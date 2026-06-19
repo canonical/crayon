@@ -1,0 +1,50 @@
+# This file is part of dogen, an agentic documentation-drafting framework.
+#
+# SPDX-FileCopyrightText: 2026 Canonical Ltd.
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 3, as published
+# by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
+# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dogen"
+version = "0.0.0"
+description = "Agentic documentation-drafting framework"
+requires-python = ">=3.12"
+license = "GPL-3.0-only"
+license-files = ["LICENSE", "LICENSES/*.txt"]
+# PEP 639 SPDX expression above emits License-Expression in the wheel METADATA
+# (LIC-02). Intentionally no license trove classifier — PEP 639 tooling treats
+# it as a conflicting duplicate of the license expression.
+
+[dependency-groups]
+dev = ["ruff", "ty", "pytest", "pytest-asyncio", "pre-commit"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C901", "PL", "ANN", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests do not require the full public-API docstring/annotation discipline.
+"tests/**" = ["D", "ANN", "PLR2004"]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
