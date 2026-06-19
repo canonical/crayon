@@ -45,6 +45,10 @@ convention = "numpy"
 
 [tool.ty.environment]
 python-version = "3.12"
+# scripts/ holds the seam guardrail, which tests import directly (single-source
+# with the CI/pre-commit step). It is not a package, so expose it to the static
+# import resolver via extra-paths.
+extra-paths = ["scripts"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
