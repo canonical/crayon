@@ -29,9 +29,35 @@ license-files = ["LICENSE", "LICENSES/*.txt"]
 # PEP 639 SPDX expression above emits License-Expression in the wheel METADATA
 # (LIC-02). Intentionally no license trove classifier — PEP 639 tooling treats
 # it as a conflicting duplicate of the license expression.
+dependencies = [
+    "github-copilot-sdk==1.0.2",
+    "logfire>=4.37.0",
+    "opentelemetry-api>=1.42.1",
+    "pydantic>=2",
+    "typer>=0.26.7",
+]
+
+[project.optional-dependencies]
+docs = [
+    "furo>=2025.12.19",
+    "myst-parser==5.1.0",
+    "sphinx==9.1.0",
+]
+
+# The installed console command. The CLI module stays thin (D-42); the Typer
+# app object is the entrypoint target.
+[project.scripts]
+dogen = "dogen.cli.main:app"
 
 [dependency-groups]
-dev = ["ruff", "ty", "pytest", "pytest-asyncio", "pre-commit"]
+dev = [
+    "ruff",
+    "ty",
+    "pytest",
+    "pytest-asyncio",
+    "pre-commit",
+    "import-linter>=2.11",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "C901", "PL", "ANN", "D"]
@@ -52,3 +78,33 @@ extra-paths = ["scripts"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# Declarative provider-seam enforcement (D-29): the SDK is now a real installable
+# dependency, so the Phase-1 AST check (scripts/seam_check.py) is upgraded to an
+# import-linter forbidden contract. The two run together as belt-and-braces —
+# import-linter is the primary declarative gate; the AST check catches dynamic
+# forms (importlib by string) its static analysis can miss (RESEARCH Pitfall 4).
+# The banned set extends beyond copilot to the observability backends so core/
+# can never import a concrete OTel SDK or logfire (OBS-01 survives a backend swap).
+# `opentelemetry` is a second root package so the contract can forbid its `.sdk`
+# subpackage specifically: core/ may use the vendor-neutral OTel *API*
+# (`opentelemetry`/`opentelemetry.trace`) but never the concrete `.sdk` backend
+# (D-20 — OBS-01 survives a backend swap). import-linter only allows forbidding a
+# subpackage when its top-level package is graphed as a root, not as an external.
+[tool.importlinter]
+root_packages = ["dogen", "opentelemetry"]
+# Required because the remaining forbidden modules (copilot, github_copilot_sdk,
+# logfire) are external packages outside the graphed roots.
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "core stays vendor- and adapter-free (provider seam)"
+type = "forbidden"
+source_modules = ["dogen.core"]
+forbidden_modules = [
+    "copilot",
+    "github_copilot_sdk",
+    "logfire",
+    "opentelemetry.sdk",
+    "dogen.adapters",
+]

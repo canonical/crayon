@@ -39,6 +39,13 @@ repos:
         entry: python scripts/seam_check.py
         language: system
         pass_filenames: false
+      # D-29: declarative seam gate, mirroring the CI import-linter step. Runs
+      # alongside the AST seam-check above as belt-and-braces (RESEARCH Pitfall 4).
+      - id: import-linter
+        name: import-linter (seam contract)
+        entry: uv run lint-imports
+        language: system
+        pass_filenames: false
       # D-14: ty has no published stable pre-commit hook yet (beta, A3); run it as
       # a local hook via uv. Re-evaluate swapping to a published hook at ty 1.0.
       - id: ty

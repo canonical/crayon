@@ -58,6 +58,11 @@ jobs:
         run: uv run ty check
       - name: Seam check (no Copilot imports outside adapters/copilot)
         run: uv run python scripts/seam_check.py # SEAM-02: exit 1 fails the build
+      # D-29: declarative seam gate. Runs alongside the AST check above as
+      # belt-and-braces (RESEARCH Pitfall 4); bans copilot/logfire/opentelemetry.sdk
+      # /adapters from core. Same `lint-imports` the pre-commit hook and test run.
+      - name: Import-linter (seam contract)
+        run: uv run lint-imports
       - name: Tests
         run: uv run pytest -q
       - name: Build (proves PEP 639 wheel metadata)
