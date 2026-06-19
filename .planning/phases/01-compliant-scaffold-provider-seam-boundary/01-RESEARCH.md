@@ -599,20 +599,25 @@ repos:
 
 **Everything else in this research was verified live or cited from the installed tool's own `--help`/output.** The four assumptions above are all version-pinning or cosmetic, with verified fallbacks.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> All three resolved by the operator at planning (2026-06-19) and baked into the plans; recorded inline below.
 
 1. **`ty` is beta — does the Handbook mandate (D-14) override "don't gate CI on a beta type checker"?**
    - What we know: Astral explicitly says don't remove your other checker from CI until ty's stable (2026). The Handbook nonetheless mandates `ty` (D-14, binding).
    - What's unclear: whether the team wants `ty` as a *hard* gate (build fails on ty error) now, or a *soft* gate (report-only) until 1.0.
    - **Recommendation:** keep `ty` as a **hard gate** (honors D-14) but (a) pin its exact version, (b) gate version bumps behind the smoke suite, (c) do **not** use `--exit-zero`. If `ty` beta instability blocks delivery, the documented fallback is to temporarily make the `ty` step `continue-on-error: true` in CI with a tracked issue — **not** to swap to mypy (which would contradict D-14). Flag this to the user at planning.
+   - **RESOLVED:** Operator chose the **hard-gate** posture — encoded in 01-04 (pinned `ty`, no `--exit-zero`; documented `continue-on-error` fallback that keeps `ty`, never mypy).
 
 2. **`.md` header style: inline HTML comment vs `.license` sidecar?**
    - What we know: `.license` sidecars are verified to work for any file; inline HTML-comment headers in Markdown are supported by `reuse` but I didn't verify them live.
    - **Recommendation:** default all four `.md` hygiene files to `<file>.md.license` sidecars for certainty, OR verify one inline at execution time. Pure discretion; either passes lint.
+   - **RESOLVED:** `.license` sidecars chosen — encoded in 01-03 (all `.md` hygiene files carry `<file>.md.license` sidecars).
 
 3. **Does `dogen` need a console-script entrypoint in Phase 1?**
    - What we know: Typer/CLI is Phase-2 (drafting loop). Phase 1's `cli/` can be an empty package.
    - **Recommendation:** stub `cli/` as an empty package (no `[project.scripts]` yet) to avoid declaring a Typer dep prematurely. Discretion.
+   - **RESOLVED:** Empty `cli/` package, no `[project.scripts]`/Typer — encoded in 01-02.
 
 ## Environment Availability
 
