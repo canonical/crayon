@@ -1,7 +1,7 @@
 # dogen coding guide
 
 **Status:** binding for all code in this repository — human- and machine-authored alike.
-**Source:** synthesized from Canonical's *Handbook for engineering practice in documentation* (Machine-assisted development, Code rules, Code review practice, Branching). Where this guide is stricter or more specific than the Handbook, this guide wins for `dogen`; where the Handbook adds practice not contradicted here, it still applies.
+**Source:** synthesized from Canonical's engineering Handbook — fully extracted to [`engineering-handbook.md`](engineering-handbook.md) (the raw source is treated as ephemeral; that extraction is the durable record). Where this guide is stricter or more specific than the Handbook, this guide wins for `dogen`; where the Handbook adds practice not contradicted here, it still applies.
 **Audience:** contributors and any coding agent operating in this repo (see [`AGENTS.md`](../../AGENTS.md)).
 
 The Handbook's framing is the standard we hold to: *"Regardless of where our code comes from, we aren't exempt from correct and safe software development."* Synthetic code is held to **exactly** the same bar as hand-written code, and the author who merges it owns it.
@@ -97,7 +97,7 @@ These are not style preferences — they are the contract that makes the provide
 
 ## 7. Licensing & file headers
 
-REUSE-compliant from commit 1; `reuse lint` gates CI. Per Canonical's Licensing policy, **every source file carries the full notice block** (not a bare SPDX line):
+REUSE-compliant from commit 1; `reuse lint` gates CI. The complete licensing reference — all rules, header variants (GPL/LGPL/AGPL/CLA/docs), and decisions — is [`licensing.md`](licensing.md), the system of record now that the source policy is ephemeral. Per that policy, **every source file carries the full notice block** (not a bare SPDX line):
 
 ```python
 # This file is part of dogen, an agentic documentation-drafting framework.

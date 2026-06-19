@@ -63,13 +63,14 @@ Phase 1 delivers a **distributable, REUSE-clean Python package skeleton** with t
 **Downstream agents MUST read these before planning or implementing.**
 
 ### In-repo binding references (read first)
-- `.planning/refs/coding-guide.md` — **binding** coding standards: ruff + `ty`, the AI-anti-pattern→rule table, testing rules, architecture invariants, and the exact REUSE/Canonical file header (§7). Created this session from the Handbook.
+- `.planning/refs/coding-guide.md` — **binding** coding standards: ruff + `ty`, the AI-anti-pattern→rule table, testing rules, architecture invariants, and the exact REUSE/Canonical file header (§7).
+- `.planning/refs/licensing.md` — **system of record** for licensing: the full Canonical rules (license-by-type, every header variant, CLA) plus every baked `dogen` decision (GPL-3.0-only, 2026, per-file headers, `LICENSES/` + `LICENSE`).
 - `AGENTS.md` — agent operating contract: the seam invariant, coding rules, AI discipline (provenance, shell-allowlists), licensing header, branching.
 - `.planning/refs/synthetic-code-provenance.md` — reusable synthetic-code provenance prompt + output templates (dev-process record; mirrors the Phase-2 product `provenance.yaml`).
+- `.planning/refs/engineering-handbook.md` — faithful **full** extraction of Canonical's engineering Handbook (general practice + Starter-Pack specifics + decision log + versioning/release model; stub sections explicitly noted).
 
-### Canonical org policy (internal — distilled into the refs above; do NOT commit to the OSS repo)
-- `~/Downloads/Licensing policy.md` — Canonical Licensing policy (Corporate Reference Library; approved 2023-01-01). Operative rules already distilled into D-01..D-06 and `coding-guide.md` §7: GPLv3-only / LGPLv3-only / AGPLv3-only by project type, per-file notice block, CLA. Internal doc — its rules travel via this CONTEXT + the coding guide, the doc itself is not committed.
-- `~/Downloads/Handbook for engineering practice in documentation.md` — Canonical engineering Handbook. Source for `coding-guide.md` and the branching/review model (D-19). Substantive content: *Machine-assisted development*, *Code rules*, *Code review practice*, *Branching*; many later policy sections are still empty stubs. Internal doc — not committed.
+### Source documents (extracted; raw sources ephemeral)
+- Canonical's **Licensing policy** and **Handbook for engineering practice in documentation** were fully extracted into `licensing.md` and `engineering-handbook.md` above. The raw documents are treated as **ephemeral** and are **not** committed — the in-repo extractions supersede them as the system of record.
 
 ### Project planning & research
 - `.planning/ROADMAP.md` → "Phase 1" — goal, requirements (SEAM-01/02, LIC-01/02), the four success criteria.
@@ -95,7 +96,7 @@ Phase 1 delivers a **distributable, REUSE-clean Python package skeleton** with t
 <specifics>
 ## Specific Ideas
 
-- Both incoming reference guides were located in `~/Downloads/` and read this session: the **Licensing policy** and the **Handbook for engineering practice in documentation**.
+- Both incoming reference guides (the **Licensing policy** and the **Handbook for engineering practice in documentation**) were read and **fully extracted** into `.planning/refs/licensing.md` and `.planning/refs/engineering-handbook.md`; the raw `~/Downloads/` sources are treated as ephemeral and not committed.
 - Rather than adopt the Handbook verbatim, the user asked for a **synthesized, stricter project coding guide** plus **AI coding artefacts for agents**, with special weight on the Handbook's machine-assisted-development critique — produced this session (`coding-guide.md`, `AGENTS.md`, `synthetic-code-provenance.md`).
 - Package name `dogen` was chosen by the user (not the working title).
 - Type checker is `ty` (Astral), explicitly per the Handbook — not mypy/pyright.
