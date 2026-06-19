@@ -17,3 +17,17 @@ current plan's changes).
 - **Fix (later):** wrap the offending prose in `REUSE-IgnoreStart`/`REUSE-IgnoreEnd`
   comments, or rephrase the table cells in 01-VERIFICATION.md. Belongs to a docs/
   housekeeping pass, not this walking-skeleton plan.
+
+## DEF-02-02 — `reuse lint` false-positive in 02-01-SUMMARY.md
+
+- **Found during:** plan 02-02, Task 3 (`uvx reuse lint` gate).
+- **File:** `.planning/phases/02-walking-skeleton-planning-schema-provable-hitl-observability/02-01-SUMMARY.md` (committed in Phase 2, plan 01).
+- **Symptom:** same class as DEF-02-01 — the SUMMARY's own prose (the "Issues
+  Encountered" section that *describes* the DEF-02-01 false positive) quotes a
+  bare license token after an `SPDX-License-Identifier:` mention, which reuse's
+  parser misreads as a malformed expression. The whole-repo invalid-expression
+  count is therefore 2, both in `.planning/` planning artifacts.
+- **Scope:** pre-existing planning artifact; NOT modified by plan 02-02. Every
+  source/test/config file this plan added passes `reuse lint-file` individually.
+- **Fix (later):** wrap the quoting prose in `REUSE-IgnoreStart`/`REUSE-IgnoreEnd`
+  in 02-01-SUMMARY.md during the same docs housekeeping pass as DEF-02-01.

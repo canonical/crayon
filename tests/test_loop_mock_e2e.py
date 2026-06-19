@@ -1,0 +1,133 @@
+# This file is part of dogen, an agentic documentation-drafting framework.
+#
+# SPDX-FileCopyrightText: 2026 Canonical Ltd.
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 3, as published
+# by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
+# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""The mock end-to-end CI loop: unit new -> steer -> draft -> review (D-24).
+
+Covers Task 3. Drives the four thin subcommands through Typer's ``CliRunner``
+against a tmp git repo on ``--provider mock`` (no SDK, no Copilot token), and
+asserts the HITL refusal path, the steering-precedes-draft ordering (HITL-02 /
+AC5), the single reviewer edit, and that progress ends ``reviewed`` and never
+``committed``. Deterministic and order-independent (coding-guide §4).
+"""
+
+import ast
+import subprocess
+from pathlib import Path
+
+import pytest
+from typer.testing import CliRunner
+
+from dogen.adapters.planning_fs import FilesystemPlanningStore
+from dogen.cli.main import app
+from dogen.core.models import Intent, ProgressState
+
+runner = CliRunner()
+
+
+@pytest.fixture
+def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A tmp git repo with a configured identity, used as the working dir."""
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    subprocess.run(
+        ["git", "-C", str(tmp_path), "config", "user.name", "Ada Lovelace"], check=True
+    )
+    subprocess.run(
+        ["git", "-C", str(tmp_path), "config", "user.email", "ada@example.com"],
+        check=True,
+    )
+    monkeypatch.chdir(tmp_path)
+    return tmp_path
+
+
+def _new_unit(unit_id: str) -> None:
+    result = runner.invoke(
+        app, ["unit", "new", unit_id, "--intent", "reference", "--audience", "devs"]
+    )
+    assert result.exit_code == 0, result.output
+
+
+def test_full_loop_reaches_reviewed(repo: Path) -> None:
+    store = FilesystemPlanningStore()
+    _new_unit("u")
+    assert runner.invoke(app, ["steer", "u"]).exit_code == 0
+    draft_res = runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    assert draft_res.exit_code == 0, draft_res.output
+    review_res = runner.invoke(app, ["review", "u", "--note", "reworded intro"])
+    assert review_res.exit_code == 0, review_res.output
+
+    unit_dir = repo / ".dogen" / "units" / "u"
+    assert (unit_dir / "unit.md").exists()
+    assert (unit_dir / "provenance.yaml").exists()
+    assert (unit_dir / "progress.yaml").exists()
+    unit = store.load_unit("u", root=repo)
+    assert (repo / "docs" / unit.sphinx_target).exists()
+
+    progress = store.read_progress("u", root=repo)
+    assert progress.state is ProgressState.reviewed
+    assert ProgressState.committed not in [e.state for e in progress.history]
+
+
+def test_draft_refuses_without_steer(repo: Path) -> None:
+    _new_unit("u")
+    result = runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    assert result.exit_code != 0
+    assert "no recorded steering" in result.output
+    assert not (repo / "docs" / "u.md").exists()
+
+
+def test_steer_records_author_and_precedes_draft(repo: Path) -> None:
+    store = FilesystemPlanningStore()
+    _new_unit("u")
+    runner.invoke(app, ["steer", "u"])
+    provenance = store.read_provenance("u", root=repo)
+    assert provenance.steering is not None
+    assert provenance.steering.author == "Ada Lovelace"
+    assert provenance.steering.intent is Intent.reference
+
+    runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    after = store.read_provenance("u", root=repo)
+    assert after.steering is not None
+    assert after.steering.at < after.generations[0].at
+
+
+def test_review_appends_single_reviewer_edit(repo: Path) -> None:
+    store = FilesystemPlanningStore()
+    _new_unit("u")
+    runner.invoke(app, ["steer", "u"])
+    runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    runner.invoke(app, ["review", "u", "--note", "reworded intro"])
+    provenance = store.read_provenance("u", root=repo)
+    assert len(provenance.reviewer_edits) == 1
+    edit = provenance.reviewer_edits[0]
+    assert edit.summary == "reworded intro"
+    assert edit.reviewer == "Ada Lovelace"
+    assert edit.at
+
+
+def test_e2e_imports_no_sdk() -> None:
+    # Parse the module's own import statements (not its source text, which would
+    # self-match on the banned tokens used in this very assertion) and assert no
+    # SDK package is imported — the CI loop runs without the SDK / token (D-24).
+    tree = ast.parse(Path("tests/test_loop_mock_e2e.py").read_text(encoding="utf-8"))
+    imported: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split(".")[0])
+    assert "copilot" not in imported
+    assert "github_copilot_sdk" not in imported
