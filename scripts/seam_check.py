@@ -103,9 +103,7 @@ def find_violations(path: Path) -> list[tuple[int, str]]:
                 if _is_banned(alias.name)
             ]
         elif (
-            isinstance(node, ast.ImportFrom)
-            and node.module
-            and _is_banned(node.module)
+            isinstance(node, ast.ImportFrom) and node.module and _is_banned(node.module)
         ):
             hits.append((node.lineno, f"from {node.module} import ..."))
         elif isinstance(node, ast.Call):
@@ -139,8 +137,7 @@ def main() -> int:
         print("seam-check: VIOLATION(S):", *bad, sep="\n  ", file=sys.stderr)
         return 1
     print(
-        f"seam-check: OK - {scanned} files, "
-        "no vendor imports outside adapters/copilot/"
+        f"seam-check: OK - {scanned} files, no vendor imports outside adapters/copilot/"
     )
     return 0
 
