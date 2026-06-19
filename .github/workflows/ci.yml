@@ -1,0 +1,64 @@
+# This file is part of dogen, an agentic documentation-drafting framework.
+#
+# SPDX-FileCopyrightText: 2026 Canonical Ltd.
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 3, as published
+# by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
+# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+name: ci
+
+on: [push, pull_request]
+
+# Least-privilege: the commit-1 gates read the repo and need nothing else.
+# No secrets are used; only the default GITHUB_TOKEN with read scope.
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # D-12: cheap forward-compat insurance across the supported floor + next.
+        python-version: ["3.12", "3.13"]
+    steps:
+      # First-party actions only, pinned to a commit SHA (supply-chain: T-04-01).
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Set up uv + Python
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (frozen lockfile)
+        run: uv sync --frozen # D-18: install exactly the committed uv.lock
+      # Gate order mirrors .pre-commit-config.yaml and scripts/seam_check.py (D-13).
+      - name: REUSE lint
+        run: uvx reuse lint # LIC-01: every file carries SPDX info; uvx pins the same reuse as pre-commit
+      - name: Ruff lint
+        run: uv run ruff check .
+      - name: Ruff format check
+        run: uv run ruff format --check .
+      # D-14: ty is a hard gate -- it runs as plain `ty check` so type errors fail
+      # the build. Do NOT pass the gate-silencing flag that forces a zero exit.
+      # ty is beta (0.0.x); if its instability ever blocks delivery, the documented
+      # fallback is to temporarily set this step `continue-on-error: true` with a
+      # tracked issue -- NEVER swap to mypy/pyright (that would contradict D-14).
+      - name: Type check (ty)
+        run: uv run ty check
+      - name: Seam check (no Copilot imports outside adapters/copilot)
+        run: uv run python scripts/seam_check.py # SEAM-02: exit 1 fails the build
+      - name: Tests
+        run: uv run pytest -q
+      - name: Build (proves PEP 639 wheel metadata)
+        run: uv build # LIC-02: License-Expression in the built wheel METADATA
