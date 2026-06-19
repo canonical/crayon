@@ -13,7 +13,7 @@ The thinnest end-to-end slice that proves the drafting loop and establishes the 
 
 ### Walking Skeleton (A2) — the thin drafting loop
 
-- [ ] **SKEL-01**: Operator can define a documentation *unit* and point the agent at human-specified source inputs for that unit
+- [x] **SKEL-01**: Operator can define a documentation *unit* and point the agent at human-specified source inputs for that unit
 - [ ] **SKEL-02**: The agent drafts the unit end-to-end into Sphinx-publishable output (MyST Markdown) via CLI → orchestrator → Copilot adapter
 - [ ] **SKEL-03**: The drafting loop produces output only and stops before any commit — no committing, pushing, PR, build, or publish
 - [ ] **SKEL-04**: The agent operates with a bounded, read-only toolset (grep / glob / view) — no write, exec, or network tools
@@ -24,17 +24,17 @@ The thinnest end-to-end slice that proves the drafting loop and establishes the 
 - [x] **SEAM-01**: The GitHub Copilot SDK is imported in exactly one adapter module; the domain core has zero vendor imports
 - [x] **SEAM-02**: A CI guardrail fails the build if any Copilot SDK import appears outside the adapter module
 - [ ] **SEAM-03**: The `DraftingProvider` port is shaped by domain verbs (not SDK method signatures), so the agentic-logic provider is swappable; a mock provider slots into it to prove swappability without any real SDK
-- [ ] **SEAM-04**: The seam is multi-provider *by design* — Copilot SDK is the v1 adapter, with the OpenCode SDK or a homegrown Pydantic AI agent named as viable target alternates; the port contract is documented and carries no Copilot-specific assumptions _(research + discuss)_
+- [x] **SEAM-04**: The seam is multi-provider *by design* — Copilot SDK is the v1 adapter, with the OpenCode SDK or a homegrown Pydantic AI agent named as viable target alternates; the port contract is documented and carries no Copilot-specific assumptions _(research + discuss)_
 
 ### Planning Directory Schema v0 (F1) — the audit/provenance surface
 
-- [ ] **PLAN-01**: The framework persists a per-unit planning directory (`unit.md`, draft, `provenance.yaml`, `progress.yaml`) plus a steering record, on disk
-- [ ] **PLAN-02**: The schema carries a `schema_version` field so future migrations are explicit and detectable
-- [ ] **PLAN-03**: `unit.md` front-matter records intent + audience + steering notes and the human-pointed sources for the unit
+- [x] **PLAN-01**: The framework persists a per-unit planning directory (`unit.md`, draft, `provenance.yaml`, `progress.yaml`) plus a steering record, on disk
+- [x] **PLAN-02**: The schema carries a `schema_version` field so future migrations are explicit and detectable
+- [x] **PLAN-03**: `unit.md` front-matter records intent + audience + steering notes and the human-pointed sources for the unit
 - [ ] **PLAN-04**: `provenance.yaml` records, per generation pass, model / model version / effort, tooling version, SDK version, context origins (what the agent actually read — distinct from the human-pointed sources), and tools used
 - [ ] **PLAN-05**: `provenance.yaml` records reviewer edits (timestamp, reviewer, summary) made after generation
 - [ ] **PLAN-06**: `progress.yaml` tracks the unit lifecycle `pending → sourced → drafted → reviewed → committed` and stops at `committed` (no push / PR / build / publish states exist)
-- [ ] **PLAN-07**: The schema structurally reserves (present but may be empty at v0) the evidence fields for actionable-content verification: step state, evidence pointer, environment fingerprint
+- [x] **PLAN-07**: The schema structurally reserves (present but may be empty at v0) the evidence fields for actionable-content verification: step state, evidence pointer, environment fingerprint
 
 ### Provable Human-in-the-Loop Gate (A2 + F1)
 
@@ -109,7 +109,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SKEL-01 | Phase 2 | Pending |
+| SKEL-01 | Phase 2 | Complete |
 | SKEL-02 | Phase 2 | Pending |
 | SKEL-03 | Phase 2 | Pending |
 | SKEL-04 | Phase 2 | Pending |
@@ -117,14 +117,14 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SEAM-01 | Phase 1 | Complete |
 | SEAM-02 | Phase 1 | Complete |
 | SEAM-03 | Phase 2 | Pending |
-| SEAM-04 | Phase 2 | Pending |
-| PLAN-01 | Phase 2 | Pending |
-| PLAN-02 | Phase 2 | Pending |
-| PLAN-03 | Phase 2 | Pending |
+| SEAM-04 | Phase 2 | Complete |
+| PLAN-01 | Phase 2 | Complete |
+| PLAN-02 | Phase 2 | Complete |
+| PLAN-03 | Phase 2 | Complete |
 | PLAN-04 | Phase 2 | Pending |
 | PLAN-05 | Phase 2 | Pending |
 | PLAN-06 | Phase 2 | Pending |
-| PLAN-07 | Phase 2 | Pending |
+| PLAN-07 | Phase 2 | Complete |
 | HITL-01 | Phase 2 | Pending |
 | HITL-02 | Phase 2 | Pending |
 | OBS-01 | Phase 2 | Pending |
