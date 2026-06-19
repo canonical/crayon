@@ -67,11 +67,25 @@ Plans:
   5. The loop emits structured traces/metrics/logs through a provider-independent instrumentation layer (not the SDK's own telemetry) wired to a concrete local backend, and each run correlates with its `provenance.yaml` generation entry
   6. The `DraftingProvider` port is shaped by domain verbs and a mock provider slots into it to prove swappability without any real SDK; the port contract is documented with no Copilot-specific assumptions
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 02-01: TBD
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — F1 schema v0 (Pydantic models, schema_version, reserved verification fields), filesystem PlanningStore + git-identity adapter, `dogen unit new`, all new deps, and the import-linter seam upgrade (Wave 1)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 02-02-PLAN.md — the demoable walking skeleton: orchestrator + deterministic mock provider + OTel/Logfire observability + provable-HITL gate; `steer`/`draft`/`review` running end-to-end on the mock in CI (Wave 2)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 02-03-PLAN.md — real Copilot adapter on the pinned SDK: bounded read-only toolset, backend-unavailable handling, local smoke (SKEL-05), SEAM-04 design doc; has a blocking checkpoint to confirm built-in tool names (Wave 3)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 02-04-PLAN.md — Sphinx/MyST docs toolchain + real `-W` CI build (SKEL-02), the D-44 docs-license decision + licensing.md reconciliation, and the committed dogfood drafted page; has a blocking license-decision checkpoint (Wave 4)
 
 **Notes / open decisions (settle at `/gsd-discuss-phase 2`):**
 
@@ -88,4 +102,4 @@ Phases execute in numeric order: 1 → 2
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Compliant Scaffold & Provider-Seam Boundary | 4/4 | Complete    | 2026-06-19 |
-| 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 0/TBD | Not started | - |
+| 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 0/4 | Not started | - |
