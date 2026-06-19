@@ -21,8 +21,8 @@ The thinnest end-to-end slice that proves the drafting loop and establishes the 
 
 ### SDK Abstraction Seam (A2) — provider-agnostic core
 
-- [ ] **SEAM-01**: The GitHub Copilot SDK is imported in exactly one adapter module; the domain core has zero vendor imports
-- [ ] **SEAM-02**: A CI guardrail fails the build if any Copilot SDK import appears outside the adapter module
+- [x] **SEAM-01**: The GitHub Copilot SDK is imported in exactly one adapter module; the domain core has zero vendor imports
+- [x] **SEAM-02**: A CI guardrail fails the build if any Copilot SDK import appears outside the adapter module
 - [ ] **SEAM-03**: The `DraftingProvider` port is shaped by domain verbs (not SDK method signatures), so the agentic-logic provider is swappable; a mock provider slots into it to prove swappability without any real SDK
 - [ ] **SEAM-04**: The seam is multi-provider *by design* — Copilot SDK is the v1 adapter, with the OpenCode SDK or a homegrown Pydantic AI agent named as viable target alternates; the port contract is documented and carries no Copilot-specific assumptions _(research + discuss)_
 
@@ -114,8 +114,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SKEL-03 | Phase 2 | Pending |
 | SKEL-04 | Phase 2 | Pending |
 | SKEL-05 | Phase 2 | Pending |
-| SEAM-01 | Phase 1 | Pending |
-| SEAM-02 | Phase 1 | Pending |
+| SEAM-01 | Phase 1 | Complete |
+| SEAM-02 | Phase 1 | Complete |
 | SEAM-03 | Phase 2 | Pending |
 | SEAM-04 | Phase 2 | Pending |
 | PLAN-01 | Phase 2 | Pending |
