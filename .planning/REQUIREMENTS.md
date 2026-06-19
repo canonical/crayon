@@ -15,7 +15,7 @@ The thinnest end-to-end slice that proves the drafting loop and establishes the 
 
 - [x] **SKEL-01**: Operator can define a documentation *unit* and point the agent at human-specified source inputs for that unit
 - [ ] **SKEL-02**: The agent drafts the unit end-to-end into Sphinx-publishable output (MyST Markdown) via CLI → orchestrator → Copilot adapter
-- [ ] **SKEL-03**: The drafting loop produces output only and stops before any commit — no committing, pushing, PR, build, or publish
+- [x] **SKEL-03**: The drafting loop produces output only and stops before any commit — no committing, pushing, PR, build, or publish
 - [ ] **SKEL-04**: The agent operates with a bounded, read-only toolset (grep / glob / view) — no write, exec, or network tools
 - [ ] **SKEL-05**: The drafting backend runs on a pinned `github-copilot-sdk==1.0.2` with a compatible pinned Copilot CLI, and "backend unavailable" is a handled, non-crashing state (a drafting-loop smoke test gates SDK/CLI upgrades)
 
@@ -23,7 +23,7 @@ The thinnest end-to-end slice that proves the drafting loop and establishes the 
 
 - [x] **SEAM-01**: The GitHub Copilot SDK is imported in exactly one adapter module; the domain core has zero vendor imports
 - [x] **SEAM-02**: A CI guardrail fails the build if any Copilot SDK import appears outside the adapter module
-- [ ] **SEAM-03**: The `DraftingProvider` port is shaped by domain verbs (not SDK method signatures), so the agentic-logic provider is swappable; a mock provider slots into it to prove swappability without any real SDK
+- [x] **SEAM-03**: The `DraftingProvider` port is shaped by domain verbs (not SDK method signatures), so the agentic-logic provider is swappable; a mock provider slots into it to prove swappability without any real SDK
 - [x] **SEAM-04**: The seam is multi-provider *by design* — Copilot SDK is the v1 adapter, with the OpenCode SDK or a homegrown Pydantic AI agent named as viable target alternates; the port contract is documented and carries no Copilot-specific assumptions _(research + discuss)_
 
 ### Planning Directory Schema v0 (F1) — the audit/provenance surface
@@ -31,21 +31,21 @@ The thinnest end-to-end slice that proves the drafting loop and establishes the 
 - [x] **PLAN-01**: The framework persists a per-unit planning directory (`unit.md`, draft, `provenance.yaml`, `progress.yaml`) plus a steering record, on disk
 - [x] **PLAN-02**: The schema carries a `schema_version` field so future migrations are explicit and detectable
 - [x] **PLAN-03**: `unit.md` front-matter records intent + audience + steering notes and the human-pointed sources for the unit
-- [ ] **PLAN-04**: `provenance.yaml` records, per generation pass, model / model version / effort, tooling version, SDK version, context origins (what the agent actually read — distinct from the human-pointed sources), and tools used
-- [ ] **PLAN-05**: `provenance.yaml` records reviewer edits (timestamp, reviewer, summary) made after generation
-- [ ] **PLAN-06**: `progress.yaml` tracks the unit lifecycle `pending → sourced → drafted → reviewed → committed` and stops at `committed` (no push / PR / build / publish states exist)
+- [x] **PLAN-04**: `provenance.yaml` records, per generation pass, model / model version / effort, tooling version, SDK version, context origins (what the agent actually read — distinct from the human-pointed sources), and tools used
+- [x] **PLAN-05**: `provenance.yaml` records reviewer edits (timestamp, reviewer, summary) made after generation
+- [x] **PLAN-06**: `progress.yaml` tracks the unit lifecycle `pending → sourced → drafted → reviewed → committed` and stops at `committed` (no push / PR / build / publish states exist)
 - [x] **PLAN-07**: The schema structurally reserves (present but may be empty at v0) the evidence fields for actionable-content verification: step state, evidence pointer, environment fingerprint
 
 ### Provable Human-in-the-Loop Gate (A2 + F1)
 
-- [ ] **HITL-01**: The orchestrator refuses to draft a unit unless intent + audience steering has been recorded first ("no recorded steering → no draft")
-- [ ] **HITL-02**: Recorded steering captures author and timestamp, so an audit of the planning directory shows no substantial draft without a recorded human steering input (AC5 evidence)
+- [x] **HITL-01**: The orchestrator refuses to draft a unit unless intent + audience steering has been recorded first ("no recorded steering → no draft")
+- [x] **HITL-02**: Recorded steering captures author and timestamp, so an audit of the planning directory shows no substantial draft without a recorded human steering input (AC5 evidence)
 
 ### Observability (foundation) — instrumented independently of the SDK
 
-- [ ] **OBS-01**: The drafting loop emits structured observability (traces/spans of the loop, key run metrics, run logs) through a provider-independent instrumentation layer in the core — not via the Copilot SDK's own telemetry — so observability survives an SDK swap
-- [ ] **OBS-02**: A concrete observability backend is wired at a basic level for local runs, layered on top of whatever the SDK already emits; Logfire (OpenTelemetry-based, pairs with Pydantic v2) is the leading candidate, final choice confirmed at planning _(research + discuss)_
-- [ ] **OBS-03**: Run-level observability correlates with the F1 provenance record (a run maps to its `provenance.yaml` generation entry), so the runtime trace and the on-disk audit surface line up
+- [x] **OBS-01**: The drafting loop emits structured observability (traces/spans of the loop, key run metrics, run logs) through a provider-independent instrumentation layer in the core — not via the Copilot SDK's own telemetry — so observability survives an SDK swap
+- [x] **OBS-02**: A concrete observability backend is wired at a basic level for local runs, layered on top of whatever the SDK already emits; Logfire (OpenTelemetry-based, pairs with Pydantic v2) is the leading candidate, final choice confirmed at planning _(research + discuss)_
+- [x] **OBS-03**: Run-level observability correlates with the F1 provenance record (a run maps to its `provenance.yaml` generation entry), so the runtime trace and the on-disk audit surface line up
 
 ### Licensing & Compliance (foundation) — REUSE from commit 1
 
@@ -111,25 +111,25 @@ Which phases cover which requirements. Populated during roadmap creation.
 |-------------|-------|--------|
 | SKEL-01 | Phase 2 | Complete |
 | SKEL-02 | Phase 2 | Pending |
-| SKEL-03 | Phase 2 | Pending |
+| SKEL-03 | Phase 2 | Complete |
 | SKEL-04 | Phase 2 | Pending |
 | SKEL-05 | Phase 2 | Pending |
 | SEAM-01 | Phase 1 | Complete |
 | SEAM-02 | Phase 1 | Complete |
-| SEAM-03 | Phase 2 | Pending |
+| SEAM-03 | Phase 2 | Complete |
 | SEAM-04 | Phase 2 | Complete |
 | PLAN-01 | Phase 2 | Complete |
 | PLAN-02 | Phase 2 | Complete |
 | PLAN-03 | Phase 2 | Complete |
-| PLAN-04 | Phase 2 | Pending |
-| PLAN-05 | Phase 2 | Pending |
-| PLAN-06 | Phase 2 | Pending |
+| PLAN-04 | Phase 2 | Complete |
+| PLAN-05 | Phase 2 | Complete |
+| PLAN-06 | Phase 2 | Complete |
 | PLAN-07 | Phase 2 | Complete |
-| HITL-01 | Phase 2 | Pending |
-| HITL-02 | Phase 2 | Pending |
-| OBS-01 | Phase 2 | Pending |
-| OBS-02 | Phase 2 | Pending |
-| OBS-03 | Phase 2 | Pending |
+| HITL-01 | Phase 2 | Complete |
+| HITL-02 | Phase 2 | Complete |
+| OBS-01 | Phase 2 | Complete |
+| OBS-02 | Phase 2 | Complete |
+| OBS-03 | Phase 2 | Complete |
 | LIC-01 | Phase 1 | Complete |
 | LIC-02 | Phase 1 | Complete |
 
