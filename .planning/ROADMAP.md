@@ -67,7 +67,7 @@ Plans:
   5. The loop emits structured traces/metrics/logs through a provider-independent instrumentation layer (not the SDK's own telemetry) wired to a concrete local backend, and each run correlates with its `provenance.yaml` generation entry
   6. The `DraftingProvider` port is shaped by domain verbs and a mock provider slots into it to prove swappability without any real SDK; the port contract is documented with no Copilot-specific assumptions
 
-**Plans**: 1/4 plans executed
+**Plans**: 2/4 plans executed
 
 Plans:
 
@@ -77,7 +77,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 02-02-PLAN.md — the demoable walking skeleton: orchestrator + deterministic mock provider + OTel/Logfire observability + provable-HITL gate; `steer`/`draft`/`review` running end-to-end on the mock in CI (Wave 2)
+- [x] 02-02-PLAN.md — the demoable walking skeleton: orchestrator + deterministic mock provider + OTel/Logfire observability + provable-HITL gate; `steer`/`draft`/`review` running end-to-end on the mock in CI (Wave 2)
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -102,4 +102,4 @@ Phases execute in numeric order: 1 → 2
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Compliant Scaffold & Provider-Seam Boundary | 4/4 | Complete    | 2026-06-19 |
-| 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 1/4 | In Progress|  |
+| 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 2/4 | In Progress|  |
