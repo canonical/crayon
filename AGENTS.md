@@ -36,7 +36,7 @@ Every source file carries the full Canonical notice block ending in:
 # SPDX-License-Identifier: GPL-3.0-only
 ```
 
-License text in `LICENSES/GPL-3.0-only.txt` + top-level `LICENSE`. See `coding-guide.md` §7 for the exact header.
+License text in `LICENSES/GPL-3.0-only.txt` + top-level `LICENSE`. Full rules, header variants, and decisions: [`.planning/refs/licensing.md`](.planning/refs/licensing.md) (the system of record).
 
 ## Branching & commits
 

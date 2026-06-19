@@ -1,6 +1,6 @@
 # Synthetic-code provenance
 
-A reusable, harness-agnostic record for code produced with machine assistance. Per Canonical's *Handbook for engineering practice in documentation*: synthetic code must declare where it came from so it stays auditable and reproducible.
+A reusable, harness-agnostic record for code produced with machine assistance. Per Canonical's engineering Handbook (extracted to [`engineering-handbook.md`](engineering-handbook.md) §7): synthetic code must declare where it came from so it stays auditable and reproducible.
 
 This is a **development-process** artefact — it records how *dogen's own code* was produced. It is deliberately shaped like `dogen`'s product `provenance.yaml` (Phase 2), but the two are separate: do not conflate the record of building the tool with the record the tool emits about drafted docs.
 
