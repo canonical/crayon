@@ -35,6 +35,8 @@ metrics:
   completed_date: 2026-06-19
 requirements: [LIC-01, LIC-02]
 ---
+<!-- REUSE-IgnoreStart -->
+
 
 # Phase 1 Plan 01: Licensing Foundation Summary
 
@@ -88,3 +90,4 @@ uvx reuse annotate --copyright "Canonical Ltd." --year 2026 \
 
 - Files: all 4 present (LICENSES/GPL-3.0-only.txt, LICENSE, .reuse/templates/canonical.jinja2, .reuse/templates/canonical.jinja2.license).
 - Commits: 417fd33 (Task 1), 8b03ea7 (Task 2) both present in git log.
+<!-- REUSE-IgnoreEnd -->

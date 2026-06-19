@@ -1,3 +1,5 @@
+<!-- REUSE-IgnoreStart -->
+
 # Phase 1: Compliant Scaffold & Provider-Seam Boundary - Research
 
 **Researched:** 2026-06-19
@@ -697,3 +699,4 @@ repos:
 
 **Research date:** 2026-06-19
 **Valid until:** ~2026-07-19 for `reuse`/`uv`/`hatchling`/PEP 639 mechanics (stable); ~2026-06-26 for `ty`/`ruff` exact versions (Astral releases weekly — re-verify pins at execution time).
+<!-- REUSE-IgnoreEnd -->
