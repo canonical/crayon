@@ -34,6 +34,7 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 - [ ] Local onboarding tool (style scraper) producing the code-to-docs map plus repo doc-style, glossary, and structure artefacts
 - [ ] Type-aware generation steered by intent (reference / tutorial / how-to / explanation as *direction*), with an evidence-gated verification step on actionable content
 - [ ] Coexist with the separate org-wide doc QA stage (DOCPR-2822) without absorbing it (optional extension point)
+- [ ] Observable drafting loop, instrumented independently of the agentic SDK (provider-independent telemetry)
 - [ ] Deployable out-of-the-box by any TA; proven to scale across multiple products (greenfield + brownfield)
 
 ### Out of Scope
@@ -66,12 +67,14 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 
 ## Constraints
 
-- **Tech stack**: Python package; rides on the **Copilot SDK behind a thin abstraction seam** so a later SDK swap stays cheap — Why: pragmatic-first per the epic, with agnosticism kept as a design property of the core
+- **Tech stack**: Python package; rides on the **Copilot SDK behind a thin, genuinely multi-provider abstraction seam** (alternate targets: OpenCode SDK, or a homegrown Pydantic AI agent) so the agentic-logic provider can be swapped cheaply — Why: pragmatic-first per the epic, with agnosticism kept as a core design property
 - **Output**: must be Sphinx-publishable — Why: primary docs-as-code stack this cycle is GitHub + RTD + Sphinx
 - **Scope border**: drafting only; stop at singular traceable local commits — Why: framework stays dumb outside drafting; reviewer/merger owns output
 - **Process**: human-in-the-loop is mandatory and must be *provable* (recorded steering on intent + audience) — Why: accountability and the AC5 audit
 - **Decoupling**: the reusable core stays distinct from the guidance it consumes (defined company-wide once and maintained, or scraped per repo) — Why: portfolio updates benefit everyone instead of fragmenting
 - **Provenance**: internal observability only, about the harness/tooling — not a published content disclaimer — Why: humans own and stand behind shipped output
+- **Observability**: instrumented independently of the agentic SDK (provider-independent layer; Logfire / OpenTelemetry the leading candidate) — Why: observability must survive an SDK swap and not depend on the SDK's own telemetry
+- **Licensing**: REUSE-compliant from commit 1 (SPDX headers, `reuse lint` in CI); specific OSS license TBD via discussion — Why: clean, auditable licensing/provenance of own and third-party code
 - **Delivery cadence**: agile; plan one pulse in advance; epic breakdown is a reference frame, not a fixed task list — Why: holiday/critical-path risk plus the "pour concrete in stages" philosophy
 - **UX**: good design is a primary requirement — Why: if it's easier to circumvent than to use, it will be circumvented
 
@@ -79,10 +82,12 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Adopt the Copilot SDK behind a thin abstraction layer | Pragmatic-first (start with available tooling); thin seam keeps SDK swap cheap and preserves agnosticism as a design property | — Pending |
+| Adopt the Copilot SDK behind a thin, multi-provider abstraction seam | Pragmatic-first; thin seam keeps the provider swappable (OpenCode SDK / homegrown Pydantic AI as alternates) and preserves agnosticism as a core design property | — Pending |
 | Build the drafting layer, not agent machinery | Adopt-not-build keeps the core thin and focused on value-add | — Pending |
 | Deliver agile — plan one pulse ahead | Critical-path/holiday risk + iterative "pour concrete in stages" philosophy | — Pending |
-| First milestone (MVP) = walking skeleton (A2) + planning directory schema v0 (F1) | Thinnest end-to-end proof of the loop, plus the SDD-style audit/provenance surface everything else hangs off | — Pending |
+| First milestone (MVP) = walking skeleton (A2) + planning directory schema v0 (F1) + foundations (seam, observability, licensing) | Thinnest end-to-end proof of the loop, plus the SDD-style audit/provenance surface and the foundations that are expensive to retrofit | — Pending |
+| Observability is provider-independent (Logfire / OTel candidate), not tied to the SDK | Keep telemetry durable across an SDK swap; don't depend on the SDK for it | — Pending (research + discuss) |
+| REUSE framework for licensing compliance from commit 1 | Auditable SPDX licensing of own + third-party code; CI-enforced | — Pending (license choice via discuss) |
 | RAG / context-augmentation is spike-gated, not a dependency | Avoid over-engineering; steering-first by default | — Pending |
 | Stop at singular traceable local commits | Reviewer/merger owns output; framework stays dumb outside drafting | — Pending |
 
