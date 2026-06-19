@@ -109,35 +109,35 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SKEL-01 | TBD | Pending |
-| SKEL-02 | TBD | Pending |
-| SKEL-03 | TBD | Pending |
-| SKEL-04 | TBD | Pending |
-| SKEL-05 | TBD | Pending |
-| SEAM-01 | TBD | Pending |
-| SEAM-02 | TBD | Pending |
-| SEAM-03 | TBD | Pending |
-| SEAM-04 | TBD | Pending |
-| PLAN-01 | TBD | Pending |
-| PLAN-02 | TBD | Pending |
-| PLAN-03 | TBD | Pending |
-| PLAN-04 | TBD | Pending |
-| PLAN-05 | TBD | Pending |
-| PLAN-06 | TBD | Pending |
-| PLAN-07 | TBD | Pending |
-| HITL-01 | TBD | Pending |
-| HITL-02 | TBD | Pending |
-| OBS-01 | TBD | Pending |
-| OBS-02 | TBD | Pending |
-| OBS-03 | TBD | Pending |
-| LIC-01 | TBD | Pending |
-| LIC-02 | TBD | Pending |
+| SKEL-01 | Phase 2 | Pending |
+| SKEL-02 | Phase 2 | Pending |
+| SKEL-03 | Phase 2 | Pending |
+| SKEL-04 | Phase 2 | Pending |
+| SKEL-05 | Phase 2 | Pending |
+| SEAM-01 | Phase 1 | Pending |
+| SEAM-02 | Phase 1 | Pending |
+| SEAM-03 | Phase 2 | Pending |
+| SEAM-04 | Phase 2 | Pending |
+| PLAN-01 | Phase 2 | Pending |
+| PLAN-02 | Phase 2 | Pending |
+| PLAN-03 | Phase 2 | Pending |
+| PLAN-04 | Phase 2 | Pending |
+| PLAN-05 | Phase 2 | Pending |
+| PLAN-06 | Phase 2 | Pending |
+| PLAN-07 | Phase 2 | Pending |
+| HITL-01 | Phase 2 | Pending |
+| HITL-02 | Phase 2 | Pending |
+| OBS-01 | Phase 2 | Pending |
+| OBS-02 | Phase 2 | Pending |
+| OBS-03 | Phase 2 | Pending |
+| LIC-01 | Phase 1 | Pending |
+| LIC-02 | Phase 1 | Pending |
 
 **Coverage:**
 - v1 requirements: 23 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 23 ⚠️ (resolved at roadmap creation)
+- Mapped to phases: 23 (Phase 1: 4 — SEAM-01, SEAM-02, LIC-01, LIC-02; Phase 2: 19 — all others)
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-19*
-*Last updated: 2026-06-19 after initial definition*
+*Last updated: 2026-06-19 after roadmap creation (traceability populated, 23/23 mapped)*
