@@ -6,14 +6,14 @@ current_phase: 01
 current_phase_name: compliant-scaffold-provider-seam-boundary
 status: executing
 stopped_at: Phase 1 context gathered
-last_updated: "2026-06-19T19:56:56.284Z"
+last_updated: "2026-06-19T20:06:57.324Z"
 last_activity: 2026-06-19
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-06-19)
 ## Current Position
 
 Phase: 01 (compliant-scaffold-provider-seam-boundary) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-19 — Phase 01 execution started
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 2 | 2 tasks | 4 files |
+| Phase 01 P02 | 6 | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,7 @@ Recent decisions affecting current work:
 - A2 and F1 are inseparable — kept together in Phase 2 (skeleton needs the schema to write to; schema needs a producer to validate it).
 - The provider-seam boundary + CI guardrail + REUSE licensing are commit-1 foundations — set in Phase 1 before any drafting logic.
 - [Phase ?]: Licensing machinery established commit-1: canonical.jinja2 template renders coding-guide section 7 byte-for-byte, GPL-3.0-only text + top-level LICENSE, per-file annotation via spdx prefix, no REUSE.toml
+- [Phase ?]: Phase 1 scaffold (01-02): hexagonal src-layout dogen (core/adapters/copilot/cli); AST seam guardrail single-sourced by pytest; PEP 639 License-Expression GPL-3.0-only proven in wheel METADATA; no github-copilot-sdk dep (D-08); uv.lock committed (D-18)
 
 ### Pending Todos
 
@@ -94,6 +96,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-19T19:56:27.344Z
+Last session: 2026-06-19T20:06:39.092Z
 Stopped at: Phase 1 context gathered
 Resume file: .planning/phases/01-compliant-scaffold-provider-seam-boundary/01-CONTEXT.md

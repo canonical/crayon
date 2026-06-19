@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The Copilot SDK is imported in exactly one adapter module; the domain core has zero vendor imports
   4. The CI build fails if any Copilot SDK import appears outside that adapter module (a guardrail check can be observed catching a deliberately misplaced import)
 
-**Plans**: 1/4 plans executed
+**Plans**: 2/4 plans executed
 
 Plans:
 **Wave 1**
@@ -40,7 +40,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02-PLAN.md — src-layout package + hexagonal seam boundary + PEP 639 metadata + AST seam guardrail + tests (Wave 2)
+- [x] 01-02-PLAN.md — src-layout package + hexagonal seam boundary + PEP 639 metadata + AST seam guardrail + tests (Wave 2)
 - [ ] 01-03-PLAN.md — repo hygiene: README, CONTRIBUTING (CLA), SECURITY, CODE_OF_CONDUCT, .editorconfig, .gitignore, all REUSE-annotated (Wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -87,5 +87,5 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Compliant Scaffold & Provider-Seam Boundary | 1/4 | In Progress|  |
+| 1. Compliant Scaffold & Provider-Seam Boundary | 2/4 | In Progress|  |
 | 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 0/TBD | Not started | - |
