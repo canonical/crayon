@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 Canonical Ltd.
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# REUSE.toml provides bulk licensing for repository META files that are NOT
+# distributable source and therefore do not carry the per-file Canonical notice
+# block (D-04 reserves REUSE.toml for files that cannot/should not be annotated
+# inline). This keeps `reuse lint` green across the WHOLE tracked tree (LIC-01 /
+# SC1) without injecting headers into planning prose -- which would both corrupt
+# the documents and be misparsed by REUSE when the prose quotes an SPDX tag.
+#
+# Distributable source, tests, scripts, packaging, CI, and OSS hygiene files are
+# deliberately NOT covered here: they each carry the full inline Canonical header
+# (or a .license sidecar) per D-04. REUSE precedence is "closest" so an inline
+# header on a covered file always wins over these bulk entries.
+version = 1
+
+# GSD planning artifacts (intent, research, state) -- internal project docs.
+[[annotations]]
+path = ".planning/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Canonical Ltd."
+SPDX-License-Identifier = "GPL-3.0-only"
+
+# Agent operating instructions consumed by the harness, not shipped source.
+[[annotations]]
+path = ".claude/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Canonical Ltd."
+SPDX-License-Identifier = "GPL-3.0-only"

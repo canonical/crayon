@@ -45,6 +45,8 @@ metrics:
   completed_date: 2026-06-19
 requirements: [LIC-01, LIC-02]
 ---
+<!-- REUSE-IgnoreStart -->
+
 
 # Phase 1 Plan 03: OSS Repo-Hygiene File Set Summary
 
@@ -108,3 +110,4 @@ Matches the plan's threat model exactly; no new surface.
 
 - Files: all 11 present (README.md + sidecar, CONTRIBUTING.md + sidecar, SECURITY.md + sidecar, CODE_OF_CONDUCT.md + sidecar, .editorconfig, .gitignore + sidecar).
 - Commits: 27a4b33 (Task 1), 21114b4 (Task 2) both present in git log.
+<!-- REUSE-IgnoreEnd -->
