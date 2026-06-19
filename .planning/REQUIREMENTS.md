@@ -49,8 +49,8 @@ The thinnest end-to-end slice that proves the drafting loop and establishes the 
 
 ### Licensing & Compliance (foundation) — REUSE from commit 1
 
-- [ ] **LIC-01**: The repository is REUSE-compliant — every file carries SPDX license + copyright info (inline header, `.license` file, or `REUSE.toml`), `LICENSES/` is populated, and `reuse lint` passes in CI
-- [ ] **LIC-02**: A license for the distributable core is chosen, applied, and recorded as an SPDX identifier; selection confirmed at planning _(discuss)_
+- [x] **LIC-01**: The repository is REUSE-compliant — every file carries SPDX license + copyright info (inline header, `.license` file, or `REUSE.toml`), `LICENSES/` is populated, and `reuse lint` passes in CI
+- [x] **LIC-02**: A license for the distributable core is chosen, applied, and recorded as an SPDX identifier; selection confirmed at planning _(discuss)_
 
 ## v2 Requirements
 
@@ -130,10 +130,11 @@ Which phases cover which requirements. Populated during roadmap creation.
 | OBS-01 | Phase 2 | Pending |
 | OBS-02 | Phase 2 | Pending |
 | OBS-03 | Phase 2 | Pending |
-| LIC-01 | Phase 1 | Pending |
-| LIC-02 | Phase 1 | Pending |
+| LIC-01 | Phase 1 | Complete |
+| LIC-02 | Phase 1 | Complete |
 
 **Coverage:**
+
 - v1 requirements: 23 total
 - Mapped to phases: 23 (Phase 1: 4 — SEAM-01, SEAM-02, LIC-01, LIC-02; Phase 2: 19 — all others)
 - Unmapped: 0 ✓
