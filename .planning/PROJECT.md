@@ -82,12 +82,12 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Adopt the Copilot SDK behind a thin, multi-provider abstraction seam | Pragmatic-first; thin seam keeps the provider swappable (OpenCode SDK / homegrown Pydantic AI as alternates) and preserves agnosticism as a core design property | — Pending |
+| Adopt the Copilot SDK behind a thin, multi-provider abstraction seam | Pragmatic-first; thin seam keeps the provider swappable (OpenCode SDK / homegrown Pydantic AI as alternates) and preserves agnosticism as a core design property | ◆ Phase 1 — seam boundary established & CI-enforced (no-vendor-import AST guardrail, single adapter site); provider swap proof lands Phase 2 |
 | Build the drafting layer, not agent machinery | Adopt-not-build keeps the core thin and focused on value-add | — Pending |
 | Deliver agile — plan one pulse ahead | Critical-path/holiday risk + iterative "pour concrete in stages" philosophy | — Pending |
 | First milestone (MVP) = walking skeleton (A2) + planning directory schema v0 (F1) + foundations (seam, observability, licensing) | Thinnest end-to-end proof of the loop, plus the SDD-style audit/provenance surface and the foundations that are expensive to retrofit | — Pending |
 | Observability is provider-independent (Logfire / OTel candidate), not tied to the SDK | Keep telemetry durable across an SDK swap; don't depend on the SDK for it | — Pending (research + discuss) |
-| REUSE framework for licensing compliance from commit 1 | Auditable SPDX licensing of own + third-party code; CI-enforced | — Pending (license choice via discuss) |
+| REUSE framework for licensing compliance from commit 1 | Auditable SPDX licensing of own + third-party code; CI-enforced | ✓ Delivered (Phase 1) — GPL-3.0-only chosen; whole-repo `reuse lint` green and enforced in CI |
 | RAG / context-augmentation is spike-gated, not a dependency | Avoid over-engineering; steering-first by default | — Pending |
 | Stop at singular traceable local commits | Reviewer/merger owns output; framework stays dumb outside drafting | — Pending |
 
@@ -109,4 +109,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-19 after initialization*
+*Last updated: 2026-06-19 after Phase 1 (Compliant Scaffold & Provider-Seam Boundary) completion*
