@@ -1,6 +1,14 @@
 ---
-gsd_state_version: '1.0'  # placeholder; syncStateFrontmatter overwrites on first state.* call
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+current_phase: 1
+current_phase_name: Compliant Scaffold & Provider-Seam Boundary
 status: planning
+stopped_at: Phase 1 context gathered
+last_updated: "2026-06-19T18:18:33.419Z"
+last_activity: 2026-06-19
+last_activity_desc: Roadmap created (MVP / first pulse; A2 + F1 + foundations)
 progress:
   total_phases: 2
   completed_phases: 0
@@ -30,6 +38,7 @@ Progress: [░░░░░░░░░░] 0%
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0
 - Average duration: — min
 - Total execution time: 0.0 hours
@@ -41,6 +50,7 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 **Recent Trend:**
+
 - Last 5 plans: —
 - Trend: —
 
@@ -66,6 +76,7 @@ None yet.
 ### Blockers/Concerns
 
 Open decisions deferred to `/gsd-discuss-phase` (do not pre-resolve):
+
 - OBS-02: observability backend (Logfire vs OTel-direct vs SDK `[telemetry]` extra) — Phase 2.
 - SEAM-04: how far to validate OpenCode SDK / Pydantic AI alternates in v1 (design-only vs real second adapter) — Phase 2.
 - LIC-02: specific OSS license for the distributable core — Phase 1.
@@ -81,6 +92,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-19
-Stopped at: ROADMAP.md + STATE.md created; REQUIREMENTS.md traceability populated (23/23 mapped)
-Resume file: None
+Last session: 2026-06-19T18:18:33.416Z
+Stopped at: Phase 1 context gathered
+Resume file: .planning/phases/01-compliant-scaffold-provider-seam-boundary/01-CONTEXT.md
