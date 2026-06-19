@@ -13,7 +13,7 @@ This is the MVP / first pulse, delivered agile — we plan one pulse ahead and n
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Compliant Scaffold & Provider-Seam Boundary** - REUSE-clean Python package with the Copilot adapter isolated behind a CI-enforced no-vendor-import boundary
+- [x] **Phase 1: Compliant Scaffold & Provider-Seam Boundary** - REUSE-clean Python package with the Copilot adapter isolated behind a CI-enforced no-vendor-import boundary (completed 2026-06-19)
 - [ ] **Phase 2: Walking Skeleton, Planning Schema, Provable HITL & Observability** - End-to-end draft loop for one unit into Sphinx-publishable output, writing the F1 audit/provenance surface, gated on recorded steering and instrumented independently of the SDK
 
 ## Phase Details
@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The Copilot SDK is imported in exactly one adapter module; the domain core has zero vendor imports
   4. The CI build fails if any Copilot SDK import appears outside that adapter module (a guardrail check can be observed catching a deliberately misplaced import)
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -45,7 +45,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-04-PLAN.md — GitHub Actions CI gate suite + pre-commit mirror + D-10 seam demo + whole-repo reuse lint green (Wave 3)
+- [x] 01-04-PLAN.md — GitHub Actions CI gate suite + pre-commit mirror + D-10 seam demo + whole-repo reuse lint green (Wave 3)
 
 **Notes / open decisions (settle at `/gsd-discuss-phase 1`):**
 
@@ -87,5 +87,5 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Compliant Scaffold & Provider-Seam Boundary | 3/4 | In Progress|  |
+| 1. Compliant Scaffold & Provider-Seam Boundary | 4/4 | Complete   | 2026-06-19 |
 | 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 0/TBD | Not started | - |
