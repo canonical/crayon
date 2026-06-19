@@ -41,6 +41,7 @@ from dogen.core.models import (
     DraftResult,
     Effort,
     Generation,
+    Progress,
     ProgressEntry,
     ProgressState,
     Provenance,
@@ -124,9 +125,40 @@ async def draft(request: DraftRequest) -> Path:
         If the unit has no recorded steering event (HITL-01 / D-40).
     """
     unit = request.store.load_unit(request.unit_id, root=request.root)
-    provenance = request.store.read_provenance(request.unit_id, root=request.root)
-    _require_steering(provenance)
+    provenance = _read_steered_provenance(request)
     return await _run_draft(request, unit=unit, provenance=provenance)
+
+
+def _read_steered_provenance(request: DraftRequest) -> Provenance:
+    """Read provenance and enforce the HITL gate (D-40/HITL-01).
+
+    A wholly missing ``provenance.yaml`` means no ``steer`` ever ran, which is
+    the same refusal as a present-but-unsteered record — both raise
+    :class:`SteeringRequiredError`, never a generic file error.
+
+    Parameters
+    ----------
+    request : DraftRequest
+        The bundled collaborators and parameters.
+
+    Returns
+    -------
+    Provenance
+        The unit's provenance record, guaranteed to carry a steering event.
+
+    Raises
+    ------
+    SteeringRequiredError
+        If provenance is absent or carries no steering event.
+    """
+    try:
+        provenance = request.store.read_provenance(request.unit_id, root=request.root)
+    except FileNotFoundError as exc:
+        raise SteeringRequiredError(
+            "no recorded steering for this unit; run `dogen steer` before drafting"
+        ) from exc
+    _require_steering(provenance)
+    return provenance
 
 
 def _require_steering(provenance: Provenance) -> None:
@@ -240,9 +272,31 @@ def _advance_progress(request: DraftRequest) -> None:
     request : DraftRequest
         The bundled collaborators and parameters.
     """
-    progress = request.store.read_progress(request.unit_id, root=request.root)
+    progress = _read_or_init_progress(request)
     for state in _AUTO_ADVANCE:
         if progress.state is not state:
             progress.state = state
             progress.history.append(ProgressEntry(at=request.now(), state=state))
     request.store.write_progress(progress, root=request.root)
+
+
+def _read_or_init_progress(request: DraftRequest) -> Progress:
+    """Read the unit's progress, initializing a ``pending`` record if absent.
+
+    A unit scaffolded with ``unit new`` has no ``progress.yaml`` until its first
+    draft; the lifecycle starts at ``pending`` (D-38).
+
+    Parameters
+    ----------
+    request : DraftRequest
+        The bundled collaborators and parameters.
+
+    Returns
+    -------
+    Progress
+        The existing or a freshly initialized ``pending`` progress record.
+    """
+    try:
+        return request.store.read_progress(request.unit_id, root=request.root)
+    except FileNotFoundError:
+        return Progress(unit_id=request.unit_id, state=ProgressState.pending)
