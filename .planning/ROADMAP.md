@@ -27,10 +27,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. The chosen OSS license is applied and recorded as an SPDX identifier in the package metadata
   3. The Copilot SDK is imported in exactly one adapter module; the domain core has zero vendor imports
   4. The CI build fails if any Copilot SDK import appears outside that adapter module (a guardrail check can be observed catching a deliberately misplaced import)
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md — REUSE annotation machinery: canonical.jinja2 template, LICENSES/GPL-3.0-only.txt, top-level LICENSE (Wave 1)
+- [ ] 01-02-PLAN.md — src-layout package + hexagonal seam boundary + PEP 639 metadata + AST seam guardrail + tests (Wave 2)
+- [ ] 01-03-PLAN.md — repo hygiene: README, CONTRIBUTING (CLA), SECURITY, CODE_OF_CONDUCT, .editorconfig, .gitignore, all REUSE-annotated (Wave 2)
+- [ ] 01-04-PLAN.md — GitHub Actions CI gate suite + pre-commit mirror + D-10 seam demo + whole-repo reuse lint green (Wave 3)
 
 **Notes / open decisions (settle at `/gsd-discuss-phase 1`):**
 - LIC-02: the specific OSS license for the distributable core is not pre-resolved here — confirm at discuss.
@@ -66,5 +69,5 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Compliant Scaffold & Provider-Seam Boundary | 0/TBD | Not started | - |
+| 1. Compliant Scaffold & Provider-Seam Boundary | 0/4 | Not started | - |
 | 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 0/TBD | Not started | - |
