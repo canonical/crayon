@@ -386,6 +386,15 @@ class DraftResult(BaseModel):
         Tokens emitted (a provenance input).
     run_id : str
         Correlates the result to the runtime trace (OBS-03/D-22).
+    context_origins : list of str
+        What the provider *actually read* during the pass, as reported by the
+        backend — distinct from the unit's human-pointed ``sources`` (D-37).
+        Empty when the backend cannot report observed reads (an honest "nothing
+        observed"); the orchestrator records this verbatim and never substitutes
+        ``unit.sources`` (BL-01).
+    tools_used : list of str
+        Source-qualified tool identifiers the provider exercised, as reported by
+        the backend. Empty when nothing was observed (BL-01).
     """
 
     text: str
@@ -393,3 +402,5 @@ class DraftResult(BaseModel):
     model_version: str = "unknown"
     output_tokens: int
     run_id: str
+    context_origins: list[str] = Field(default_factory=list)
+    tools_used: list[str] = Field(default_factory=list)
