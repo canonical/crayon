@@ -160,7 +160,7 @@ None affecting scope. Two small, necessary adjustments handled inline:
 
 ## Issues Encountered
 
-- **`reuse lint` whole-repo false positive (out of scope, deferred).** `uvx reuse lint` reports one invalid SPDX expression in `.planning/phases/01-.../01-VERIFICATION.md` — a Phase-1 planning artifact whose prose places a bare license token after an `SPDX-License-Identifier:` mention. This file was NOT touched by this plan. Every source/config file this plan created or modified passes `reuse lint-file`. Logged as DEF-02-01 in `deferred-items.md`. My own `deferred-items.md` was reworded to avoid introducing the same parser trigger, keeping the whole-repo count at the single pre-existing hit.
+- **`reuse lint` whole-repo false positive (out of scope, deferred).** `uvx reuse lint` reports one invalid SPDX expression in `.planning/phases/01-.../01-VERIFICATION.md` — a Phase-1 planning artifact whose prose places a bare license token after an <!-- REUSE-IgnoreStart -->`SPDX-License-Identifier:`<!-- REUSE-IgnoreEnd --> mention. This file was NOT touched by this plan. Every source/config file this plan created or modified passes `reuse lint-file`. Logged as DEF-02-01 in `deferred-items.md`. My own `deferred-items.md` was reworded to avoid introducing the same parser trigger, keeping the whole-repo count at the single pre-existing hit.
 
 ## User Setup Required
 None - no external service configuration required. (The real Copilot SDK run is a later-plan manual smoke test, out of scope here.)

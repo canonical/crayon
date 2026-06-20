@@ -142,7 +142,7 @@ None affecting scope. Adjustments handled inline:
 
 ## Issues Encountered
 
-- **`reuse lint` whole-repo invalid-SPDX count is 2 (out of scope, deferred).** `uvx reuse lint` reports two invalid SPDX expressions, both in `.planning/` planning artifacts: `01-VERIFICATION.md` (DEF-02-01, pre-existing from Phase 1) and `02-01-SUMMARY.md` (DEF-02-02 — its own "Issues Encountered" prose quotes a bare license token after an `SPDX-License-Identifier:` mention). Neither file was touched by this plan. Every source/test file this plan created passes `reuse lint-file` individually. Logged both as DEF-02-01/02 in `deferred-items.md`; the fix is a docs-housekeeping `REUSE-IgnoreStart/End` pass, not this walking-skeleton plan.
+- **`reuse lint` whole-repo invalid-SPDX count is 2 (out of scope, deferred).** `uvx reuse lint` reports two invalid SPDX expressions, both in `.planning/` planning artifacts: `01-VERIFICATION.md` (DEF-02-01, pre-existing from Phase 1) and `02-01-SUMMARY.md` (DEF-02-02 — its own "Issues Encountered" prose quotes a bare license token after an <!-- REUSE-IgnoreStart -->`SPDX-License-Identifier:`<!-- REUSE-IgnoreEnd --> mention). Neither file was touched by this plan. Every source/test file this plan created passes `reuse lint-file` individually. Logged both as DEF-02-01/02 in `deferred-items.md`; the fix is a docs-housekeeping `REUSE-IgnoreStart/End` pass, not this walking-skeleton plan.
 - **`reuse` is not a dev dependency**, so the REUSE gate runs via `uvx reuse lint` (matching plan 01 and the pre-commit `reuse` hook); `uv run reuse lint` is not available.
 
 ## Threat surface scan

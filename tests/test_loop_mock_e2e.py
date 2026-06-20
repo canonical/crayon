@@ -222,9 +222,7 @@ def test_draft_mock_error_path_does_not_import_copilot_adapter(repo: Path) -> No
     # Corrupt the front-matter so load_unit raises ValueError (unit_id mismatch).
     unit_md = repo / ".dogen" / "units" / "u" / "unit.md"
     unit_md.write_text(
-        unit_md.read_text(encoding="utf-8").replace(
-            "unit_id: u\n", "unit_id: not-u\n"
-        ),
+        unit_md.read_text(encoding="utf-8").replace("unit_id: u\n", "unit_id: not-u\n"),
         encoding="utf-8",
     )
     sys.modules.pop("dogen.adapters.copilot", None)
