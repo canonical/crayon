@@ -14,7 +14,7 @@
 | Per-file annotation | **Full Canonical notice block** in every source file (not `REUSE.toml` bulk) | Policy mandates a per-file notice. |
 | Copyright tag | `SPDX-FileCopyrightText: 2026 Canonical Ltd.` | Satisfies `reuse lint` while preserving the policy block (replaces a bare `Copyright` line). |
 | License text files | `LICENSES/GPL-3.0-only.txt` (REUSE) **+** top-level `LICENSE` (policy) | Both conventions satisfied. |
-| Docs/content license | **Deferred** until real docs land | Policy default is CC-BY-SA-4.0, but the policy's own per-file example says CC-BY-**NC**-SA-4.0 — resolve this inconsistency before first docs ship. |
+| Docs/content license | **`CC-BY-SA-4.0`** | Resolved per D-44 (the first docs landed in Phase 2, plan 04). Matches the policy default (§2: new non-software → CC-BY-SA) without the commercial restriction. The earlier §3.5 CC-BY-**NC**-SA example was the policy's own inconsistency; it is reconciled to CC-BY-SA-4.0 below so §1/§2/§3.5 agree. Applied to drafted `docs/*.md` via a `.license` sidecar (no inline SPDX in published prose); `LICENSES/CC-BY-SA-4.0.txt` carries the legal text. |
 | Contributions | **Canonical CLA** required; CLA-contributed files use the "License granted by Canonical Limited" notice variant | Policy contributor rules. |
 | Non-default license | Would need **CEO approval** | Policy. We stay on `GPL-3.0-only`. |
 
@@ -94,10 +94,15 @@ Code contributed under a Canonical CLA is **not** copyright Canonical, but the n
 - Document upstream copyright and license in `debian/copyright` per Debian policy.
 - Packaging code is licensed under the **same** license as the software being packaged (treat it as a contribution to the work, not an aggregation).
 
-### 3.5 Documentation header (for when docs land — see §1 deferral)
+### 3.5 Documentation header (docs license resolved — see §1)
+
+Drafted `docs/*.md` content is licensed **`CC-BY-SA-4.0`** (D-44, reconciled with
+§1/§2). The SPDX id is applied via a `.license` **sidecar** next to the page (so no
+inline SPDX header pollutes the published prose or gets misparsed by `reuse lint`);
+the human-readable attribution line is:
 
 ```
-[name of work] © [year of first publication] by Canonical Ltd. is licensed under CC BY-NC-SA 4.0
+[name of work] © [year of first publication] by Canonical Ltd. is licensed under CC-BY-SA-4.0
 ```
 
 ### 3.6 Proprietary code header (not applicable to `dogen`; recorded for completeness)
