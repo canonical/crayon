@@ -40,6 +40,7 @@ from dogen.core import orchestrator
 from dogen.core.models import (
     Intent,
     Progress,
+    ProgressEntry,
     ProgressState,
     Provenance,
     SourceRef,
@@ -180,6 +181,33 @@ async def test_redraft_does_not_move_progress_backward(tmp_path: Path) -> None:
     assert ProgressState.sourced not in [
         e.state for e in second.history[len(first_history) :]
     ]
+
+
+@pytest.mark.asyncio
+async def test_redraft_of_reviewed_resets_to_drafted(tmp_path: Path) -> None:
+    # Re-drafting a *reviewed* unit supersedes the now-stale review and resets
+    # the unit to ``drafted`` in one clean transition — never the backward walk
+    # through ``sourced`` the first WR-04 fix left in place (verifier follow-up).
+    store = _seed_unit(tmp_path, with_steering=True)
+    await draft(_request(tmp_path, store))
+    # Simulate a completed review by advancing progress to ``reviewed``.
+    reviewed = store.read_progress("u", root=tmp_path)
+    reviewed.state = ProgressState.reviewed
+    reviewed.history.append(
+        ProgressEntry(at="2026-01-01T00:01:00Z", state=ProgressState.reviewed)
+    )
+    store.write_progress(reviewed, root=tmp_path)
+    before_states = [e.state for e in reviewed.history]
+    # Re-draft the reviewed unit.
+    await draft(_request(tmp_path, store))
+    after = store.read_progress("u", root=tmp_path)
+    after_states = [e.state for e in after.history]
+    # The fresh draft lands the unit back at ``drafted``...
+    assert after.state is ProgressState.drafted
+    # ...recorded as exactly one new ``drafted`` transition (no backward
+    # ``sourced`` re-stamp, so the audit history stays trustworthy).
+    assert after_states == [*before_states, ProgressState.drafted]
+    assert after_states.count(ProgressState.sourced) == 1
 
 
 def test_orchestrator_never_writes_committed() -> None:

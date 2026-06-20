@@ -60,12 +60,19 @@ _AUTO_ADVANCE: tuple[ProgressState, ...] = (
     ProgressState.drafted,
 )
 
-# The forward lifecycle ordering used to keep auto-advance monotonic (WR-04):
-# a state is only stamped when it is strictly later than the current one.
+# The forward lifecycle ordering (D-38) used to keep auto-advance monotonic
+# (WR-04): a state is only stamped when it is strictly later than the current
+# one. ``reviewed`` is included so a re-draft of an already-reviewed unit is
+# ranked correctly instead of falling through an "unknown state" path and
+# walking the lifecycle backward (the WR-04 follow-up). The terminal
+# ``committed`` state is deliberately NOT named here — the drafting use-case
+# never references it (SKEL-03); a state beyond this ladder is handled
+# positionally in :func:`_advance_progress`.
 _PROGRESS_ORDER: tuple[ProgressState, ...] = (
     ProgressState.pending,
     ProgressState.sourced,
     ProgressState.drafted,
+    ProgressState.reviewed,
 )
 
 Clock = Callable[[], str]
@@ -273,12 +280,19 @@ def _record_generation(
 
 
 def _advance_progress(request: DraftRequest) -> None:
-    """Auto-advance progress ``pending → sourced → drafted`` (never committed).
+    """Land the unit at ``ProgressState.drafted`` after a draft (never committed).
 
-    Transitions are monotonic and idempotent: a re-draft of an already-``drafted``
-    unit never moves the lifecycle *backward* to ``sourced`` and never appends a
-    spurious history entry (WR-04). Only states strictly later than the current
-    one are stamped, so the audit history stays forward-only.
+    A draft always leaves the unit at ``drafted``, recorded as forward-only,
+    idempotent history (WR-04 and its follow-up):
+
+    - Already ``drafted``: a no-op — no transition, no spurious history entry.
+    - Earlier (``pending``/``sourced``): walk the forward ladder, stamping each
+      newly-reached state up to ``drafted``.
+    - Later (``reviewed``, or any hand-set terminal state beyond the ladder): a
+      re-draft deliberately supersedes the now-stale review and resets the unit
+      to ``drafted`` in a single clean transition — never a backward walk
+      through ``sourced`` (D-38; the regression the first WR-04 fix left for
+      re-draft of a reviewed unit).
 
     Parameters
     ----------
@@ -286,15 +300,27 @@ def _advance_progress(request: DraftRequest) -> None:
         The bundled collaborators and parameters.
     """
     progress = _read_or_init_progress(request)
+    if progress.state is ProgressState.drafted:
+        return
+    drafted_rank = _PROGRESS_ORDER.index(ProgressState.drafted)
+    # A state outside the ladder (only the terminal post-review state can be) is
+    # ranked just past its end, so a re-draft resets it cleanly to ``drafted``.
     current = (
         _PROGRESS_ORDER.index(progress.state)
         if progress.state in _PROGRESS_ORDER
-        else -1
+        else len(_PROGRESS_ORDER)
     )
-    for state in _AUTO_ADVANCE:
-        if _PROGRESS_ORDER.index(state) > current:
-            progress.state = state
-            progress.history.append(ProgressEntry(at=request.now(), state=state))
+    if current > drafted_rank:
+        # Re-draft of a reviewed (or later) unit: one clean reset to ``drafted``.
+        progress.state = ProgressState.drafted
+        progress.history.append(
+            ProgressEntry(at=request.now(), state=ProgressState.drafted)
+        )
+    else:
+        for state in _AUTO_ADVANCE:
+            if _PROGRESS_ORDER.index(state) > current:
+                progress.state = state
+                progress.history.append(ProgressEntry(at=request.now(), state=state))
     request.store.write_progress(progress, root=request.root)
 
 
