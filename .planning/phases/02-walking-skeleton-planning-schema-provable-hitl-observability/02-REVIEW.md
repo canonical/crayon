@@ -43,11 +43,12 @@ files_reviewed_list:
   - tests/test_seam_importlinter.py
   - tests/test_smoke_harness.py
 findings:
-  critical: 0
-  warning: 5
+  critical: 1
+  warning: 6
   info: 4
-  total: 9
+  total: 11
 status: issues_found
+consolidated_with: 02-REVIEW-codex.md  # BL-01 and WR-06 added from the Codex cross-model run
 ---
 
 # Phase 02: Code Review Report
@@ -74,6 +75,15 @@ be fixed before this skeleton is built upon. The most important is WR-01: the CL
 violating the D-25 guarantee the code is explicitly written to uphold.
 
 ## Narrative Findings (AI reviewer)
+
+### Blockers
+
+#### BL-01: `Generation.context_origins` / `tools_used` are fabricated, violating D-37 (cross-model: Codex)
+
+**File:** `src/dogen/core/orchestrator.py:266-279`
+**Source:** Surfaced by the Codex cross-model review (`02-REVIEW-codex.md`); verified against code by the orchestrator.
+**Issue:** `_record_generation` sets `context_origins=[s.path or s.ref or "" for s in unit.sources]` and `tools_used=[]`. This copies the unit's *human-pointed* `sources` into the field documented as the *agent-read* context — exactly the collapse decision **D-37** forbids ("Unit.sources (human-pointed) vs Generation.context_origins (agent-read) never collapse"). `tools_used` is hardcoded empty even on the real Copilot path, where the bounded grep/glob/view ToolSet is actually exercised. The mock path is harmless (it reads nothing), but the real provider path writes a provenance record that claims the requested sources were the read context and that no tools ran — fabricated audit evidence that directly undermines the AC5 provenance guarantee, the project's core value.
+**Fix:** Stop fabricating. Until a provider can report what it actually read/used, record `context_origins=[]` and `tools_used=[]` (an honest "nothing observed") rather than copying `unit.sources`. Add `context_origins`/`tools_used` to `DraftResult` so `CopilotDraftingProvider` can populate them from the SDK events (mock returns empty), and have `_record_generation` read them from `result`, not from `unit.sources`. This restores D-37 and makes the audit record truthful.
 
 ### Warnings
 
@@ -177,6 +187,13 @@ arrive empty on a truncated stream — is the one that is not.
 **Fix:** Coerce defensively to match the other fields: `text = getattr(data,
 "content", None) or ""`, and/or validate non-null content before mapping, raising
 `BackendUnavailableError` otherwise.
+
+#### WR-06: Unknown `--provider` raises `ValueError` outside the `draft` try-block (unhandled traceback) (cross-model: Codex)
+
+**File:** `src/dogen/cli/main.py:170-190`; `src/dogen/adapters/mock_provider.py:160-185`
+**Source:** Surfaced by the Codex cross-model review (`02-REVIEW-codex.md`); verified against code by the orchestrator.
+**Issue:** `select_provider(provider)` raises `ValueError` on an unknown provider name, but it is called at `main.py:175` during `DraftRequest` construction — *before* the `try:` at line 180. The command's own `except (FileNotFoundError, ValueError)` handler (line 188) therefore never catches it, so `dogen draft UNIT --provider banana` exits with an unhandled `ValueError` traceback instead of the intended clean exit-2 message. "Good UX is a primary requirement" (PROJECT.md), so an uncaught stack trace on a simple typo is a real defect.
+**Fix:** Move `select_provider(provider)` (and ideally the whole `DraftRequest` construction) inside the `try:` block so the existing `except (FileNotFoundError, ValueError)` path renders the clean "Cannot draft … unknown provider 'banana'; choose one of: copilot, mock" message with exit code 2.
 
 ### Info
 
