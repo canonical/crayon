@@ -16,7 +16,7 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 
 <!-- Shipped and confirmed valuable. -->
 
-(None yet — ship to validate)
+- **Walking-skeleton foundation (Phases 1–2):** the end-to-end Mode-A mechanism is proven on a single unit — the provider-seam abstraction (a deterministic mock *and* the real Copilot SDK behind one `DraftingProvider` port, CI-enforced), provable HITL (recorded steering gates drafting; `draft` refuses with no side effects otherwise), SDK-independent observability correlated to the provenance record, the F1 audit/provenance schema (`schema_version: 0`, reserved verification fields), and Sphinx-publishable MyST output proven by a warnings-as-errors build — all stopping before any commit. The full-scale Active items below (multi-product scale, brownfield ingestion, layered customization, onboarding scraper) remain hypotheses until proven beyond this thin slice.
 
 ### Active
 
@@ -109,4 +109,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-19 after Phase 1 (Compliant Scaffold & Provider-Seam Boundary) completion*
+*Last updated: 2026-06-20 after Phase 2 (Walking Skeleton, Planning Schema, Provable HITL & Observability) completion*
