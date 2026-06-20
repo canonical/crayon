@@ -231,11 +231,25 @@ def review(
     try:
         reviewer, _email = read_git_identity()
         provenance = store.read_provenance(unit_id, root=root)
-        progress = store.read_progress(unit_id, root=root)
     except GitIdentityError as exc:
         typer.echo(f"Cannot record review: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     except (FileNotFoundError, ValueError) as exc:
+        typer.echo(f"Cannot read unit {unit_id!r}: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    try:
+        progress = store.read_progress(unit_id, root=root)
+    except FileNotFoundError as exc:
+        # A missing progress.yaml means the unit was never drafted (WR-05): a
+        # review has nothing to attach to, so say so plainly instead of a
+        # generic read error.
+        typer.echo(
+            f"Cannot review {unit_id!r}: it has not been drafted yet — "
+            f"run `dogen draft {unit_id}` first.",
+            err=True,
+        )
+        raise typer.Exit(code=2) from exc
+    except ValueError as exc:
         typer.echo(f"Cannot read unit {unit_id!r}: {exc}", err=True)
         raise typer.Exit(code=2) from exc
     provenance.reviewer_edits.append(
