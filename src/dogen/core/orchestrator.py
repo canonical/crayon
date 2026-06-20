@@ -60,6 +60,14 @@ _AUTO_ADVANCE: tuple[ProgressState, ...] = (
     ProgressState.drafted,
 )
 
+# The forward lifecycle ordering used to keep auto-advance monotonic (WR-04):
+# a state is only stamped when it is strictly later than the current one.
+_PROGRESS_ORDER: tuple[ProgressState, ...] = (
+    ProgressState.pending,
+    ProgressState.sourced,
+    ProgressState.drafted,
+)
+
 Clock = Callable[[], str]
 
 
@@ -267,14 +275,24 @@ def _record_generation(
 def _advance_progress(request: DraftRequest) -> None:
     """Auto-advance progress ``pending → sourced → drafted`` (never committed).
 
+    Transitions are monotonic and idempotent: a re-draft of an already-``drafted``
+    unit never moves the lifecycle *backward* to ``sourced`` and never appends a
+    spurious history entry (WR-04). Only states strictly later than the current
+    one are stamped, so the audit history stays forward-only.
+
     Parameters
     ----------
     request : DraftRequest
         The bundled collaborators and parameters.
     """
     progress = _read_or_init_progress(request)
+    current = (
+        _PROGRESS_ORDER.index(progress.state)
+        if progress.state in _PROGRESS_ORDER
+        else -1
+    )
     for state in _AUTO_ADVANCE:
-        if progress.state is not state:
+        if _PROGRESS_ORDER.index(state) > current:
             progress.state = state
             progress.history.append(ProgressEntry(at=request.now(), state=state))
     request.store.write_progress(progress, root=request.root)

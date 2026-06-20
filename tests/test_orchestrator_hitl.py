@@ -164,6 +164,24 @@ async def test_draft_advances_progress_to_drafted(tmp_path: Path) -> None:
     assert ProgressState.committed not in states
 
 
+@pytest.mark.asyncio
+async def test_redraft_does_not_move_progress_backward(tmp_path: Path) -> None:
+    # Re-drafting an already-drafted unit must not regress to sourced nor
+    # append spurious history entries (WR-04: monotonic, idempotent advance).
+    store = _seed_unit(tmp_path, with_steering=True)
+    await draft(_request(tmp_path, store))
+    first = store.read_progress("u", root=tmp_path)
+    first_history = list(first.history)
+    await draft(_request(tmp_path, store))
+    second = store.read_progress("u", root=tmp_path)
+    # State stays drafted and no extra transitions were stamped on re-draft.
+    assert second.state is ProgressState.drafted
+    assert [e.state for e in second.history] == [e.state for e in first_history]
+    assert ProgressState.sourced not in [
+        e.state for e in second.history[len(first_history) :]
+    ]
+
+
 def test_orchestrator_never_writes_committed() -> None:
     source = Path(orchestrator.__file__).read_text(encoding="utf-8")
     tree = ast.parse(source)
