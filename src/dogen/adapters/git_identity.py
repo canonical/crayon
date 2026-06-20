@@ -28,9 +28,12 @@ from collections.abc import Callable
 
 # The only git invocations this adapter may issue. Nothing else is shelled, and
 # no user input is interpolated into these argument lists (T-02.1-02).
+# ``--get`` is the explicit read form (IN-02): the bare ``git config <key>``
+# read form is deprecated and returns the last value for a multi-valued key,
+# which is surprising for a field that becomes an immutable audit author.
 _ALLOWED_COMMANDS: dict[str, list[str]] = {
-    "user.name": ["git", "config", "user.name"],
-    "user.email": ["git", "config", "user.email"],
+    "user.name": ["git", "config", "--get", "user.name"],
+    "user.email": ["git", "config", "--get", "user.email"],
 }
 
 GitConfigRunner = Callable[[list[str]], str]
