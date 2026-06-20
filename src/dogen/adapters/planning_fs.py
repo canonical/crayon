@@ -26,6 +26,8 @@ operator hand-edits it afterward), so PyYAML suffices and ruamel.yaml is not
 needed for round-trip comment preservation (A4 decision — recorded in SUMMARY).
 """
 
+import os
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -204,7 +206,9 @@ class FilesystemPlanningStore:
         self._assert_within_root(target, root=root)
         self._assert_not_under_planning(target, root=root)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(text, encoding="utf-8")
+        # Atomic (WR-03): the draft is written last in the loop, after the audit
+        # record is durable, and atomically so a crash never leaves a torn .md.
+        self._atomic_write_text(target, text)
         return target
 
     def read_provenance(self, unit_id: str, *, root: Path) -> Provenance:
@@ -276,6 +280,36 @@ class FilesystemPlanningStore:
             The path to the written ``progress.yaml``.
         """
         return self._write_yaml(progress.unit_id, "progress.yaml", progress, root=root)
+
+    @staticmethod
+    def _atomic_write_text(target: Path, text: str) -> None:
+        """Write ``text`` to ``target`` atomically (temp-then-rename, WR-03).
+
+        A torn write (disk full, interrupt) must never leave a half-written
+        audit file: the content is written to a temp file in the same directory,
+        flushed and fsynced, then ``os.replace``-d over the target — an atomic
+        rename on the same filesystem. A failure leaves the prior file intact.
+
+        Parameters
+        ----------
+        target : Path
+            The destination path (its parent must already exist).
+        text : str
+            The full file content to write.
+        """
+        fd, tmp_name = tempfile.mkstemp(
+            dir=str(target.parent), prefix=f".{target.name}.", suffix=".tmp"
+        )
+        tmp_path = Path(tmp_name)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(text)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp_path, target)
+        except BaseException:
+            tmp_path.unlink(missing_ok=True)
+            raise
 
     @staticmethod
     def _reject_unsafe_unit_id(unit_id: str) -> None:
@@ -445,8 +479,10 @@ class FilesystemPlanningStore:
         self._assert_within_root(target, root=root)
         self._assert_not_under_planning(target, root=root)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(
-            yaml.safe_dump(model.model_dump(mode="json"), sort_keys=False),
-            encoding="utf-8",
+        # Atomic (WR-03): provenance/progress are the audit trail; a torn write
+        # must never leave a half-serialized YAML. temp-then-rename guarantees
+        # the on-disk file is either the prior or the new content, never partial.
+        self._atomic_write_text(
+            target, yaml.safe_dump(model.model_dump(mode="json"), sort_keys=False)
         )
         return target

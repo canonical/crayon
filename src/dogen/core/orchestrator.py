@@ -233,10 +233,17 @@ async def _run_draft(
             steering=steering,
             sources=unit.sources,
         )
-        draft_path = request.store.write_draft(unit, result.text, root=request.root)
+        # WR-03: make the audit record durable BEFORE the draft is observable.
+        # Provenance (the generations[] row) and progress are written first; the
+        # draft .md is written last. A crash between these steps can then only
+        # leave an audit row with no draft (re-runnable, harmless) — never a
+        # drafted output with no recorded generation, the exact AC5 gap that an
+        # output-first order would open. The store writes each YAML atomically
+        # (temp-then-rename) so a partial step never leaves a torn file.
         _record_generation(provenance, request, result=result, run_id=run_id)
         request.store.write_provenance(provenance, root=request.root)
         _advance_progress(request)
+        draft_path = request.store.write_draft(unit, result.text, root=request.root)
     return draft_path
 
 
