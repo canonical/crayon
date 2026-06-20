@@ -270,6 +270,42 @@ async def test_generation_records_provider_reported_context(tmp_path: Path) -> N
 
 
 @pytest.mark.asyncio
+async def test_provenance_is_durable_before_draft_write(tmp_path: Path) -> None:
+    # WR-03: the audit record (provenance + progress) must be written BEFORE the
+    # draft file, so a failure during the draft write can never leave a drafted
+    # output with no recorded generation. Here write_draft raises; the generation
+    # and progress advance must already be on disk, and no draft .md must exist.
+    store = _seed_unit(tmp_path, with_steering=True)
+
+    class _FailingDraftStore:
+        def __init__(self, inner: FilesystemPlanningStore) -> None:
+            self._inner = inner
+
+        def __getattr__(self, name: str):  # type: ignore[no-untyped-def]
+            return getattr(self._inner, name)
+
+        def write_draft(self, *_a: object, **_k: object):  # type: ignore[no-untyped-def]
+            raise OSError("disk full")
+
+    failing = _FailingDraftStore(store)
+    request = DraftRequest(
+        unit_id="u",
+        root=tmp_path,
+        provider=MockDraftingProvider(),
+        store=failing,  # type: ignore[arg-type]
+        provider_name="mock",
+        now=_Clock(),
+    )
+    with pytest.raises(OSError, match="disk full"):
+        await draft(request)
+    # Audit row is durable even though the draft write failed.
+    assert len(store.read_provenance("u", root=tmp_path).generations) == 1
+    assert store.read_progress("u", root=tmp_path).state is ProgressState.drafted
+    # The draft .md was never written (no orphan output without provenance).
+    assert not (tmp_path / "docs" / "u.md").exists()
+
+
+@pytest.mark.asyncio
 async def test_draft_reads_prior_steering_act(tmp_path: Path) -> None:
     # Drafting must follow steering written by a *prior* act, not this call.
     store = _seed_unit(tmp_path, with_steering=True)
