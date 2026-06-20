@@ -155,6 +155,50 @@ def test_review_appends_single_reviewer_edit(repo: Path) -> None:
     assert edit.at
 
 
+def test_steer_refuses_to_overwrite_without_force(repo: Path) -> None:
+    # WR-04: re-running `steer` on a unit that already has steering must refuse
+    # without an explicit flag, so the recorded steering act is never silently
+    # rewritten (which could invert the steering-precedes-draft ordering).
+    store = FilesystemPlanningStore()
+    _new_unit("u")
+    assert runner.invoke(app, ["steer", "u"]).exit_code == 0
+    first = store.read_provenance("u", root=repo).steering
+    assert first is not None
+    result = runner.invoke(app, ["steer", "u"])
+    assert result.exit_code == 1
+    assert "already recorded" in result.output
+    # The original steering act is untouched.
+    again = store.read_provenance("u", root=repo).steering
+    assert again is not None
+    assert again.at == first.at
+
+
+def test_re_steer_flag_overwrites_steering(repo: Path) -> None:
+    # An explicit --re-steer is honoured and replaces the steering act (WR-04).
+    store = FilesystemPlanningStore()
+    _new_unit("u")
+    runner.invoke(app, ["steer", "u"])
+    first = store.read_provenance("u", root=repo).steering
+    assert first is not None
+    result = runner.invoke(app, ["steer", "u", "--re-steer"])
+    assert result.exit_code == 0, result.output
+    replaced = store.read_provenance("u", root=repo).steering
+    assert replaced is not None
+    # A fresh act was stamped (the same author, a newly recorded event).
+    assert replaced.author == first.author
+
+
+def test_re_steer_after_draft_warns(repo: Path) -> None:
+    # Re-steering a drafted unit is allowed with --re-steer but warns that
+    # existing generations predate the new steering act (WR-04).
+    _new_unit("u")
+    runner.invoke(app, ["steer", "u"])
+    runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    result = runner.invoke(app, ["steer", "u", "--re-steer"])
+    assert result.exit_code == 0, result.output
+    assert "already has" in result.output
+
+
 def test_draft_mock_error_path_does_not_import_copilot_adapter(repo: Path) -> None:
     # WR-01/D-25: an error on the ``--provider mock`` path (here a ValueError
     # from a unit_id that disagrees with its directory) must be handled WITHOUT

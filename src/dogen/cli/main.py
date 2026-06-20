@@ -115,6 +115,14 @@ def unit_new(
 @app.command("steer")
 def steer(
     unit_id: Annotated[str, typer.Argument(help="Unit to record steering for.")],
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            "--re-steer",
+            help="Overwrite an existing steering event (re-steer).",
+        ),
+    ] = False,
 ) -> None:
     """Record the HITL steering event for a unit (D-39).
 
@@ -122,10 +130,17 @@ def steer(
     ``intent``/``audience`` into ``provenance.yaml.steering`` — a discrete act
     that provably precedes any draft (HITL-01/02).
 
+    Refuses to overwrite an already-recorded steering event unless ``--force``
+    (alias ``--re-steer``) is passed (WR-04): silently replacing steering after
+    a unit has been drafted would invert the ``steering.at < generations[0].at``
+    ordering the AC5 audit depends on. Mirrors the ``unit new`` clobber guard.
+
     Parameters
     ----------
     unit_id : str
         The unit to record steering for.
+    force : bool
+        Overwrite an existing steering event (re-steer) when set.
     """
     store = FilesystemPlanningStore()
     root = Path.cwd()
@@ -139,6 +154,26 @@ def steer(
         typer.echo(f"Cannot read unit {unit_id!r}: {exc}", err=True)
         raise typer.Exit(code=2) from exc
     provenance = _load_or_init_provenance(store, unit_id, root=root)
+    if provenance.steering is not None and not force:
+        # WR-04: do not rewrite an existing steering act. Overwriting after a
+        # draft would push steering.at past generations[0].at, inverting the
+        # "steering provably precedes the draft" ordering (HITL-02/AC5).
+        typer.echo(
+            f"Refusing to re-steer {unit_id!r}: steering already recorded "
+            f"(by {provenance.steering.author} at {provenance.steering.at}). "
+            "Pass --re-steer to overwrite.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    if provenance.steering is not None and provenance.generations:
+        # An explicit re-steer of an already-drafted unit is honoured, but warn:
+        # existing generations still reference the prior steering ordering.
+        typer.echo(
+            f"Warning: re-steering {unit_id!r} which already has "
+            f"{len(provenance.generations)} recorded generation(s); existing "
+            "generations predate this new steering act.",
+            err=True,
+        )
     provenance.steering = Steering(
         author=author, at=_utc_now(), intent=unit.intent, audience=unit.audience
     )
