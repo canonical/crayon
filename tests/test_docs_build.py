@@ -65,6 +65,15 @@ def test_drafted_page_is_licensed_via_sidecar() -> None:
     assert "CC-BY-SA-4.0" in sidecar.read_text(encoding="utf-8")
 
 
+def test_seam_doc_names_alternates() -> None:
+    """docs/seam.md must name both alternates and be in the toctree (SEAM-04)."""
+    seam = (_DOCS / "seam.md").read_text(encoding="utf-8")
+    assert "OpenCode" in seam
+    assert "Pydantic AI" in seam
+    index = (_DOCS / "index.md").read_text(encoding="utf-8")
+    assert "seam" in index
+
+
 @pytest.mark.skipif(
     shutil.which("sphinx-build") is None,
     reason="sphinx-build not installed (docs extra); CI runs it with --extra docs",
