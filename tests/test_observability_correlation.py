@@ -138,9 +138,13 @@ def test_select_provider_default_is_copilot() -> None:
     assert inspect.signature(select_provider).parameters["name"].default == "copilot"
 
 
-def test_select_provider_copilot_dispatches_lazily() -> None:
-    with pytest.raises(NotImplementedError):
-        select_provider("copilot")
+def test_select_provider_copilot_resolves_real_adapter() -> None:
+    # Deferred so the sibling mock-path no-import test stays valid; the copilot
+    # branch resolves the real adapter (plan 03) via a lazy import.
+    from dogen.adapters.copilot import CopilotDraftingProvider  # noqa: PLC0415
+
+    provider = select_provider("copilot")
+    assert isinstance(provider, CopilotDraftingProvider)
 
 
 def test_select_provider_unknown_name_raises() -> None:

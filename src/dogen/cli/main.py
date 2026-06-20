@@ -182,10 +182,32 @@ def draft(
     except SteeringRequiredError as exc:
         typer.echo(f"Refusing to draft: {exc}", err=True)
         raise typer.Exit(code=1) from exc
+    except _backend_unavailable_error() as exc:
+        typer.echo(f"Copilot backend unavailable: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
     except (FileNotFoundError, ValueError) as exc:
         typer.echo(f"Cannot draft {unit_id!r}: {exc}", err=True)
         raise typer.Exit(code=2) from exc
     typer.echo(f"Drafted {unit_id} -> {draft_path}")
+
+
+def _backend_unavailable_error() -> type[Exception]:
+    """Resolve the copilot backend-unavailable error class lazily.
+
+    The import is deferred so selecting ``--provider mock`` never loads the
+    Copilot SDK adapter (D-25); the class is only needed to classify a failure
+    that can only originate from the real provider.
+
+    Returns
+    -------
+    type of Exception
+        The :class:`BackendUnavailableError` exception class.
+    """
+    # Deferred (D-25): catching the error must not pull the SDK adapter onto the
+    # mock path, where this exception can never be raised.
+    from dogen.adapters.copilot import BackendUnavailableError  # noqa: PLC0415
+
+    return BackendUnavailableError
 
 
 @app.command("review")
