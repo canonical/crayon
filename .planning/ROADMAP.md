@@ -14,7 +14,7 @@ This is the MVP / first pulse, delivered agile — we plan one pulse ahead and n
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Compliant Scaffold & Provider-Seam Boundary** - REUSE-clean Python package with the Copilot adapter isolated behind a CI-enforced no-vendor-import boundary (completed 2026-06-19)
-- [ ] **Phase 2: Walking Skeleton, Planning Schema, Provable HITL & Observability** - End-to-end draft loop for one unit into Sphinx-publishable output, writing the F1 audit/provenance surface, gated on recorded steering and instrumented independently of the SDK
+- [x] **Phase 2: Walking Skeleton, Planning Schema, Provable HITL & Observability** - End-to-end draft loop for one unit into Sphinx-publishable output, writing the F1 audit/provenance surface, gated on recorded steering and instrumented independently of the SDK (completed 2026-06-20)
 
 ## Phase Details
 
@@ -67,7 +67,7 @@ Plans:
   5. The loop emits structured traces/metrics/logs through a provider-independent instrumentation layer (not the SDK's own telemetry) wired to a concrete local backend, and each run correlates with its `provenance.yaml` generation entry
   6. The `DraftingProvider` port is shaped by domain verbs and a mock provider slots into it to prove swappability without any real SDK; the port contract is documented with no Copilot-specific assumptions
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans complete
 
 Plans:
 
@@ -85,7 +85,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 02-04-PLAN.md — Sphinx/MyST docs toolchain + real `-W` CI build (SKEL-02), the D-44 docs-license decision + licensing.md reconciliation, and the committed dogfood drafted page; has a blocking license-decision checkpoint (Wave 4)
+- [x] 02-04-PLAN.md — Sphinx/MyST docs toolchain + real `-W` CI build (SKEL-02), the D-44 docs-license decision + licensing.md reconciliation, and the committed dogfood drafted page; has a blocking license-decision checkpoint (Wave 4)
 
 **Notes / open decisions (settle at `/gsd-discuss-phase 2`):**
 
@@ -102,4 +102,4 @@ Phases execute in numeric order: 1 → 2
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Compliant Scaffold & Provider-Seam Boundary | 4/4 | Complete    | 2026-06-19 |
-| 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 3/4 | In Progress|  |
+| 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 4/4 | Complete   | 2026-06-20 |
