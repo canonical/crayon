@@ -234,7 +234,7 @@ async def _run_draft(
             sources=unit.sources,
         )
         draft_path = request.store.write_draft(unit, result.text, root=request.root)
-        _record_generation(provenance, request, unit=unit, result=result, run_id=run_id)
+        _record_generation(provenance, request, result=result, run_id=run_id)
         request.store.write_provenance(provenance, root=request.root)
         _advance_progress(request)
     return draft_path
@@ -244,11 +244,14 @@ def _record_generation(
     provenance: Provenance,
     request: DraftRequest,
     *,
-    unit: Unit,
     result: DraftResult,
     run_id: str,
 ) -> None:
     """Append a ``generations[]`` entry correlated to the run (D-36/OBS-03).
+
+    The unit's human-pointed ``sources`` are deliberately *not* an input here:
+    copying them into ``context_origins`` is the D-37 collapse this fix removes
+    (BL-01). ``context_origins``/``tools_used`` come only from ``result``.
 
     Parameters
     ----------
@@ -256,13 +259,17 @@ def _record_generation(
         The provenance record to append to.
     request : DraftRequest
         The bundled run parameters (effort and timestamp source).
-    unit : Unit
-        The drafted unit (its human-pointed sources become context origins).
     result : DraftResult
-        The provider's draft outcome.
+        The provider's draft outcome, the sole source of truth for what the
+        agent actually read and which tools it ran (BL-01).
     run_id : str
         The active span's 32-hex run id (stamped for correlation).
     """
+    # D-37/BL-01: ``context_origins``/``tools_used`` record what the agent
+    # *actually* read/ran, as reported by the provider — never the unit's
+    # human-pointed ``sources``. Until a provider can observe and report these,
+    # the result carries empty lists (an honest "nothing observed"), so the
+    # audit record never fabricates read context or tool activity.
     provenance.generations.append(
         Generation(
             model=result.model,
@@ -270,8 +277,8 @@ def _record_generation(
             effort=request.effort,
             tooling_version=__version__,
             sdk=_SDK_IDENTIFIER,
-            context_origins=[s.path or s.ref or "" for s in unit.sources],
-            tools_used=[],
+            context_origins=list(result.context_origins),
+            tools_used=list(result.tools_used),
             run_id=run_id,
             at=request.now(),
             action=_DRAFT_ACTION,

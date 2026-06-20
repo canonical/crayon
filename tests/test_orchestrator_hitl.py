@@ -38,6 +38,7 @@ from dogen.adapters.mock_provider import MockDraftingProvider
 from dogen.adapters.planning_fs import FilesystemPlanningStore, split_front_matter
 from dogen.core import orchestrator
 from dogen.core.models import (
+    DraftResult,
     Intent,
     Progress,
     ProgressEntry,
@@ -219,6 +220,53 @@ def test_orchestrator_never_writes_committed() -> None:
             assert not (isinstance(value, ast.Name) and value.id == "ProgressState"), (
                 "orchestrator must never reference ProgressState.committed (SKEL-03)"
             )
+
+
+@pytest.mark.asyncio
+async def test_generation_does_not_fabricate_context_origins(tmp_path: Path) -> None:
+    # BL-01/D-37: the recorded generation must NOT copy the unit's human-pointed
+    # sources into ``context_origins`` (agent-read). The mock observes nothing,
+    # so both ``context_origins`` and ``tools_used`` must be honestly empty even
+    # though the unit declares a source.
+    store = _seed_unit(tmp_path, with_steering=True)
+    unit = store.load_unit("u", root=tmp_path)
+    assert unit.sources  # the seeded unit declares a human-pointed source
+    await draft(_request(tmp_path, store))
+    generation = store.read_provenance("u", root=tmp_path).generations[0]
+    assert generation.context_origins == []
+    assert generation.tools_used == []
+
+
+@pytest.mark.asyncio
+async def test_generation_records_provider_reported_context(tmp_path: Path) -> None:
+    # BL-01: when a provider *does* report what it read/ran, the orchestrator
+    # records those values verbatim (not ``unit.sources``).
+    store = _seed_unit(tmp_path, with_steering=True)
+
+    class _ReportingProvider:
+        async def draft_unit(self, **_kwargs: object) -> DraftResult:
+            return DraftResult(
+                text="# drafted",
+                model="m",
+                model_version="v",
+                output_tokens=1,
+                run_id="",
+                context_origins=["docs/actually_read.md"],
+                tools_used=["builtin:view"],
+            )
+
+    request = DraftRequest(
+        unit_id="u",
+        root=tmp_path,
+        provider=_ReportingProvider(),
+        store=store,
+        provider_name="reporting",
+        now=_Clock(),
+    )
+    await draft(request)
+    generation = store.read_provenance("u", root=tmp_path).generations[0]
+    assert generation.context_origins == ["docs/actually_read.md"]
+    assert generation.tools_used == ["builtin:view"]
 
 
 @pytest.mark.asyncio
