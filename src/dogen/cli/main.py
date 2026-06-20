@@ -242,9 +242,16 @@ def review(
         ReviewerEdit(at=_utc_now(), reviewer=reviewer, summary=note)
     )
     store.write_provenance(provenance, root=root)
-    progress.state = ProgressState.reviewed
-    progress.history.append(ProgressEntry(at=_utc_now(), state=ProgressState.reviewed))
-    store.write_progress(progress, root=root)
+    # Idempotent transition (WR-05): the reviewer edit above is a per-invocation
+    # record, but the progress transition is stamped once. Re-running `review`
+    # records the new note without appending a duplicate `reviewed` history
+    # entry, so the lifecycle history stays trustworthy audit evidence (D-38).
+    if progress.state is not ProgressState.reviewed:
+        progress.state = ProgressState.reviewed
+        progress.history.append(
+            ProgressEntry(at=_utc_now(), state=ProgressState.reviewed)
+        )
+        store.write_progress(progress, root=root)
     typer.echo(f"Reviewed {unit_id}: progress -> {ProgressState.reviewed.value}")
 
 

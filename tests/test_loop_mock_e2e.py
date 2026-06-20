@@ -81,6 +81,27 @@ def test_full_loop_reaches_reviewed(repo: Path) -> None:
     assert ProgressState.committed not in [e.state for e in progress.history]
 
 
+def test_review_twice_appends_single_reviewed_transition(repo: Path) -> None:
+    # Re-running `review` records each reviewer edit but stamps the `reviewed`
+    # progress transition only once (WR-05: idempotent lifecycle history).
+    store = FilesystemPlanningStore()
+    _new_unit("u")
+    runner.invoke(app, ["steer", "u"])
+    runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    runner.invoke(app, ["review", "u", "--note", "first pass"])
+    runner.invoke(app, ["review", "u", "--note", "second pass"])
+    provenance = store.read_provenance("u", root=repo)
+    progress = store.read_progress("u", root=repo)
+    # Both edits are recorded (each is a distinct, audit-relevant act).
+    assert len(provenance.reviewer_edits) == 2
+    # But only one `reviewed` transition lives in the progress history.
+    reviewed_entries = [
+        e for e in progress.history if e.state is ProgressState.reviewed
+    ]
+    assert len(reviewed_entries) == 1
+    assert progress.state is ProgressState.reviewed
+
+
 def test_draft_refuses_without_steer(repo: Path) -> None:
     _new_unit("u")
     result = runner.invoke(app, ["draft", "u", "--provider", "mock"])
