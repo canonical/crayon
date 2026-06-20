@@ -5,9 +5,8 @@ milestone_name: milestone
 current_phase: 02
 status: verifying
 stopped_at: Completed 02-04-PLAN.md (phase 02 final plan)
-last_updated: "2026-06-20T06:58:38.948Z"
+last_updated: "2026-06-20T19:19:23.908Z"
 last_activity: 2026-06-20
-last_activity_desc: Phase 02 complete
 progress:
   total_phases: 2
   completed_phases: 2
@@ -31,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-06-19)
 Phase: 02
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-06-20 — Phase 02 complete
+Last activity: 2026-06-20 - Completed quick task 260620-sa1: fix CI-red gates (CI now 8/8 green)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -97,6 +96,12 @@ Open decisions deferred to `/gsd-discuss-phase` (do not pre-resolve):
 - SEAM-04: how far to validate OpenCode SDK / Pydantic AI alternates in v1 (design-only vs real second adapter) — Phase 2.
 - LIC-02: specific OSS license for the distributable core — Phase 1.
 - Research flag (Phase 2): verify exact `github-copilot-sdk==1.0.2` Python API names against the installed package before planning.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260620-sa1 | Fix two CI-red gates from v1.0 audit (reuse-lint prose false-positives + ty test-double); also fixed a third pre-existing ruff-format gate | 2026-06-20 | e9cede0 | [260620-sa1-fix-two-ci-red-gates-from-v1-0-audit-reu](./quick/260620-sa1-fix-two-ci-red-gates-from-v1-0-audit-reu/) |
 
 ## Deferred Items
 
