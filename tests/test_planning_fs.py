@@ -27,7 +27,7 @@ from dogen.adapters.planning_fs import (
     UnitExistsError,
     split_front_matter,
 )
-from dogen.core.models import Intent, Unit
+from dogen.core.models import Intent, ProgressState, Unit
 
 
 def test_scaffold_unit_writes_editable_unit_md(tmp_path: Path) -> None:
@@ -85,6 +85,53 @@ def test_scaffold_unit_refuses_to_clobber_without_force(tmp_path: Path) -> None:
     # --force overwrites.
     store.scaffold_unit("my-unit", root=tmp_path, force=True)
     assert "edited by operator" not in written.read_text()
+
+
+def test_write_draft_rejects_sphinx_target_escaping_docs(tmp_path: Path) -> None:
+    # A hand-edited unit.md with a traversing sphinx_target must be refused at
+    # the write boundary, never written outside docs/ (CR-01/T-02.1-01).
+    store = FilesystemPlanningStore()
+    unit = Unit.model_construct(
+        schema_version=0,
+        unit_id="evil",
+        intent=Intent.reference,
+        audience="ops",
+        title="",
+        sources=[],
+        sphinx_target="../../../tmp/evil.md",
+        steering_notes="",
+        status=ProgressState.pending,
+    )
+    with pytest.raises(ValueError, match="escapes docs/"):
+        store.write_draft(unit, "# pwned\n", root=tmp_path)
+    assert not (tmp_path.parent.parent / "tmp" / "evil.md").exists()
+
+
+def test_write_draft_writes_under_docs_for_safe_target(tmp_path: Path) -> None:
+    store = FilesystemPlanningStore()
+    unit = Unit(
+        unit_id="ok",
+        intent=Intent.reference,
+        audience="ops",
+        title="",
+        sphinx_target="ok.md",
+    )
+    written = store.write_draft(unit, "# ok\n", root=tmp_path)
+    assert written == (tmp_path / "docs" / "ok.md").resolve()
+    assert written.read_text(encoding="utf-8") == "# ok\n"
+
+
+def test_unit_rejects_traversing_sphinx_target() -> None:
+    # The schema boundary refuses absolute / ..-bearing targets (CR-01).
+    for bad in ["../escape.md", "/abs/evil.md", "a/../../b.md", ""]:
+        with pytest.raises(ValueError):
+            Unit(
+                unit_id="u",
+                intent=Intent.reference,
+                audience="ops",
+                title="",
+                sphinx_target=bad,
+            )
 
 
 def test_split_front_matter_round_trips_normal_doc() -> None:
