@@ -102,6 +102,10 @@ def test_steer_records_author_and_precedes_draft(repo: Path) -> None:
     after = store.read_provenance("u", root=repo)
     assert after.steering is not None
     assert after.steering.at < after.generations[0].at
+    # model_version is a real version, not a duplicate of the model name (WR-03).
+    generation = after.generations[0]
+    assert generation.model == "mock-model"
+    assert generation.model_version == "mock-1"
 
 
 def test_review_appends_single_reviewer_edit(repo: Path) -> None:

@@ -77,6 +77,7 @@ class MockDraftingProvider:
         return DraftResult(
             text=text,
             model=_MOCK_MODEL,
+            model_version=_MOCK_MODEL_VERSION,
             output_tokens=_MOCK_OUTPUT_TOKENS,
             run_id="",
         )

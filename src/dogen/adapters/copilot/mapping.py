@@ -34,6 +34,9 @@ from dogen.core.models import DraftResult
 
 # Stand-in recorded when the runtime omits the model name on the event.
 _UNKNOWN_MODEL = "unknown"
+# Stand-in recorded when the runtime omits a resolved model version (WR-03):
+# kept distinct from the model name so the provenance record stays honest.
+_UNKNOWN_MODEL_VERSION = "unknown"
 
 
 def to_draft_result(evt: SessionEvent, run_id: str) -> DraftResult:
@@ -61,10 +64,12 @@ def to_draft_result(evt: SessionEvent, run_id: str) -> DraftResult:
     data = evt.data
     text = getattr(data, "content", "")
     model = getattr(data, "model", None) or _UNKNOWN_MODEL
+    model_version = getattr(data, "model_version", None) or _UNKNOWN_MODEL_VERSION
     output_tokens = getattr(data, "output_tokens", None) or 0
     return DraftResult(
         text=text,
         model=model,
+        model_version=model_version,
         output_tokens=output_tokens,
         run_id=run_id,
     )

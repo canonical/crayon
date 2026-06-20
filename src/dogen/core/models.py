@@ -378,6 +378,10 @@ class DraftResult(BaseModel):
         The drafted MyST Markdown content.
     model : str
         The model that produced the draft.
+    model_version : str
+        The resolved model version (``"unknown"`` when the backend does not
+        report one), kept distinct from ``model`` so the provenance record does
+        not misrepresent a model name as a version (WR-03).
     output_tokens : int
         Tokens emitted (a provenance input).
     run_id : str
@@ -386,5 +390,6 @@ class DraftResult(BaseModel):
 
     text: str
     model: str
+    model_version: str = "unknown"
     output_tokens: int
     run_id: str
