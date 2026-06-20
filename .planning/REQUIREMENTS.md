@@ -16,8 +16,8 @@ The thinnest end-to-end slice that proves the drafting loop and establishes the 
 - [x] **SKEL-01**: Operator can define a documentation *unit* and point the agent at human-specified source inputs for that unit
 - [ ] **SKEL-02**: The agent drafts the unit end-to-end into Sphinx-publishable output (MyST Markdown) via CLI → orchestrator → Copilot adapter
 - [x] **SKEL-03**: The drafting loop produces output only and stops before any commit — no committing, pushing, PR, build, or publish
-- [ ] **SKEL-04**: The agent operates with a bounded, read-only toolset (grep / glob / view) — no write, exec, or network tools
-- [ ] **SKEL-05**: The drafting backend runs on a pinned `github-copilot-sdk==1.0.2` with a compatible pinned Copilot CLI, and "backend unavailable" is a handled, non-crashing state (a drafting-loop smoke test gates SDK/CLI upgrades)
+- [x] **SKEL-04**: The agent operates with a bounded, read-only toolset (grep / glob / view) — no write, exec, or network tools
+- [x] **SKEL-05**: The drafting backend runs on a pinned `github-copilot-sdk==1.0.2` with a compatible pinned Copilot CLI, and "backend unavailable" is a handled, non-crashing state (a drafting-loop smoke test gates SDK/CLI upgrades)
 
 ### SDK Abstraction Seam (A2) — provider-agnostic core
 
@@ -112,8 +112,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SKEL-01 | Phase 2 | Complete |
 | SKEL-02 | Phase 2 | Pending |
 | SKEL-03 | Phase 2 | Complete |
-| SKEL-04 | Phase 2 | Pending |
-| SKEL-05 | Phase 2 | Pending |
+| SKEL-04 | Phase 2 | Complete |
+| SKEL-05 | Phase 2 | Complete |
 | SEAM-01 | Phase 1 | Complete |
 | SEAM-02 | Phase 1 | Complete |
 | SEAM-03 | Phase 2 | Complete |

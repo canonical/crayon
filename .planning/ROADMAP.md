@@ -67,7 +67,7 @@ Plans:
   5. The loop emits structured traces/metrics/logs through a provider-independent instrumentation layer (not the SDK's own telemetry) wired to a concrete local backend, and each run correlates with its `provenance.yaml` generation entry
   6. The `DraftingProvider` port is shaped by domain verbs and a mock provider slots into it to prove swappability without any real SDK; the port contract is documented with no Copilot-specific assumptions
 
-**Plans**: 2/4 plans executed
+**Plans**: 3/4 plans executed
 
 Plans:
 
@@ -81,7 +81,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 02-03-PLAN.md — real Copilot adapter on the pinned SDK: bounded read-only toolset, backend-unavailable handling, local smoke (SKEL-05), SEAM-04 design doc; has a blocking checkpoint to confirm built-in tool names (Wave 3)
+- [x] 02-03-PLAN.md — real Copilot adapter on the pinned SDK: bounded read-only toolset, backend-unavailable handling, local smoke (SKEL-05), SEAM-04 design doc; has a blocking checkpoint to confirm built-in tool names (Wave 3)
 
 **Wave 4** *(blocked on Wave 3)*
 
@@ -102,4 +102,4 @@ Phases execute in numeric order: 1 → 2
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Compliant Scaffold & Provider-Seam Boundary | 4/4 | Complete    | 2026-06-19 |
-| 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 2/4 | In Progress|  |
+| 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | 3/4 | In Progress|  |
