@@ -401,6 +401,11 @@ class DraftResult(BaseModel):
     tools_used : list of str
         Source-qualified tool identifiers the provider exercised, as reported by
         the backend. Empty when nothing was observed (BL-01).
+    effort_used : Effort or None
+        The reasoning effort the provider actually ran at (IN-03). When set, the
+        orchestrator records it on the generation so the audit entry reflects the
+        effort the SDK truly used rather than only the requested value; ``None``
+        means the provider did not report one and the requested effort stands.
     """
 
     text: str
@@ -410,3 +415,4 @@ class DraftResult(BaseModel):
     run_id: str
     context_origins: list[str] = Field(default_factory=list)
     tools_used: list[str] = Field(default_factory=list)
+    effort_used: Effort | None = None

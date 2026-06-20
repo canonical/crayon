@@ -39,6 +39,7 @@ from dogen.adapters.planning_fs import FilesystemPlanningStore, split_front_matt
 from dogen.core import orchestrator
 from dogen.core.models import (
     DraftResult,
+    Effort,
     Intent,
     Progress,
     ProgressEntry,
@@ -267,6 +268,56 @@ async def test_generation_records_provider_reported_context(tmp_path: Path) -> N
     generation = store.read_provenance("u", root=tmp_path).generations[0]
     assert generation.context_origins == ["docs/actually_read.md"]
     assert generation.tools_used == ["builtin:view"]
+
+
+@pytest.mark.asyncio
+async def test_generation_records_provider_reported_effort(tmp_path: Path) -> None:
+    # IN-03: when the provider reports the effort it actually ran at, the
+    # recorded generation uses that value, not the requested DraftRequest.effort.
+    store = _seed_unit(tmp_path, with_steering=True)
+
+    class _EffortReportingProvider:
+        async def draft_unit(self, **_kwargs: object) -> DraftResult:
+            return DraftResult(
+                text="# drafted",
+                model="m",
+                model_version="v",
+                output_tokens=1,
+                run_id="",
+                effort_used=Effort.xhigh,
+            )
+
+    request = DraftRequest(
+        unit_id="u",
+        root=tmp_path,
+        provider=_EffortReportingProvider(),
+        store=store,
+        provider_name="reporting",
+        now=_Clock(),
+        effort=Effort.low,  # requested low, but provider ran xhigh
+    )
+    await draft(request)
+    generation = store.read_provenance("u", root=tmp_path).generations[0]
+    assert generation.effort is Effort.xhigh
+
+
+@pytest.mark.asyncio
+async def test_generation_falls_back_to_requested_effort(tmp_path: Path) -> None:
+    # IN-03: when the provider reports no effort (mock), the requested effort
+    # stands so the audit entry is never left blank.
+    store = _seed_unit(tmp_path, with_steering=True)
+    request = DraftRequest(
+        unit_id="u",
+        root=tmp_path,
+        provider=MockDraftingProvider(),
+        store=store,
+        provider_name="mock",
+        now=_Clock(),
+        effort=Effort.high,
+    )
+    await draft(request)
+    generation = store.read_provenance("u", root=tmp_path).generations[0]
+    assert generation.effort is Effort.high
 
 
 @pytest.mark.asyncio
