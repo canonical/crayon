@@ -44,10 +44,25 @@ def test_conf_enables_myst_and_colon_fence() -> None:
     assert '"colon_fence"' in conf
 
 
-def test_index_has_a_toctree() -> None:
-    """The docs root must declare a toctree so pages are not orphaned under -W."""
+def test_index_toctree_references_drafted_page() -> None:
+    """The dogfood page must be in the toctree so -W does not fail on an orphan."""
     index = (_DOCS / "index.md").read_text(encoding="utf-8")
     assert "toctree" in index
+    # The dogfood drafted page (D-32) is the publishability proof; it must be
+    # reachable from the root toctree.
+    assert "cli-reference" in index
+
+
+def test_drafted_page_is_licensed_via_sidecar() -> None:
+    """The drafted page carries CC-BY-SA-4.0 via a sidecar, not inline SPDX (S2)."""
+    page = _DOCS / "cli-reference.md"
+    sidecar = _DOCS / "cli-reference.md.license"
+    assert page.exists()
+    assert sidecar.exists()
+    # No inline SPDX header in the published prose (it would pollute the page and
+    # be misparsed by reuse); the license lives in the sidecar.
+    assert "SPDX-License-Identifier" not in page.read_text(encoding="utf-8")
+    assert "CC-BY-SA-4.0" in sidecar.read_text(encoding="utf-8")
 
 
 @pytest.mark.skipif(

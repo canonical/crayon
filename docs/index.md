@@ -10,5 +10,6 @@ Sphinx-publishable.
 :maxdepth: 2
 :caption: Contents
 
+cli-reference
 seam
 :::
