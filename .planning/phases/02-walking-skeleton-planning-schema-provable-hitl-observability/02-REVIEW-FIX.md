@@ -3,8 +3,8 @@ phase: 02-walking-skeleton-planning-schema-provable-hitl-observability
 fixed_at: 2026-06-20T00:00:00Z
 review_path: .planning/phases/02-walking-skeleton-planning-schema-provable-hitl-observability/02-REVIEW.md
 iteration: 1
-findings_in_scope: 6
-fixed: 6
+findings_in_scope: 11
+fixed: 11
 skipped: 0
 status: all_fixed
 ---
@@ -16,105 +16,165 @@ status: all_fixed
 **Iteration:** 1
 
 **Summary:**
-- Findings in scope: 6 (BLOCKER CR-01 + WARNINGS WR-01..WR-05; the 4 Info items were out of scope)
-- Fixed: 6
+- Findings in scope: 11 (fix scope: all)
+- Fixed: 11
 - Skipped: 0
 
-All in-scope findings were applied within the established hexagonal +
-security patterns (full Canonical REUSE headers unchanged, numpy docstrings,
-functions <=60 lines, no `typing.Any`, zero vendor imports in `core/`). The
-full gate suite is green after every fix:
+All findings were fixed. Each fix carries a regression test where one was
+missing (the review explicitly called out untested error paths for WR-01 and
+honest-provenance for BL-01). The full suite grew from 77 to 88 passing tests
+(1 skipped unchanged); `ruff check .`, `scripts/seam_check.py`, and the
+import-linter seam contract (`tests/test_seam_importlinter.py`) all stay green,
+and `core/` still carries zero vendor SDK imports.
 
-- `uv run pytest -q` -> 75 passed, 1 skipped
-- `uv run lint-imports` -> 1 contract kept, 0 broken (core stays vendor/adapter-free)
-- `uv run ruff check .` -> all checks passed
-- `uv run ruff format --check .` -> all 35 files formatted
-- `uv run ty check` -> all checks passed
-- REUSE (`uvx reuse@6.2.0 lint`) -> Bad licenses: 0, Missing licenses: 0; exit 0.
-  Pre-existing `.planning/*.md` SPDX-in-prose recommendations are unrelated to
-  the changed source files.
+Three findings touch domain logic (BL-01 provenance honesty, WR-03 side-effect
+ordering, WR-04 / IN-03 lifecycle and effort semantics). Their behaviour is
+pinned by new tests, but they are flagged below as `fixed: requires human
+verification` so a developer confirms the semantics match intent before the
+phase proceeds.
 
 ## Fixed Issues
 
-### CR-01 + WR-01: `write_draft` does not contain `sphinx_target`; `.planning/`-only guard leaves writes uncontained
+### BL-01: `Generation.context_origins` / `tools_used` are fabricated, violating D-37
 
-**Files modified:** `src/dogen/adapters/planning_fs.py`, `src/dogen/core/models.py`, `tests/test_planning_fs.py`
-**Commit:** 7b50702
-**Applied fix:** These two findings share the same security boundary and the
-same files, so they were applied as one atomic commit (documented here as the
-combined fix). The fix:
-- Resolves the draft target under a resolved `docs/` root and asserts positive
-  containment — the target must be `docs/` itself or live beneath it — rejecting
-  (not writing) any `sphinx_target` that escapes `docs/`, mirroring the
-  `_reject_unsafe_unit_id` discipline (CR-01).
-- Adds a `_assert_within_root` positive-containment helper and calls it from
-  every write method (`scaffold_unit`, `write_draft`, `_write_yaml`), so the
-  `.planning/` denylist is now defense-in-depth rather than the primary control
-  (WR-01).
-- Enforces the invariant once more at the schema boundary: a `Unit`
-  `model_validator` rejects an empty, absolute, or `..`-bearing `sphinx_target`,
-  consistent with how `SourceRef` validates its shape.
-- Adds tests proving `../../../tmp/evil.md` is rejected at the write boundary,
-  that a safe target writes under `docs/`, and that the schema rejects
-  traversing targets (T-02.1-01).
+**Files modified:** `src/dogen/core/models.py`, `src/dogen/core/orchestrator.py`, `tests/test_orchestrator_hitl.py`
+**Commit:** f3a1dba
+**Status:** fixed: requires human verification (provenance-truth semantics)
+**Applied fix:** Added `context_origins` and `tools_used` to `DraftResult`
+(provider seam preserved — both default to empty, no vendor import added).
+`_record_generation` now reads these from `result` instead of copying
+`unit.sources`, and the unused `unit` parameter was dropped from that helper.
+Until a provider can observe and report reads/tools, both record an honest
+empty list rather than fabricated read context. Added two regression tests: one
+asserting `context_origins`/`tools_used` stay empty for the mock even when the
+unit declares a source (D-37), and one asserting a provider that *does* report
+them is recorded verbatim.
 
-### WR-02: `load_unit` ignores the directory `unit_id`, accepting a mismatched front-matter id
-
-**Files modified:** `src/dogen/adapters/planning_fs.py`, `tests/test_planning_fs.py`
-**Commit:** c24af29
-**Applied fix:** `load_unit` now raises `ValueError` when the parsed
-front-matter `unit_id` disagrees with the directory it was loaded from,
-preventing a silently inconsistent audit record after a directory rename or a
-hand-edited id (D-36/AC5). Added tests for both the mismatch (raises) and the
-matching (accepts) cases.
-
-### WR-03: `model_version` is populated with the model *name*, not a version
-
-**Files modified:** `src/dogen/core/models.py`, `src/dogen/core/orchestrator.py`, `src/dogen/adapters/mock_provider.py`, `src/dogen/adapters/copilot/mapping.py`, `tests/test_copilot_mapping.py`, `tests/test_loop_mock_e2e.py`
-**Commit:** 7238661
-**Applied fix:** Added a distinct `model_version` field to `DraftResult`
-(default sentinel `"unknown"`). It is mapped from the SDK event at the Copilot
-seam (falling back to `"unknown"` when absent, kept distinct from the model
-name) and from the fixed mock constant `_MOCK_MODEL_VERSION = "mock-1"` (which
-already existed but was unused). The orchestrator now records
-`result.model_version` instead of duplicating `result.model`, so the provenance
-record no longer misrepresents a model name as a version. Tests assert the seam
-maps a real version, records `"unknown"` when absent, and that the mock e2e
-generation carries `model="mock-model"` with `model_version="mock-1"`.
-
-### WR-04: `_advance_progress` re-stamps `drafted` history on every re-draft
-
-**Files modified:** `src/dogen/core/orchestrator.py`, `tests/test_orchestrator_hitl.py`
-**Commit:** bafdf3a
-**Status:** fixed: requires human verification (lifecycle-ordering logic change)
-**Applied fix:** Introduced a `_PROGRESS_ORDER` lifecycle tuple and drove
-`_advance_progress` off it: only states strictly later than the current state
-are stamped. A re-draft of an already-`drafted` unit no longer regresses
-`drafted -> sourced -> drafted` nor appends spurious history entries (monotonic,
-idempotent; D-38). Added a re-draft test asserting state stays `drafted` and no
-extra transitions (and no backward `sourced`) are appended on the second draft.
-
-### WR-05: `review` advances to `reviewed` and appends history unconditionally
+### WR-01: `draft` CLI imports the Copilot SDK adapter on the mock error path (seam leak)
 
 **Files modified:** `src/dogen/cli/main.py`, `tests/test_loop_mock_e2e.py`
-**Commit:** 3810096
-**Status:** fixed: requires human verification (lifecycle-transition logic change)
-**Applied fix:** The per-invocation `ReviewerEdit` append is retained (each
-review note is a distinct, audit-relevant act), but the progress transition is
-now idempotent: the `reviewed` state and history entry are stamped only when the
-unit is not already `reviewed`, and `write_progress` is skipped otherwise.
-Repeated `review` runs no longer dilute the lifecycle history with duplicate
-`reviewed` transitions (D-38). Added a test asserting two `review` runs record
-two reviewer edits but exactly one `reviewed` history entry.
+**Commit:** 4197a54
+**Status:** fixed
+**Applied fix:** Removed the `except _backend_unavailable_error()` clause (whose
+lazy import ran on every non-steering error) and the now-unused
+`_backend_unavailable_error()` helper. Replaced with `except RuntimeError` that
+classifies by `type(exc).__name__ == "BackendUnavailableError"` and re-raises
+anything else — so the `--provider mock` path never imports `adapters/copilot/`.
+Added a regression test driving a `ValueError` on the mock path and asserting
+`dogen.adapters.copilot` / `...provider` are absent from `sys.modules` and the
+exit code is the intended clean `2`.
 
-## Skipped Issues
+### WR-02: `Unit.status` is documented as a progress mirror but is never updated
 
-None — all in-scope findings were fixed.
+**Files modified:** `src/dogen/core/models.py`
+**Commit:** 730dd54
+**Status:** fixed
+**Applied fix:** Took the reviewer's option (c), the lowest-risk path: changed
+the `Unit` class docstring and the `status` field docstring to state the field
+is "reserved; not yet maintained" and that `progress.yaml` is the sole source of
+truth, so the schema no longer advertises a live-mirror guarantee it does not
+keep. No data migration and no behavioural change.
 
-The 4 Info findings (IN-01 `getattr`-with-defaults in mapping; IN-02 unnamespaced
-`sphinx_target` default; IN-03 `git_identity` exit-code conflation; IN-04 OTel
-private-state test hack) were out of scope (`fix_scope = critical_warning`) and
-were intentionally not modified.
+### WR-03: Drafting writes draft + provenance + progress with no partial-failure handling
+
+**Files modified:** `src/dogen/core/orchestrator.py`, `src/dogen/adapters/planning_fs.py`, `tests/test_orchestrator_hitl.py`
+**Commit:** e37a828
+**Status:** fixed: requires human verification (side-effect ordering)
+**Applied fix:** Reordered `_run_draft` so the audit record is durable before
+the draft is observable: `_record_generation` → `write_provenance` →
+`_advance_progress` → `write_draft` (draft last). Added an
+`_atomic_write_text` helper (temp-then-rename with `flush`/`fsync`/`os.replace`)
+to `FilesystemPlanningStore` and routed both `_write_yaml` and `write_draft`
+through it, so a torn write never leaves a half-serialized audit file. A crash
+can now only leave an audit row with no draft (re-runnable), never a drafted
+output with no recorded generation. Added a regression test that makes
+`write_draft` raise and asserts provenance + progress are already on disk while
+no `docs/u.md` exists.
+
+### WR-04: `steer` can silently overwrite a prior steering event and invert the audit ordering
+
+**Files modified:** `src/dogen/cli/main.py`, `tests/test_loop_mock_e2e.py`
+**Commit:** 234d6d2
+**Status:** fixed: requires human verification (HITL audit-ordering semantics)
+**Applied fix:** `steer` now refuses to overwrite an existing steering event
+unless `--force` / `--re-steer` is passed (mirroring the `unit new` clobber
+guard), exiting `1` with a clear message naming the prior author/timestamp. An
+explicit re-steer of an already-drafted unit is honoured but warns that existing
+generations predate the new steering act. Added three regression tests: refusal
+without the flag (original act untouched), overwrite with `--re-steer`, and the
+warning when re-steering a drafted unit.
+
+### WR-05: `mapping.to_draft_result` lets a `None` content crash instead of degrading
+
+**Files modified:** `src/dogen/adapters/copilot/mapping.py`, `tests/test_copilot_mapping.py`
+**Commit:** 892efae
+**Status:** fixed
+**Applied fix:** Changed `text = getattr(data, "content", "")` to
+`getattr(data, "content", None) or ""`, matching how `model` and
+`output_tokens` already coerce — so an explicit `content=None` on a truncated
+stream degrades to an empty string instead of raising a Pydantic
+`ValidationError` on the `str`-typed `DraftResult.text`. Added a regression test
+asserting `content=None` maps to `text == ""`.
+
+### WR-06: Unknown `--provider` raises `ValueError` outside the `draft` try-block
+
+**Files modified:** `src/dogen/cli/main.py`, `tests/test_loop_mock_e2e.py`
+**Commit:** ee86206
+**Status:** fixed
+**Applied fix:** Moved the entire `DraftRequest` construction (including
+`select_provider(provider)`, which raises `ValueError` on an unknown name)
+inside the `try:` block, so the existing `except (FileNotFoundError, ValueError)`
+handler renders the clean exit-2 "Cannot draft … unknown provider" message
+instead of an uncaught traceback. Added a regression test for
+`--provider banana` asserting exit code 2 and the message text.
+
+### IN-01: Committed dogfood provenance records a stale `model_version`
+
+**Files modified:** `.dogen/units/cli-reference/provenance.yaml`
+**Commit:** 90fbf48
+**Status:** fixed
+**Applied fix:** Corrected the committed dogfood generation's
+`model_version: mock-model` to `mock-1`, matching the current mock provider
+(`_MOCK_MODEL_VERSION = "mock-1"`). Validated the file still round-trips through
+the `Provenance` model. (The record already carried the post-BL-01 empty
+`context_origins`/`tools_used`, so only the version line needed correcting.)
+
+### IN-02: `git config` reads omit `--get`, risking surprising values
+
+**Files modified:** `src/dogen/adapters/git_identity.py`, `tests/test_planning_fs.py`
+**Commit:** 5ff604b
+**Status:** fixed
+**Applied fix:** Changed the two allowlisted read vectors to the explicit
+`["git", "config", "--get", "user.name"]` / `--get user.email` form, so a
+multi-valued key behaves predictably for a field that becomes an immutable audit
+author. Updated the test that asserts the exact issued argument vectors.
+
+### IN-03: SDK reasoning effort and recorded provenance effort are two independent values
+
+**Files modified:** `src/dogen/core/models.py`, `src/dogen/core/orchestrator.py`, `src/dogen/adapters/copilot/provider.py`, `tests/test_orchestrator_hitl.py`
+**Commit:** d343155
+**Status:** fixed: requires human verification (provenance effort semantics)
+**Applied fix:** Added an optional `effort_used: Effort | None` to `DraftResult`.
+The Copilot provider now reports the effort it actually ran at via
+`result.model_copy(update={"effort_used": self._effort})`; the orchestrator
+records `result.effort_used or request.effort`, making the provider's actual
+effort the single source of truth and falling back to the requested effort only
+when the provider reports none (the mock case). Added two regression tests:
+provider-reported effort is recorded over the requested value, and the requested
+effort stands when the provider reports none.
+
+### IN-04: Un-flagged `draft` defaults to `copilot`, amplifying WR-01
+
+**Files modified:** (none — addressed by WR-01)
+**Commit:** 4197a54 (the WR-01 commit)
+**Status:** fixed
+**Applied fix:** The review states "No independent fix required beyond WR-01."
+IN-04 is the blast-radius observation that the common `dogen draft UNIT` (no
+`--provider`) defaults to `copilot` and therefore eagerly resolves the real SDK
+adapter. That default is intentional and unchanged. With WR-01 fixed (the mock
+*error* path no longer pulls `adapters/copilot/`), the amplification IN-04
+described — a common command turning a clean domain error into an `ImportError`
+on a host without the SDK — is neutralized. No separate code change was needed.
 
 ---
 
