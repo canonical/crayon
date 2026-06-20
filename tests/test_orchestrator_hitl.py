@@ -328,22 +328,21 @@ async def test_provenance_is_durable_before_draft_write(tmp_path: Path) -> None:
     # and progress advance must already be on disk, and no draft .md must exist.
     store = _seed_unit(tmp_path, with_steering=True)
 
-    class _FailingDraftStore:
-        def __init__(self, inner: FilesystemPlanningStore) -> None:
-            self._inner = inner
-
-        def __getattr__(self, name: str):  # type: ignore[no-untyped-def]
-            return getattr(self._inner, name)
-
-        def write_draft(self, *_a: object, **_k: object):  # type: ignore[no-untyped-def]
+    class _FailingDraftStore(FilesystemPlanningStore):
+        # A real (stateless) store whose draft write fails, to prove the audit
+        # row is durable before the draft file is written. Subclassing the real
+        # store keeps this a genuine PlanningStore, so the type checker needs no
+        # suppression; every other call still hits the real implementation
+        # against the same tmp_path.
+        def write_draft(self, unit: Unit, text: str, *, root: Path) -> Path:
             raise OSError("disk full")
 
-    failing = _FailingDraftStore(store)
+    failing = _FailingDraftStore()
     request = DraftRequest(
         unit_id="u",
         root=tmp_path,
         provider=MockDraftingProvider(),
-        store=failing,  # type: ignore[arg-type]
+        store=failing,
         provider_name="mock",
         now=_Clock(),
     )

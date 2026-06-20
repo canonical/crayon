@@ -24,7 +24,7 @@ current plan's changes).
 - **File:** `.planning/phases/02-walking-skeleton-planning-schema-provable-hitl-observability/02-01-SUMMARY.md` (committed in Phase 2, plan 01).
 - **Symptom:** same class as DEF-02-01 — the SUMMARY's own prose (the "Issues
   Encountered" section that *describes* the DEF-02-01 false positive) quotes a
-  bare license token after an `SPDX-License-Identifier:` mention, which reuse's
+  bare license token after an <!-- REUSE-IgnoreStart -->`SPDX-License-Identifier:`<!-- REUSE-IgnoreEnd --> mention, which reuse's
   parser misreads as a malformed expression. The whole-repo invalid-expression
   count is therefore 2, both in `.planning/` planning artifacts.
 - **Scope:** pre-existing planning artifact; NOT modified by plan 02-02. Every
