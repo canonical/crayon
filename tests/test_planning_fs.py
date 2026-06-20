@@ -87,6 +87,26 @@ def test_scaffold_unit_refuses_to_clobber_without_force(tmp_path: Path) -> None:
     assert "edited by operator" not in written.read_text()
 
 
+def test_load_unit_rejects_mismatched_front_matter_unit_id(tmp_path: Path) -> None:
+    # A unit.md whose front-matter unit_id disagrees with its directory must be
+    # refused, not silently returned with an inconsistent id (WR-02/AC5).
+    store = FilesystemPlanningStore()
+    written = store.scaffold_unit("dir-name", root=tmp_path)
+    text = written.read_text(encoding="utf-8").replace(
+        "unit_id: dir-name", "unit_id: other-id"
+    )
+    written.write_text(text, encoding="utf-8")
+    with pytest.raises(ValueError, match="lives under"):
+        store.load_unit("dir-name", root=tmp_path)
+
+
+def test_load_unit_accepts_matching_front_matter_unit_id(tmp_path: Path) -> None:
+    store = FilesystemPlanningStore()
+    store.scaffold_unit("dir-name", root=tmp_path)
+    unit = store.load_unit("dir-name", root=tmp_path)
+    assert unit.unit_id == "dir-name"
+
+
 def test_write_draft_rejects_sphinx_target_escaping_docs(tmp_path: Path) -> None:
     # A hand-edited unit.md with a traversing sphinx_target must be refused at
     # the write boundary, never written outside docs/ (CR-01/T-02.1-01).
