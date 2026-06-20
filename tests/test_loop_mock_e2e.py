@@ -110,6 +110,17 @@ def test_draft_refuses_without_steer(repo: Path) -> None:
     assert not (repo / "docs" / "u.md").exists()
 
 
+def test_review_before_draft_says_draft_first(repo: Path) -> None:
+    # A unit steered but never drafted has no progress.yaml to attach a review
+    # to; the CLI says so plainly rather than emitting a generic read error
+    # (WR-05 UX follow-up).
+    _new_unit("u")
+    runner.invoke(app, ["steer", "u"])
+    result = runner.invoke(app, ["review", "u", "--note", "premature"])
+    assert result.exit_code == 2
+    assert "has not been drafted yet" in result.output
+
+
 def test_steer_records_author_and_precedes_draft(repo: Path) -> None:
     store = FilesystemPlanningStore()
     _new_unit("u")
