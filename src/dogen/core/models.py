@@ -34,6 +34,7 @@ Two design invariants are load-bearing and must never be collapsed:
 """
 
 from enum import StrEnum
+from pathlib import PurePosixPath, PureWindowsPath
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -154,6 +155,35 @@ class Unit(BaseModel):
     sphinx_target: str
     steering_notes: str = ""
     status: ProgressState = ProgressState.pending
+
+    @model_validator(mode="after")
+    def _contain_sphinx_target(self) -> "Unit":
+        """Reject an absolute or ``..``-bearing ``sphinx_target`` (T-02.1-01).
+
+        ``sphinx_target`` is operator-authored and load-bearing: it becomes a
+        write path under ``docs/``. Enforcing containment once at the schema
+        boundary — mirroring how :class:`SourceRef` validates its own shape —
+        keeps the invariant from depending solely on the write adapter (CR-01).
+
+        Returns
+        -------
+        Unit
+            The validated instance.
+
+        Raises
+        ------
+        ValueError
+            If ``sphinx_target`` is empty, absolute, or contains a ``..`` part.
+        """
+        target = self.sphinx_target
+        if not target:
+            raise ValueError("sphinx_target must not be empty")
+        if PurePosixPath(target).is_absolute() or PureWindowsPath(target).is_absolute():
+            raise ValueError(f"sphinx_target must be relative: {target!r}")
+        parts = PurePosixPath(target).parts + PureWindowsPath(target).parts
+        if ".." in parts:
+            raise ValueError(f"sphinx_target must not contain '..': {target!r}")
+        return self
 
 
 class Steering(BaseModel):

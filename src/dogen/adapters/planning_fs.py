@@ -132,6 +132,7 @@ class FilesystemPlanningStore:
         """
         self._reject_unsafe_unit_id(unit_id)
         target = self._unit_md_path(unit_id, root=root)
+        self._assert_within_root(target, root=root)
         self._assert_not_under_planning(target, root=root)
         if target.exists() and not force:
             raise UnitExistsError(f"{target} exists; pass force=True to overwrite")
@@ -180,7 +181,16 @@ class FilesystemPlanningStore:
         Path
             The path to the written ``.md`` under ``docs/``.
         """
-        target = (root / "docs" / unit.sphinx_target).resolve()
+        docs_root = (root / "docs").resolve()
+        target = (docs_root / unit.sphinx_target).resolve()
+        # Positive containment (CR-01/T-02.1-01): the draft target must be
+        # ``docs/`` itself or live beneath it. ``Path.resolve`` collapses ``..``
+        # before this runs, so an operator-authored ``sphinx_target`` such as
+        # ``../../escape.md`` is rejected here rather than written outside the
+        # repo. The ``.planning/`` and root guards remain as defense-in-depth.
+        if target != docs_root and docs_root not in target.parents:
+            raise ValueError(f"sphinx_target escapes docs/: {unit.sphinx_target!r}")
+        self._assert_within_root(target, root=root)
         self._assert_not_under_planning(target, root=root)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
@@ -293,6 +303,31 @@ class FilesystemPlanningStore:
         return (root / _UNITS_SUBDIR / unit_id / "unit.md").resolve()
 
     @staticmethod
+    def _assert_within_root(target: Path, *, root: Path) -> None:
+        """Refuse to write anywhere outside ``root`` (WR-01; T-02.1-01).
+
+        The positive containment that pairs with
+        :meth:`_assert_not_under_planning`: every write target must be ``root``
+        itself or live beneath it. This is the primary control; the
+        ``.planning/`` guard is then a narrower, defense-in-depth check.
+
+        Parameters
+        ----------
+        target : Path
+            The resolved write target.
+        root : Path
+            The repo root.
+
+        Raises
+        ------
+        ValueError
+            If ``target`` resolves outside ``<root>/``.
+        """
+        resolved_root = root.resolve()
+        if target != resolved_root and resolved_root not in target.parents:
+            raise ValueError(f"refusing to write outside the repo root: {target}")
+
+    @staticmethod
     def _assert_not_under_planning(target: Path, *, root: Path) -> None:
         """Refuse to write anywhere under ``.planning/`` (D-30; T-02.1-01).
 
@@ -396,6 +431,7 @@ class FilesystemPlanningStore:
         """
         self._reject_unsafe_unit_id(unit_id)
         target = (root / _UNITS_SUBDIR / unit_id / name).resolve()
+        self._assert_within_root(target, root=root)
         self._assert_not_under_planning(target, root=root)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(
