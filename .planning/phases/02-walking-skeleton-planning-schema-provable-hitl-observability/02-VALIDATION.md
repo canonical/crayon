@@ -6,7 +6,8 @@ nyquist_compliant: true
 wave_0_complete: true
 created: 2026-06-20
 reconstructed_from: artifacts (State B — no prior VALIDATION.md; PLAN/SUMMARY + live suite)
-suite: 90 passed
+suite: 97 passed
+last_audited: 2026-06-20 (re-audit — State A; 0 gaps, all 19 commands re-verified)
 gap_fill:
   - "SEAM-04 (PARTIAL → COVERED): added tests/test_docs_build.py::test_seam_doc_names_alternates locking the doc claim (OpenCode SDK + Pydantic AI named; seam wired into the toctree)"
 ---
@@ -127,3 +128,39 @@ honoured by `ty`). This file was **not** touched by this validation — it preda
 the audit (commit `d343155`) and is unrelated to the Nyquist gap fill. Flagged
 here for follow-up; the full pytest suite, ruff, lint-imports, and the Sphinx
 `-W` build are all green.
+
+---
+
+## Validation Audit 2026-06-20 (re-audit — State A)
+
+Re-ran the validate-phase audit against the live suite. **No gaps; nothing
+generated or escalated.** The strategy was verified rather than reconstructed:
+every automated command in the Per-Task Verification Map was checked to resolve
+to real, passing tests.
+
+| Metric | Count |
+|--------|-------|
+| Requirements audited | 19 |
+| COVERED | 19 |
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+| Manual-only | 1 (SKEL-05 live SDK smoke — by design, D-24) |
+
+**Verification performed:**
+- Full suite green: `uv run pytest -q` → **97 passed** (was 90 at first
+  validation; Phase 1 subsequently added 7 Nyquist tests — SEAM-02 failure path
+  + LIC-02 wheel metadata — so the whole-suite count grew; frontmatter `suite:`
+  updated 90 → 97).
+- All **13** `::`-qualified test node IDs cited in the map resolve under
+  `pytest --collect-only` and pass.
+- All **8** `-k` filter expressions select ≥1 test (no empty selection): e.g.
+  `select_provider` → 4, `generation` → 5, `reviewer_edit` → 1.
+- Seam gates the OBS-01/SEAM-04 rows depend on are green and CI-wrapped:
+  `lint-imports` (1 kept / 0 broken), `scripts/seam_check.py` (OK — 14 files),
+  surfaced in-suite by `test_seam_importlinter.py`, `test_seam.py`, and
+  `test_seam_violation_detected.py` (5 cases).
+
+**Verdict:** Phase 2 remains **Nyquist-compliant** — 19/19 requirements have
+automated verification that resolves to existing green tests; the one manual-only
+item is intentional (D-24, live Copilot token kept out of CI).
