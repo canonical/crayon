@@ -251,7 +251,7 @@ def _record_generation(
     provenance.generations.append(
         Generation(
             model=result.model,
-            model_version=result.model,
+            model_version=result.model_version,
             effort=request.effort,
             tooling_version=__version__,
             sdk=_SDK_IDENTIFIER,

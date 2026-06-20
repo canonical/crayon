@@ -41,6 +41,7 @@ class _FakeAssistantData:
     content: str
     model: str | None
     output_tokens: int | None
+    model_version: str | None = None
 
 
 @dataclass
@@ -59,13 +60,19 @@ def _event(data: _FakeAssistantData) -> SessionEvent:
 
 def test_to_draft_result_maps_content_model_tokens_and_run_id() -> None:
     evt = _event(
-        _FakeAssistantData(content="# Title\n\nbody", model="gpt-5", output_tokens=42)
+        _FakeAssistantData(
+            content="# Title\n\nbody",
+            model="gpt-5",
+            output_tokens=42,
+            model_version="gpt-5-2026-01",
+        )
     )
     result = to_draft_result(evt, run_id="abc123")
 
     assert isinstance(result, DraftResult)
     assert result.text == "# Title\n\nbody"
     assert result.model == "gpt-5"
+    assert result.model_version == "gpt-5-2026-01"
     assert result.output_tokens == 42
     assert result.run_id == "abc123"
 
@@ -76,6 +83,8 @@ def test_to_draft_result_coerces_missing_model_and_tokens() -> None:
 
     # None must never leak into the domain record; coerce to safe defaults.
     assert result.model == "unknown"
+    # An absent version must record a distinct sentinel, never the model name (WR-03).
+    assert result.model_version == "unknown"
     assert result.output_tokens == 0
     assert result.text == "draft"
 
