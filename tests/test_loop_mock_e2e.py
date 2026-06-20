@@ -26,6 +26,7 @@ AC5), the single reviewer edit, and that progress ends ``reviewed`` and never
 
 import ast
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -152,6 +153,33 @@ def test_review_appends_single_reviewer_edit(repo: Path) -> None:
     assert edit.summary == "reworded intro"
     assert edit.reviewer == "Ada Lovelace"
     assert edit.at
+
+
+def test_draft_mock_error_path_does_not_import_copilot_adapter(repo: Path) -> None:
+    # WR-01/D-25: an error on the ``--provider mock`` path (here a ValueError
+    # from a unit_id that disagrees with its directory) must be handled WITHOUT
+    # importing ``adapters/copilot/``. The pre-fix code caught the
+    # backend-unavailable error via a lazy import that ran on every non-steering
+    # error, pulling the SDK adapter onto the mock path. Catching by class name
+    # instead keeps the mock path SDK-free.
+    _new_unit("u")
+    runner.invoke(app, ["steer", "u"])
+    # Corrupt the front-matter so load_unit raises ValueError (unit_id mismatch).
+    unit_md = repo / ".dogen" / "units" / "u" / "unit.md"
+    unit_md.write_text(
+        unit_md.read_text(encoding="utf-8").replace(
+            "unit_id: u\n", "unit_id: not-u\n"
+        ),
+        encoding="utf-8",
+    )
+    sys.modules.pop("dogen.adapters.copilot", None)
+    sys.modules.pop("dogen.adapters.copilot.provider", None)
+    result = runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    assert result.exit_code == 2, result.output
+    assert "Cannot draft" in result.output
+    # The mock error path must never have loaded the Copilot SDK adapter.
+    assert "dogen.adapters.copilot" not in sys.modules
+    assert "dogen.adapters.copilot.provider" not in sys.modules
 
 
 def test_e2e_imports_no_sdk() -> None:
