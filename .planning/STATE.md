@@ -2,11 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 02
-status: verifying
+current_phase: 0
+status: Awaiting next milestone
 stopped_at: Completed 02-04-PLAN.md (phase 02 final plan)
-last_updated: "2026-06-20T19:19:23.908Z"
+last_updated: "2026-06-20T19:49:00.553Z"
 last_activity: 2026-06-20
+last_activity_desc: Milestone v1.0 completed and archived
 progress:
   total_phases: 2
   completed_phases: 2
@@ -20,19 +21,17 @@ current_phase_name: walking-skeleton-planning-schema-provable-hitl-observability
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-19)
+See: .planning/PROJECT.md (updated 2026-06-20 after v1.0 MVP milestone)
 
 **Core value:** A TA (or anyone acting in that capacity) can reliably draft review-ready documentation faster than from scratch, with a human owning intent and review at every step — "quality at speed," without AI slop.
-**Current focus:** Phase 02 — walking-skeleton-planning-schema-provable-hitl-observability
+**Current focus:** v1.0 MVP shipped — planning next milestone (v1.1) via `/gsd-new-milestone`
 
 ## Current Position
 
-Phase: 02
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-06-20 - Completed quick task 260620-sa1: fix CI-red gates (CI now 8/8 green)
-
-Progress: [░░░░░░░░░░] 0%
+Phase: Milestone v1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-20 — Milestone v1.0 completed and archived
 
 ## Performance Metrics
 
@@ -90,12 +89,14 @@ None yet.
 
 ### Blockers/Concerns
 
-Open decisions deferred to `/gsd-discuss-phase` (do not pre-resolve):
+None open. All v1.0 deferred decisions were resolved during the milestone:
 
-- OBS-02: observability backend (Logfire vs OTel-direct vs SDK `[telemetry]` extra) — Phase 2.
-- SEAM-04: how far to validate OpenCode SDK / Pydantic AI alternates in v1 (design-only vs real second adapter) — Phase 2.
-- LIC-02: specific OSS license for the distributable core — Phase 1.
-- Research flag (Phase 2): verify exact `github-copilot-sdk==1.0.2` Python API names against the installed package before planning.
+- OBS-02 → resolved: OTel-API in core + Logfire at the composition root (`send_to_logfire=False`).
+- SEAM-04 → resolved: design-only — `DraftingProvider` port documented Copilot-agnostic; OpenCode SDK + Pydantic AI named as un-built alternates; mock proves swappability.
+- LIC-02 → resolved: GPL-3.0-only core; CC-BY-SA-4.0 for published docs/content (D-44).
+- Research flag → resolved: the `github-copilot-sdk==1.0.2` API names were verified live against the installed package (CLI runtime `1.0.64-0` pinned as the SKEL-05 bump-gate).
+
+Carried tech debt (cosmetic, CI green): SKEL-02 tags-only bookkeeping; live-backend error-mapping breadth on the manual-only Copilot path. See MILESTONES.md.
 
 ### Quick Tasks Completed
 
@@ -116,3 +117,7 @@ Items acknowledged and carried forward from previous milestone close:
 Last session: 2026-06-20T01:02:10.854Z
 Stopped at: Completed 02-04-PLAN.md (phase 02 final plan)
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
