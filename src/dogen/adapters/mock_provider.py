@@ -130,24 +130,22 @@ def _make_mock_provider() -> DraftingProvider:
 
 
 def _make_copilot_provider() -> DraftingProvider:
-    """Lazily construct the real Copilot provider (plan 03) behind the port.
+    """Lazily construct the real Copilot provider behind the port.
 
     The import is deferred so the mock path never loads ``adapters/copilot/``
-    and so this dispatch works before the real adapter exists.
+    (and so the SDK is only imported when the copilot provider is actually
+    selected — D-25).
 
     Returns
     -------
     DraftingProvider
         The real Copilot drafting provider.
-
-    Raises
-    ------
-    NotImplementedError
-        Until the Copilot adapter lands in plan 03.
     """
-    raise NotImplementedError(
-        "the copilot provider is not implemented yet; use --provider mock"
-    )
+    # Deliberately deferred (D-25): a top-level import would load the SDK on the
+    # mock/CI path, defeating the seam's whole point.
+    from dogen.adapters.copilot import CopilotDraftingProvider  # noqa: PLC0415
+
+    return CopilotDraftingProvider()
 
 
 # Dict dispatch, not an if/elif ladder (coding-guide §2). Each value is a
