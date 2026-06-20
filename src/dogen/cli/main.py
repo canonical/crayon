@@ -204,15 +204,19 @@ def draft(
     """
     configure_observability()
     store = FilesystemPlanningStore()
-    request = DraftRequest(
-        unit_id=unit_id,
-        root=Path.cwd(),
-        provider=select_provider(provider),
-        store=store,
-        provider_name=provider,
-        now=_utc_now,
-    )
     try:
+        # WR-06: build the request (incl. select_provider, which raises
+        # ValueError on an unknown provider name) INSIDE the try so the
+        # existing handler renders a clean exit-2 message instead of letting an
+        # uncaught traceback escape on a simple typo ("good UX", PROJECT.md).
+        request = DraftRequest(
+            unit_id=unit_id,
+            root=Path.cwd(),
+            provider=select_provider(provider),
+            store=store,
+            provider_name=provider,
+            now=_utc_now,
+        )
         draft_path = asyncio.run(draft_use_case(request))
     except SteeringRequiredError as exc:
         typer.echo(f"Refusing to draft: {exc}", err=True)

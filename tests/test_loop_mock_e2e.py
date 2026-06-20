@@ -199,6 +199,17 @@ def test_re_steer_after_draft_warns(repo: Path) -> None:
     assert "already has" in result.output
 
 
+def test_draft_unknown_provider_exits_cleanly(repo: Path) -> None:
+    # WR-06: an unknown --provider must render a clean exit-2 message, not an
+    # uncaught ValueError traceback (select_provider is now inside the try).
+    _new_unit("u")
+    runner.invoke(app, ["steer", "u"])
+    result = runner.invoke(app, ["draft", "u", "--provider", "banana"])
+    assert result.exit_code == 2, result.output
+    assert "Cannot draft" in result.output
+    assert "unknown provider" in result.output
+
+
 def test_draft_mock_error_path_does_not_import_copilot_adapter(repo: Path) -> None:
     # WR-01/D-25: an error on the ``--provider mock`` path (here a ValueError
     # from a unit_id that disagrees with its directory) must be handled WITHOUT
