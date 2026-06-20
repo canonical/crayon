@@ -198,10 +198,11 @@ def test_read_git_identity_returns_configured_values() -> None:
     name, email = read_git_identity(runner=fake_runner)
     assert name == "Ada Lovelace"
     assert email == "ada@example.com"
-    # Only the two allowlisted git-config reads were issued.
+    # Only the two allowlisted git-config reads were issued, in the explicit
+    # ``--get`` read form (IN-02).
     assert calls == [
-        ["git", "config", "user.name"],
-        ["git", "config", "user.email"],
+        ["git", "config", "--get", "user.name"],
+        ["git", "config", "--get", "user.email"],
     ]
 
 
