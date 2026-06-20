@@ -277,11 +277,15 @@ def _record_generation(
     # human-pointed ``sources``. Until a provider can observe and report these,
     # the result carries empty lists (an honest "nothing observed"), so the
     # audit record never fabricates read context or tool activity.
+    # IN-03: prefer the effort the provider actually ran at (single source of
+    # truth) and fall back to the requested effort only when the provider does
+    # not report one, so the audit entry never misrepresents the effort used.
+    effort = result.effort_used or request.effort
     provenance.generations.append(
         Generation(
             model=result.model,
             model_version=result.model_version,
-            effort=request.effort,
+            effort=effort,
             tooling_version=__version__,
             sdk=_SDK_IDENTIFIER,
             context_origins=list(result.context_origins),

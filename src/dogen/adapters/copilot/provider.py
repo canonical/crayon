@@ -176,7 +176,10 @@ class CopilotDraftingProvider:
             )
             async with session_cm as session:
                 event = await session.send_and_wait(prompt, timeout=_DRAFT_TIMEOUT)
-        return _require_assistant_message(event)
+        result = _require_assistant_message(event)
+        # IN-03: report the effort the SDK actually ran at, so the recorded
+        # provenance reflects the real effort rather than only the requested one.
+        return result.model_copy(update={"effort_used": self._effort})
 
 
 async def _require_available_backend(client: CopilotClient) -> None:
