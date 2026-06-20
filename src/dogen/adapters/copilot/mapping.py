@@ -62,7 +62,13 @@ def to_draft_result(evt: SessionEvent, run_id: str) -> DraftResult:
     # guarantees that event type before calling, so read the fields defensively
     # (anti-corruption: the union never reaches ``core/``).
     data = evt.data
-    text = getattr(data, "content", "")
+    # Coerce ``content`` defensively (WR-05): the SDK can deliver ``content=None``
+    # on a truncated/unfinalised stream. ``getattr(..., "")`` only guards a
+    # *missing* attribute, not an explicit ``None``, which would flow into the
+    # ``str``-typed ``DraftResult.text`` and raise a Pydantic ValidationError —
+    # an uncaught crash instead of the handled degradation the seam promises.
+    # Treat it like ``model``/``output_tokens``: fall back to a safe default.
+    text = getattr(data, "content", None) or ""
     model = getattr(data, "model", None) or _UNKNOWN_MODEL
     model_version = getattr(data, "model_version", None) or _UNKNOWN_MODEL_VERSION
     output_tokens = getattr(data, "output_tokens", None) or 0

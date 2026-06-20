@@ -38,7 +38,7 @@ from dogen.core.models import DraftResult
 class _FakeAssistantData:
     """A minimal stand-in for ``AssistantMessageData`` (no SDK construction)."""
 
-    content: str
+    content: str | None
     model: str | None
     output_tokens: int | None
     model_version: str | None = None
@@ -87,6 +87,18 @@ def test_to_draft_result_coerces_missing_model_and_tokens() -> None:
     assert result.model_version == "unknown"
     assert result.output_tokens == 0
     assert result.text == "draft"
+
+
+def test_to_draft_result_coerces_none_content() -> None:
+    # WR-05: a truncated/unfinalised stream can deliver content=None. That must
+    # degrade to an empty string, not raise a Pydantic ValidationError on the
+    # str-typed DraftResult.text (an uncaught crash the seam must never surface).
+    evt = _event(_FakeAssistantData(content=None, model="gpt-5", output_tokens=3))
+    result = to_draft_result(evt, run_id="r")
+
+    assert isinstance(result, DraftResult)
+    assert result.text == ""
+    assert result.model == "gpt-5"
 
 
 @pytest.mark.parametrize(
