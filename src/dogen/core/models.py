@@ -122,7 +122,11 @@ class Unit(BaseModel):
 
     The operator authors this by hand: it records intent, audience, title, the
     human-pointed sources, the Sphinx output target, and free-form steering
-    notes. ``status`` mirrors the unit's progress state.
+    notes. ``status`` is **reserved and not yet maintained** (WR-02): the
+    authoritative lifecycle state lives in ``progress.yaml`` (D-38), and no
+    command writes ``status`` back to ``unit.md``, so it must not be read as a
+    live progress mirror. It is kept on the schema so a later phase can populate
+    it without a breaking migration.
 
     Parameters
     ----------
@@ -143,7 +147,9 @@ class Unit(BaseModel):
     steering_notes : str
         Free-form operator guidance for the draft.
     status : ProgressState
-        Mirror of the unit's progress lifecycle state.
+        Reserved; not yet maintained (WR-02). ``progress.yaml`` is the sole
+        source of truth for lifecycle state — no command writes this field back,
+        so it must not be treated as a live mirror.
     """
 
     schema_version: int = 0
