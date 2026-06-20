@@ -1,0 +1,10 @@
+schema_version: 0
+unit_id: cli-reference
+state: reviewed
+history:
+- at: '2026-06-20T00:58:37.084054+00:00'
+  state: sourced
+- at: '2026-06-20T00:58:37.084060+00:00'
+  state: drafted
+- at: '2026-06-20T00:58:37.391139+00:00'
+  state: reviewed

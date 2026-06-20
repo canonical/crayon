@@ -1,0 +1,24 @@
+schema_version: 0
+unit_id: cli-reference
+steering:
+  author: Artem Konev
+  at: '2026-06-20T00:58:36.790498+00:00'
+  intent: reference
+  audience: dogen users and contributors
+generations:
+- model: mock-model
+  model_version: mock-model
+  effort: medium
+  tooling_version: 0.0.0
+  sdk: github-copilot-sdk==1.0.2
+  context_origins: []
+  tools_used: []
+  run_id: 019ee2896a9bfd97b14e2e09263c0f80
+  at: '2026-06-20T00:58:37.083455+00:00'
+  action: draft
+reviewer_edits:
+- at: '2026-06-20T00:58:37.390502+00:00'
+  reviewer: Artem Konev
+  summary: Reviewed dogfood CLI reference draft; grounded in real src/dogen surface.
+verification:
+  steps: []

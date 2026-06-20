@@ -27,3 +27,14 @@ path = ".claude/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Canonical Ltd."
 SPDX-License-Identifier = "GPL-3.0-only"
+
+# Committed AC5 audit surface (D-24): the dogfood run's .dogen/units/<id>/ files
+# (unit.md, provenance.yaml, progress.yaml) are tool-generated and cannot carry an
+# inline per-file header, so they are licensed in bulk here -- GPL-3.0-only, the
+# same license as the code that produced them (licensing.md §1). precedence =
+# "aggregate" so any inline header would still win. Scoped to .dogen/** only.
+[[annotations]]
+path = ".dogen/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Canonical Ltd."
+SPDX-License-Identifier = "GPL-3.0-only"
