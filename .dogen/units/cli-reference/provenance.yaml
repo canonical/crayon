@@ -7,7 +7,7 @@ steering:
   audience: dogen users and contributors
 generations:
 - model: mock-model
-  model_version: mock-model
+  model_version: mock-1
   effort: medium
   tooling_version: 0.0.0
   sdk: github-copilot-sdk==1.0.2
