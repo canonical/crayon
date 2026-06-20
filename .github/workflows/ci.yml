@@ -67,3 +67,20 @@ jobs:
         run: uv run pytest -q
       - name: Build (proves PEP 639 wheel metadata)
         run: uv build # LIC-02: License-Expression in the built wheel METADATA
+
+  # SKEL-02: prove "Sphinx-publishable" with a REAL build, not by assertion.
+  # Python 3.12 only -- Sphinx 9.1 floors at 3.12 (the docs toolchain env).
+  # `-W` makes warnings fatal so an orphaned page or a MyST mis-parse fails CI.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Set up uv + Python
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          python-version: "3.12"
+      - name: Install (frozen lockfile)
+        run: uv sync --frozen # D-18: install exactly the committed uv.lock
+      - name: Sphinx build (warnings-as-errors)
+        run: uv run --extra docs sphinx-build -W -b html docs docs/_build

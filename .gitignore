@@ -9,6 +9,11 @@ build/
 dist/
 dist/_wheel/
 
+# Sphinx HTML build output (generated, not source; never reuse-scanned).
+# NOTE: .dogen/ is deliberately NOT ignored -- the audit surface is committed
+# as AC5 evidence (D-24) and licensed via the REUSE.toml .dogen/** glob.
+docs/_build/
+
 # Environments
 .venv/
 venv/
