@@ -157,12 +157,23 @@ class FilesystemPlanningStore:
         -------
         Unit
             The validated unit model.
+
+        Raises
+        ------
+        ValueError
+            If the front-matter ``unit_id`` disagrees with the directory the
+            unit was loaded from (audit-record integrity; D-36/AC5).
         """
         self._reject_unsafe_unit_id(unit_id)
         front, _ = split_front_matter(
             self._unit_md_path(unit_id, root=root).read_text(encoding="utf-8")
         )
-        return Unit(**front)
+        unit = Unit(**front)
+        if unit.unit_id != unit_id:
+            raise ValueError(
+                f"unit.md declares unit_id {unit.unit_id!r} but lives under {unit_id!r}"
+            )
+        return unit
 
     def write_draft(self, unit: Unit, text: str, *, root: Path) -> Path:
         """Write a drafted MyST page to the unit's Sphinx target.
