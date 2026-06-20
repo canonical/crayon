@@ -16,7 +16,7 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 
 <!-- Shipped and confirmed valuable. -->
 
-- **Walking-skeleton foundation (Phases 1–2):** the end-to-end Mode-A mechanism is proven on a single unit — the provider-seam abstraction (a deterministic mock *and* the real Copilot SDK behind one `DraftingProvider` port, CI-enforced), provable HITL (recorded steering gates drafting; `draft` refuses with no side effects otherwise), SDK-independent observability correlated to the provenance record, the F1 audit/provenance schema (`schema_version: 0`, reserved verification fields), and Sphinx-publishable MyST output proven by a warnings-as-errors build — all stopping before any commit. The full-scale Active items below (multi-product scale, brownfield ingestion, layered customization, onboarding scraper) remain hypotheses until proven beyond this thin slice.
+- ✓ **Walking-skeleton foundation — v1.0 (Phases 1–2):** the end-to-end Mode-A mechanism is proven on a single unit — the provider-seam abstraction (a deterministic mock *and* the real Copilot SDK behind one `DraftingProvider` port, CI-enforced), provable HITL (recorded steering gates drafting; `draft` refuses with no side effects otherwise), SDK-independent observability correlated to the provenance record, the F1 audit/provenance schema (`schema_version: 0`, reserved verification fields), and Sphinx-publishable MyST output proven by a warnings-as-errors build — all stopping before any commit. The full-scale Active items below (multi-product scale, brownfield ingestion, layered customization, onboarding scraper) remain hypotheses until proven beyond this thin slice.
 
 ### Active
 
@@ -64,6 +64,7 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 - Sibling epic **DOCPR-2822** provides the org-wide doc QA framework — an external extension point this core optionally calls.
 - Shared resources to reuse and contribute back to: skills-playground, AI-resources-for-docs.
 - Two operating modes: **Mode A** (human-guided, in-cycle target) → **Mode B** (agent-guided, deferred).
+- **Current state (after v1.0, 2026-06-20):** ~4,800 LOC Python (~2,861 src / ~1,942 tests), 97 tests passing. Stack as shipped: Python 3.12, `uv` + `hatchling`, Typer CLI (`dogen`), Pydantic v2 schema, `github-copilot-sdk==1.0.2` behind a single adapter, OTel-API observability, REUSE/SPDX licensing (GPL-3.0-only core, CC-BY-SA-4.0 content), Sphinx 9 + MyST docs proven by a `-W` CI build. CI runs 8 gates green (reuse lint, ruff lint+format, ty, seam check, import-linter, tests, wheel build).
 
 ## Constraints
 
@@ -74,7 +75,7 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 - **Decoupling**: the reusable core stays distinct from the guidance it consumes (defined company-wide once and maintained, or scraped per repo) — Why: portfolio updates benefit everyone instead of fragmenting
 - **Provenance**: internal observability only, about the harness/tooling — not a published content disclaimer — Why: humans own and stand behind shipped output
 - **Observability**: instrumented independently of the agentic SDK (provider-independent layer; Logfire / OpenTelemetry the leading candidate) — Why: observability must survive an SDK swap and not depend on the SDK's own telemetry
-- **Licensing**: REUSE-compliant from commit 1 (SPDX headers, `reuse lint` in CI); specific OSS license TBD via discussion — Why: clean, auditable licensing/provenance of own and third-party code
+- **Licensing**: REUSE-compliant from commit 1 (SPDX headers, `reuse lint` in CI); core licensed **GPL-3.0-only**, published docs/content **CC-BY-SA-4.0** (resolved v1.0) — Why: clean, auditable licensing/provenance of own and third-party code
 - **Delivery cadence**: agile; plan one pulse in advance; epic breakdown is a reference frame, not a fixed task list — Why: holiday/critical-path risk plus the "pour concrete in stages" philosophy
 - **UX**: good design is a primary requirement — Why: if it's easier to circumvent than to use, it will be circumvented
 
@@ -82,14 +83,16 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Adopt the Copilot SDK behind a thin, multi-provider abstraction seam | Pragmatic-first; thin seam keeps the provider swappable (OpenCode SDK / homegrown Pydantic AI as alternates) and preserves agnosticism as a core design property | ◆ Phase 1 — seam boundary established & CI-enforced (no-vendor-import AST guardrail, single adapter site); provider swap proof lands Phase 2 |
-| Build the drafting layer, not agent machinery | Adopt-not-build keeps the core thin and focused on value-add | — Pending |
-| Deliver agile — plan one pulse ahead | Critical-path/holiday risk + iterative "pour concrete in stages" philosophy | — Pending |
-| First milestone (MVP) = walking skeleton (A2) + planning directory schema v0 (F1) + foundations (seam, observability, licensing) | Thinnest end-to-end proof of the loop, plus the SDD-style audit/provenance surface and the foundations that are expensive to retrofit | — Pending |
-| Observability is provider-independent (Logfire / OTel candidate), not tied to the SDK | Keep telemetry durable across an SDK swap; don't depend on the SDK for it | — Pending (research + discuss) |
+| Adopt the Copilot SDK behind a thin, multi-provider abstraction seam | Pragmatic-first; thin seam keeps the provider swappable (OpenCode SDK / homegrown Pydantic AI as alternates) and preserves agnosticism as a core design property | ✓ Good (v1.0) — boundary CI-enforced from commit 1; both a deterministic mock *and* the real Copilot adapter slot into one `DraftingProvider` port, proving swappability |
+| Build the drafting layer, not agent machinery | Adopt-not-build keeps the core thin and focused on value-add | ✓ Good (v1.0) — zero agent-loop/tool-dispatch code; orchestrator drives the SDK's session primitives |
+| Deliver agile — plan one pulse ahead | Critical-path/holiday risk + iterative "pour concrete in stages" philosophy | ✓ Good (v1.0) — two-phase pulse shipped in 2 days; held the one-pulse-ahead discipline |
+| First milestone (MVP) = walking skeleton (A2) + planning directory schema v0 (F1) + foundations (seam, observability, licensing) | Thinnest end-to-end proof of the loop, plus the SDD-style audit/provenance surface and the foundations that are expensive to retrofit | ✓ Delivered (v1.0) — 23/23 requirements satisfied; live E2E loop on mock + real SDK |
+| Observability is provider-independent (Logfire / OTel candidate), not tied to the SDK | Keep telemetry durable across an SDK swap; don't depend on the SDK for it | ✓ Delivered (Phase 2) — OBS-02 resolved: OTel-API instrumentation layer in core, banned from the SDK by the import-linter contract; `run_id` correlates to provenance |
 | REUSE framework for licensing compliance from commit 1 | Auditable SPDX licensing of own + third-party code; CI-enforced | ✓ Delivered (Phase 1) — GPL-3.0-only chosen; whole-repo `reuse lint` green and enforced in CI |
-| RAG / context-augmentation is spike-gated, not a dependency | Avoid over-engineering; steering-first by default | — Pending |
-| Stop at singular traceable local commits | Reviewer/merger owns output; framework stays dumb outside drafting | — Pending |
+| Docs/published content licensed CC-BY-SA-4.0, distinct from the GPL-3.0-only code core (D-44) | Code and prose have different reuse contracts; keep the published-content license appropriate for docs | ✓ Delivered (Phase 2) — applied via `.license` sidecars; `licensing.md` reconciled |
+| Seam guardrail upgraded from an AST check to a declarative `import-linter` contract | Declarative contract is more expressive and standard than a hand-rolled AST walk; bans `copilot`/`logfire`/`opentelemetry.sdk` from `core/` | ✓ Good (Phase 2) — single `lint-imports` gate, 1 contract kept, 0 broken |
+| RAG / context-augmentation is spike-gated, not a dependency | Avoid over-engineering; steering-first by default | — Pending (held; not built in v1.0) |
+| Stop at singular traceable local commits | Reviewer/merger owns output; framework stays dumb outside drafting | ✓ Good (v1.0) — lifecycle stops at `reviewed`; no commit/push/PR/build/publish path in `src/` |
 
 ## Evolution
 
@@ -109,4 +112,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-20 after Phase 2 (Walking Skeleton, Planning Schema, Provable HITL & Observability) completion*
+*Last updated: 2026-06-20 after v1.0 MVP milestone*
