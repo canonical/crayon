@@ -14,7 +14,7 @@ The thinnest end-to-end slice that proves the drafting loop and establishes the 
 ### Walking Skeleton (A2) — the thin drafting loop
 
 - [x] **SKEL-01**: Operator can define a documentation *unit* and point the agent at human-specified source inputs for that unit
-- [ ] **SKEL-02**: The agent drafts the unit end-to-end into Sphinx-publishable output (MyST Markdown) via CLI → orchestrator → Copilot adapter
+- [x] **SKEL-02**: The agent drafts the unit end-to-end into Sphinx-publishable output (MyST Markdown) via CLI → orchestrator → Copilot adapter
 - [x] **SKEL-03**: The drafting loop produces output only and stops before any commit — no committing, pushing, PR, build, or publish
 - [x] **SKEL-04**: The agent operates with a bounded, read-only toolset (grep / glob / view) — no write, exec, or network tools
 - [x] **SKEL-05**: The drafting backend runs on a pinned `github-copilot-sdk==1.0.2` with a compatible pinned Copilot CLI, and "backend unavailable" is a handled, non-crashing state (a drafting-loop smoke test gates SDK/CLI upgrades)
@@ -110,7 +110,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SKEL-01 | Phase 2 | Complete |
-| SKEL-02 | Phase 2 | Pending |
+| SKEL-02 | Phase 2 | Complete |
 | SKEL-03 | Phase 2 | Complete |
 | SKEL-04 | Phase 2 | Complete |
 | SKEL-05 | Phase 2 | Complete |
