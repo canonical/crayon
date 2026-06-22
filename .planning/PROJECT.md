@@ -10,18 +10,11 @@ A reusable, distributable Python package that helps a person in a Technical Auth
 
 A TA (or anyone acting in that capacity) can reliably draft review-ready documentation faster than starting from scratch, with a human owning intent and review at every step — "quality at speed," without AI slop.
 
-## Current Milestone: v1.1 Live Copilot Path Hardening
+## Current State
 
-**Goal:** The real `dogen draft --provider copilot` loop runs end-to-end out of the box on an available model and records honest, observed provenance — closing the four gaps the first live run surfaced.
+**Shipped:** v1.1 Live Copilot Path Hardening (2026-06-22). The real `dogen draft --provider copilot` loop now runs end-to-end out of the box on an available model of any family and records honest, observed provenance — closing the four gaps the first live run surfaced (operator-selectable model with an available default; clean live error mapping; a permission handler that approves the read-only lookup allowlist; model-family-aware `reasoning_effort`; and `context_origins`/`tools_used` filled from observed tool-call events). Builds on v1.0's proven walking-skeleton foundation. 7/7 v1.1 requirements satisfied; 131 tests green; operator-approved D-24 live runs.
 
-**Target features:**
-- Operator-selectable drafting model with an available default — retire the hardcoded, unavailable `gpt-5`
-- Clean live error mapping — model-rejection and other backend errors surface as an actionable message + a nonzero exit, never a raw traceback (closes the accepted live error-mapping debt)
-- Permission handler that approves the already-read-only lookup allowlist, so non-interactive `grep`/`glob`/`view` reads are not denied
-- Model-family-aware parameters — `reasoning_effort` sent only to GPT-5-family models, omitted for Claude models that reject it
-- Honest provenance — `context_origins`/`tools_used` populated from observed tool-call events, completing the BL-01 honesty work (v1.0 stopped *fabricating* them; v1.1 *truthfully fills* them)
-
-**Context:** Pure hardening of the existing live path — no net-new domain features. The live `--provider copilot` path is manual-only (D-24, kept out of CI), so these are validated by manual live runs plus unit tests against a fake SDK.
+**Next milestone:** Not yet planned — run `/gsd-new-milestone`. The full-framework vision (the v2 destination) is captured in the Active list below and archived in [milestones/v1.0-REQUIREMENTS.md](milestones/v1.0-REQUIREMENTS.md); promoting any of it requires a new milestone.
 
 ## Requirements
 
@@ -79,7 +72,7 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 - Sibling epic **DOCPR-2822** provides the org-wide doc QA framework — an external extension point this core optionally calls.
 - Shared resources to reuse and contribute back to: skills-playground, AI-resources-for-docs.
 - Two operating modes: **Mode A** (human-guided, in-cycle target) → **Mode B** (agent-guided, deferred).
-- **Current state (after v1.0, 2026-06-20):** ~4,800 LOC Python (~2,861 src / ~1,942 tests), 97 tests passing. Stack as shipped: Python 3.12, `uv` + `hatchling`, Typer CLI (`dogen`), Pydantic v2 schema, `github-copilot-sdk==1.0.2` behind a single adapter, OTel-API observability, REUSE/SPDX licensing (GPL-3.0-only core, CC-BY-SA-4.0 content), Sphinx 9 + MyST docs proven by a `-W` CI build. CI runs 8 gates green (reuse lint, ruff lint+format, ty, seam check, import-linter, tests, wheel build).
+- **Current state (after v1.1, 2026-06-22):** ~6,165 LOC Python (src + tests), 131 tests passing. v1.1 added live-path hardening confined almost entirely to the single Copilot adapter (`adapters/copilot/provider.py`, `mapping.py`) plus the orchestrator/CLI seam (+1,420/−58 across 14 src/test files). Stack unchanged from v1.0: Python 3.12, `uv` + `hatchling`, Typer CLI (`dogen`), Pydantic v2 schema, `github-copilot-sdk==1.0.2` behind a single adapter, OTel-API observability, REUSE/SPDX licensing (GPL-3.0-only core, CC-BY-SA-4.0 content), Sphinx 9 + MyST docs proven by a `-W` CI build. CI gates green (reuse lint, ruff lint+format, ty, seam check, import-linter, tests, wheel build). The live `--provider copilot` path stays manual-only (D-24, out of CI — no token/network); validated by a fake-SDK unit suite plus operator-approved live runs.
 
 ## Constraints
 
@@ -128,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-22 — v1.1 Phase 4 complete (honest observed provenance: PROV-01/02). Milestone v1.1 is 100% complete (Phases 3–4); ready to complete-milestone.*
+*Last updated: 2026-06-22 after v1.1 milestone — Live Copilot Path Hardening shipped (Phases 3–4; LIVE-01/02/03, ERR-01/02, PROV-01/02). Milestone archived; ready for `/gsd-new-milestone`.*

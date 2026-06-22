@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Copilot Path Hardening
-current_phase: 4
-status: milestone-complete
-stopped_at: Phase 4 verified — milestone v1.1 100% complete
-last_updated: "2026-06-22T17:24:44.748Z"
+current_phase: 1
+status: Awaiting next milestone
+stopped_at: Phase 4 complete & verified — milestone v1.1 100% complete, ready to archive
+last_updated: "2026-06-22T22:12:58.899Z"
 last_activity: 2026-06-22
-last_activity_desc: Phase 4 verified (UAT pass + security gate) — milestone v1.1 complete
+last_activity_desc: Milestone v1.1 completed and archived
 progress:
   total_phases: 2
   completed_phases: 2
@@ -21,17 +21,17 @@ current_phase_name: honest-observed-provenance
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-22 — v1.1 Phase 4 complete; milestone v1.1 100% done)
+See: .planning/PROJECT.md (updated 2026-06-22 — v1.1 milestone shipped & archived)
 
 **Core value:** A TA (or anyone acting in that capacity) can reliably draft review-ready documentation faster than from scratch, with a human owning intent and review at every step — "quality at speed," without AI slop.
-**Current focus:** Milestone v1.1 complete — ready to archive via `/gsd-complete-milestone v1.1`
+**Current focus:** Planning the next milestone — run `/gsd-new-milestone`
 
 ## Current Position
 
-Phase: 4 (honest-observed-provenance) — COMPLETE & VERIFIED
-Plan: 1/1 complete
-Status: Milestone v1.1 100% complete (Phases 3–4) — ready to complete-milestone
-Last activity: 2026-06-22 — Phase 4 verified (UAT pass, security gate cleared)
+Phase: Milestone v1.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-22 — Milestone v1.1 completed and archived
 
 ## Performance Metrics
 
@@ -123,9 +123,9 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-06-22
-Stopped at: Phase 4 complete & verified — milestone v1.1 100% complete, ready to archive
+Stopped at: Milestone v1.1 completed and archived (tag v1.1) — awaiting next milestone
 Resume file: None
 
 ## Operator Next Steps
 
-- Archive the completed milestone: `/gsd-complete-milestone v1.1`
+- Start the next milestone with /gsd-new-milestone
