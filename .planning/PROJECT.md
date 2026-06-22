@@ -10,6 +10,19 @@ A reusable, distributable Python package that helps a person in a Technical Auth
 
 A TA (or anyone acting in that capacity) can reliably draft review-ready documentation faster than starting from scratch, with a human owning intent and review at every step — "quality at speed," without AI slop.
 
+## Current Milestone: v1.1 Live Copilot Path Hardening
+
+**Goal:** The real `dogen draft --provider copilot` loop runs end-to-end out of the box on an available model and records honest, observed provenance — closing the four gaps the first live run surfaced.
+
+**Target features:**
+- Operator-selectable drafting model with an available default — retire the hardcoded, unavailable `gpt-5`
+- Clean live error mapping — model-rejection and other backend errors surface as an actionable message + a nonzero exit, never a raw traceback (closes the accepted live error-mapping debt)
+- Permission handler that approves the already-read-only lookup allowlist, so non-interactive `grep`/`glob`/`view` reads are not denied
+- Model-family-aware parameters — `reasoning_effort` sent only to GPT-5-family models, omitted for Claude models that reject it
+- Honest provenance — `context_origins`/`tools_used` populated from observed tool-call events, completing the BL-01 honesty work (v1.0 stopped *fabricating* them; v1.1 *truthfully fills* them)
+
+**Context:** Pure hardening of the existing live path — no net-new domain features. The live `--provider copilot` path is manual-only (D-24, kept out of CI), so these are validated by manual live runs plus unit tests against a fake SDK.
+
 ## Requirements
 
 ### Validated
@@ -112,4 +125,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-20 after v1.0 MVP milestone*
+*Last updated: 2026-06-22 — v1.1 Live Copilot Path Hardening milestone started*
