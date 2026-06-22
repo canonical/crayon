@@ -69,7 +69,11 @@ against a fake/stub SDK; no CI live-call gate is added.
   3. After a successful live draft, `provenance.yaml`'s `tools_used` is non-empty and lists the tools the agent actually invoked, derived from observed tool-call events
   4. The same provenance population is exercised by a unit test against a fake/stub SDK that emits tool-call events (manual-only live path stays out of CI)
 
-**Plans**: TBD
+**Plans**: 1 plan
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Observe Copilot session tool-call events (`get_events()` → `TOOL_EXECUTION_START`), translate them in a pure `mapping.py` helper into `context_origins` (`view` read paths) + `tools_used` (`builtin:<name>`), attach via `model_copy`, and prove it with the fake-SDK criterion-4 test (PROV-01/02)
+
 **UI hint**: no
 
 ## Progress
@@ -79,4 +83,4 @@ against a fake/stub SDK; no CI live-call gate is added.
 | 1. Compliant Scaffold & Provider-Seam Boundary | v1.0 | 4/4 | Complete | 2026-06-19 |
 | 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | v1.0 | 4/4 | Complete | 2026-06-20 |
 | 3. Live Copilot path runs out of the box | v1.1 | 2/2 | Complete    | 2026-06-22 |
-| 4. Honest observed provenance | v1.1 | 0/? | Not started | - |
+| 4. Honest observed provenance | v1.1 | 0/1 | Planned | - |
