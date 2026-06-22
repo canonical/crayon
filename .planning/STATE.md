@@ -5,8 +5,8 @@ milestone_name: Live Copilot Path Hardening
 current_phase: 4
 current_phase_name: Honest observed provenance
 status: verifying
-stopped_at: Awaiting 03-02 Task 3 human-verify checkpoint (D-24 manual live runs)
-last_updated: "2026-06-22T11:14:27.283Z"
+stopped_at: Phase 4 context gathered
+last_updated: "2026-06-22T11:24:33.649Z"
 last_activity: 2026-06-22
 last_activity_desc: Phase 3 complete, transitioned to Phase 4
 progress:
@@ -119,9 +119,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-22T09:48:45.176Z
-Stopped at: Awaiting 03-02 Task 3 human-verify checkpoint (D-24 manual live runs)
-Resume file: .planning/phases/03-live-copilot-path-runs-out-of-the-box/03-02-PLAN.md (Task 3)
+Last session: 2026-06-22T11:24:33.645Z
+Stopped at: Phase 4 context gathered
+Resume file: .planning/phases/04-honest-observed-provenance/04-CONTEXT.md
 
 ## Operator Next Steps
 
