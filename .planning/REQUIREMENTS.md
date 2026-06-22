@@ -49,20 +49,21 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LIVE-01 | TBD | Pending |
-| LIVE-02 | TBD | Pending |
-| LIVE-03 | TBD | Pending |
-| ERR-01 | TBD | Pending |
-| ERR-02 | TBD | Pending |
-| PROV-01 | TBD | Pending |
-| PROV-02 | TBD | Pending |
+| LIVE-01 | Phase 3 | Pending |
+| LIVE-02 | Phase 3 | Pending |
+| LIVE-03 | Phase 3 | Pending |
+| ERR-01 | Phase 3 | Pending |
+| ERR-02 | Phase 3 | Pending |
+| PROV-01 | Phase 4 | Pending |
+| PROV-02 | Phase 4 | Pending |
 
 **Coverage:**
 
 - v1.1 requirements: 7 total
-- Mapped to phases: 0 (filled by roadmap)
-- Unmapped: 7 (pre-roadmap)
+- Mapped to phases: 7 (Phase 3: LIVE-01/02/03 + ERR-01/02; Phase 4: PROV-01/02)
+- Unmapped: 0
+- Orphaned: 0
 
 ---
 *Requirements defined: 2026-06-22*
-*Last updated: 2026-06-22 after initial v1.1 definition*
+*Last updated: 2026-06-22 after roadmap creation (Phases 3-4 mapped)*
