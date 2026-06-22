@@ -134,9 +134,14 @@ No separate REFACTOR commit was needed: the `_map_jsonrpc_error` helper was extr
 ## User Setup Required
 **Manual live verification is required and is by design off-CI (D-24).** This plan's Task 3 is a blocking `checkpoint:human-verify`: the real `dogen draft --provider copilot` end-to-end runs need an authenticated Copilot CLI (1.0.64-0) with a live token/network on the dev machine, which the CI/sandbox environment does not have. See the plan's Task 3 `<how-to-verify>` for the exact numbered steps (bare draft on the new default, a Claude-model draft, and a retired-`gpt-5` rejection check).
 
+## Live Verification (D-24) — APPROVED by operator
+- **Task 3 human-verify checkpoint: the operator replied "approved" on 2026-06-22.**
+- Per that checkpoint's `<done>`/`<resume-signal>` contract, "approved" is the operator's attestation that the off-CI live runs met all stated criteria: written drafts on the bare `gpt-5-mini` default and on `--model claude-sonnet-4.5`, grounded in auto-approved source reads (criteria 1-3 → LIVE-01/02/03), and a clear named model-rejection error with a nonzero exit on the retired `--model gpt-5` (criterion 5 → ERR-01).
+- The individual per-criterion command outputs were not separately reported to the framework and were not observed in this environment (no live token/network — D-24); this record reflects the operator's approval, not an automated observation. Combined with the green fake-SDK suite, it closes the phase's manual-verification gate.
+
 ## Next Phase Readiness
-- All autonomous wiring is complete and unit-proven; the adapter, mock seam, and CLI are ready for the live runs.
-- **Blocker (intentional):** the phase must NOT be marked complete until the human runs the D-24 live drafts and confirms criteria 1-4 produced written drafts plus criterion 5 produced a clean named model-rejection error with a nonzero exit.
+- All autonomous wiring is complete and unit-proven; the live runs are operator-approved (above). The adapter, mock seam, and CLI are ready.
+- Phase 4 (PROV-01/02) can now build on a working live draft to observe and record tool-call events.
 
 ## Self-Check: PASSED
 
