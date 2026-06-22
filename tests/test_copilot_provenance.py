@@ -89,8 +89,82 @@ def _tool_complete(tool_name: str) -> SessionEvent:
     return cast("SessionEvent", event)
 
 
-def test_helper_importable() -> None:
-    # Wave-0 RED scaffold: the helper does not exist yet. The next task turns
-    # this file green by implementing tool_events_to_provenance and adding the
-    # focused translation + end-to-end provenance tests.
-    assert callable(tool_events_to_provenance)
+# --- Pure-helper translation tests (PROV-01/02, D-02/D-03/D-05) ---
+
+
+def test_view_path_becomes_origin_and_tool() -> None:
+    # PROV-01/02: a view read records both the read path (origin) and the
+    # builtin:view identifier.
+    origins, tools = tool_events_to_provenance(
+        [_tool_start("view", {"path": "README.md"})]
+    )
+    assert origins == ["README.md"]
+    assert tools == ["builtin:view"]
+
+
+def test_duplicate_view_is_deduped() -> None:
+    # D-02/D-03: first-seen de-dup — a repeated view of the same path appears once.
+    origins, tools = tool_events_to_provenance(
+        [
+            _tool_start("view", {"path": "README.md"}),
+            _tool_start("view", {"path": "README.md"}),
+        ]
+    )
+    assert origins == ["README.md"]
+    assert tools == ["builtin:view"]
+
+
+def test_grep_adds_tool_but_no_origin() -> None:
+    # grep is a discovery tool — its pattern is not a guaranteed content read
+    # (omit-on-doubt): record the tool, never a context origin.
+    origins, tools = tool_events_to_provenance(
+        [_tool_start("grep", {"pattern": "TODO"})]
+    )
+    assert origins == []
+    assert tools == ["builtin:grep"]
+
+
+def test_glob_adds_tool_but_no_origin() -> None:
+    origins, tools = tool_events_to_provenance(
+        [_tool_start("glob", {"pattern": "**/*.md"})]
+    )
+    assert origins == []
+    assert tools == ["builtin:glob"]
+
+
+def test_first_seen_ordering_across_mixed_sequence() -> None:
+    # The RESEARCH-verified mixed sequence: first-seen order, view's path the
+    # only origin, duplicate view de-duped.
+    origins, tools = tool_events_to_provenance(
+        [
+            _tool_start("view", {"path": "README.md"}),
+            _tool_start("grep", {"pattern": "TODO"}),
+            _tool_start("view", {"path": "README.md"}),
+            _tool_start("glob", {"pattern": "**/*.md"}),
+        ]
+    )
+    assert origins == ["README.md"]
+    assert tools == ["builtin:view", "builtin:grep", "builtin:glob"]
+
+
+def test_empty_events_is_honest_empty() -> None:
+    # D-05/BL-01: no observed events → both lists honestly empty.
+    assert tool_events_to_provenance([]) == ([], [])
+
+
+def test_malformed_arguments_none_does_not_crash() -> None:
+    # T-04-01 / Pitfall 2: a view event whose arguments is None must not raise
+    # and must record no origin (omit-on-doubt, V5).
+    origins, tools = tool_events_to_provenance([_tool_start("view", None)])
+    assert origins == []
+    assert tools == ["builtin:view"]
+
+
+def test_complete_event_contributes_nothing() -> None:
+    # Pitfall 1: only TOOL_EXECUTION_START is counted — a COMPLETE in the
+    # history carries no tool_name/arguments and must contribute nothing.
+    origins, tools = tool_events_to_provenance(
+        [_tool_start("view", {"path": "README.md"}), _tool_complete("view")]
+    )
+    assert origins == ["README.md"]
+    assert tools == ["builtin:view"]
