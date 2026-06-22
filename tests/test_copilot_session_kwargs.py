@@ -33,7 +33,6 @@ import pytest
 from copilot.session import PermissionHandler
 
 from dogen.adapters.copilot.provider import CopilotDraftingProvider
-
 from tests.conftest import _draft
 
 
