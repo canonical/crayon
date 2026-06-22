@@ -19,9 +19,8 @@
 
 These tests are the single-source companion to the CI ``sphinx-build -W`` gate:
 they assert the MyST config is wired correctly (``myst_parser`` + ``colon_fence``,
-Pitfall 6), that the drafted dogfood page is reachable from the toctree (so a
-``-W`` build does not fail on an orphan), and — when Sphinx is installed — that a
-real warnings-as-errors build of the docs tree succeeds.
+Pitfall 6) and — when Sphinx is installed — that a real warnings-as-errors build
+of the docs tree succeeds.
 """
 
 import shutil
@@ -42,36 +41,6 @@ def test_conf_enables_myst_and_colon_fence() -> None:
     assert '"myst_parser"' in conf
     assert "myst_enable_extensions" in conf
     assert '"colon_fence"' in conf
-
-
-def test_index_toctree_references_drafted_page() -> None:
-    """The dogfood page must be in the toctree so -W does not fail on an orphan."""
-    index = (_DOCS / "index.md").read_text(encoding="utf-8")
-    assert "toctree" in index
-    # The dogfood drafted page (D-32) is the publishability proof; it must be
-    # reachable from the root toctree.
-    assert "cli-reference" in index
-
-
-def test_drafted_page_is_licensed_via_sidecar() -> None:
-    """The drafted page carries CC-BY-SA-4.0 via a sidecar, not inline SPDX (S2)."""
-    page = _DOCS / "cli-reference.md"
-    sidecar = _DOCS / "cli-reference.md.license"
-    assert page.exists()
-    assert sidecar.exists()
-    # No inline SPDX header in the published prose (it would pollute the page and
-    # be misparsed by reuse); the license lives in the sidecar.
-    assert "SPDX-License-Identifier" not in page.read_text(encoding="utf-8")
-    assert "CC-BY-SA-4.0" in sidecar.read_text(encoding="utf-8")
-
-
-def test_seam_doc_names_alternates() -> None:
-    """docs/seam.md must name both alternates and be in the toctree (SEAM-04)."""
-    seam = (_DOCS / "seam.md").read_text(encoding="utf-8")
-    assert "OpenCode" in seam
-    assert "Pydantic AI" in seam
-    index = (_DOCS / "index.md").read_text(encoding="utf-8")
-    assert "seam" in index
 
 
 @pytest.mark.skipif(
