@@ -3,41 +3,41 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Live Copilot Path Hardening
 current_phase: 4
-current_phase_name: honest-observed-provenance
-status: verifying
-stopped_at: Phase 4 context gathered
-last_updated: "2026-06-22T11:57:14.317Z"
+status: milestone-complete
+stopped_at: Phase 4 verified — milestone v1.1 100% complete
+last_updated: "2026-06-22T17:24:44.748Z"
 last_activity: 2026-06-22
-last_activity_desc: Phase 4 execution started
+last_activity_desc: Phase 4 verified (UAT pass + security gate) — milestone v1.1 complete
 progress:
   total_phases: 2
   completed_phases: 2
   total_plans: 3
   completed_plans: 3
   percent: 100
+current_phase_name: honest-observed-provenance
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-22 — v1.1 Live Copilot Path Hardening milestone started)
+See: .planning/PROJECT.md (updated 2026-06-22 — v1.1 Phase 4 complete; milestone v1.1 100% done)
 
 **Core value:** A TA (or anyone acting in that capacity) can reliably draft review-ready documentation faster than from scratch, with a human owning intent and review at every step — "quality at speed," without AI slop.
-**Current focus:** Phase 4 — honest-observed-provenance
+**Current focus:** Milestone v1.1 complete — ready to archive via `/gsd-complete-milestone v1.1`
 
 ## Current Position
 
-Phase: 4 (honest-observed-provenance) — EXECUTING
-Plan: 1 of 1
-Status: Phase complete — ready for verification
-Last activity: 2026-06-22 — Phase 4 execution started
+Phase: 4 (honest-observed-provenance) — COMPLETE & VERIFIED
+Plan: 1/1 complete
+Status: Milestone v1.1 100% complete (Phases 3–4) — ready to complete-milestone
+Last activity: 2026-06-22 — Phase 4 verified (UAT pass, security gate cleared)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 10
+- Total plans completed: 11
 - Average duration: — min
 - Total execution time: 0.0 hours
 
@@ -48,6 +48,7 @@ Last activity: 2026-06-22 — Phase 4 execution started
 | 01 | 4 | - | - |
 | 02 | 4 | - | - |
 | 3 | 2 | - | - |
+| 4 | 1 | - | - |
 
 **Recent Trend:**
 
@@ -77,6 +78,7 @@ Recent decisions affecting current work:
 - 03-02: family-gate optional SDK params by computing value-or-None and passing unconditionally (SDK drops falsy) — used for `reasoning_effort` (LIVE-03).
 - 03-02: split the overloaded JSON-RPC `-32603` by requiring BOTH the code AND the "is not available" message signature — model-rejection (ERR-01) vs generic backend error (ERR-02), Pitfall 1.
 - 03-02: the CLI classifies `ModelRejectedError`/`BackendUnavailableError` by `type(exc).__name__` so the `--provider mock` path never imports the adapter or SDK (D-25).
+- 04-01: provenance is *observed* — a pure `tool_events_to_provenance` seam helper translates `TOOL_EXECUTION_START` events into `context_origins` (`view` paths only) + `tools_used` (`builtin:<name>`), honest-empty on doubt, never back-filled from `sources` (D-02/D-05/D-37). Live D-24 run confirmed the real CLI emits the expected event shape.
 - v1.1 is a brownfield hardening milestone — no net-new domain features; closes exactly the four gaps the first real live `dogen draft --provider copilot` run surfaced (7 requirements: LIVE-01/02/03, ERR-01/02, PROV-01/02).
 - Roadmap split into 2 phases (coarse granularity): Phase 3 = "live path runs out of the box" (LIVE-01/02/03 + clean error mapping ERR-01/02, same code surface, one live-run verification); Phase 4 = "honest observed provenance" (PROV-01/02, depends on a working live draft to observe tool-call events).
 - Implementation surface is almost entirely the single Copilot adapter (`src/dogen/adapters/copilot/provider.py`, `mapping.py`, `tools.py`) plus the existing orchestrator/CLI seam.
@@ -94,15 +96,15 @@ None yet.
 
 ### Blockers/Concerns
 
-None open. Carried context from the first live run (see MEMORY.md "Live Copilot path findings") is exactly what Phases 3-4 address:
+None open. All five gaps the first live run surfaced (see MEMORY.md "Live Copilot path findings") are now **closed and verified** across Phases 3–4:
 
-- gpt-5 unavailable on a standard account → LIVE-01 (operator-selectable model + available default).
-- No permission handler → non-interactive `grep`/`glob`/`view` reads denied → LIVE-02 (auto-approve read-only allowlist).
-- `reasoning_effort` rejected by Claude-family models → LIVE-03 (model-family-aware parameter).
-- Empty `context_origins`/`tools_used` → PROV-01/02 (populate from observed tool-call events).
-- Raw `JsonRpcError` traceback on model rejection → ERR-01/02 (clean handled failure + nonzero exit).
+- ✓ gpt-5 unavailable → LIVE-01 (operator-selectable model + `gpt-5-mini` default) — Phase 3.
+- ✓ No permission handler → LIVE-02 (`approve_all` auto-approves the read-only `grep`/`glob`/`view` allowlist) — Phase 3.
+- ✓ `reasoning_effort` rejected by Claude-family models → LIVE-03 (model-family-aware parameter) — Phase 3.
+- ✓ Raw `JsonRpcError` traceback on model rejection → ERR-01/02 (clean handled failure + nonzero exit) — Phase 3.
+- ✓ Empty `context_origins`/`tools_used` → PROV-01/02 (populated from observed tool-call events; D-24 live run confirmed 2026-06-22) — Phase 4.
 
-Carried tech debt (cosmetic, CI green): SKEL-02 tags-only bookkeeping (v1.0). The live-backend error-mapping breadth item is now scheduled work (ERR-01/02), not carried debt.
+Carried tech debt (cosmetic, CI green): SKEL-02 tags-only bookkeeping (v1.0) — still open, deferred.
 
 ### Quick Tasks Completed
 
@@ -120,10 +122,10 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-22T11:57:05.459Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-honest-observed-provenance/04-CONTEXT.md
+Last session: 2026-06-22
+Stopped at: Phase 4 complete & verified — milestone v1.1 100% complete, ready to archive
+Resume file: None
 
 ## Operator Next Steps
 
-- Plan the first v1.1 phase: `/gsd-plan-phase 3`
+- Archive the completed milestone: `/gsd-complete-milestone v1.1`

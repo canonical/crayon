@@ -83,4 +83,4 @@ against a fake/stub SDK; no CI live-call gate is added.
 | 1. Compliant Scaffold & Provider-Seam Boundary | v1.0 | 4/4 | Complete | 2026-06-19 |
 | 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | v1.0 | 4/4 | Complete | 2026-06-20 |
 | 3. Live Copilot path runs out of the box | v1.1 | 2/2 | Complete    | 2026-06-22 |
-| 4. Honest observed provenance | v1.1 | 1/1 | Complete   | 2026-06-22 |
+| 4. Honest observed provenance | v1.1 | 1/1 | Complete    | 2026-06-22 |
