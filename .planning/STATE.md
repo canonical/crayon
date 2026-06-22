@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-06-22T07:49:26.277Z"
 last_activity: 2026-06-22
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-20 after v1.0 MVP milestone)
+See: .planning/PROJECT.md (updated 2026-06-22 — v1.1 Live Copilot Path Hardening milestone started)
 
 **Core value:** A TA (or anyone acting in that capacity) can reliably draft review-ready documentation faster than from scratch, with a human owning intent and review at every step — "quality at speed," without AI slop.
-**Current focus:** v1.0 MVP shipped — planning next milestone (v1.1) via `/gsd-new-milestone`
+**Current focus:** v1.1 roadmap created (Phases 3-4) — closing the four live-Copilot gaps; ready to plan Phase 3.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 3 — Live Copilot path runs out of the box (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-22 — Milestone v1.1 started
+Status: Roadmap created — ready for `/gsd-plan-phase 3`
+Last activity: 2026-06-22 — v1.1 roadmap created (Phases 3-4, 7/7 requirements mapped)
 
 ## Performance Metrics
 
@@ -66,16 +66,14 @@ Last activity: 2026-06-22 — Milestone v1.1 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Milestone scope = MVP: walking skeleton (A2) + planning schema v0 (F1) + foundations (seam, observability, licensing). v2 destination deferred.
-- A2 and F1 are inseparable — kept together in Phase 2 (skeleton needs the schema to write to; schema needs a producer to validate it).
-- The provider-seam boundary + CI guardrail + REUSE licensing are commit-1 foundations — set in Phase 1 before any drafting logic.
-- [Phase ?]: Licensing machinery established commit-1: canonical.jinja2 template renders coding-guide section 7 byte-for-byte, GPL-3.0-only text + top-level LICENSE, per-file annotation via spdx prefix, no REUSE.toml
-- [Phase ?]: Phase 1 scaffold (01-02): hexagonal src-layout dogen (core/adapters/copilot/cli); AST seam guardrail single-sourced by pytest; PEP 639 License-Expression GPL-3.0-only proven in wheel METADATA; no github-copilot-sdk dep (D-08); uv.lock committed (D-18)
-- [Phase ?]: [Phase 1]: OSS hygiene set (01-03) — README/CONTRIBUTING(CLA, D-06)/SECURITY/CODE_OF_CONDUCT/.editorconfig/.gitignore each REUSE-annotated (LIC-01); .md + .gitignore via .license sidecars, .editorconfig inline; uv.lock not ignored (D-18)
-- [Phase ?]: [Phase 2 plan 04]: docs/content license resolved = CC-BY-SA-4.0 (D-44); licensing.md §1/§2/§3.5 reconciled; applied via .license sidecars
-- [Phase ?]: [Phase 2 plan 04]: docs/seam.md treated as published content — relicensed CC-BY-SA-4.0 via sidecar, inline GPL header stripped
-- [Phase ?]: [Phase 2 plan 04]: .dogen/ audit surface committed (not gitignored) as AC5 evidence (D-24); REUSE.toml .dogen/** glob under GPL-3.0-only keeps it reuse-lint-clean
-- [Phase ?]: [Phase 2 plan 04]: SKEL-02 proven by a real Python-3.12 sphinx-build -W CI docs job (D-43); D-17 docs-toolchain deferral resolved
+- v1.1 is a brownfield hardening milestone — no net-new domain features; closes exactly the four gaps the first real live `dogen draft --provider copilot` run surfaced (7 requirements: LIVE-01/02/03, ERR-01/02, PROV-01/02).
+- Roadmap split into 2 phases (coarse granularity): Phase 3 = "live path runs out of the box" (LIVE-01/02/03 + clean error mapping ERR-01/02, same code surface, one live-run verification); Phase 4 = "honest observed provenance" (PROV-01/02, depends on a working live draft to observe tool-call events).
+- Implementation surface is almost entirely the single Copilot adapter (`src/dogen/adapters/copilot/provider.py`, `mapping.py`, `tools.py`) plus the existing orchestrator/CLI seam.
+- Live path stays manual-only (D-24, out of CI — no token/network). Verification = manual live runs PLUS unit tests against a fake/stub SDK; no CI live-call gate is added (explicitly out of scope).
+- ERR-01 closes accepted v1.0 tech-debt item #4 (raw `JsonRpcError` traceback on model rejection); PROV-01/02 complete the BL-01 honesty work (v1.0 stopped fabricating provenance; v1.1 truthfully fills it).
+- Milestone scope = MVP: walking skeleton (A2) + planning schema v0 (F1) + foundations (seam, observability, licensing). v2 destination deferred. *(v1.0)*
+- A2 and F1 are inseparable — kept together in Phase 2. *(v1.0)*
+- The provider-seam boundary + CI guardrail + REUSE licensing are commit-1 foundations — set in Phase 1 before any drafting logic. *(v1.0)*
 
 ### Pending Todos
 
@@ -85,14 +83,15 @@ None yet.
 
 ### Blockers/Concerns
 
-None open. All v1.0 deferred decisions were resolved during the milestone:
+None open. Carried context from the first live run (see MEMORY.md "Live Copilot path findings") is exactly what Phases 3-4 address:
 
-- OBS-02 → resolved: OTel-API in core + Logfire at the composition root (`send_to_logfire=False`).
-- SEAM-04 → resolved: design-only — `DraftingProvider` port documented Copilot-agnostic; OpenCode SDK + Pydantic AI named as un-built alternates; mock proves swappability.
-- LIC-02 → resolved: GPL-3.0-only core; CC-BY-SA-4.0 for published docs/content (D-44).
-- Research flag → resolved: the `github-copilot-sdk==1.0.2` API names were verified live against the installed package (CLI runtime `1.0.64-0` pinned as the SKEL-05 bump-gate).
+- gpt-5 unavailable on a standard account → LIVE-01 (operator-selectable model + available default).
+- No permission handler → non-interactive `grep`/`glob`/`view` reads denied → LIVE-02 (auto-approve read-only allowlist).
+- `reasoning_effort` rejected by Claude-family models → LIVE-03 (model-family-aware parameter).
+- Empty `context_origins`/`tools_used` → PROV-01/02 (populate from observed tool-call events).
+- Raw `JsonRpcError` traceback on model rejection → ERR-01/02 (clean handled failure + nonzero exit).
 
-Carried tech debt (cosmetic, CI green): SKEL-02 tags-only bookkeeping; live-backend error-mapping breadth on the manual-only Copilot path. See MILESTONES.md.
+Carried tech debt (cosmetic, CI green): SKEL-02 tags-only bookkeeping (v1.0). The live-backend error-mapping breadth item is now scheduled work (ERR-01/02), not carried debt.
 
 ### Quick Tasks Completed
 
@@ -110,10 +109,10 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-20T01:02:10.854Z
-Stopped at: Completed 02-04-PLAN.md (phase 02 final plan)
+Last session: 2026-06-22 — v1.1 roadmap created
+Stopped at: Roadmap written (Phases 3-4); REQUIREMENTS.md traceability filled (7/7)
 Resume file: None
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan the first v1.1 phase: `/gsd-plan-phase 3`
