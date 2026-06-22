@@ -19,7 +19,8 @@
 
 The Wave-1 implementation tests (``test_copilot_session_kwargs.py``,
 ``test_copilot_model_selection.py``, ``test_copilot_error_mapping.py`` in plan
-03-02) all drive the real :class:`~dogen.adapters.copilot.provider.CopilotDraftingProvider`
+03-02) all drive the real
+:class:`~dogen.adapters.copilot.provider.CopilotDraftingProvider`
 against a stubbed ``CopilotClient`` injected at the true SDK boundary
 (``dogen.adapters.copilot.provider.CopilotClient``). No live SDK call or network
 access occurs — pytest only ever touches these stubs.
@@ -269,7 +270,8 @@ def install_stub_client(monkeypatch: pytest.MonkeyPatch):
     Returns
     -------
     callable
-        ``install(*, status_error=None, session_error=None, send_error=None) -> _StubClient``.
+        ``install(*, status_error=None, session_error=None, send_error=None)``
+        returning the injected ``_StubClient``.
     """
 
     def _install(
