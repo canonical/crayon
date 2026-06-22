@@ -371,17 +371,19 @@ Note: `Effort` is already importable in `mock_provider` from `core.models` witho
 
 **Note:** Both assumptions are LOW risk and degrade gracefully (worse case = a clean ERR-02 message instead of a clean ERR-01 message, or a clean ERR-01 on a retired default). Neither can produce an uncaught traceback, which is the property the phase guarantees.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the `effort` kwarg be wired through `select_provider` now, or deferred?**
    - What we know: CONTEXT.md D-05/Discretion says model is the LIVE-01 requirement; effort threading is optional scaffolding (the `Effort` enum + per-pass default already exist, and there is no `--effort` flag in v1.1 scope).
    - What's unclear: whether the planner wants the seam ready for a future `--effort` or kept minimal.
    - Recommendation: wire the `effort` *kwarg* through `select_provider` (cheap, symmetric with `model`, ignored by the mock) but do **not** add a `--effort` CLI option (deferred). This keeps the seam future-ready without scope creep.
+   - **RESOLVED:** wired now — plan `03-02` Task 2 extends `select_provider(name, *, model=None, effort=None)` and forwards `effort`; no `--effort` CLI option is added (deferred per CONTEXT.md Discretion).
 
 2. **Dict-dispatch vs. inline `if` for the CLI error classifier.**
    - What we know: the existing classifier (`cli/main.py:233`) uses an inline `if type(exc).__name__ == ...`; coding-guide §2 prefers dict dispatch over if/elif ladders for assigning one value.
    - What's unclear: whether two error types justify converting to a dict-dispatch `{name: (message_template, code)}`.
    - Recommendation: two cases is the borderline "rule of three" case — either is defensible. A small `{name: render_fn}` map reads cleanly and pre-empts a third error type; the planner/executor chooses (Discretion).
+   - **RESOLVED:** left to executor discretion (plan `03-02` Task 2) — both an inline `if` chain and a small `{name: render_fn}` map are accepted for two error types; neither is mandated.
 
 ## Environment Availability
 
