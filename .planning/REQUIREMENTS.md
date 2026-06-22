@@ -12,14 +12,14 @@ The thinnest set of fixes that makes the real Copilot drafting path run end-to-e
 
 ### Live Drafting Path (LIVE) — the real `--provider copilot` loop works out of the box
 
-- [ ] **LIVE-01**: Operator can choose the drafting model on `dogen draft` (e.g. a `--model` option), and the default is a model available on a standard Copilot account — the hardcoded, unavailable `gpt-5` default is retired *(Finding 1)*
-- [ ] **LIVE-02**: In a non-interactive run the agent can actually read the human-pointed sources — the Copilot provider supplies a permission handler that auto-approves the already-read-only lookup allowlist (`grep`/`glob`/`view`), so source reads are not denied. Auto-approval is safe because the toolset is read-only with write/exec/network already denied *(Finding 2)*
-- [ ] **LIVE-03**: Drafting succeeds on any available model regardless of family — the provider sends `reasoning_effort` only to models that accept it (GPT-5 family) and omits it for Claude-family models that reject it, so selecting a Claude model no longer errors on the parameter *(Finding 3)*
+- [x] **LIVE-01**: Operator can choose the drafting model on `dogen draft` (e.g. a `--model` option), and the default is a model available on a standard Copilot account — the hardcoded, unavailable `gpt-5` default is retired *(Finding 1)*
+- [x] **LIVE-02**: In a non-interactive run the agent can actually read the human-pointed sources — the Copilot provider supplies a permission handler that auto-approves the already-read-only lookup allowlist (`grep`/`glob`/`view`), so source reads are not denied. Auto-approval is safe because the toolset is read-only with write/exec/network already denied *(Finding 2)*
+- [x] **LIVE-03**: Drafting succeeds on any available model regardless of family — the provider sends `reasoning_effort` only to models that accept it (GPT-5 family) and omits it for Claude-family models that reject it, so selecting a Claude model no longer errors on the parameter *(Finding 3)*
 
 ### Live Error Mapping (ERR) — clean failures, never a raw traceback (closes accepted debt #4)
 
-- [ ] **ERR-01**: When the backend rejects the requested model (e.g. a JSON-RPC `-32603 Model "X" is not available`), `dogen draft` exits nonzero with a clear, actionable message naming the rejected model — never a raw `JsonRpcError` traceback *(Finding 1 / known debt item #4)*
-- [ ] **ERR-02**: Other live backend / JSON-RPC errors raised on the draft path are classified into a handled failure with a clear message and a nonzero exit — extending the v1.0 "backend unavailable" handling across the live-error surface — never an uncaught crash *(Finding 1, generalised)*
+- [x] **ERR-01**: When the backend rejects the requested model (e.g. a JSON-RPC `-32603 Model "X" is not available`), `dogen draft` exits nonzero with a clear, actionable message naming the rejected model — never a raw `JsonRpcError` traceback *(Finding 1 / known debt item #4)*
+- [x] **ERR-02**: Other live backend / JSON-RPC errors raised on the draft path are classified into a handled failure with a clear message and a nonzero exit — extending the v1.0 "backend unavailable" handling across the live-error surface — never an uncaught crash *(Finding 1, generalised)*
 
 ### Honest Provenance (PROV) — the audit surface reflects what actually happened (completes BL-01)
 
@@ -49,11 +49,11 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LIVE-01 | Phase 3 | Pending |
-| LIVE-02 | Phase 3 | Pending |
-| LIVE-03 | Phase 3 | Pending |
-| ERR-01 | Phase 3 | Pending |
-| ERR-02 | Phase 3 | Pending |
+| LIVE-01 | Phase 3 | Complete |
+| LIVE-02 | Phase 3 | Complete |
+| LIVE-03 | Phase 3 | Complete |
+| ERR-01 | Phase 3 | Complete |
+| ERR-02 | Phase 3 | Complete |
 | PROV-01 | Phase 4 | Pending |
 | PROV-02 | Phase 4 | Pending |
 
