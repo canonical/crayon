@@ -39,7 +39,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, cast
 
+import pytest
+
 from dogen.adapters.copilot.mapping import tool_events_to_provenance
+from dogen.adapters.copilot.provider import CopilotDraftingProvider
+
+from .conftest import _draft
 
 if TYPE_CHECKING:
     from copilot import SessionEvent
@@ -168,3 +173,32 @@ def test_complete_event_contributes_nothing() -> None:
     )
     assert origins == ["README.md"]
     assert tools == ["builtin:view"]
+
+
+# --- Fake-SDK end-to-end provenance tests (criterion 4, D-06) ---
+
+
+@pytest.mark.asyncio
+async def test_draft_populates_provenance_from_observed_events(
+    install_stub_client,
+) -> None:
+    # Criterion 4: a scripted get_events() history drives the real provider
+    # through _run_draft and the populated lists reach the DraftResult.
+    install_stub_client(
+        events=[
+            _tool_start("view", {"path": "README.md"}),
+            _tool_start("grep", {"pattern": "TODO"}),
+        ]
+    )
+    result = await _draft(CopilotDraftingProvider())
+    assert result.context_origins == ["README.md"]
+    assert result.tools_used == ["builtin:view", "builtin:grep"]
+
+
+@pytest.mark.asyncio
+async def test_draft_honest_empty_when_no_events(install_stub_client) -> None:
+    # D-05/BL-01: no observed events → both lists honestly empty end-to-end.
+    install_stub_client()
+    result = await _draft(CopilotDraftingProvider())
+    assert result.context_origins == []
+    assert result.tools_used == []
