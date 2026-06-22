@@ -28,7 +28,7 @@ gaps across 7 requirements. The live path is **manual-only** (D-24, kept out of 
 token or network in CI), so phases are validated by manual live runs **plus** unit tests
 against a fake/stub SDK; no CI live-call gate is added.
 
-- [ ] **Phase 3: Live Copilot path runs out of the box** - Operator selects an available model, non-interactive source reads are allowed, any model family drafts successfully, and every failure surfaces as a clean message + nonzero exit instead of a traceback (autonomous code done 2026-06-22; awaiting D-24 manual live-run verification)
+- [x] **Phase 3: Live Copilot path runs out of the box** - Operator selects an available model, non-interactive source reads are allowed, any model family drafts successfully, and every failure surfaces as a clean message + nonzero exit instead of a traceback (autonomous code done 2026-06-22; awaiting D-24 manual live-run verification) (completed 2026-06-22)
 - [ ] **Phase 4: Honest observed provenance** - After a successful live draft, `provenance.yaml` truthfully records what the agent actually read and which tools it actually invoked, derived from observed tool-call events
 
 ## Phase Details
@@ -78,5 +78,5 @@ against a fake/stub SDK; no CI live-call gate is added.
 |-------|-----------|----------------|--------|-----------|
 | 1. Compliant Scaffold & Provider-Seam Boundary | v1.0 | 4/4 | Complete | 2026-06-19 |
 | 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | v1.0 | 4/4 | Complete | 2026-06-20 |
-| 3. Live Copilot path runs out of the box | v1.1 | 2/2 | Awaiting live-run checkpoint | - |
+| 3. Live Copilot path runs out of the box | v1.1 | 2/2 | Complete    | 2026-06-22 |
 | 4. Honest observed provenance | v1.1 | 0/? | Not started | - |
