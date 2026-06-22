@@ -30,6 +30,7 @@ A TA (or anyone acting in that capacity) can reliably draft review-ready documen
 <!-- Shipped and confirmed valuable. -->
 
 - ✓ **Walking-skeleton foundation — v1.0 (Phases 1–2):** the end-to-end Mode-A mechanism is proven on a single unit — the provider-seam abstraction (a deterministic mock *and* the real Copilot SDK behind one `DraftingProvider` port, CI-enforced), provable HITL (recorded steering gates drafting; `draft` refuses with no side effects otherwise), SDK-independent observability correlated to the provenance record, the F1 audit/provenance schema (`schema_version: 0`, reserved verification fields), and Sphinx-publishable MyST output proven by a warnings-as-errors build — all stopping before any commit. The full-scale Active items below (multi-product scale, brownfield ingestion, layered customization, onboarding scraper) remain hypotheses until proven beyond this thin slice.
+- ✓ **Live Copilot path runs out of the box — v1.1 (Phase 3, LIVE-01/02/03 + ERR-01/02):** the real `dogen draft --provider copilot` loop works without hand-holding — an available default model (`gpt-5-mini`) plus an operator `--model` flag (no more hardcoded-unavailable `gpt-5`); a `PermissionHandler.approve_all` handler that auto-approves the read-only `grep`/`glob`/`view` allowlist so non-interactive source reads are not denied; model-family-aware `reasoning_effort` (sent to GPT-5 family, omitted for Claude); and clean live error mapping — a backend model rejection names the model and exits nonzero, all other JSON-RPC/backend errors (draft *and* status path) become a handled `BackendUnavailableError`, never a raw traceback. Validated by a green fake-SDK unit suite (121 tests) and operator-approved D-24 manual live runs.
 
 ### Active
 
@@ -125,4 +126,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-22 — v1.1 Live Copilot Path Hardening milestone started*
+*Last updated: 2026-06-22 — v1.1 Phase 3 complete (live Copilot path runs out of the box: LIVE-01/02/03 + ERR-01/02); Phase 4 (honest observed provenance) next*
