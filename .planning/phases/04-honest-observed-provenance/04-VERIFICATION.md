@@ -1,14 +1,16 @@
 ---
 phase: 04-honest-observed-provenance
 verified: 2026-06-22T00:00:00Z
-status: human_needed
-score: 5/6 must-haves verified
+status: verified
+human_verified: 2026-06-22T13:20:00Z
+score: 6/6 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
   - test: "Run `dogen draft --provider copilot` against a real Copilot account and inspect the generated `provenance.yaml`"
     expected: "`context_origins` is non-empty and lists the file paths the agent actually read via the `view` tool; `tools_used` is non-empty and lists the `builtin:<name>` identifiers the agent invoked — both derived from live session events, not from `unit.sources`"
     why_human: "The live Copilot path is manually-only (D-24) — CI has no token or network access. The fake-SDK tests prove the code path works with scripted events; only a real session confirms the SDK actually emits `TOOL_EXECUTION_START` events with `arguments[\"path\"]` populated as expected in production."
+    outcome: "CONFIRMED 2026-06-22 via /gsd-verify-work 4 (UAT Test 1 = pass). Operator ran the live draft and confirmed `context_origins`/`tools_used` were populated from observed session events, distinct from `sources`."
 ---
 
 # Phase 4: Honest Observed Provenance Verification Report
@@ -24,14 +26,14 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | After a draft that observed read tools, `DraftResult.context_origins` lists the view-read file paths (first-seen, de-duped), non-empty (PROV-01) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Code path fully implemented and wired; fake-SDK test `test_draft_populates_provenance_from_observed_events` passes with scripted events. Live confirmation is D-24 manual-only — see Human Verification. |
+| 1 | After a draft that observed read tools, `DraftResult.context_origins` lists the view-read file paths (first-seen, de-duped), non-empty (PROV-01) | ✓ VERIFIED (live) | Code path fully implemented and wired; fake-SDK test `test_draft_populates_provenance_from_observed_events` passes with scripted events. **D-24 live confirmation passed 2026-06-22** (UAT Test 1): a real `dogen draft --provider copilot` run populated `context_origins` from observed `view` reads. |
 | 2 | `context_origins` records what was READ (view path), kept distinct from the human-pointed `unit.sources` — never copied from sources (PROV-01 / D-02 / D-37) | ✓ VERIFIED | `_record_generation` (orchestrator.py:250–297) receives only `result`, not `unit.sources`. `context_origins=list(result.context_origins)` at line 291. The docstring at line 259 explicitly names the D-37 ban. `test_generation_does_not_fabricate_context_origins` passes (1 passed). |
-| 3 | After a draft that observed tools, `DraftResult.tools_used` lists `builtin:<name>` identifiers (first-seen, de-duped), non-empty (PROV-02) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Code path fully implemented and wired; fake-SDK test `test_draft_populates_provenance_from_observed_events` passes with scripted events. Live confirmation is D-24 manual-only — see Human Verification. |
+| 3 | After a draft that observed tools, `DraftResult.tools_used` lists `builtin:<name>` identifiers (first-seen, de-duped), non-empty (PROV-02) | ✓ VERIFIED (live) | Code path fully implemented and wired; fake-SDK test `test_draft_populates_provenance_from_observed_events` passes with scripted events. **D-24 live confirmation passed 2026-06-22** (UAT Test 1): a real `dogen draft --provider copilot` run populated `tools_used` with `builtin:<name>` identifiers from observed events. |
 | 4 | A fake-SDK test whose stub `session.get_events()` emits scripted `TOOL_EXECUTION_START` events drives the full provider→orchestrator path and asserts the populated lists reach the recorded `Generation` (criterion 4 / D-06) | ✓ VERIFIED | `tests/test_copilot_provenance.py`: 10/10 tests pass. `test_draft_populates_provenance_from_observed_events` and `test_draft_honest_empty_when_no_events` drive `CopilotDraftingProvider` with a stubbed SDK session whose `get_events()` returns scripted events; both assert on `DraftResult.context_origins` and `tools_used`. Confirmed by running `uv run pytest tests/test_copilot_provenance.py -v` — 10 passed. |
 | 5 | When no tool-execution events are observed, both lists stay honestly empty — `test_generation_does_not_fabricate_context_origins` still passes (D-05 / BL-01) | ✓ VERIFIED | `uv run pytest tests/test_orchestrator_hitl.py -k does_not_fabricate -v` — 1 passed. `test_draft_honest_empty_when_no_events` also passes. `_StubSession.get_events()` defaults to `[]` — existing happy-path tests remain green. |
 | 6 | No SDK shape (`SessionEvent` / `SessionEventType` / `ToolExecutionStartData`) crosses into `core/` — `tests/test_seam.py` and `tests/test_seam_importlinter.py` still pass (D-04 / SEAM-01/03) | ✓ VERIFIED | `uv run pytest tests/test_seam.py tests/test_seam_importlinter.py -v` — 2 passed. `tool_events_to_provenance` returns `tuple[list[str], list[str]]` only. `conftest.py` has zero top-level `from copilot` / `import copilot` lines (confirmed by grep returning empty). |
 
-**Score:** 4/6 truths verified (2 present + behavior-unverified due to D-24 live-run constraint; 0 failed)
+**Score:** 6/6 truths verified (the 2 previously D-24-gated truths confirmed by the live run on 2026-06-22; 0 failed)
 
 ### Required Artifacts
 
@@ -91,7 +93,9 @@ WR-01: `effort_used` in the provenance record reflects the *requested* effort ra
 
 ### Human Verification Required
 
-#### 1. Live Draft Provenance Confirmation (D-24)
+#### 1. Live Draft Provenance Confirmation (D-24) — ✅ CONFIRMED 2026-06-22
+
+**Outcome:** Passed via `/gsd-verify-work 4` (UAT Test 1 = pass). The operator ran a live `dogen draft --provider copilot` and confirmed the latest `generations[]` entry had non-empty `context_origins` (observed `view` reads) and `tools_used` (`builtin:<name>`), distinct from `unit.sources`. The real Copilot CLI runtime emits `TOOL_EXECUTION_START` events with `arguments["path"]` populated as the bundled-schema probe predicted (RESEARCH open question A1 closed).
 
 **Test:** Run `dogen draft --provider copilot` with real Copilot credentials against a unit that has sources and recorded steering. After the draft completes, inspect the generated `provenance.yaml` and read the latest `generations[]` entry.
 
@@ -107,7 +111,7 @@ WR-01: `effort_used` in the provenance record reflects the *requested* effort ra
 
 ## Gaps Summary
 
-No gaps. All six must-haves are either fully verified or present-and-wired with behavior confirmed by fake-SDK tests. The only outstanding item is the D-24 manual live run, which is the by-design verification boundary for the live Copilot path — it is not a gap in the implementation.
+No gaps. All six must-haves are fully verified — including the D-24 manual live run, which was confirmed on 2026-06-22 via `/gsd-verify-work 4`. The implementation is complete and the live audit surface is honest.
 
 ---
 
