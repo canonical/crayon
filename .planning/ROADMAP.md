@@ -46,10 +46,10 @@ against a fake/stub SDK; no CI live-call gate is added.
   4. Requesting a model the backend rejects prints a clear message naming the rejected model and exits nonzero — never a raw `JsonRpcError` traceback (closes accepted debt item #4)
   5. Any other live backend / JSON-RPC error on the draft path surfaces as a handled failure with a clear message and a nonzero exit, never an uncaught crash
 
-**Plans**: 2 plans
+**Plans**: 1/2 plans executed
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Wave-0 fake-SDK test harness (kwargs-capturing _StubClient in conftest) + the D-08 private-import and V4 toolset-boundary regression guards
+- [x] 03-01-PLAN.md — Wave-0 fake-SDK test harness (kwargs-capturing _StubClient in conftest) + the D-08 private-import and V4 toolset-boundary regression guards
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -78,5 +78,5 @@ against a fake/stub SDK; no CI live-call gate is added.
 |-------|-----------|----------------|--------|-----------|
 | 1. Compliant Scaffold & Provider-Seam Boundary | v1.0 | 4/4 | Complete | 2026-06-19 |
 | 2. Walking Skeleton, Planning Schema, Provable HITL & Observability | v1.0 | 4/4 | Complete | 2026-06-20 |
-| 3. Live Copilot path runs out of the box | v1.1 | 0/2 | Not started | - |
+| 3. Live Copilot path runs out of the box | v1.1 | 1/2 | In Progress|  |
 | 4. Honest observed provenance | v1.1 | 0/? | Not started | - |
