@@ -29,7 +29,7 @@ a live run. The test additionally pins the ``code`` / ``message`` shape the
 adapter reads.
 """
 
-from copilot._jsonrpc import JsonRpcError
+from copilot._jsonrpc import JsonRpcError, ProcessExitedError
 
 
 def test_jsonrpc_error_is_importable_and_shaped() -> None:
@@ -42,3 +42,18 @@ def test_jsonrpc_error_is_importable_and_shaped() -> None:
     exc = JsonRpcError(-32603, "x")
     assert exc.code == -32603
     assert exc.message == "x"
+
+
+def test_process_exited_error_is_importable() -> None:
+    """Pin the private ``ProcessExitedError`` shape the adapter catches (D-08).
+
+    ``provider.py`` also catches ``ProcessExitedError`` from the same private
+    ``copilot._jsonrpc`` module (on both the draft and the status-probe paths).
+    It is equally absent from ``copilot.__all__``, so an SDK bump that moves or
+    renames it would silently drop those ``except`` handlers. Constructing it and
+    asserting it is an ``Exception`` subclass guards against that — the
+    module-level import is itself the loud CI signal if the private path goes
+    away.
+    """
+    exc = ProcessExitedError("cli exited")
+    assert isinstance(exc, Exception)
