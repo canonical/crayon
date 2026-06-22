@@ -294,7 +294,11 @@ async def _require_available_backend(client: CopilotClient) -> None:
     Raises
     ------
     BackendUnavailableError
-        If status or auth-status reports the backend cannot serve a draft.
+        If status or auth-status reports the backend cannot serve a draft,
+        including any JSON-RPC or process-exit error during the status probe.
+        A status-path ``-32603`` is classified here as backend-unavailable
+        (ERR-02), never run through the model-rejection mapping (it has nothing
+        to do with the requested model).
     """
     try:
         await client.get_status()
@@ -302,6 +306,14 @@ async def _require_available_backend(client: CopilotClient) -> None:
     except StopError as exc:
         raise BackendUnavailableError(
             f"Copilot backend status check failed: {exc}"
+        ) from exc
+    except JsonRpcError as exc:
+        raise BackendUnavailableError(
+            f"Copilot backend status check error (JSON-RPC {exc.code}): {exc.message}"
+        ) from exc
+    except ProcessExitedError as exc:
+        raise BackendUnavailableError(
+            f"Copilot backend process exited during status check: {exc}"
         ) from exc
     except (ConnectionError, OSError, TimeoutError) as exc:
         raise BackendUnavailableError(f"Copilot backend is unreachable: {exc}") from exc

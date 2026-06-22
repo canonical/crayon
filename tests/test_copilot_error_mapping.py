@@ -106,3 +106,36 @@ async def test_other_backend_errors_map_to_backend_unavailable(
 
     with pytest.raises(BackendUnavailableError):
         await _draft(provider)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "error",
+    [
+        # A status-path ``-32603`` whose message LOOKS like a model rejection
+        # (CR-01): an entitlement/quota failure during the status probe. It must
+        # NOT be run through the model-rejection mapping — it has nothing to do
+        # with the requested model.
+        JsonRpcError(-32603, 'Model "gpt-5-mini" is not available'),
+        # A plain status-path JSON-RPC error.
+        JsonRpcError(-32000, "status backend failure"),
+        # The CLI process exited during the status probe.
+        ProcessExitedError("copilot process exited during status check"),
+    ],
+)
+async def test_status_path_errors_map_to_backend_unavailable_not_model_rejected(
+    install_stub_client, error: Exception
+) -> None:
+    """CR-01: status-probe ``JsonRpcError``/``ProcessExitedError`` → ERR-02.
+
+    ``_require_available_backend`` runs ``get_status``/``get_auth_status`` before
+    the draft. A ``JsonRpcError`` or ``ProcessExitedError`` raised there must be
+    classified as ``BackendUnavailableError`` (ERR-02), never escape to the
+    draft-path model-rejection mapping — even a ``-32603`` "is not available"
+    status error, which is a backend/entitlement failure, not a model rejection.
+    """
+    install_stub_client(status_error=error)
+    provider = CopilotDraftingProvider(model="gpt-5-mini")
+
+    with pytest.raises(BackendUnavailableError):
+        await _draft(provider)
