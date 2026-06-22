@@ -21,9 +21,15 @@ These assert the ``--model`` wiring without any live SDK call:
 
 * the Copilot provider defaults to ``gpt-5-mini`` (the retired ``gpt-5`` is gone);
 * ``select_provider("copilot", model=...)`` threads the model to the adapter;
-* the ``mock`` path ignores ``model``/``effort`` and stays SDK-free — the seam
-  guardrail (``seam_check.main() == 0``) still holds, and resolving the mock
-  provider does not pull ``dogen.adapters.copilot`` onto ``sys.modules``.
+* the ``mock`` path ignores ``model``/``effort`` and the static seam guardrail
+  (``seam_check.main() == 0``) still holds — no Copilot SDK import has leaked
+  onto ``core``/``cli`` or the mock path.
+
+The SDK-free mock path is asserted *statically* here (the AST seam check that CI
+and pre-commit run), not by a runtime ``sys.modules`` probe: this module imports
+``CopilotDraftingProvider`` at top level to type-check the copilot assertions, so
+``dogen.adapters.copilot`` is already in ``sys.modules`` at collection time and a
+runtime isolation probe in this file would be meaningless.
 """
 
 import sys
@@ -57,7 +63,16 @@ def test_select_provider_copilot_default_model_when_unset() -> None:
 
 
 def test_mock_provider_ignores_model_and_stays_sdk_free() -> None:
-    """LIVE-01/D-25: the mock path honours the signature but imports no SDK."""
+    """LIVE-01/D-25: the mock path honours the signature; the seam guard passes.
+
+    Asserts the mock provider accepts (and ignores) ``model``, and that the
+    static AST seam guardrail — the exact ``seam_check.main()`` check CI and
+    pre-commit run — still passes, proving no Copilot SDK import has leaked onto
+    ``core``/``cli`` or the mock path in the source tree. This is a static
+    source-code check, not a runtime ``sys.modules`` probe (the test module
+    itself imports the copilot adapter at top level, so a runtime probe here
+    would be meaningless — see the module docstring).
+    """
     provider = select_provider("mock", model="gpt-5-mini")
     assert isinstance(provider, MockDraftingProvider)
     # The seam guardrail (the exact check CI/pre-commit run) still passes: no
