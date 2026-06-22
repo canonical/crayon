@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-current_phase: 0
-status: Awaiting next milestone
-stopped_at: Completed 02-04-PLAN.md (phase 02 final plan)
-last_updated: "2026-06-20T19:49:00.553Z"
-last_activity: 2026-06-20
-last_activity_desc: Milestone v1.0 completed and archived
+milestone: v1.1
+milestone_name: Live Copilot Path Hardening
+status: planning
+last_updated: "2026-06-22T07:49:26.277Z"
+last_activity: 2026-06-22
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
-current_phase_name: walking-skeleton-planning-schema-provable-hitl-observability
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -28,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-06-20 after v1.0 MVP milestone)
 
 ## Current Position
 
-Phase: Milestone v1.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-20 — Milestone v1.0 completed and archived
+Status: Defining requirements
+Last activity: 2026-06-22 — Milestone v1.1 started
 
 ## Performance Metrics
 
