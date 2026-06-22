@@ -43,14 +43,24 @@ The ``_steering`` / ``_draft`` helpers drive a single draft through the provider
 hoisted here so the 03-02 tests do not redefine them.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
-from copilot import SessionEvent, SessionEventType
 
 from dogen.adapters.copilot.provider import CopilotDraftingProvider
 from dogen.core.models import DraftResult, Intent, SourceRef, Steering
+
+if TYPE_CHECKING:
+    # SDK types are referenced only in type annotations here (deferred by
+    # ``from __future__ import annotations``). Keeping the import behind
+    # ``TYPE_CHECKING`` means importing this shared ``conftest`` puts no
+    # ``copilot`` entry in ``sys.modules`` — so a mock-path runtime isolation
+    # check stays meaningful (WR-02). The single runtime use of the SDK types
+    # lives in a function-local import inside ``_assistant_event``.
+    from copilot import SessionEvent, SessionEventType
 
 
 @dataclass
@@ -91,6 +101,11 @@ def _assistant_event() -> SessionEvent:
         strict type checker happy without constructing a full SDK event (the
         established idiom in ``tests/test_copilot_mapping.py``).
     """
+    # Function-local import keeps the shared ``conftest`` itself SDK-free at
+    # collection time (WR-02); only the copilot-adapter tests that actually
+    # build a scripted event pull ``copilot`` into ``sys.modules``, and only
+    # when this helper runs.
+    from copilot import SessionEvent, SessionEventType  # noqa: PLC0415
 
     @dataclass
     class _Event:
@@ -115,7 +130,7 @@ class _StubSession:
     def __init__(self, *, send_error: Exception | None = None) -> None:
         self._send_error = send_error
 
-    async def __aenter__(self) -> "_StubSession":
+    async def __aenter__(self) -> _StubSession:
         """Enter the async context, returning self.
 
         Returns
@@ -192,7 +207,7 @@ class _StubClient:
         self._send_error = send_error
         self.session_kwargs: dict[str, object] | None = None
 
-    async def __aenter__(self) -> "_StubClient":
+    async def __aenter__(self) -> _StubClient:
         """Enter the async context, returning self.
 
         Returns
