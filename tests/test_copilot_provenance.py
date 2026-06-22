@@ -1,0 +1,96 @@
+# This file is part of dogen, an agentic documentation-drafting framework.
+#
+# SPDX-FileCopyrightText: 2026 Canonical Ltd.
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 3, as published
+# by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
+# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""Observed-provenance tests for the Copilot adapter (no live SDK, D-24).
+
+Two layers, both driven by a fake SDK so they run in CI (D-06, criterion 4):
+
+* The pure-helper layer pins
+  :func:`dogen.adapters.copilot.mapping.tool_events_to_provenance` — scripted
+  ``TOOL_EXECUTION_START`` events translate to ``(context_origins, tools_used)``
+  with first-seen de-dup and omit-on-doubt guards (PROV-01/02, D-02/D-03/D-05).
+* The end-to-end layer drives the real
+  :class:`~dogen.adapters.copilot.provider.CopilotDraftingProvider` against the
+  shared ``_StubSession`` (its ``get_events`` returns the scripted history) and
+  asserts the populated lists reach the ``DraftResult`` and the recorded
+  ``Generation`` through the orchestrator's verbatim copy.
+
+The shared ``conftest`` stays SDK-free at collection (WR-02): the only ``copilot``
+imports are function-local, inside the event builders, mirroring ``_assistant_event``.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, cast
+
+from dogen.adapters.copilot.mapping import tool_events_to_provenance
+
+if TYPE_CHECKING:
+    from copilot import SessionEvent
+
+
+def _tool_start(tool_name: str, arguments: dict | None) -> SessionEvent:
+    """Build a scripted ``TOOL_EXECUTION_START`` event for the given tool.
+
+    The function-local ``copilot`` import keeps this module's collection
+    SDK-free (WR-02); only running a builder pulls ``copilot`` into
+    ``sys.modules``.
+    """
+    from copilot import SessionEvent, SessionEventType  # noqa: PLC0415
+    from copilot.session_events import ToolExecutionStartData  # noqa: PLC0415
+
+    event = SessionEvent(
+        data=ToolExecutionStartData(
+            tool_call_id=str(uuid.uuid4()),
+            tool_name=tool_name,
+            arguments=arguments,
+        ),
+        id=uuid.uuid4(),
+        timestamp=datetime.now(timezone.utc),
+        type=SessionEventType.TOOL_EXECUTION_START,
+    )
+    return cast("SessionEvent", event)
+
+
+def _tool_complete(tool_name: str) -> SessionEvent:
+    """Build a scripted ``TOOL_EXECUTION_COMPLETE`` event (no name/args ride it).
+
+    Used to prove the helper counts START events only — a COMPLETE in the
+    history contributes nothing (RESEARCH Pitfall 1).
+    """
+    from copilot import SessionEvent, SessionEventType  # noqa: PLC0415
+    from copilot.session_events import ToolExecutionCompleteData  # noqa: PLC0415
+
+    event = SessionEvent(
+        data=ToolExecutionCompleteData(
+            tool_call_id=str(uuid.uuid4()),
+            success=True,
+        ),
+        id=uuid.uuid4(),
+        timestamp=datetime.now(timezone.utc),
+        type=SessionEventType.TOOL_EXECUTION_COMPLETE,
+    )
+    return cast("SessionEvent", event)
+
+
+def test_helper_importable() -> None:
+    # Wave-0 RED scaffold: the helper does not exist yet. The next task turns
+    # this file green by implementing tool_events_to_provenance and adding the
+    # focused translation + end-to-end provenance tests.
+    assert callable(tool_events_to_provenance)

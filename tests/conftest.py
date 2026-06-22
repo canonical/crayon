@@ -125,10 +125,22 @@ class _StubSession:
         When set, :meth:`send_and_wait` raises it instead of returning the
         scripted happy-path event — how the 03-02 error-mapping tests inject a
         fake ``JsonRpcError`` raised mid-draft.
+    events : list or None
+        The scripted tool-event history :meth:`get_events` returns. Defaults to
+        an empty list — the honest-empty path (D-05): the existing happy-path
+        callers observe no tool events, so their ``context_origins`` /
+        ``tools_used`` stay empty and those tests keep passing. The PROV
+        provenance tests pass scripted ``TOOL_EXECUTION_START`` events here.
     """
 
-    def __init__(self, *, send_error: Exception | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        send_error: Exception | None = None,
+        events: list[SessionEvent] | None = None,
+    ) -> None:
         self._send_error = send_error
+        self._events = events if events is not None else []
 
     async def __aenter__(self) -> _StubSession:
         """Enter the async context, returning self.
@@ -174,6 +186,21 @@ class _StubSession:
             raise self._send_error
         return _assistant_event()
 
+    async def get_events(self) -> list[SessionEvent]:
+        """Return the scripted tool-event history (default empty).
+
+        Mirrors the real ``CopilotSession.get_events`` the provider calls inside
+        the open session block to observe what the agent read/ran. The default
+        empty list is the honest-empty path (D-05): no observed events → both
+        provenance lists stay empty.
+
+        Returns
+        -------
+        list of SessionEvent
+            A copy of the scripted tool-event history.
+        """
+        return list(self._events)
+
 
 class _StubClient:
     """A kwargs-capturing stand-in for ``CopilotClient``.
@@ -193,6 +220,9 @@ class _StubClient:
     send_error : Exception or None
         Forwarded to the scripted :class:`_StubSession` to raise from
         ``send_and_wait`` (a mid-draft failure).
+    events : list or None
+        Forwarded to the scripted :class:`_StubSession` as the tool-event
+        history its ``get_events`` returns (default empty — honest-empty).
     """
 
     def __init__(
@@ -201,10 +231,12 @@ class _StubClient:
         status_error: Exception | None = None,
         session_error: Exception | None = None,
         send_error: Exception | None = None,
+        events: list[SessionEvent] | None = None,
     ) -> None:
         self._status_error = status_error
         self._session_error = session_error
         self._send_error = send_error
+        self._events = events
         self.session_kwargs: dict[str, object] | None = None
 
     async def __aenter__(self) -> _StubClient:
@@ -265,7 +297,7 @@ class _StubClient:
         self.session_kwargs = kwargs
         if self._session_error is not None:
             raise self._session_error
-        return _StubSession(send_error=self._send_error)
+        return _StubSession(send_error=self._send_error, events=self._events)
 
 
 @pytest.fixture
@@ -285,8 +317,8 @@ def install_stub_client(monkeypatch: pytest.MonkeyPatch):
     Returns
     -------
     callable
-        ``install(*, status_error=None, session_error=None, send_error=None)``
-        returning the injected ``_StubClient``.
+        ``install(*, status_error=None, session_error=None, send_error=None,
+        events=None)`` returning the injected ``_StubClient``.
     """
 
     def _install(
@@ -294,11 +326,13 @@ def install_stub_client(monkeypatch: pytest.MonkeyPatch):
         status_error: Exception | None = None,
         session_error: Exception | None = None,
         send_error: Exception | None = None,
+        events: list[SessionEvent] | None = None,
     ) -> _StubClient:
         stub = _StubClient(
             status_error=status_error,
             session_error=session_error,
             send_error=send_error,
+            events=events,
         )
 
         def _factory(*_a: object, **_k: object) -> _StubClient:
