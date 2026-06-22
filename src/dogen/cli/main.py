@@ -188,6 +188,13 @@ def draft(
         str,
         typer.Option(help="Drafting provider: copilot or mock."),
     ] = "copilot",
+    model: Annotated[
+        str | None,
+        typer.Option(
+            help="Drafting model to request; defaults to the provider's "
+            "available default.",
+        ),
+    ] = None,
 ) -> None:
     """Run the drafting loop for a unit (D-25/D-40).
 
@@ -201,6 +208,9 @@ def draft(
         The unit to draft.
     provider : str
         The provider to use (``copilot`` default; tests/CI use ``mock``).
+    model : str or None
+        The drafting model to request; threaded to the provider. ``None`` leaves
+        the provider on its own default (``gpt-5-mini`` for copilot — LIVE-01).
     """
     configure_observability()
     store = FilesystemPlanningStore()
@@ -212,7 +222,7 @@ def draft(
         request = DraftRequest(
             unit_id=unit_id,
             root=Path.cwd(),
-            provider=select_provider(provider),
+            provider=select_provider(provider, model=model),
             store=store,
             provider_name=provider,
             now=_utc_now,
@@ -225,12 +235,19 @@ def draft(
         typer.echo(f"Cannot draft {unit_id!r}: {exc}", err=True)
         raise typer.Exit(code=2) from exc
     except RuntimeError as exc:
-        # WR-01/D-25: never make catching the backend-unavailable error depend
-        # on importing the Copilot adapter. ``BackendUnavailableError`` is a
-        # ``RuntimeError``; classify it by name so the ``--provider mock`` path
-        # never pulls ``adapters/copilot/`` (or the SDK) onto it. Any other
-        # RuntimeError re-raises unchanged.
-        if type(exc).__name__ == "BackendUnavailableError":
+        # WR-01/D-25: never make catching a backend domain error depend on
+        # importing the Copilot adapter. Both ``ModelRejectedError`` and
+        # ``BackendUnavailableError`` are ``RuntimeError`` subclasses; classify
+        # them by type name so the ``--provider mock`` path never pulls
+        # ``adapters/copilot/`` (or the SDK) onto it. Any other RuntimeError
+        # re-raises unchanged.
+        name = type(exc).__name__
+        if name == "ModelRejectedError":
+            # ERR-01: the message already names the requested model — echo it
+            # directly so the operator sees a clean, model-named failure.
+            typer.echo(f"{exc}", err=True)
+            raise typer.Exit(code=1) from exc
+        if name == "BackendUnavailableError":
             typer.echo(f"Copilot backend unavailable: {exc}", err=True)
             raise typer.Exit(code=1) from exc
         raise

@@ -33,6 +33,11 @@ exercised only by the manual local smoke harness (D-24).
 from dogen.adapters.copilot.provider import (
     BackendUnavailableError,
     CopilotDraftingProvider,
+    ModelRejectedError,
 )
 
-__all__ = ["BackendUnavailableError", "CopilotDraftingProvider"]
+__all__ = [
+    "BackendUnavailableError",
+    "CopilotDraftingProvider",
+    "ModelRejectedError",
+]
