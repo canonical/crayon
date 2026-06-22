@@ -23,8 +23,8 @@ The thinnest set of fixes that makes the real Copilot drafting path run end-to-e
 
 ### Honest Provenance (PROV) — the audit surface reflects what actually happened (completes BL-01)
 
-- [ ] **PROV-01**: After a successful live draft, `provenance.yaml`'s `context_origins` lists what the agent actually read, derived from the session's observed tool-call events and kept distinct from the human-pointed `sources` — it is no longer left empty *(Finding 4)*
-- [ ] **PROV-02**: After a successful live draft, `provenance.yaml`'s `tools_used` lists the tools the agent actually invoked, derived from the session's observed tool-call events — it is no longer left empty *(Finding 4)*
+- [x] **PROV-01**: After a successful live draft, `provenance.yaml`'s `context_origins` lists what the agent actually read, derived from the session's observed tool-call events and kept distinct from the human-pointed `sources` — it is no longer left empty *(Finding 4)*
+- [x] **PROV-02**: After a successful live draft, `provenance.yaml`'s `tools_used` lists the tools the agent actually invoked, derived from the session's observed tool-call events — it is no longer left empty *(Finding 4)*
 
 ## Future Requirements
 
@@ -54,8 +54,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | LIVE-03 | Phase 3 | Complete |
 | ERR-01 | Phase 3 | Complete |
 | ERR-02 | Phase 3 | Complete |
-| PROV-01 | Phase 4 | Pending |
-| PROV-02 | Phase 4 | Pending |
+| PROV-01 | Phase 4 | Complete |
+| PROV-02 | Phase 4 | Complete |
 
 **Coverage:**
 
