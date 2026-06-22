@@ -338,9 +338,7 @@ def install_stub_client(monkeypatch: pytest.MonkeyPatch):
         def _factory(*_a: object, **_k: object) -> _StubClient:
             return stub
 
-        monkeypatch.setattr(
-            "dogen.adapters.copilot.provider.CopilotClient", _factory
-        )
+        monkeypatch.setattr("dogen.adapters.copilot.provider.CopilotClient", _factory)
         return stub
 
     return _install

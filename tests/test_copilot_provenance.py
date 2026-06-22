@@ -36,7 +36,7 @@ imports are function-local, inside the event builders, mirroring ``_assistant_ev
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
 
 import pytest
@@ -67,7 +67,7 @@ def _tool_start(tool_name: str, arguments: dict | None) -> SessionEvent:
             arguments=arguments,
         ),
         id=uuid.uuid4(),
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         type=SessionEventType.TOOL_EXECUTION_START,
     )
     return cast("SessionEvent", event)
@@ -88,7 +88,7 @@ def _tool_complete(tool_name: str) -> SessionEvent:
             success=True,
         ),
         id=uuid.uuid4(),
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         type=SessionEventType.TOOL_EXECUTION_COMPLETE,
     )
     return cast("SessionEvent", event)

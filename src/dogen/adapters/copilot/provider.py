@@ -54,7 +54,10 @@ from copilot import (
 from copilot._jsonrpc import JsonRpcError, ProcessExitedError
 from copilot.session import PermissionHandler, SystemMessageAppendConfig
 
-from dogen.adapters.copilot.mapping import to_draft_result
+from dogen.adapters.copilot.mapping import (
+    to_draft_result,
+    tool_events_to_provenance,
+)
 from dogen.adapters.copilot.tools import DENY, READONLY
 from dogen.core.models import (
     DraftResult,
@@ -277,10 +280,24 @@ class CopilotDraftingProvider:
             )
             async with session_cm as session:
                 event = await session.send_and_wait(prompt, timeout=_DRAFT_TIMEOUT)
+                # PROV-01/02: observe the full session history while the session
+                # is still open — get_events() raises once it closes (Pitfall 3).
+                events = await session.get_events()
+        # Translate the observed events to the two domain lists in the mapping
+        # seam (no event-shape handling here, D-04); honest-empty when none seen.
+        context_origins, tools_used = tool_events_to_provenance(events)
         result = _require_assistant_message(event)
         # IN-03: report the effort the SDK actually ran at, so the recorded
         # provenance reflects the real effort rather than only the requested one.
-        return result.model_copy(update={"effort_used": self._effort})
+        # PROV-01/02: attach what the agent actually read/ran via the same
+        # established model_copy attach point, kept distinct from unit.sources.
+        return result.model_copy(
+            update={
+                "effort_used": self._effort,
+                "context_origins": context_origins,
+                "tools_used": tools_used,
+            }
+        )
 
 
 async def _require_available_backend(client: CopilotClient) -> None:
