@@ -39,7 +39,6 @@ from dogen.adapters.copilot.provider import (
     CopilotDraftingProvider,
     ModelRejectedError,
 )
-
 from tests.conftest import _draft
 
 
