@@ -5,16 +5,16 @@ milestone_name: Live Copilot Path Hardening
 current_phase: 3
 current_phase_name: Live Copilot path runs out of the box
 status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-06-22T09:34:36.317Z"
+stopped_at: Awaiting 03-02 Task 3 human-verify checkpoint (D-24 live runs)
+last_updated: "2026-06-22T09:48:45.180Z"
 last_activity: 2026-06-22
-last_activity_desc: Phase 3 execution started
+last_activity_desc: Plan 03-02 Tasks 1-2 executed; all automated gates green; live runs pending
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 0
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-06-22 — v1.1 Live Copilot Path Hardeni
 
 Phase: 3 (Live Copilot path runs out of the box) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-06-22 — Phase 3 execution started
+Status: Awaiting human-verify checkpoint (03-02 Task 3 — D-24 manual live runs)
+Last activity: 2026-06-22 — Plan 03-02 Tasks 1-2 executed; all automated gates green; live runs pending
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Last activity: 2026-06-22 — Phase 3 execution started
 | Phase 02 P03 | ~50min | 2 tasks | 12 files |
 | Phase 02 P04 | 25min | 2 tasks | 16 files |
 | Phase 03 P01 | 6min | 2 tasks | 3 files |
+| Phase 03 P02 | 8min | 2 tasks (Task 3 awaiting checkpoint) | 9 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,9 @@ Last activity: 2026-06-22 — Phase 3 execution started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- 03-02: family-gate optional SDK params by computing value-or-None and passing unconditionally (SDK drops falsy) — used for `reasoning_effort` (LIVE-03).
+- 03-02: split the overloaded JSON-RPC `-32603` by requiring BOTH the code AND the "is not available" message signature — model-rejection (ERR-01) vs generic backend error (ERR-02), Pitfall 1.
+- 03-02: the CLI classifies `ModelRejectedError`/`BackendUnavailableError` by `type(exc).__name__` so the `--provider mock` path never imports the adapter or SDK (D-25).
 - v1.1 is a brownfield hardening milestone — no net-new domain features; closes exactly the four gaps the first real live `dogen draft --provider copilot` run surfaced (7 requirements: LIVE-01/02/03, ERR-01/02, PROV-01/02).
 - Roadmap split into 2 phases (coarse granularity): Phase 3 = "live path runs out of the box" (LIVE-01/02/03 + clean error mapping ERR-01/02, same code surface, one live-run verification); Phase 4 = "honest observed provenance" (PROV-01/02, depends on a working live draft to observe tool-call events).
 - Implementation surface is almost entirely the single Copilot adapter (`src/dogen/adapters/copilot/provider.py`, `mapping.py`, `tools.py`) plus the existing orchestrator/CLI seam.
@@ -114,9 +118,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-22T09:34:29.631Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-live-copilot-path-runs-out-of-the-box/03-CONTEXT.md
+Last session: 2026-06-22T09:48:45.176Z
+Stopped at: Awaiting 03-02 Task 3 human-verify checkpoint (D-24 manual live runs)
+Resume file: .planning/phases/03-live-copilot-path-runs-out-of-the-box/03-02-PLAN.md (Task 3)
 
 ## Operator Next Steps
 
