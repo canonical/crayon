@@ -1,20 +1,3 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """Backend-unavailable handling + the structural port check (no live SDK).
 
 A stubbed ``CopilotClient`` injected into the provider module simulates the
@@ -35,12 +18,12 @@ from dogen.adapters.copilot.provider import (
     BackendUnavailableError,
     CopilotDraftingProvider,
 )
-from dogen.core.models import Effort, Intent, SourceRef, Steering
+from dogen.core.models import Effort, Intent, Signoff, SourceRef
 from dogen.core.ports import DraftingProvider
 
 
-def _steering() -> Steering:
-    return Steering(
+def _steering() -> Signoff:
+    return Signoff(
         author="a@example.com",
         at="2026-06-20T00:00:00Z",
         intent=Intent.reference,
@@ -52,7 +35,7 @@ async def _draft(provider: CopilotDraftingProvider):
     return await provider.draft_unit(
         intent=Intent.reference,
         audience="operators",
-        steering=_steering(),
+        signoff=_steering(),
         sources=[SourceRef(path="README.md")],
     )
 

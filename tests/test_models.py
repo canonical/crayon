@@ -1,26 +1,10 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
-"""Behaviour tests for the F1 planning-directory schema v0 (core/models.py)."""
+"""Behaviour tests for the F1 planning-directory schema v1 (core/models.py)."""
 
 import pytest
 from pydantic import ValidationError
 
 from dogen.core.models import (
+    SCHEMA_VERSION,
     Effort,
     Generation,
     Intent,
@@ -28,8 +12,9 @@ from dogen.core.models import (
     ProgressEntry,
     ProgressState,
     Provenance,
+    ReadRecord,
+    Signoff,
     SourceRef,
-    Steering,
     Unit,
     VerificationStep,
 )
@@ -79,16 +64,16 @@ def test_effort_includes_xhigh() -> None:
     assert {m.value for m in Effort} == {"low", "medium", "high", "xhigh"}
 
 
-def test_machine_models_default_schema_version_zero() -> None:
-    assert Unit(**_valid_front_matter()).schema_version == 0
-    assert Provenance(unit_id="cli-usage").schema_version == 0
+def test_machine_models_default_schema_version_current() -> None:
+    assert Unit(**_valid_front_matter()).schema_version == SCHEMA_VERSION
+    assert Provenance(unit_id="cli-usage").schema_version == SCHEMA_VERSION
     assert (
         Progress(
             unit_id="cli-usage",
             state=ProgressState.pending,
             history=[],
         ).schema_version
-        == 0
+        == SCHEMA_VERSION
     )
 
 
@@ -97,7 +82,8 @@ def test_provenance_reserves_empty_verification_and_reviewer_edits() -> None:
     assert prov.verification.steps == []
     assert prov.reviewer_edits == []
     assert prov.generations == []
-    assert prov.steering is None
+    assert prov.signoff is None
+    assert prov.steering == []
 
 
 def test_verification_step_defaults_are_reserved_empty() -> None:
@@ -148,10 +134,42 @@ def test_sources_and_context_origins_are_distinct_fields() -> None:
         action="draft",
     )
     assert [s.path for s in unit.sources] == ["src/dogen/cli/main.py"]
-    assert gen.context_origins == ["AGENTS.md"]
+    # v1: plain-string origins are lifted to commit-stampable ReadRecords.
+    assert [o.path for o in gen.context_origins] == ["AGENTS.md"]
     # Mutating one never touches the other (different objects, different fields).
-    gen.context_origins.append("README.md")
+    gen.context_origins.append(ReadRecord(path="README.md"))
     assert [s.path for s in unit.sources] == ["src/dogen/cli/main.py"]
+
+
+def _generation(**overrides: object) -> Generation:
+    fields: dict = {
+        "model": "gpt",
+        "model_version": "x",
+        "effort": Effort.medium,
+        "tooling_version": "0.0.0",
+        "sdk": "github-copilot-sdk==1.0.2",
+        "run_id": "abc",
+        "at": "2026-06-20T00:00:00Z",
+        "action": "draft",
+    }
+    fields.update(overrides)
+    return Generation(**fields)
+
+
+def test_generation_provider_mode_default_empty_and_round_trip() -> None:
+    # OQ-1: provider/mode are additive provenance fields with empty defaults.
+    default = _generation()
+    assert default.provider == ""
+    assert default.mode == ""
+
+    stamped = _generation(provider="mock", mode="local")
+    dump = stamped.model_dump()
+    assert dump["provider"] == "mock"
+    assert dump["mode"] == "local"
+    assert Generation(**dump).provider == "mock"
+    assert Generation(**dump).mode == "local"
+
+    assert Provenance(unit_id="cli-usage").schema_version == SCHEMA_VERSION
 
 
 def test_source_ref_is_path_xor_ref() -> None:
@@ -164,7 +182,7 @@ def test_source_ref_is_path_xor_ref() -> None:
 
 
 def test_steering_records_the_hitl_event_fields() -> None:
-    steering = Steering(
+    steering = Signoff(
         author="Ada <ada@example.com>",
         at="2026-06-20T00:00:00Z",
         intent=Intent.reference,
@@ -172,3 +190,21 @@ def test_steering_records_the_hitl_event_fields() -> None:
     )
     assert steering.intent is Intent.reference
     assert steering.audience == "developers"
+
+
+def test_provenance_migrates_v0_steering_mapping_to_signoff() -> None:
+    prov = Provenance(
+        unit_id="cli-usage",
+        schema_version=0,
+        steering={
+            "author": "Ada",
+            "at": "2026-06-20T00:00:00Z",
+            "intent": "reference",
+            "audience": "developers",
+        },
+    )
+    assert prov.signoff is not None
+    assert prov.signoff.author == "Ada"
+    assert prov.signoff.plan_hash == ""
+    assert prov.steering == []
+    assert prov.schema_version == SCHEMA_VERSION

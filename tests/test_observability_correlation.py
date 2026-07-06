@@ -1,20 +1,3 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """Observability layer, mock provider, and provider-selection behaviour.
 
 Covers Task 1: the OTel-API tracer/run_id helpers, the import discipline that
@@ -35,7 +18,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 
 from dogen.adapters.mock_provider import MockDraftingProvider, select_provider
 from dogen.core import observability
-from dogen.core.models import Intent, SourceRef, Steering
+from dogen.core.models import Intent, Signoff, SourceRef
 from dogen.obs import logfire_backend
 
 
@@ -56,8 +39,8 @@ def in_memory_spans() -> InMemorySpanExporter:
     return exporter
 
 
-def _steering() -> Steering:
-    return Steering(
+def _steering() -> Signoff:
+    return Signoff(
         author="Ada Lovelace",
         at="2026-01-01T00:00:00Z",
         intent=Intent.reference,
@@ -107,10 +90,10 @@ async def test_mock_provider_is_deterministic() -> None:
     steering = _steering()
     sources = [SourceRef(path="README.md")]
     first = await provider.draft_unit(
-        intent=Intent.reference, audience="devs", steering=steering, sources=sources
+        intent=Intent.reference, audience="devs", signoff=steering, sources=sources
     )
     second = await provider.draft_unit(
-        intent=Intent.reference, audience="devs", steering=steering, sources=sources
+        intent=Intent.reference, audience="devs", signoff=steering, sources=sources
     )
     assert first.text == second.text
     assert first.model == "mock-model"
@@ -134,14 +117,19 @@ def test_select_provider_mock_does_not_import_copilot_adapter() -> None:
     assert "dogen.adapters.copilot.provider" not in sys.modules
 
 
-def test_select_provider_default_is_copilot() -> None:
-    assert inspect.signature(select_provider).parameters["name"].default == "copilot"
+def test_select_provider_default_is_auto() -> None:
+    # D-06: the default provider is now ``auto`` (offline-resolved to
+    # copilot/host-harness), retiring the earlier hardcoded ``copilot`` default.
+    assert inspect.signature(select_provider).parameters["name"].default == "auto"
 
 
 def test_select_provider_copilot_resolves_real_adapter() -> None:
-    # Deferred so the sibling mock-path no-import test stays valid; the copilot
-    # branch resolves the real adapter (plan 03) via a lazy import.
-    from dogen.adapters.copilot import CopilotDraftingProvider  # noqa: PLC0415
+    # The copilot branch resolves the real adapter (lifted in Plan 03-02) via a
+    # lazy import, kept function-local so the sibling mock-path no-import test
+    # stays valid.
+    from dogen.adapters.copilot import (  # noqa: PLC0415
+        CopilotDraftingProvider,
+    )
 
     provider = select_provider("copilot")
     assert isinstance(provider, CopilotDraftingProvider)

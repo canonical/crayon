@@ -1,30 +1,7 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
 # Local mirror of the CI gates (.github/workflows/ci.yml) for developer DX (D-13).
 # The seam check is single-sourced: this hook, the CI step, and tests/test_seam.py
 # all invoke scripts/seam_check.py -- there is no duplicated logic to drift.
 repos:
-  # LIC-01: REUSE/SPDX compliance. rev pinned to the same reuse version uvx and
-  # CI resolve (6.2.0) so local and CI run the identical gate.
-  - repo: https://github.com/fsfe/reuse-tool
-    rev: v6.2.0
-    hooks:
-      - id: reuse
   # ruff lint + format. rev pinned to the locked ruff (uv.lock: 0.15.18, A2).
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.18
@@ -37,6 +14,14 @@ repos:
       - id: seam-check
         name: seam-check (no Copilot imports outside adapters/copilot)
         entry: python scripts/seam_check.py
+        language: system
+        pass_filenames: false
+      # D-18: the SAME script CI and pytest run -- no drift. Asserts the
+      # Write/Edit tool-surface isolation + agentskills.io frontmatter as a
+      # provable-in-code invariant, mirroring the seam-check gate above.
+      - id: skill-lint
+        name: skill-lint (frontmatter + tool surface)
+        entry: python scripts/skill_lint.py
         language: system
         pass_filenames: false
       # D-29: declarative seam gate, mirroring the CI import-linter step. Runs

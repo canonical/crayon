@@ -1,20 +1,3 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """Shared fake-SDK harness for the Copilot adapter tests (no network, D-24).
 
 The Wave-1 implementation tests (``test_copilot_session_kwargs.py``,
@@ -51,7 +34,7 @@ from typing import TYPE_CHECKING, cast
 import pytest
 
 from dogen.adapters.copilot.provider import CopilotDraftingProvider
-from dogen.core.models import DraftResult, Intent, SourceRef, Steering
+from dogen.core.models import DraftResult, Intent, Signoff, SourceRef
 
 if TYPE_CHECKING:
     # SDK types are referenced only in type annotations here (deferred by
@@ -344,15 +327,15 @@ def install_stub_client(monkeypatch: pytest.MonkeyPatch):
     return _install
 
 
-def _steering() -> Steering:
-    """Build a minimal recorded HITL steering event for a draft.
+def _signoff() -> Signoff:
+    """Build a minimal recorded HITL signoff act for a draft.
 
     Returns
     -------
-    Steering
-        A valid steering event anchoring the draft to a human author.
+    Signoff
+        A valid signoff act anchoring the draft to a human author.
     """
-    return Steering(
+    return Signoff(
         author="a@example.com",
         at="2026-06-20T00:00:00Z",
         intent=Intent.reference,
@@ -376,6 +359,7 @@ async def _draft(provider: CopilotDraftingProvider) -> DraftResult:
     return await provider.draft_unit(
         intent=Intent.reference,
         audience="operators",
-        steering=_steering(),
+        signoff=_signoff(),
         sources=[SourceRef(path="README.md")],
+        notes=[],
     )

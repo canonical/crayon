@@ -1,20 +1,3 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """Orchestrator behaviour: HITL gate, run_id correlation, progress lifecycle.
 
 Covers Task 2. The use-case is exercised against a *real*
@@ -45,11 +28,11 @@ from dogen.core.models import (
     ProgressEntry,
     ProgressState,
     Provenance,
+    Signoff,
     SourceRef,
-    Steering,
     Unit,
 )
-from dogen.core.orchestrator import DraftRequest, SteeringRequiredError, draft
+from dogen.core.orchestrator import DraftRequest, SignoffRequiredError, draft
 
 
 @pytest.fixture
@@ -93,7 +76,7 @@ def _seed_unit(root: Path, *, with_steering: bool) -> FilesystemPlanningStore:
     unit.title = "About dogen"
     _rewrite_unit_md(unit_md, unit, body)
     steering = (
-        Steering(
+        Signoff(
             author="Ada",
             at="2026-01-01T00:00:00Z",
             intent=Intent.reference,
@@ -102,7 +85,7 @@ def _seed_unit(root: Path, *, with_steering: bool) -> FilesystemPlanningStore:
         if with_steering
         else None
     )
-    store.write_provenance(Provenance(unit_id="u", steering=steering), root=root)
+    store.write_provenance(Provenance(unit_id="u", signoff=steering), root=root)
     store.write_progress(Progress(unit_id="u", state=ProgressState.pending), root=root)
     return store
 
@@ -133,7 +116,7 @@ def _request(root: Path, store: FilesystemPlanningStore) -> DraftRequest:
 @pytest.mark.asyncio
 async def test_draft_refuses_without_steering(tmp_path: Path) -> None:
     store = _seed_unit(tmp_path, with_steering=False)
-    with pytest.raises(SteeringRequiredError):
+    with pytest.raises(SignoffRequiredError):
         await draft(_request(tmp_path, store))
     assert not (tmp_path / "docs" / "u.md").exists()
     assert store.read_provenance("u", root=tmp_path).generations == []
@@ -145,7 +128,7 @@ async def test_draft_writes_correlated_generation(
     tmp_path: Path, in_memory_spans: InMemorySpanExporter
 ) -> None:
     store = _seed_unit(tmp_path, with_steering=True)
-    draft_path = await draft(_request(tmp_path, store))
+    draft_path = (await draft(_request(tmp_path, store))).path
     assert draft_path.exists()
     provenance = store.read_provenance("u", root=tmp_path)
     assert len(provenance.generations) == 1
@@ -153,6 +136,23 @@ async def test_draft_writes_correlated_generation(
     finished = in_memory_spans.get_finished_spans()
     assert len(finished) == 1
     assert format(finished[0].context.trace_id, "032x") == run_id
+
+
+@pytest.mark.asyncio
+async def test_generation_stamps_provider_and_mode(tmp_path: Path) -> None:
+    # PLAN-02 / OQ-1 (on-record half): the written generation records the
+    # provider name (from the request) and a non-empty run mode, so provenance
+    # carries provider/mode on disk — not merely as an OTel span attribute.
+    store = _seed_unit(tmp_path, with_steering=True)
+    await draft(_request(tmp_path, store))
+    generation = store.read_provenance("u", root=tmp_path).generations[0]
+    assert generation.provider == "mock"
+    # D-12: the mock is a driver double, so its recorded run mode is now the
+    # provider-reported "driver" (was the retired "local" module constant).
+    assert generation.mode == "driver"
+    assert generation.mode  # a non-empty run mode is recorded
+    # D-14: SDK-free provider stamps an empty sdk id, not the copilot SDK string.
+    assert generation.sdk == ""
 
 
 @pytest.mark.asyncio
@@ -266,7 +266,7 @@ async def test_generation_records_provider_reported_context(tmp_path: Path) -> N
     )
     await draft(request)
     generation = store.read_provenance("u", root=tmp_path).generations[0]
-    assert generation.context_origins == ["docs/actually_read.md"]
+    assert [o.path for o in generation.context_origins] == ["docs/actually_read.md"]
     assert generation.tools_used == ["builtin:view"]
 
 
@@ -360,9 +360,9 @@ async def test_draft_reads_prior_steering_act(tmp_path: Path) -> None:
     # Drafting must follow steering written by a *prior* act, not this call.
     store = _seed_unit(tmp_path, with_steering=True)
     before = store.read_provenance("u", root=tmp_path)
-    assert before.steering is not None
+    assert before.signoff is not None
     assert before.generations == []
     await draft(_request(tmp_path, store))
     after = store.read_provenance("u", root=tmp_path)
-    assert after.steering is not None
-    assert after.steering.at < after.generations[0].at
+    assert after.signoff is not None
+    assert after.signoff.at < after.generations[0].at
