@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -53,7 +53,7 @@ def _tool_start(tool_name: str, arguments: dict | None) -> SessionEvent:
         timestamp=datetime.now(UTC),
         type=SessionEventType.TOOL_EXECUTION_START,
     )
-    return cast("SessionEvent", event)
+    return event
 
 
 def _tool_complete(tool_name: str) -> SessionEvent:
@@ -74,7 +74,7 @@ def _tool_complete(tool_name: str) -> SessionEvent:
         timestamp=datetime.now(UTC),
         type=SessionEventType.TOOL_EXECUTION_COMPLETE,
     )
-    return cast("SessionEvent", event)
+    return event
 
 
 # --- Pure-helper translation tests (PROV-01/02, D-02/D-03/D-05) ---
