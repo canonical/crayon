@@ -3,9 +3,8 @@
 This closes the half of LIC-01 that no lifted test covers (RESEARCH Wave 0 gap):
 the total REUSE strip (D-01) must leave zero per-file SPDX license-identifier or
 file-copyright markers in dogen's OWN tracked source. It enumerates only
-``git ls-files`` output (so the gitignored ``prior-research/`` prior-art tree —
-which is full of GPL/REUSE markers — is never scanned) and asserts no marker
-survives.
+``git ls-files`` output — so only tracked source is scanned — and asserts no
+marker survives.
 
 SELF-MATCH GUARD: this file searches for the very markers it forbids, so each
 needle is assembled at runtime by concatenation. That keeps this module's own
