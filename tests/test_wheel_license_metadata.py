@@ -1,21 +1,4 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
-"""LIC-02 regression: built wheel METADATA carries License-Expression: GPL-3.0-only."""
+"""LIC-01 regression: built wheel METADATA carries License-Expression: LGPL-3.0-only."""
 
 import shutil
 import subprocess
@@ -26,10 +9,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_wheel_contains_license_expression(tmp_path: Path) -> None:
-    """The built wheel METADATA must carry License-Expression: GPL-3.0-only (LIC-02)."""
+    """Built wheel METADATA must carry License-Expression: LGPL-3.0-only (LIC-01)."""
     uv = shutil.which("uv")
     assert uv is not None, (
-        "uv is not on PATH — cannot build wheel. Install uv to satisfy LIC-02 check."
+        "uv is not on PATH — cannot build wheel. Install uv to satisfy LIC-01 check."
     )
 
     result = subprocess.run(  # noqa: PLW1510
@@ -56,7 +39,7 @@ def test_wheel_contains_license_expression(tmp_path: Path) -> None:
     license_lines = "\n".join(
         line for line in metadata.splitlines() if "icense" in line
     )
-    assert "License-Expression: GPL-3.0-only" in metadata, (
-        "License-Expression: GPL-3.0-only not found in wheel METADATA.\n"
+    assert "License-Expression: LGPL-3.0-only" in metadata, (
+        "License-Expression: LGPL-3.0-only not found in wheel METADATA.\n"
         f"Relevant lines:\n{license_lines}"
     )

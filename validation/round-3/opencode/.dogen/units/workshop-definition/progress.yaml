@@ -1,0 +1,25 @@
+schema_version: 1
+unit_id: workshop-definition
+state: reviewed
+history:
+- at: '2026-07-04T18:14:36.185020+00:00'
+  state: sourced
+  run_id: 019f2e56eb8dc00657ac9d44079c39fe
+- at: '2026-07-04T18:14:36.185032+00:00'
+  state: drafted
+  run_id: 019f2e56eb8dc00657ac9d44079c39fe
+- at: '2026-07-04T18:18:01.927174+00:00'
+  state: reviewed
+  run_id: ''
+- at: '2026-07-04T18:19:54.185501+00:00'
+  state: drafted
+  run_id: 019f2e5bc5bb8513932b18fdf439f11a
+- at: '2026-07-04T18:24:08.704016+00:00'
+  state: reviewed
+  run_id: ''
+- at: '2026-07-04T18:25:57.243008+00:00'
+  state: drafted
+  run_id: 019f2e614fe8e94ddc8c3ffa968942c2
+- at: '2026-07-04T18:29:00.862950+00:00'
+  state: reviewed
+  run_id: ''

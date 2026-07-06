@@ -1,20 +1,3 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -24,10 +7,10 @@ name = "dogen"
 version = "0.0.0"
 description = "Agentic documentation-drafting framework"
 requires-python = ">=3.12"
-license = "GPL-3.0-only"
-license-files = ["LICENSE", "LICENSES/*.txt"]
+license = "LGPL-3.0-only"
+license-files = ["LICENSE"]
 # PEP 639 SPDX expression above emits License-Expression in the wheel METADATA
-# (LIC-02). Intentionally no license trove classifier — PEP 639 tooling treats
+# (LIC-01). Intentionally no license trove classifier — PEP 639 tooling treats
 # it as a conflicting duplicate of the license expression.
 dependencies = [
     "github-copilot-sdk==1.0.2",
@@ -58,6 +41,11 @@ dev = [
     "pre-commit",
     "import-linter>=2.11",
 ]
+
+[tool.ruff]
+# Captured validation evidence (the round-3 scorer + drafted artifacts under
+# validation/) is frozen — not product source — so it stays out of lint/format.
+extend-exclude = ["validation"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "C901", "PL", "ANN", "D"]

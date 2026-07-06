@@ -1,27 +1,30 @@
-# Python bytecode and caches
+# Python
 __pycache__/
 *.py[cod]
-*.egg-info/
-.eggs/
-
-# Build artifacts
-build/
-dist/
-dist/_wheel/
-
-# Sphinx HTML build output (generated, not source; never reuse-scanned).
-# NOTE: .dogen/ is deliberately NOT ignored -- the audit surface is committed
-# as AC5 evidence (D-24) and licensed via the REUSE.toml .dogen/** glob.
-docs/_build/
-
-# Environments
+*$py.class
 .venv/
 venv/
-
-# Tooling caches
+env/
+dist/
+build/
+*.egg-info/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
 .ty_cache/
-.coverage
-htmlcov/
+.import_linter_cache/
+
+# Tool caches (code-graph index, etc.)
+.tokensave/
+
+# Env / secrets
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+*.swp
+
+# dogen passenger handoff staging (D-11). MUST stay scoped to the staging path:
+# a blanket .dogen/ ignore would hide the committed .dogen/units/<id>/unit.md.
+.dogen/staging/

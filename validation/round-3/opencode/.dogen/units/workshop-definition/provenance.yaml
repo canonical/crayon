@@ -1,0 +1,390 @@
+schema_version: 1
+unit_id: workshop-definition
+signoff:
+  author: Artem Konev
+  at: '2026-07-04T18:11:28.383955+00:00'
+  intent: reference
+  audience: Workshop users editing their own workshop.yaml and SDK publishers wiring
+    up workshop definitions
+  plan_hash: b5b8e7d8f589f0fac5927fc8f6632030f0b6a6f0b1b22992fd8c80df9034073a
+  commit: ae996c8b1027f0e2314ef4fd4c7bb0b900dc528c
+signoff_history: []
+steering:
+- author: Artem Konev
+  at: '2026-07-04T18:18:01.916167+00:00'
+  note: "Two must-fix items: (1) Lines 126-128 claim 'system' and 'sketch' are never\
+    \ authored in the sdks list \u2014 this is wrong. Both names are valid entries\
+    \ that resolve to SystemSource/SketchSource via parseSdkName; system is also installed\
+    \ implicitly when omitted. Replace with an accurate statement. (2) The CLI placed\
+    \ the draft at docs/docs/reference/definition-files/workshop-definition.rst (doubled\
+    \ docs/) but the intended target where all relative includes resolve is docs/reference/definition-files/workshop-definition.rst\
+    \ \u2014 move the file before publishing. One nit: drop the literal flag string\
+    \ 'bash -elo pipefail' on line 264; keep the behavioural description (login shell,\
+    \ errexit, pipefail)."
+  origin: review
+- author: Artem Konev
+  at: '2026-07-04T18:24:08.691809+00:00'
+  note: "Two items: (1) [must-fix] The canonical draft is at docs/docs/reference/definition-files/workshop-definition.rst\
+    \ (doubled docs/) \u2014 all relative include/literalinclude paths are broken\
+    \ from there. Must be at docs/reference/definition-files/workshop-definition.rst\
+    \ before publishing. (2) [nit] Lines 126-131 have 8-space indentation where sibling\
+    \ bullets in the same list-table cell use 7 spaces \u2014 reduce to 7-space indentation\
+    \ for consistency."
+  origin: review
+- author: Artem Konev
+  at: '2026-07-04T18:29:00.847336+00:00'
+  note: "Must-fix: the CLI path bug places the canonical draft at docs/docs/ instead\
+    \ of docs/. This cannot be fixed by re-drafting \u2014 every dogen-write pass\
+    \ reproduces the doubled path. After acceptance, the file must be manually moved\
+    \ from docs/docs/reference/definition-files/workshop-definition.rst to docs/reference/definition-files/workshop-definition.rst\
+    \ before publishing."
+  origin: review
+generations:
+- model: ''
+  model_version: ''
+  effort: medium
+  tooling_version: 0.0.0
+  sdk: ''
+  provider: host-harness
+  mode: passenger
+  context_origins:
+  - path: internal/workshop/workshop_file.go
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: internal/sdk/validate.go
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: internal/sdk/sdk.go
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: internal/sdk/channel.go
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: internal/overlord/cmdstate/handlers.go
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/schema.json
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/examples/workshop-digits-cuda.yaml
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/examples/workshop-go-dev.yaml
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/examples/workshop-golang.yaml
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/examples/workshop-try-go.yaml
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/index.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/sdk-definition.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/sdkcraft-definition.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/camera.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/custom-device.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/desktop.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/gpu.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/mount.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/ssh-agent.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/tunnel.rst
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: .dogen/context/doc-gaps.md
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: .dogen/context/structure.md
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  - path: .dogen/context/doc-style.md
+    commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+    note: ''
+  tools_used:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  gaps: []
+  gaps_note: All field types, constraints, defaults, and naming rules verified against
+    Go source, JSON Schema, and existing sibling reference pages; interface includes
+    reuse the vetted single-sourced snippets.
+  files:
+  - path: docs/docs/reference/definition-files/workshop-definition.rst
+    sha256: ca5116319fef6bf65661aac86a783f1b9d7308272b9510f5954c5258557bb088
+  run_id: 019f2e56eb8dc00657ac9d44079c39fe
+  at: '2026-07-04T18:14:36.174596+00:00'
+  action: draft
+  draft_path: docs/docs/reference/definition-files/workshop-definition.rst
+  draft_sha256: ca5116319fef6bf65661aac86a783f1b9d7308272b9510f5954c5258557bb088
+  handoff_path: .dogen/staging/workshop-definition/handoff.rst
+  source_commit: 92f5366d443c9430b0d84fcca474d9e693ae8e03
+  steering_count: 0
+  reviewer_edit_count: 0
+- model: ''
+  model_version: ''
+  effort: medium
+  tooling_version: 0.0.0
+  sdk: ''
+  provider: host-harness
+  mode: passenger
+  context_origins:
+  - path: internal/workshop/workshop_file.go
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: internal/sdk/validate.go
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: internal/sdk/sdk.go
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: internal/sdk/channel.go
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: internal/overlord/cmdstate/handlers.go
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/schema.json
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/examples/workshop-digits-cuda.yaml
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/examples/workshop-go-dev.yaml
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/examples/workshop-golang.yaml
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/examples/workshop-try-go.yaml
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/index.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/sdk-definition.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/sdkcraft-definition.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/camera.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/custom-device.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/desktop.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/gpu.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/mount.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/ssh-agent.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/tunnel.rst
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: .dogen/context/doc-gaps.md
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: .dogen/context/structure.md
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  - path: .dogen/context/doc-style.md
+    commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+    note: ''
+  tools_used:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  gaps:
+  - "CLI path prefix bug: dogen draft wrote the canonical file to docs/docs/ instead\
+    \ of docs/ \u2014 the handoff content and all relative paths are correct for the\
+    \ intended docs/reference/definition-files/ location, but the CLI's output path\
+    \ is wrong. This is a CLI-side defect, not a draft content issue."
+  gaps_note: ''
+  files:
+  - path: docs/docs/reference/definition-files/workshop-definition.rst
+    sha256: f1a34ea895cd4f3ef38511eb209f0a925420b872f3394725a2b5d1ea5ed77333
+  run_id: 019f2e5bc5bb8513932b18fdf439f11a
+  at: '2026-07-04T18:19:54.172725+00:00'
+  action: draft
+  draft_path: docs/docs/reference/definition-files/workshop-definition.rst
+  draft_sha256: f1a34ea895cd4f3ef38511eb209f0a925420b872f3394725a2b5d1ea5ed77333
+  handoff_path: .dogen/staging/workshop-definition/handoff.rst
+  source_commit: d8fd4f26fb26a3139da5069e6e4b74bdd6e3a2a5
+  steering_count: 1
+  reviewer_edit_count: 1
+- model: ''
+  model_version: ''
+  effort: medium
+  tooling_version: 0.0.0
+  sdk: ''
+  provider: host-harness
+  mode: passenger
+  context_origins:
+  - path: internal/workshop/workshop_file.go
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: internal/sdk/validate.go
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: internal/sdk/sdk.go
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: internal/sdk/channel.go
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: internal/overlord/cmdstate/handlers.go
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/schema.json
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/examples/workshop-digits-cuda.yaml
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/examples/workshop-go-dev.yaml
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/examples/workshop-golang.yaml
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/examples/workshop-try-go.yaml
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/index.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/sdk-definition.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/sdkcraft-definition.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/camera.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/custom-device.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/desktop.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/gpu.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/mount.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/ssh-agent.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: docs/reference/definition-files/_interfaces/tunnel.rst
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: .dogen/context/doc-gaps.md
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: .dogen/context/structure.md
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  - path: .dogen/context/doc-style.md
+    commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+    note: ''
+  tools_used:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  gaps:
+  - "CLI path prefix bug: dogen draft writes the canonical file to docs/docs/ instead\
+    \ of docs/ \u2014 the handoff content and all relative paths are correct for the\
+    \ intended docs/reference/definition-files/ location, but the CLI's output path\
+    \ is wrong. This is a CLI-side defect that the reviewer must fix manually after\
+    \ accepting the draft (move docs/docs/reference/definition-files/workshop-definition.rst\
+    \ to docs/reference/definition-files/workshop-definition.rst)."
+  gaps_note: ''
+  files:
+  - path: docs/docs/reference/definition-files/workshop-definition.rst
+    sha256: 068fb5399c3748b2355afd4b2b3a6bc944829bbc759867744c9662bf20779590
+  run_id: 019f2e614fe8e94ddc8c3ffa968942c2
+  at: '2026-07-04T18:25:57.225480+00:00'
+  action: draft
+  draft_path: docs/docs/reference/definition-files/workshop-definition.rst
+  draft_sha256: 068fb5399c3748b2355afd4b2b3a6bc944829bbc759867744c9662bf20779590
+  handoff_path: .dogen/staging/workshop-definition/handoff.rst
+  source_commit: a80849239a552ced9e5e1b35a71703dbd9645dcb
+  steering_count: 2
+  reviewer_edit_count: 2
+reviewer_edits:
+- at: '2026-07-04T18:18:01.916154+00:00'
+  reviewer: Artem Konev
+  summary: "Two must-fix items: (1) Lines 126-128 claim 'system' and 'sketch' are\
+    \ never authored in the sdks list \u2014 this is wrong. Both names are valid entries\
+    \ that resolve to SystemSource/SketchSource via parseSdkName; system is also installed\
+    \ implicitly when omitted. Replace with an accurate statement. (2) The CLI placed\
+    \ the draft at docs/docs/reference/definition-files/workshop-definition.rst (doubled\
+    \ docs/) but the intended target where all relative includes resolve is docs/reference/definition-files/workshop-definition.rst\
+    \ \u2014 move the file before publishing. One nit: drop the literal flag string\
+    \ 'bash -elo pipefail' on line 264; keep the behavioural description (login shell,\
+    \ errexit, pipefail)."
+  verdict: fix
+  draft_sha256: ''
+  files: []
+- at: '2026-07-04T18:24:08.691798+00:00'
+  reviewer: Artem Konev
+  summary: "Two items: (1) [must-fix] The canonical draft is at docs/docs/reference/definition-files/workshop-definition.rst\
+    \ (doubled docs/) \u2014 all relative include/literalinclude paths are broken\
+    \ from there. Must be at docs/reference/definition-files/workshop-definition.rst\
+    \ before publishing. (2) [nit] Lines 126-131 have 8-space indentation where sibling\
+    \ bullets in the same list-table cell use 7 spaces \u2014 reduce to 7-space indentation\
+    \ for consistency."
+  verdict: fix
+  draft_sha256: ''
+  files: []
+- at: '2026-07-04T18:29:00.847322+00:00'
+  reviewer: Artem Konev
+  summary: "Must-fix: the CLI path bug places the canonical draft at docs/docs/ instead\
+    \ of docs/. This cannot be fixed by re-drafting \u2014 every dogen-write pass\
+    \ reproduces the doubled path. After acceptance, the file must be manually moved\
+    \ from docs/docs/reference/definition-files/workshop-definition.rst to docs/reference/definition-files/workshop-definition.rst\
+    \ before publishing."
+  verdict: fix
+  draft_sha256: ''
+  files: []
+- at: '2026-07-04T18:29:35.922837+00:00'
+  reviewer: Artem Konev
+  summary: "Content is correct. The CLI path bug (docs/docs/ doubling) is a known\
+    \ CLI-side defect \u2014 the file must be manually moved from docs/docs/reference/definition-files/workshop-definition.rst\
+    \ to docs/reference/definition-files/workshop-definition.rst before publishing."
+  verdict: accept
+  draft_sha256: 068fb5399c3748b2355afd4b2b3a6bc944829bbc759867744c9662bf20779590
+  files:
+  - path: docs/docs/reference/definition-files/workshop-definition.rst
+    sha256: 068fb5399c3748b2355afd4b2b3a6bc944829bbc759867744c9662bf20779590
+verification:
+  steps: []

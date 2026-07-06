@@ -1,20 +1,3 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """Anti-corruption mapping: a Copilot ``assistant.message`` event → ``DraftResult``.
 
 This is the seam translation (ARCHITECTURE Anti-Pattern 1, RESEARCH Pitfall 4):
@@ -26,6 +9,11 @@ The SDK reports ``model`` as ``str | None`` and ``output_tokens`` as ``int | Non
 (an event may arrive before usage is finalised); the domain model requires
 concrete values, so both are coerced to safe defaults at the boundary rather
 than leaking ``None`` into the provenance record.
+
+This is also the single site that stamps the driver's provenance identity
+(D-14/D-12): every ``DraftResult`` the Copilot driver returns reports
+``sdk="github-copilot-sdk==1.0.2"`` and ``mode="driver"``. Stamping it here — not
+in ``provider.py`` — keeps one source of truth so the two fields can never drift.
 """
 
 from copilot import SessionEvent, SessionEventType
@@ -37,6 +25,14 @@ _UNKNOWN_MODEL = "unknown"
 # Stand-in recorded when the runtime omits a resolved model version (WR-03):
 # kept distinct from the model name so the provenance record stays honest.
 _UNKNOWN_MODEL_VERSION = "unknown"
+
+# D-14: the pinned agent SDK identifier this driver reports on every DraftResult.
+# The Copilot adapter is the SOLE driver that stamps a non-empty sdk (SDK-free
+# providers report ""), so the recorded provenance never fabricates an SDK.
+_DRIVER_SDK = "github-copilot-sdk==1.0.2"
+# D-12: the operational role — this adapter is the headless, bounded-toolset
+# *driver* with authoritative provenance (never the host-harness "passenger").
+_DRIVER_MODE = "driver"
 
 # Built-in tools whose argument carries a guaranteed content read (D-02): only
 # ``view`` opens a concrete file. ``grep``/``glob`` are discovery tools whose
@@ -67,7 +63,8 @@ def to_draft_result(evt: SessionEvent, run_id: str) -> DraftResult:
     Returns
     -------
     DraftResult
-        The drafted MyST text and its provenance inputs, in pure domain terms.
+        The drafted MyST text and its provenance inputs, in pure domain terms,
+        stamped with the driver's ``sdk``/``mode`` identity (D-14/D-12).
     """
     # ``evt.data`` is a union over every event payload; only an
     # ``assistant.message`` carries content/model/output_tokens. The provider
@@ -90,6 +87,9 @@ def to_draft_result(evt: SessionEvent, run_id: str) -> DraftResult:
         model_version=model_version,
         output_tokens=output_tokens,
         run_id=run_id,
+        # D-14/D-12: the driver's single provenance-identity stamp.
+        sdk=_DRIVER_SDK,
+        mode=_DRIVER_MODE,
     )
 
 

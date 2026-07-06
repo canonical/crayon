@@ -1,20 +1,3 @@
-# This file is part of dogen, an agentic documentation-drafting framework.
-#
-# SPDX-FileCopyrightText: 2026 Canonical Ltd.
-# SPDX-License-Identifier: GPL-3.0-only
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 3, as published
-# by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranties of MERCHANTABILITY,
-# SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """The real Copilot drafting provider — the sole ``github-copilot-sdk`` importer.
 
 :class:`CopilotDraftingProvider` implements the same ``core.ports.DraftingProvider``
@@ -59,12 +42,13 @@ from dogen.adapters.copilot.mapping import (
     tool_events_to_provenance,
 )
 from dogen.adapters.copilot.tools import DENY, READONLY
+from dogen.core.authoring import REFERENCE_CODE_RUBRIC, STANCE_CONTRACT
 from dogen.core.models import (
     DraftResult,
     Effort,
     Intent,
+    Signoff,
     SourceRef,
-    Steering,
 )
 
 # Default drafting model and per-pass effort for the skeleton.
@@ -158,13 +142,15 @@ class CopilotDraftingProvider:
         # The SDK rejects a relative working_directory; resolve to absolute.
         self._working_directory = os.path.abspath(working_directory or os.getcwd())
 
-    async def draft_unit(
+    async def draft_unit(  # noqa: PLR0913
         self,
         *,
         intent: Intent,
         audience: str,
-        steering: Steering,
+        signoff: Signoff,
         sources: list[SourceRef],
+        notes: list[str] | None = None,
+        page_format: str = "myst",
     ) -> DraftResult:
         """Draft one unit on the real Copilot SDK behind the shared port.
 
@@ -174,15 +160,22 @@ class CopilotDraftingProvider:
             The Diátaxis direction to draft toward.
         audience : str
             Who the page is written for.
-        steering : Steering
-            The recorded HITL steering event that precedes this draft.
+        signoff : Signoff
+            The recorded HITL gate act that precedes this draft.
         sources : list of SourceRef
-            The human-pointed sources to ground the draft in.
+            The declared sources — the primary grounding and the starting
+            points for the session's read-only navigation (v1).
+        notes : list of str
+            The unit's steering notes, oldest first; folded into the drafting
+            prompt so review-verdict corrections steer the re-draft (v1).
+        page_format : str
+            The unit's page format (v1.2); the prompt names the markup so an
+            ``.rst`` unit is authored as reStructuredText, not MyST.
 
         Returns
         -------
         DraftResult
-            The drafted MyST content plus provenance inputs, in domain terms.
+            The drafted page content plus provenance inputs, in domain terms.
 
         Raises
         ------
@@ -194,8 +187,10 @@ class CopilotDraftingProvider:
             broke, or any other draft-path JSON-RPC / process-exit error
             occurred (a handled state, never a crash — SKEL-05/D-27, ERR-02).
         """
-        prompt = _compose_prompt(intent, audience, sources)
-        steer = _compose_steering(intent, audience, steering)
+        prompt = _compose_prompt(
+            intent, audience, sources, notes or [], page_format=page_format
+        )
+        steer = _compose_steering(intent, audience, signoff)
         try:
             return await self._run_draft(prompt, steer)
         except StopError as exc:
@@ -364,7 +359,14 @@ def _require_assistant_message(event: SessionEvent | None) -> DraftResult:
     return to_draft_result(event, run_id="")
 
 
-def _compose_prompt(intent: Intent, audience: str, sources: Iterable[SourceRef]) -> str:
+def _compose_prompt(
+    intent: Intent,
+    audience: str,
+    sources: Iterable[SourceRef],
+    notes: Iterable[str],
+    *,
+    page_format: str = "myst",
+) -> str:
     """Compose the drafting instruction from domain inputs only.
 
     Parameters
@@ -374,7 +376,14 @@ def _compose_prompt(intent: Intent, audience: str, sources: Iterable[SourceRef])
     audience : str
         The target audience.
     sources : iterable of SourceRef
-        The human-pointed sources to ground the draft in.
+        The declared sources — primary grounding and navigation starting
+        points (v1: a starting set, not a boundary).
+    notes : iterable of str
+        The unit's steering notes, oldest first; review-verdict corrections
+        arrive here so a re-draft actually applies them (v1).
+    page_format : str
+        The unit's page format (v1.2): the markup named in the instruction —
+        ``rst`` → reStructuredText, else MyST Markdown.
 
     Returns
     -------
@@ -382,15 +391,26 @@ def _compose_prompt(intent: Intent, audience: str, sources: Iterable[SourceRef])
         A plain-text drafting prompt carrying no SDK shapes.
     """
     listed = ", ".join(s.path or s.ref or "" for s in sources) or "no sources"
+    steering_block = ""
+    note_list = [n for n in notes if n]
+    if note_list:
+        joined = "\n".join(f"- {n}" for n in note_list)
+        steering_block = f" Steering notes to honour, oldest first:\n{joined}\n"
+    markup = "reStructuredText" if page_format == "rst" else "MyST Markdown"
     return (
-        f"Draft a {intent.value} documentation page for {audience}, in MyST "
-        f"Markdown suitable for Sphinx. Ground it strictly in these sources: "
-        f"{listed}. Use only the read-only tools available to inspect them."
+        f"Draft a {intent.value} documentation page for {audience}, in {markup} "
+        f"suitable for Sphinx. Start from these declared sources and "
+        f"ground every claim in what you actually read: {listed}. You may "
+        "navigate beyond them with the read-only tools when a fact's origin "
+        "lies elsewhere; never assert what you have not read."
+        f"{steering_block} "
+        "Reference code entities by qualified name; do not reproduce their "
+        f"source in the page. {REFERENCE_CODE_RUBRIC} {STANCE_CONTRACT}"
     )
 
 
-def _compose_steering(intent: Intent, audience: str, steering: Steering) -> str:
-    """Compose the system-message steering text from the recorded HITL event.
+def _compose_steering(intent: Intent, audience: str, signoff: Signoff) -> str:
+    """Compose the system-message steering text from the recorded gate act.
 
     Parameters
     ----------
@@ -398,8 +418,8 @@ def _compose_steering(intent: Intent, audience: str, steering: Steering) -> str:
         The steered Diátaxis direction.
     audience : str
         The steered audience.
-    steering : Steering
-        The recorded steering event (its author anchors accountability).
+    signoff : Signoff
+        The recorded signoff act (its author anchors accountability).
 
     Returns
     -------
@@ -408,6 +428,7 @@ def _compose_steering(intent: Intent, audience: str, steering: Steering) -> str:
     """
     return (
         f"You are drafting documentation under human steering recorded by "
-        f"{steering.author}. Direction: {intent.value}. Audience: {audience}. "
-        "Draft only; never commit, push, or modify files."
+        f"{signoff.author}. Direction: {intent.value}. Audience: {audience}. "
+        "Draft only; never commit, push, or modify files. "
+        f"{REFERENCE_CODE_RUBRIC}"
     )
