@@ -166,6 +166,15 @@ dogen has been exercised end-to-end across three agent harnesses. See
 builds, output-vs-gold comparison, and provenance), with the per-leg captures under
 [`validation/round-3/`](./validation/round-3/).
 
+## Project timeline
+
+An interactive milestone planning timeline lives in
+[`project-timeline.html`](./project-timeline.html) — pulses by component, with dependency
+links and per-item detail. It's a standalone page (inline CSS/JS, no build step). GitHub
+shows it as source; view it by opening the file in a browser, or on the repo's
+(access-controlled) GitHub Pages site at
+<https://effective-doodle-ee1w8gm.pages.github.io/project-timeline.html>.
+
 ## Licensing
 
 The packaged core is licensed under **LGPL-3.0-only** (see [`LICENSE`](./LICENSE)). The portable
