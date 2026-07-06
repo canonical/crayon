@@ -901,6 +901,7 @@ def test_edit_re_sign_folds_re_approval_into_one_act(repo):
     assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
     store = FilesystemPlanningStore()
     first = store.read_provenance("u", root=repo).signoff
+    assert first is not None
     result = runner.invoke(
         app, ["unit", "edit", "u", "--title", "Amended", "--re-sign", "--json"]
     )
@@ -939,6 +940,7 @@ def test_signoff_re_sign_archives_the_superseded_act(repo):
     assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
     store = FilesystemPlanningStore()
     first = store.read_provenance("u", root=repo).signoff
+    assert first is not None
     assert runner.invoke(app, ["unit", "edit", "u", "--title", "New"]).exit_code == 0
     assert runner.invoke(app, ["signoff", "u", "--re-sign"]).exit_code == 0
     provenance = store.read_provenance("u", root=repo)

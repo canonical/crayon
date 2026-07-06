@@ -127,7 +127,7 @@ def test_sources_and_context_origins_are_distinct_fields() -> None:
         effort=Effort.medium,
         tooling_version="0.0.0",
         sdk="github-copilot-sdk==1.0.2",
-        context_origins=["AGENTS.md"],
+        context_origins=["AGENTS.md"],  # ty: ignore[invalid-argument-type]
         tools_used=["builtin:grep"],
         run_id="abc",
         at="2026-06-20T00:00:00Z",
@@ -196,7 +196,7 @@ def test_provenance_migrates_v0_steering_mapping_to_signoff() -> None:
     prov = Provenance(
         unit_id="cli-usage",
         schema_version=0,
-        steering={
+        steering={  # ty: ignore[invalid-argument-type]
             "author": "Ada",
             "at": "2026-06-20T00:00:00Z",
             "intent": "reference",
