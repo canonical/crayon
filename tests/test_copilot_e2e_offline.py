@@ -7,29 +7,21 @@ fake-SDK transport injected by the shared ``install_stub_client`` fixture (plan
 03-02). The stub *is* the transport, so no Copilot token, runtime, or network is
 touched — the whole path runs green in CI.
 
-Two proofs, both fully offline:
+The proof, fully offline:
 
 * ``test_offline_driver_e2e_records_authoritative_provenance`` — the recorded
   ``generations[0]`` carries the driver's authoritative identity
   (``mode="driver"``, ``sdk="github-copilot-sdk==1.0.2"``, ``provider="copilot"``)
   and the WR-03 provenance-before-output ordering held (a generation row and a
   ``drafted`` progress transition were persisted alongside the written draft).
-* ``test_offline_driver_draft_compiles_under_sphinx_w`` — the driver's canned
-  MyST, written to ``docs/`` through the store, compiles warning-free under the
-  same ``sphinx-build -W`` publishability gate ``tests/test_docs_build.py`` uses
-  (DRAFT-04 publishability, D-15 / Assumption A4).
 
 The stub scripts a canned ``assistant.message`` whose ``content`` is valid MyST
 (``conftest._StubAssistantData``); the orchestrator writes it to the unit's
-Sphinx target, which the committed ``docs/index.md`` toctree names, so ``-W``
-compiles the loop's real output rather than an empty tree (Pitfall 3).
+Sphinx target under the unit's ``docs/`` output path.
 """
 
 from __future__ import annotations
 
-import asyncio
-import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -48,16 +40,12 @@ from dogen.core.orchestrator import (
     signoff as steer,
 )
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-_DOCS = _REPO_ROOT / "docs"
-
-# The reference unit the committed docs/index.md toctree names; the scaffold sets
-# sphinx_target = "<unit_id>.md", so the draft lands at docs/dogen-reference.md
-# (the toctree entry), matching tests/test_docs_build.py.
+# The offline reference unit; the store sets sphinx_target = "<unit_id>.md", so the
+# draft lands at the unit's docs/dogen-reference.md output path.
 _UNIT_ID = "dogen-reference"
 
 # The canned MyST the fake-SDK stub returns (conftest._StubAssistantData.content).
-# Asserted verbatim so a stub-content drift is caught here, and compiled under -W.
+# Asserted verbatim so a stub-content drift is caught here.
 _CANNED_MYST = "# Drafted\n\nbody"
 
 # The driver's authoritative provenance identity, stamped once at the mapping seam
@@ -139,39 +127,3 @@ async def test_offline_driver_e2e_records_authoritative_provenance(
     assert generation.run_id  # correlated to the draft span
     progress = store.read_progress(_UNIT_ID, root=tmp_path)
     assert progress.state is ProgressState.drafted
-
-
-@pytest.mark.skipif(
-    shutil.which("sphinx-build") is None,
-    reason="sphinx-build not installed (docs extra); CI runs it with --extra docs",
-)
-def test_offline_driver_draft_compiles_under_sphinx_w(
-    tmp_path: Path, install_stub_client
-) -> None:
-    # Assemble a docs tree = the committed conf.py + index.md + the driver's
-    # drafted page, then run a real -W build over it. The fake-SDK stub is the
-    # only transport — no Copilot token, no network (mirrors test_docs_build.py).
-    install_stub_client()
-
-    docs_dir = tmp_path / "docs"
-    docs_dir.mkdir()
-    shutil.copy(_DOCS / "conf.py", docs_dir / "conf.py")
-    shutil.copy(_DOCS / "index.md", docs_dir / "index.md")
-
-    store = FilesystemPlanningStore()
-    _declare_and_steer(tmp_path, store)
-    asyncio.run(draft(_draft_request(tmp_path, store)))
-
-    drafted = docs_dir / f"{_UNIT_ID}.md"
-    # The driver's MyST must be the page the toctree references, so -W compiles
-    # the loop's real output rather than an empty tree (Pitfall 3).
-    assert drafted.exists()
-
-    out = tmp_path / "_out"
-    result = subprocess.run(  # noqa: S603
-        ["sphinx-build", "-W", "-b", "html", str(docs_dir), str(out)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr or result.stdout

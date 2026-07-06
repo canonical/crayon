@@ -38,7 +38,8 @@ from its tool surface so that posture is enforced at the manifest (D-14/D-18). S
    them for the provenance gap and (in review mode) the findings.
 3. Select the review mode with `AskUserQuestion` (BLOCKING): **record** (just record
    my verdict) or **review** (do a full findings review first). Do NOT run
-   `sphinx-build`; publishability is already a tested CI property (D-13).
+   `sphinx-build` or any build — building and publishing are out of dogen's scope; the
+   merger owns them (D-13).
 4. Present the provenance summary (workflow step 3, both modes). Load
    `references/provenance-summary.md` now for the exact field map.
 5. In review mode only, run the findings review (workflow step 4). Load
@@ -251,8 +252,8 @@ note.
   `../README.md`.
 </must>
 <must_not>
-- D-13: Never run `sphinx-build` or any build; publishability is a tested CI
-  property.
+- D-13: Never run `sphinx-build` or any build — building and publishing are out of
+  dogen's scope; the reviewer/merger owns them.
 - D-14: Never publish, push, or run a git state-changing command — the CLI's commit
   seam owns the transition commit; the human owns publishing.
 - Never edit the draft, `unit.md`, or any file — this skill has no `Write`/`Edit`
