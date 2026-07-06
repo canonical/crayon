@@ -70,9 +70,9 @@ This iteration is a **skills-first rebuild**: portable Agent Skills (`SKILL.md`)
 | `opentelemetry-api` | `>=1.42.1` | 1.42.1 | LIFT (API only — see seam note) | HIGH |
 | `pydantic` | `>=2` | 2.13.4 | LIFT | HIGH |
 | `typer` | `>=0.26.7` | 0.26.7 | LIFT — but reposition (see CLI decision) | HIGH |
-| `sphinx` (docs extra) | `==9.1.0` | 9.1.0 | LIFT | HIGH |
-| `myst-parser` (docs extra) | `==5.1.0` | 5.1.0 | LIFT | HIGH |
-| `furo` (docs extra) | `>=2025.12.19` | 2025.12.19 | LIFT | HIGH |
+| `sphinx` (docs extra) | `==9.1.0` | 9.1.0 | DROPPED — self-docs `docs` extra removed | HIGH |
+| `myst-parser` (docs extra) | `==5.1.0` | 5.1.0 | DROPPED — self-docs `docs` extra removed | HIGH |
+| `furo` (docs extra) | `>=2025.12.19` | 2025.12.19 | DROPPED — self-docs `docs` extra removed | HIGH |
 | `ruff` (dev) | unpinned | 0.15.18 | LIFT; consider pinning | HIGH |
 | `ty` (dev) | unpinned | 0.0.51 | LIFT; pin (pre-1.0, churny) | MEDIUM |
 | `pytest` (dev) | unpinned | 9.1.1 | LIFT (eval deferred, but keep installed) | HIGH |
@@ -102,6 +102,10 @@ This iteration is a **skills-first rebuild**: portable Agent Skills (`SKILL.md`)
 | **hatchling** | latest | PEP 517 build backend | mvp-1's `[build-system]`. Lightweight, src-layout friendly, plays clean with uv. [HIGH] |
 
 ### Documentation output toolchain (the "Sphinx-publishable" target)
+
+> These pins describe the **drafted output's target stack** — a *consumer* repo's
+> Sphinx/RTD publish pipeline — not a dogen dependency. dogen emits for this stack but
+> does not run it; the self-docs `docs` extra (Sphinx/myst-parser/furo) was removed.
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
