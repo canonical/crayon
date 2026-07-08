@@ -755,9 +755,10 @@ def test_seam_commit_never_sweeps_unrelated_files(repo):
         ["draft", "u", "--provider", "mock"],
     ):
         assert runner.invoke(app, args).exit_code == 0
-    all_committed = _git(repo, "log", "--name-only", "--format=", "main..HEAD") or _git(
-        repo, "log", "--name-only", "--format="
-    )
+    initial_commit = _git(repo, "rev-list", "--max-parents=0", "HEAD").splitlines()[-1]
+    all_committed = _git(
+        repo, "log", "--name-only", "--format=", f"{initial_commit}..HEAD"
+    ) or _git(repo, "log", "--name-only", "--format=")
     assert "WIP-notes.md" not in all_committed
     assert "staged-elsewhere.md" not in all_committed
     # The operator's index entry survives the seam commits untouched.
