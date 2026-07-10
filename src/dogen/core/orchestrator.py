@@ -7,9 +7,10 @@ HITL-01). When the signoff is present it opens the ``dogen.draft`` OTel span,
 mints the ``run_id`` from the trace id, drives the injected
 :class:`DraftingProvider`, writes the draft + a ``generations[]`` entry (whose
 ``run_id`` correlates to the span — OBS-03/D-22) via the
-:class:`PlanningStore`, and auto-advances progress ``pending → sourced →
-drafted``. It **never** writes ``ProgressState.committed`` — publishing belongs
-to the human (SKEL-03 / Pitfall 9 / D-38).
+:class:`PlanningStore`. Lifecycle state is **derived** from that record, not
+persisted: :func:`derive_progress` maps an empty stream to ``pending``, a
+drafted stream to ``drafted``, and a reviewed stream to ``reviewed`` (PROV-04 /
+D-01/D-02).
 
 Schema v1 adds the traceability spine here:
 
@@ -43,8 +44,6 @@ from dogen.core.models import (
     FileDigest,
     Generation,
     Intent,
-    Progress,
-    ProgressEntry,
     ProgressState,
     Provenance,
     ReadRecord,
@@ -61,24 +60,6 @@ from dogen.core.models import (
 from dogen.core.ports import DraftingProvider, Identity, PlanningStore, RepoSeam
 
 _DRAFT_ACTION = "draft"
-
-# The auto-advance ladder the loop walks; ``committed`` is deliberately absent.
-_AUTO_ADVANCE: tuple[ProgressState, ...] = (
-    ProgressState.sourced,
-    ProgressState.drafted,
-)
-
-# The forward lifecycle ordering (D-38) used to keep auto-advance monotonic
-# (WR-04): a state is only stamped when it is strictly later than the current
-# one. ``reviewed`` is included so a re-draft of an already-reviewed unit is
-# ranked correctly instead of walking the lifecycle backward. The terminal
-# ``committed`` state is deliberately NOT named here (SKEL-03).
-_PROGRESS_ORDER: tuple[ProgressState, ...] = (
-    ProgressState.pending,
-    ProgressState.sourced,
-    ProgressState.drafted,
-    ProgressState.reviewed,
-)
 
 Clock = Callable[[], str]
 
@@ -107,9 +88,9 @@ class SignoffExistsError(RuntimeError):
 class NotDraftedError(RuntimeError):
     """Raised when ``review`` targets a unit that was never drafted (WR-05).
 
-    A missing ``progress.yaml`` means no draft has run, so a review has nothing
-    to attach to. Surfacing a clear domain refusal — rather than letting a bare
-    ``FileNotFoundError`` escape — keeps the "draft first" border legible
+    An empty ``generations`` stream means no draft has run, so a review has
+    nothing to attach to. Surfacing a clear domain refusal — rather than letting
+    a bare ``FileNotFoundError`` escape — keeps the "draft first" border legible
     (REVIEW-01); the CLI maps it to a nonzero exit.
     """
 
@@ -1156,8 +1137,9 @@ def review(request: ReviewRequest) -> ReviewOutcome:
     note to the steering stream so the next draft pass reads it — the review
     loop's correction never again lives only in a conversation.
 
-    The loop never sets ``ProgressState.committed`` — publishing belongs to
-    the human (SKEL-03/D-38).
+    Progress is derived from the provenance record (``pending → drafted →
+    reviewed``); the loop never mints a terminal publish state — publishing
+    belongs to the human (SKEL-03/D-38).
 
     Parameters
     ----------
@@ -1172,7 +1154,7 @@ def review(request: ReviewRequest) -> ReviewOutcome:
     Raises
     ------
     NotDraftedError
-        If the unit has no ``progress.yaml`` (it was never drafted).
+        If the unit has an empty ``generations`` stream (it was never drafted).
     AlreadyAcceptedError
         If an ``accept`` would duplicate the latest sealed accept for the
         same on-disk draft text (a harness double-fire); nothing is written.
@@ -1620,69 +1602,6 @@ def _record_generation(  # noqa: PLR0913
             reviewer_edit_count=len(provenance.reviewer_edits),
         )
     )
-
-
-def _advance_progress(request: DraftRequest, *, run_id: str = "") -> None:
-    """Land the unit at ``ProgressState.drafted`` after a draft (never committed).
-
-    A draft always leaves the unit at ``drafted``, recorded as forward-only,
-    idempotent history (WR-04 and its follow-up):
-
-    - Already ``drafted``: a no-op — no transition, no spurious history entry.
-    - Earlier (``pending``/``sourced``): walk the forward ladder, stamping each
-      newly-reached state up to ``drafted``.
-    - Later (``reviewed``, or any hand-set terminal state beyond the ladder): a
-      re-draft deliberately supersedes the now-stale review and resets the unit
-      to ``drafted`` in a single clean transition (D-38).
-
-    Parameters
-    ----------
-    request : DraftRequest
-        The bundled collaborators and parameters.
-    run_id : str
-        The draft run id stamped on each new history entry (v1 cross-ref).
-    """
-    progress = _read_or_init_progress(request)
-    if progress.state is ProgressState.drafted:
-        return
-    drafted_rank = _PROGRESS_ORDER.index(ProgressState.drafted)
-    current = (
-        _PROGRESS_ORDER.index(progress.state)
-        if progress.state in _PROGRESS_ORDER
-        else len(_PROGRESS_ORDER)
-    )
-    if current > drafted_rank:
-        progress.state = ProgressState.drafted
-        progress.history.append(
-            ProgressEntry(at=request.now(), state=ProgressState.drafted, run_id=run_id)
-        )
-    else:
-        for state in _AUTO_ADVANCE:
-            if _PROGRESS_ORDER.index(state) > current:
-                progress.state = state
-                progress.history.append(
-                    ProgressEntry(at=request.now(), state=state, run_id=run_id)
-                )
-    request.store.write_progress(progress, root=request.root)
-
-
-def _read_or_init_progress(request: DraftRequest) -> Progress:
-    """Read the unit's progress, initializing a ``pending`` record if absent.
-
-    Parameters
-    ----------
-    request : DraftRequest
-        The bundled collaborators and parameters.
-
-    Returns
-    -------
-    Progress
-        The existing or a freshly initialized ``pending`` progress record.
-    """
-    try:
-        return request.store.read_progress(request.unit_id, root=request.root)
-    except FileNotFoundError:
-        return Progress(unit_id=request.unit_id, state=ProgressState.pending)
 
 
 def _load_or_init_provenance(
