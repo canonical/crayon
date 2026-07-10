@@ -56,7 +56,14 @@ from dogen.adapters.planning_fs import (
 )
 from dogen.app import compose
 from dogen.cli.skills import skills_app
-from dogen.core.models import CommitMode, Intent, Provenance, ReviewVerdict, Unit
+from dogen.core.models import (
+    CommitMode,
+    Intent,
+    Provenance,
+    ReviewVerdict,
+    Unit,
+    derive_progress,
+)
 from dogen.core.orchestrator import (
     AlreadyAcceptedError,
     NotDraftedError,
@@ -1047,13 +1054,13 @@ def _gather_unit_detail(
     """
     unit = store.load_unit(unit_id, root=root)
     try:
-        state = store.read_progress(unit_id, root=root).state.value
-    except FileNotFoundError:
-        state = "pending"
-    try:
         provenance = store.read_provenance(unit_id, root=root)
     except FileNotFoundError:
         provenance = Provenance(unit_id=unit_id)
+    # PROV-04: derive lifecycle state from provenance rather than reading a
+    # second stored artefact. An empty/absent record derives to ``pending``,
+    # so the former FileNotFoundError→"pending" guard is no longer needed.
+    state = derive_progress(provenance).value
     return unit, state, provenance
 
 
@@ -1617,7 +1624,11 @@ def draft(  # noqa: PLR0913, C901, PLR0912
             "wrote the page and pass --model so the provenance names it.",
             err=True,
         )
-    progress = store.read_progress(unit_id, root=root).state.value
+    try:
+        provenance = store.read_provenance(unit_id, root=root)
+    except FileNotFoundError:
+        provenance = Provenance(unit_id=unit_id)
+    progress = derive_progress(provenance).value
     sha = _report_git(seam, no_commit=no_commit)
     if json_output:
         _emit_json(
