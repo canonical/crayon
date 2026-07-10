@@ -373,9 +373,7 @@ async def test_draft_reads_prior_steering_act(tmp_path: Path) -> None:
 
 def test_same_file_digests_is_order_agnostic() -> None:
     from dogen.core.models import FileDigest  # noqa: PLC0415
-    from dogen.core.orchestrator import (  # noqa: PLC0415
-        same_file_digests,  # ty: ignore[unresolved-import]
-    )
+    from dogen.core.orchestrator import same_file_digests  # noqa: PLC0415
 
     a = [
         FileDigest(path="docs/a.md", sha256="1"),
@@ -396,8 +394,8 @@ def test_same_file_digests_is_order_agnostic() -> None:
 def test_tooling_version_reads_installed_metadata(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(orchestrator._metadata, "version", lambda name: "9.9.9")  # ty: ignore[unresolved-attribute]
-    assert orchestrator.tooling_version() == "9.9.9"  # ty: ignore[unresolved-attribute]
+    monkeypatch.setattr(orchestrator._metadata, "version", lambda name: "9.9.9")
+    assert orchestrator.tooling_version() == "9.9.9"
 
 
 def test_tooling_version_falls_back_on_missing_package(
@@ -408,7 +406,7 @@ def test_tooling_version_falls_back_on_missing_package(
     def _raise(name: str) -> str:
         raise importlib.metadata.PackageNotFoundError(name)
 
-    monkeypatch.setattr(orchestrator._metadata, "version", _raise)  # ty: ignore[unresolved-attribute]
-    fallback = orchestrator.tooling_version()  # ty: ignore[unresolved-attribute]
+    monkeypatch.setattr(orchestrator._metadata, "version", _raise)
+    fallback = orchestrator.tooling_version()
     # Honest, non-semver sentinel — not a fabricated version string.
     assert "+" in fallback

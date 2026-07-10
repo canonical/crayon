@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from dogen.core.models import (
     SCHEMA_VERSION,
     Effort,
+    FileDigest,
     Generation,
     Intent,
     Progress,
@@ -19,7 +20,6 @@ from dogen.core.models import (
     Signoff,
     SourceRef,
     Unit,
-    VerificationStep,
 )
 
 
@@ -80,20 +80,14 @@ def test_machine_models_default_schema_version_current() -> None:
     )
 
 
-def test_provenance_reserves_empty_verification_and_reviewer_edits() -> None:
+def test_provenance_reserves_empty_reviewer_edits_and_generations() -> None:
+    # v2: the reserved-empty ``verification`` block was deleted (PROV-02); a
+    # scaffold-time record simply carries empty streams.
     prov = Provenance(unit_id="cli-usage")
-    assert prov.verification.steps == []
     assert prov.reviewer_edits == []
     assert prov.generations == []
     assert prov.signoff is None
     assert prov.steering == []
-
-
-def test_verification_step_defaults_are_reserved_empty() -> None:
-    step = VerificationStep(id="build")
-    assert step.state == "unverified"
-    assert step.evidence is None
-    assert step.env_fingerprint is None
 
 
 def test_progress_accepts_lifecycle_ordering_in_history() -> None:
@@ -132,6 +126,7 @@ def test_sources_and_context_origins_are_distinct_fields() -> None:
         sdk="github-copilot-sdk==1.0.2",
         context_origins=["AGENTS.md"],  # ty: ignore[invalid-argument-type]
         tools_used=["builtin:grep"],
+        files=[FileDigest(path="docs/reference/cli.md", sha256="ab12")],
         run_id="abc",
         at="2026-06-20T00:00:00Z",
         action="draft",
@@ -151,6 +146,7 @@ def _generation(**overrides: object) -> Generation:
         "effort": Effort.medium,
         "tooling_version": "0.0.0",
         "sdk": "github-copilot-sdk==1.0.2",
+        "files": [FileDigest(path="docs/reference/cli.md", sha256="ab12")],
         "run_id": "abc",
         "at": "2026-06-20T00:00:00Z",
         "action": "draft",

@@ -16,17 +16,25 @@ concepts:
 * ``SteeringEntry`` — the append-only guidance stream (from planning, from
   review verdicts, or added manually) that a re-draft reads.
 
-Two v0 design invariants remain load-bearing and must never be collapsed:
+One v0 design invariant remains load-bearing and must never be collapsed:
 
 * ``Unit.sources`` (human-pointed, authored in ``unit.md``) and
   ``Generation.context_origins`` (what the agent *actually read*) are distinct
   fields — the gap between them is itself audit-relevant (D-37).
-* ``Verification`` is reserved present-but-empty (D-36/PLAN-07): the field
-  exists so a later phase can fill it without a breaking migration.
 
-v0 records load transparently: the ``Provenance`` migrator lifts the old single
-``steering`` mapping into ``signoff``, and ``Generation`` lifts plain-string
-``context_origins`` into :class:`ReadRecord` entries.
+Schema v2 (the provenance unification) promotes ``Generation.files`` /
+``ReviewerEdit.files`` to the sole digest authority (always ≥1 entry on a
+generation, primary first), deletes the legacy primary mirrors
+(``draft_path``/``draft_sha256``) and the reserved-empty ``verification`` block,
+adds ``Generation.model_origin``, and makes ``effort``/``model_version``/``sdk``
+omit-empty on serialization.
+
+Records load transparently across versions: the ``Provenance`` migrator lifts a
+v0 single ``steering`` mapping into ``signoff`` and then lifts a v1 record into
+v2 (synthesizing ``files`` from the legacy digests, dropping the dead fields),
+and ``Generation`` lifts plain-string ``context_origins`` into
+:class:`ReadRecord` entries. Migration is lazy and load-time only (D-01): a read
+never writes, so a repo may hold mixed v1/v2 sidecars indefinitely.
 """
 
 import re
@@ -34,10 +42,16 @@ from enum import StrEnum
 from pathlib import PurePosixPath, PureWindowsPath
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 
 #: The current on-disk schema generation for every machine-readable model.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 #: Supported page extensions → format names (v1.2). The target extension IS
 #: the unit's format — a derived fact, never a stored field that could drift.
@@ -385,13 +399,19 @@ class Generation(BaseModel):
     model : str
         The model name used for the pass.
     model_version : str
-        The resolved model version.
-    effort : Effort
-        Reasoning effort requested.
+        The resolved model version; ``""`` when the provider does not report
+        one. Omitted from serialization while empty (v2, PROV-02).
+    effort : Effort or None
+        Reasoning effort the pass ran at; ``None`` when unknown. Omitted from
+        serialization while ``None`` (v2, PROV-02).
     tooling_version : str
         The ``dogen`` package version that produced the pass.
     sdk : str
-        The pinned agent SDK identifier/version.
+        The pinned agent SDK identifier/version; ``""`` when the provider is
+        SDK-free. Omitted from serialization while empty (v2, PROV-02).
+    model_origin : str
+        How the recorded model identity was established (``""``|``ta``|``self``
+        |``config``|``flag``); ``""`` until Phase 8 populates it (v2, PROV-02).
     provider : str
         The selected provider name (e.g. ``mock``/``copilot``). Defaults to the
         empty string. OQ-1 additive provenance extension — see ``mode``.
@@ -411,10 +431,6 @@ class Generation(BaseModel):
         ISO-8601 timestamp of the pass.
     action : str
         The orchestrator action that produced this entry (e.g. ``draft``).
-    draft_path : str
-        Repo-relative path of the draft this pass recorded (v1 cross-ref).
-    draft_sha256 : str
-        SHA-256 hex digest of the recorded draft text (v1 cross-ref).
     handoff_path : str
         Repo-relative path of the passenger handoff file that carried the
         text, ``""`` for driver passes (v1 cross-ref).
@@ -436,15 +452,16 @@ class Generation(BaseModel):
         the context report (v1.2); ``""`` on older records.
     files : list of FileDigest
         Every page this pass wrote, primary first, each with its content hash
-        (v1.2). ``draft_path``/``draft_sha256`` keep mirroring the primary;
-        empty on records that predate multi-file units.
+        — the sole digest authority (v2, PROV-01). Always carries at least one
+        entry; single- and multi-file units share this shape.
     """
 
     model: str
-    model_version: str
-    effort: Effort
+    model_version: str = ""
+    effort: Effort | None = None
     tooling_version: str
-    sdk: str
+    sdk: str = ""
+    model_origin: str = ""
     provider: str = ""
     mode: str = ""
     context_origins: list[ReadRecord] = Field(default_factory=list)
@@ -455,8 +472,6 @@ class Generation(BaseModel):
     run_id: str
     at: str
     action: str
-    draft_path: str = ""
-    draft_sha256: str = ""
     handoff_path: str = ""
     source_commit: str = ""
     steering_count: int = 0
@@ -481,6 +496,54 @@ class Generation(BaseModel):
         if isinstance(value, list):
             return [{"path": v} if isinstance(v, str) else v for v in value]
         return value
+
+    @model_validator(mode="after")
+    def _require_files(self) -> "Generation":
+        """Enforce the ≥1 ``files`` invariant (v2, PROV-01, RESEARCH Pitfall 5).
+
+        Every generation is a written pass, so it must carry at least one page
+        digest. A migrated legacy record whose primary digest cannot be
+        synthesized fails here as a :class:`ValidationError` rather than
+        serializing a false-empty seal.
+
+        Returns
+        -------
+        Generation
+            The validated instance.
+        """
+        if not self.files:
+            raise ValueError(
+                "Generation.files must carry at least one page digest (PROV-01)"
+            )
+        return self
+
+    @model_serializer(mode="wrap")
+    def _omit_empty(self, handler: Any) -> dict[str, Any]:  # noqa: ANN401
+        """Drop exactly the three PROV-02 fields when empty; keep everything else.
+
+        A surgical omit-empty (RESEARCH Pattern 2): ``effort`` when ``None`` and
+        ``model_version``/``sdk`` when ``""`` are popped from the serialized
+        mapping. A blanket ``exclude_none``/``exclude_defaults`` is deliberately
+        avoided because it over-drops unrelated empty fields.
+
+        Parameters
+        ----------
+        handler : Any
+            The default Pydantic serialization handler for this model.
+
+        Returns
+        -------
+        dict of str to Any
+            The serialized mapping with only the empty PROV-02 fields removed.
+        """
+        data = handler(self)
+        if self.effort is None:
+            data.pop("effort", None)
+        if self.model_version == "":
+            data.pop("model_version", None)
+        if self.sdk == "":
+            data.pop("sdk", None)
+        return data
 
 
 class ReviewVerdict(StrEnum):
@@ -509,57 +572,182 @@ class ReviewerEdit(BaseModel):
         The reviewer's note describing the judgment.
     verdict : ReviewVerdict or None
         The structured verdict (v1); ``None`` on a record migrated from v0.
-    draft_sha256 : str
-        SHA-256 hex digest of the exact draft text an ``accept`` verdict
-        sealed; ``""`` for non-accept verdicts and migrated v0 records. For a
-        multi-file unit this mirrors the primary page.
     files : list of FileDigest
-        Every page an ``accept`` verdict sealed, with content hashes (v1.2);
-        empty for non-accept verdicts and pre-v1.2 records.
+        Every page an ``accept`` verdict sealed, with content hashes — the sole
+        seal authority (v2, PROV-01); empty for non-accept verdicts (they never
+        sealed).
     """
 
     at: str
     reviewer: str
     summary: str
     verdict: ReviewVerdict | None = None
-    draft_sha256: str = ""
     files: list[FileDigest] = Field(default_factory=list)
 
 
-class VerificationStep(BaseModel):
-    """A reserved-empty verification step (PLAN-07).
-
-    Present-but-empty so a later phase can record actionable-content checks
-    without a breaking migration (D-36, RESEARCH Pitfall 5).
+def _lift_v0_steering(data: dict[str, Any]) -> dict[str, Any]:
+    """v0→v1: lift a mapping-valued ``steering`` (the old gate act) to ``signoff``.
 
     Parameters
     ----------
-    id : str
-        Stable step identifier.
-    state : str
-        Verification state; defaults to ``"unverified"``.
-    evidence : str or None
-        Pointer to captured evidence; reserved ``None``.
-    env_fingerprint : str or None
-        Environment fingerprint for the check; reserved ``None``.
+    data : dict of str to Any
+        The raw input mapping.
+
+    Returns
+    -------
+    dict of str to Any
+        A copy with a v0 ``steering`` mapping promoted to ``signoff`` and the
+        stream emptied, or the input unchanged when it is not a v0 record.
     """
+    steering = data.get("steering")
+    if isinstance(steering, dict):
+        migrated = dict(data)
+        migrated.setdefault("signoff", None)
+        if migrated["signoff"] is None:
+            migrated["signoff"] = steering
+        migrated["steering"] = []
+        return migrated
+    if steering is None and "steering" in data:
+        migrated = dict(data)
+        migrated["steering"] = []
+        return migrated
+    return data
 
-    id: str
-    state: str = "unverified"
-    evidence: str | None = None
-    env_fingerprint: str | None = None
+
+def _primary_digest(files: Any) -> tuple[str | None, str | None]:  # noqa: ANN401
+    """Return the ``(path, sha256)`` of a file list's primary entry, if any."""
+    if isinstance(files, list) and files:
+        first = files[0]
+        if isinstance(first, dict):
+            return first.get("path"), first.get("sha256")
+        return getattr(first, "path", None), getattr(first, "sha256", None)
+    return None, None
 
 
-class Verification(BaseModel):
-    """The reserved verification block of a unit's provenance (PLAN-07).
+def _lift_generation(gen: dict[str, Any]) -> dict[str, Any]:
+    """v1→v2: synthesize ``files`` from a generation's legacy primary digest.
+
+    ``files`` wins on disagreement (D-03): a present, non-empty ``files`` is
+    kept verbatim and the legacy mirrors are simply dropped. Copy-then-mutate —
+    the input dict is never mutated in place.
 
     Parameters
     ----------
-    steps : list of VerificationStep
-        Reserved, empty until the verification phase lands.
-    """
+    gen : dict of str to Any
+        One raw generation mapping.
 
-    steps: list[VerificationStep] = Field(default_factory=list)
+    Returns
+    -------
+    dict of str to Any
+        The generation lifted to v2 shape (legacy keys dropped, ``model_origin``
+        defaulted).
+    """
+    out = dict(gen)
+    if not out.get("files"):
+        path = out.get("draft_path")
+        sha = out.get("draft_sha256")
+        if path and sha:
+            out["files"] = [{"path": path, "sha256": sha}]
+    out.pop("draft_path", None)
+    out.pop("draft_sha256", None)
+    out.setdefault("model_origin", "")
+    return out
+
+
+def _borrow_edit_path(sha: str, gens: list[Any]) -> str | None:
+    """Borrow a reviewer edit's seal path from its paired generation (Pitfall 3).
+
+    A legacy ``ReviewerEdit`` carried only a primary hash with no path. Match
+    the generation whose primary sha equals the edit's, else fall back to the
+    latest generation that carries a primary path.
+
+    Parameters
+    ----------
+    sha : str
+        The edit's legacy ``draft_sha256``.
+    gens : list of Any
+        The already-lifted generations (dicts or model instances).
+
+    Returns
+    -------
+    str or None
+        The borrowed docs-relative path, or ``None`` when none is available.
+    """
+    fallback: str | None = None
+    for gen in gens:
+        files = (
+            gen.get("files") if isinstance(gen, dict) else getattr(gen, "files", None)
+        )
+        path, gsha = _primary_digest(files)
+        if path:
+            fallback = path
+            if gsha == sha:
+                return path
+    return fallback
+
+
+def _lift_reviewer_edit(edit: dict[str, Any], gens: list[Any]) -> dict[str, Any]:
+    """v1→v2: synthesize an accept edit's ``files`` from its legacy seal hash.
+
+    Non-accept edits carry an empty ``draft_sha256`` and never sealed — their
+    ``files`` stay empty. Copy-then-mutate.
+
+    Parameters
+    ----------
+    edit : dict of str to Any
+        One raw reviewer-edit mapping.
+    gens : list of Any
+        The already-lifted generations, to borrow the seal path from.
+
+    Returns
+    -------
+    dict of str to Any
+        The edit lifted to v2 shape (legacy ``draft_sha256`` dropped).
+    """
+    out = dict(edit)
+    sha = out.get("draft_sha256", "")
+    if sha and not out.get("files"):
+        path = _borrow_edit_path(sha, gens)
+        if path:
+            out["files"] = [{"path": path, "sha256": sha}]
+    out.pop("draft_sha256", None)
+    return out
+
+
+def _lift_v1_to_v2(data: dict[str, Any]) -> dict[str, Any]:
+    """v1→v2: drop the ``verification`` block and legacy digests, stamp v2.
+
+    Copy-then-mutate throughout (never mutates the input): each generation and
+    reviewer edit is lifted into a fresh dict, and ``schema_version`` is stamped
+    current so a re-load is a no-op (Pitfall 4).
+
+    Parameters
+    ----------
+    data : dict of str to Any
+        The (already v0-lifted) raw mapping.
+
+    Returns
+    -------
+    dict of str to Any
+        The mapping lifted to v2 shape.
+    """
+    out = dict(data)
+    out.pop("verification", None)
+    gens = out.get("generations")
+    lifted_gens: list[Any] = []
+    if isinstance(gens, list):
+        lifted_gens = [
+            _lift_generation(gen) if isinstance(gen, dict) else gen for gen in gens
+        ]
+        out["generations"] = lifted_gens
+    edits = out.get("reviewer_edits")
+    if isinstance(edits, list):
+        out["reviewer_edits"] = [
+            _lift_reviewer_edit(edit, lifted_gens) if isinstance(edit, dict) else edit
+            for edit in edits
+        ]
+    out["schema_version"] = SCHEMA_VERSION
+    return out
 
 
 class Provenance(BaseModel):
@@ -586,8 +774,6 @@ class Provenance(BaseModel):
         One entry per draft pass.
     reviewer_edits : list of ReviewerEdit
         Post-generation human reviews; empty at scaffold time.
-    verification : Verification
-        Reserved verification block.
     """
 
     schema_version: int = SCHEMA_VERSION
@@ -597,19 +783,21 @@ class Provenance(BaseModel):
     steering: list[SteeringEntry] = Field(default_factory=list)
     generations: list[Generation] = Field(default_factory=list)
     reviewer_edits: list[ReviewerEdit] = Field(default_factory=list)
-    verification: Verification = Field(default_factory=Verification)
 
     @model_validator(mode="before")
     @classmethod
-    def _migrate_v0(cls, data: Any) -> Any:  # noqa: ANN401
-        """Lift a v0 record (single ``steering`` mapping) into the v1 shape.
+    def _migrate(cls, data: Any) -> Any:  # noqa: ANN401
+        """Lift an on-disk record forward to the current schema (v0→v1→v2).
 
-        v0 stored the gate act as ``steering: {author, at, intent, audience}``;
-        v1 renames that act to ``signoff`` and reuses ``steering`` for the
-        guidance stream. A mapping-valued ``steering`` is therefore a v0 record:
-        it becomes ``signoff`` (unless one is already present) and the stream
-        starts empty. A ``None`` steering (v0 un-steered) is dropped so the v1
-        list default applies.
+        The two lifts chain in one load-time pass (D-01, lazy — a read never
+        writes). v0→v1: a mapping-valued ``steering`` (the old single gate act)
+        becomes ``signoff`` and the stream empties. v1→v2: legacy primary
+        digests (``draft_path``/``draft_sha256`` on a generation, ``draft_sha256``
+        on an accept edit) are synthesized into ``files`` (``files`` wins on
+        disagreement, D-03), the reserved ``verification`` block and legacy
+        mirrors are dropped, ``model_origin`` defaults in, and ``schema_version``
+        is stamped current. The v1→v2 lift is skipped for a record already at
+        (or beyond) the current version, so a re-load is a no-op (Pitfall 4).
 
         Parameters
         ----------
@@ -623,20 +811,13 @@ class Provenance(BaseModel):
         """
         if not isinstance(data, dict):
             return data
-        steering = data.get("steering")
-        if isinstance(steering, dict):
-            migrated = dict(data)
-            migrated.setdefault("signoff", None)
-            if migrated["signoff"] is None:
-                migrated["signoff"] = steering
-            migrated["steering"] = []
-            migrated["schema_version"] = SCHEMA_VERSION
-            return migrated
-        if steering is None and "steering" in data:
-            migrated = dict(data)
-            migrated["steering"] = []
-            migrated["schema_version"] = SCHEMA_VERSION
-            return migrated
+        original_version = data.get("schema_version")
+        data = _lift_v0_steering(data)
+        already_current = (
+            isinstance(original_version, int) and original_version >= SCHEMA_VERSION
+        )
+        if not already_current:
+            data = _lift_v1_to_v2(data)
         return data
 
 

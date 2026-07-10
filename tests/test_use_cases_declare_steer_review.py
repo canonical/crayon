@@ -19,6 +19,7 @@ from dogen.adapters.planning_fs import (
 )
 from dogen.core.models import (
     Effort,
+    FileDigest,
     Generation,
     Intent,
     Progress,
@@ -185,6 +186,7 @@ def test_steer_force_overwrites_and_warns(tmp_path: Path) -> None:
                     effort=Effort.medium,
                     tooling_version="0.0.0",
                     sdk="sdk",
+                    files=[FileDigest(path="docs/u.md", sha256="ab12")],
                     run_id="r",
                     at="2026-01-01T00:00:01Z",
                     action="draft",
