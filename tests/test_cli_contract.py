@@ -65,6 +65,7 @@ def repo(tmp_path, monkeypatch):
     )
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("DOGEN_PROVIDER", raising=False)
+    monkeypatch.delenv("DOGEN_MODEL", raising=False)
     return tmp_path
 
 
@@ -327,6 +328,58 @@ def test_unit_show_single_file_unit_renders_count_one(repo):
     targets_line = next(line for line in lines if line.startswith("targets:"))
     assert "1 page(s)" in targets_line
     assert sum("(primary)" in line for line in lines) == 1
+
+
+# --------------------------------------------------------------------------- #
+# `dogen model show|set` — the JSON contract (Phase 8, MODEL-01/D-03)
+# --------------------------------------------------------------------------- #
+
+
+def test_model_set_then_show_json_reports_model_source_origin(repo):
+    # `model set --origin ta` persists both fields; `model show --json` reports
+    # the fixed {model, source, model_origin} shape with origin carried through.
+    set_result = runner.invoke(
+        app, ["model", "set", "gpt-4o", "--origin", "ta", "--json"]
+    )
+    assert set_result.exit_code == 0, set_result.output
+    set_payload = _payload(set_result)
+    assert set_payload["model"] == "gpt-4o"
+    assert set_payload["model_origin"] == "ta"
+
+    show_result = runner.invoke(app, ["model", "show", "--json"])
+    assert show_result.exit_code == 0, show_result.output
+    show_payload = _payload(show_result)
+    assert show_payload == {
+        "model": "gpt-4o",
+        "source": "repo config",
+        "model_origin": "ta",
+    }
+
+
+def test_model_show_plain_reports_unset_when_no_model(repo):
+    result = runner.invoke(app, ["model", "show"])
+    assert result.exit_code == 0, result.output
+    assert "model: (unset) (from default)" in result.output
+
+
+def test_model_set_rejects_control_char_name_and_writes_nothing(repo):
+    # A newline in the name is bad input (exit 2) and must NOT persist a config.
+    result = runner.invoke(app, ["model", "set", "bad\nname", "--json"])
+    assert result.exit_code == 2, result.output
+    assert not (repo / ".dogen" / "config.yaml").exists()
+
+
+def test_model_set_self_origin_persists_self(repo):
+    # The dogen-write auto self-assert path passes --origin self explicitly.
+    result = runner.invoke(
+        app, ["model", "set", "claude-x", "--origin", "self", "--json"]
+    )
+    assert result.exit_code == 0, result.output
+    assert _payload(result)["model_origin"] == "self"
+    store = FilesystemPlanningStore()
+    config = store.read_config(root=repo)
+    assert config.model == "claude-x"
+    assert config.model_origin == "self"
 
 
 def test_cli_module_imports_no_sdk():

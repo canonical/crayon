@@ -23,6 +23,7 @@ Coverage in this plan:
   control-char names before they reach a trailer or YAML scalar (V5).
 """
 
+import asyncio
 import json
 import subprocess
 
@@ -33,7 +34,7 @@ from dogen.adapters.planning_fs import FilesystemPlanningStore
 from dogen.app import compose
 from dogen.cli.main import app
 from dogen.core.models import DogenConfig, Intent
-from dogen.core.orchestrator import draft
+from dogen.core.orchestrator import declare, draft
 from dogen.core.orchestrator import signoff as steer
 
 runner = CliRunner()
@@ -89,8 +90,6 @@ def repo(tmp_path, monkeypatch):
 
 def _declare(store, root, *, unit, sphinx_target="guide.md", repo=None):
     """Declare ``unit`` onto ``sphinx_target`` through the promoted core use-case."""
-    from dogen.core.orchestrator import declare
-
     declare(
         compose.build_declare_request(
             unit,
@@ -107,12 +106,14 @@ def _declare(store, root, *, unit, sphinx_target="guide.md", repo=None):
 def _signoff(store, root, clock, *, unit, repo=None):
     """Record the HITL steering sign-off for ``unit`` (the draft-gate precondition)."""
     return steer(
-        compose.build_signoff_request(unit, root=root, store=store, now=clock, repo=repo)
+        compose.build_signoff_request(
+            unit, root=root, store=store, now=clock, repo=repo
+        )
     )
 
 
-async def _draft(store, root, clock, *, unit, provider="mock", repo=None):
-    """Drive one mock draft of ``unit``, recording ≥1 generation; returns the outcome."""
+async def _draft(store, root, clock, *, unit, provider="mock", repo=None):  # noqa: PLR0913
+    """Drive one mock draft of ``unit``, recording a generation; returns the outcome."""
     return await draft(
         compose.build_draft_request(
             unit,
@@ -132,8 +133,6 @@ def unit_with_generation(repo):
     The shared Wave-0 fixture Plans 02/03 reuse: returns ``(store, root, clock,
     unit_id)`` after a mock draft has recorded a generation onto ``u``.
     """
-    import asyncio
-
     store = FilesystemPlanningStore()
     clock = _Clock()
     unit = "u"
@@ -292,3 +291,46 @@ def test_validate_model_name_rejects_control_char():
         compose.validate_model_name("gpt\x004o")
     with pytest.raises(ValueError):  # noqa: PT011
         compose.validate_model_name("gpt\t4o")
+
+
+# --------------------------------------------------------------------------- #
+# Task 3 — dogen model show|set CLI surface (-k set / -k show)
+# --------------------------------------------------------------------------- #
+
+
+def test_model_set_persists_model_and_origin_via_cli(repo):
+    result = runner.invoke(app, ["model", "set", "gpt-4o", "--origin", "ta", "--json"])
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["model"] == "gpt-4o"
+    assert payload["model_origin"] == "ta"
+    store = FilesystemPlanningStore()
+    config = store.read_config(root=repo)
+    assert config.model == "gpt-4o"
+    assert config.model_origin == "ta"
+
+
+def test_model_show_reports_effective_and_source(repo):
+    runner.invoke(app, ["model", "set", "gpt-4o", "--origin", "self"])
+    result = runner.invoke(app, ["model", "show", "--json"])
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["model"] == "gpt-4o"
+    assert payload["source"] == "repo config"
+    assert payload["model_origin"] == "self"
+
+
+def test_model_set_bad_name_exits_bad_input_and_writes_nothing(repo):
+    result = runner.invoke(app, ["model", "set", "bad\nname"])
+    assert result.exit_code == 2, result.output
+    assert not (repo / ".dogen" / "config.yaml").exists()
+
+
+def test_model_show_env_beats_config_and_labels_env(repo, monkeypatch):
+    runner.invoke(app, ["model", "set", "gpt-config", "--origin", "ta"])
+    monkeypatch.setenv("DOGEN_MODEL", "gpt-env")
+    result = runner.invoke(app, ["model", "show", "--json"])
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["model"] == "gpt-env"
+    assert payload["source"] == "env"
