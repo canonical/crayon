@@ -200,6 +200,28 @@ polish it as part of their publishing work — that is outside the loop.)
 sealed accept already covers this identical draft. Nothing was recorded and
 nothing needs redoing — surface it and stop.
 
+**Reopening an accepted unit (post-accept iteration — no new verb):** there is no
+separate reopen verb. Post-accept iteration is the existing `review --verdict
+fix|redraft` → `dogen-write draft` path. The `already_accepted` guard blocks
+re-drafting a sealed unit, so you must record the `fix` (or `redraft`) verdict
+first: that appends a non-`accept` verdict, which flips the unit back to
+**in-flight** and **re-arms its lease** on its pages. The next dogen-write pass then
+re-drafts it. (Because the reopened unit again holds its lease, a competitor that
+took one of its pages while it was sealed is now refused at that unit's next draft.)
+
+**Superseding a sealed page (worked example):** declaring or editing onto a page a
+*sealed* unit owns succeeds and records a supersede — this mirrors the tested
+end-to-end scenario:
+
+- *Before:* unit **A** covers `docs/guide.md` and its latest review is an **accept**,
+  so A is **sealed** and has released its lease on the page.
+- unit **B** declares onto `docs/guide.md`. Because A is sealed (not in-flight), the
+  claim is allowed rather than refused.
+- *After:* B's declare commit records the takeover — a body line
+  `note: docs/guide.md extends unit A (sealed <sha12>)` plus a `Dogen-Extends: A`
+  trailer — and B then drafts and reviews as usual until **B seals `docs/guide.md`**.
+  (Had A still been in-flight, B's declare would instead refuse with `target_claimed`.)
+
 **The plan is stale (unit.md changed after signoff):** surface it in the provenance
 summary; the reviewer may want the plan re-approved (`dogen signoff --re-sign`)
 before judging a draft made under the old approval. When the review itself orders

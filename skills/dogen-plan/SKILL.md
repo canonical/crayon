@@ -140,8 +140,11 @@ Collect the mechanical fields directly (these are not Socratic — just ask for 
   a single page; but when the reader problem spans several existing pages
   ("the same fix across…", "rebalance content between…"), propose the full set:
   the anchor page stays `--target`, each additional page is `--also-target`.
-  The outline then gets a per-page section. A page already owned by another
-  unit refuses with `target_claimed` — surface which unit holds it.
+  The outline then gets a per-page section. A page held by an *in-flight* unit
+  refuses with `target_claimed` — surface which unit holds it; but a page whose
+  owner has already **sealed** it (its last review was an accept) is claimable,
+  and declaring or editing onto it *supersedes* the seal — the CLI records a
+  `note:` line and a `Dogen-Extends: <owner-id>` trailer rather than refusing.
 
 If the TA has not decided a unit id or title, help them settle one; do not invent
 sources they did not confirm.
