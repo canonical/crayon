@@ -253,7 +253,10 @@ def _plant_unit(store, root, unit_id, *, targets):
 def _plant_accept(store, root, unit_id, at):
     """Plant a sealed provenance (latest verdict ``accept`` at ``at``)."""
     store.write_provenance(
-        Provenance(unit_id=unit_id, reviewer_edits=[_edit(at, verdict=ReviewVerdict.accept)]),
+        Provenance(
+            unit_id=unit_id,
+            reviewer_edits=[_edit(at, verdict=ReviewVerdict.accept)],
+        ),
         root=root,
     )
 
