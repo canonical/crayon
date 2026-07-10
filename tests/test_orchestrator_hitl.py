@@ -24,7 +24,6 @@ from dogen.core.models import (
     DraftResult,
     Effort,
     Intent,
-    Progress,
     ProgressState,
     Provenance,
     ReviewerEdit,
@@ -87,7 +86,6 @@ def _seed_unit(root: Path, *, with_steering: bool) -> FilesystemPlanningStore:
         else None
     )
     store.write_provenance(Provenance(unit_id="u", signoff=steering), root=root)
-    store.write_progress(Progress(unit_id="u", state=ProgressState.pending), root=root)
     return store
 
 
@@ -121,7 +119,10 @@ async def test_draft_refuses_without_steering(tmp_path: Path) -> None:
         await draft(_request(tmp_path, store))
     assert not (tmp_path / "docs" / "u.md").exists()
     assert store.read_provenance("u", root=tmp_path).generations == []
-    assert store.read_progress("u", root=tmp_path).state is ProgressState.pending
+    assert (
+        derive_progress(store.read_provenance("u", root=tmp_path))
+        is ProgressState.pending
+    )
 
 
 @pytest.mark.asyncio

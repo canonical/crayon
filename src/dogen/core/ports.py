@@ -16,7 +16,6 @@ from dogen.core.models import (
     DogenConfig,
     DraftResult,
     Intent,
-    Progress,
     Provenance,
     Signoff,
     SourceRef,
@@ -331,40 +330,6 @@ class PlanningStore(Protocol):
         -------
         Path
             The path to the written ``provenance.yaml``.
-        """
-        ...
-
-    def read_progress(self, unit_id: str, *, root: Path) -> Progress:
-        """Load a unit's progress state machine.
-
-        Parameters
-        ----------
-        unit_id : str
-            The unit to read.
-        root : Path
-            The repo root the store reads beneath.
-
-        Returns
-        -------
-        Progress
-            The validated progress model.
-        """
-        ...
-
-    def write_progress(self, progress: Progress, *, root: Path) -> Path:
-        """Persist a unit's progress state machine.
-
-        Parameters
-        ----------
-        progress : Progress
-            The progress model to serialize.
-        root : Path
-            The repo root the store writes beneath.
-
-        Returns
-        -------
-        Path
-            The path to the written ``progress.yaml``.
         """
         ...
 

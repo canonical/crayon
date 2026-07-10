@@ -19,9 +19,9 @@ from dogen.adapters.host_harness import HostHarnessDraftingProvider
 from dogen.adapters.planning_fs import FilesystemPlanningStore
 from dogen.core.models import (
     Intent,
-    Progress,
     ProgressState,
     Provenance,
+    derive_progress,
 )
 from dogen.core.orchestrator import DraftRequest, SignoffRequiredError, draft
 
@@ -40,7 +40,6 @@ def _seed_unsteered_unit(root: Path) -> FilesystemPlanningStore:
     store = FilesystemPlanningStore()
     store.scaffold_unit("u", root=root, intent=Intent.reference, audience="devs")
     store.write_provenance(Provenance(unit_id="u", signoff=None), root=root)
-    store.write_progress(Progress(unit_id="u", state=ProgressState.pending), root=root)
     return store
 
 
@@ -71,7 +70,10 @@ async def test_unsteered_passenger_refuses_with_zero_side_effects(
     # Zero side effects (D-04): no generation recorded, progress unmoved, no
     # draft written under docs/.
     assert store.read_provenance("u", root=tmp_path).generations == []
-    assert store.read_progress("u", root=tmp_path).state is ProgressState.pending
+    assert (
+        derive_progress(store.read_provenance("u", root=tmp_path))
+        is ProgressState.pending
+    )
     assert not (tmp_path / "docs" / "u.md").exists()
 
     # T-03-02: the read-only handoff file is left byte-for-byte untouched.
