@@ -40,6 +40,7 @@ import asyncio
 import json
 import os
 import sys
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
 
@@ -89,6 +90,24 @@ from dogen.core.ports import PlanningStore, RepoSeam
 #: The ``DOGEN_PROVIDER`` env var — the mid-precedence provider signal (below
 #: an explicit ``--provider`` flag, above the repo config). CI pins ``mock``.
 _PROVIDER_ENV = "DOGEN_PROVIDER"
+
+#: The ``DOGEN_MODEL`` env var — the mid-precedence model signal (below an
+#: explicit ``--model`` flag, above the repo config). Its resolved value stamps
+#: ``model_origin`` = ``flag`` (the operator-override tier, D-03).
+_MODEL_ENV = "DOGEN_MODEL"
+
+
+class _ModelOrigin(StrEnum):
+    """The vouch origins a human may pin via ``dogen model set --origin`` (D-03).
+
+    Only ``ta`` / ``self`` are settable here — they record *who vouched* for the
+    model (a human TA or the agent asserting itself). The broader
+    ``model_origin`` vocab (``config`` / ``flag`` / ``""``) is derived at draft
+    time by :func:`compose.model_generation_origin`, never set by this command.
+    """
+
+    ta = "ta"
+    self = "self"
 
 # The stable, machine-readable D-10 ``reason`` vocabulary emitted in ``--json``.
 # Skills branch on these codes; humans/CI read the coarse exit code + message.
@@ -148,9 +167,11 @@ _EXIT_BAD_INPUT = 2
 app = typer.Typer(help="Draft review-ready documentation, human in the loop.")
 unit_app = typer.Typer(help="Create and manage documentation units.")
 provider_app = typer.Typer(help="Show or set the explicit drafting provider.")
+model_app = typer.Typer(help="Show or set the persisted drafting model.")
 context_app = typer.Typer(help="Manage the B1/B2 context-artifact landing zone.")
 app.add_typer(unit_app, name="unit")
 app.add_typer(provider_app, name="provider")
+app.add_typer(model_app, name="model")
 app.add_typer(context_app, name="context")
 app.add_typer(skills_app, name="skills")
 
@@ -1953,6 +1974,100 @@ def provider_set(
         typer.echo(json.dumps({"provider": resolved, "config": str(written)}))
     else:
         typer.echo(f"Pinned provider {resolved} in {written}")
+
+
+@model_app.command("show")
+def model_show(json_output: _JsonOutput = False) -> None:
+    """Explain the model resolution: the effective name, its source, and origin.
+
+    Mirrors ``provider show`` — the resolution is ``--model`` flag >
+    ``DOGEN_MODEL`` env > repo config, with honest-empty when all three are
+    absent (no default; MODEL-01). The plain line reports the effective model +
+    the deciding level; ``--json`` adds the persisted ``model_origin`` (D-03).
+
+    Parameters
+    ----------
+    json_output : bool
+        Emit the structured JSON object instead of the plain report.
+    """
+    store = compose.default_store()
+    root = Path.cwd()
+    config, _ = compose.repo_config(store, root=root)
+    env = os.environ.get(_MODEL_ENV)
+    configured = config.model or None
+    effective = compose.resolve_model_name(None, env, configured)
+    source = compose.model_resolution_source(None, env, configured)
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {
+                    "model": effective,
+                    "source": source,
+                    "model_origin": config.model_origin,
+                }
+            )
+        )
+        return
+    typer.echo(f"model: {effective or '(unset)'} (from {source})")
+
+
+@model_app.command("set")
+def model_set(
+    name: Annotated[
+        str,
+        typer.Argument(help="Model identity to persist (single line, no controls)."),
+    ],
+    origin: Annotated[
+        _ModelOrigin,
+        typer.Option("--origin", help="Who vouches for the model: ta|self."),
+    ] = _ModelOrigin.ta,
+    json_output: _JsonOutput = False,
+) -> None:
+    """Pin the repo's drafting model + its vouch origin in ``.dogen/config.yaml``.
+
+    A human running ``model set`` is a vouch, so ``--origin`` defaults to ``ta``
+    (D-01/D-03); dogen-write's auto self-assert path passes ``--origin self``
+    explicitly. The name is validated (single line, no control chars) **before**
+    it is written, so a newline/control-char name never reaches the config YAML
+    scalar or a later ``Dogen-Model:`` trailer (V5, threats T-08-01/T-08-02).
+
+    Parameters
+    ----------
+    name : str
+        The model identity to persist.
+    origin : _ModelOrigin
+        The vouch origin recorded alongside the model (``ta`` / ``self``).
+    json_output : bool
+        Emit the structured JSON object instead of a plain line.
+    """
+    store = compose.default_store()
+    root = Path.cwd()
+    try:
+        validated = compose.validate_model_name(name)
+    except ValueError as exc:
+        raise _fail(
+            "",
+            message=str(exc),
+            reason=None,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        ) from exc
+    config, _ = compose.repo_config(store, root=root)
+    config.model = validated
+    config.model_origin = origin.value
+    written = store.write_config(config, root=root)
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {
+                    "model": validated,
+                    "model_origin": origin.value,
+                    "config": str(written),
+                }
+            )
+        )
+    else:
+        typer.echo(f"Pinned model {validated} (origin {origin.value}) in {written}")
 
 
 @app.command("commits")
