@@ -584,3 +584,66 @@ async def test_edit_onto_sealed_records_takeover(repo):
     message = _head_message(repo)
     assert "Dogen-Extends: A" in message
     assert "docs/p.md extends unit A (sealed " in message
+
+
+# --------------------------------------------------------------------------- #
+# Task 1 (Wave 3) — _run_draft in-flight lease re-check + reopen (OWN-03/OWN-05,
+# D-02/D-03)
+# --------------------------------------------------------------------------- #
+#
+# The draft-time gate closes the REVERSE hole: after a sealed owner reopens via a
+# post-accept `fix`/`redraft` (D-02 — the non-accept verdict flips is_sealed back
+# to in-flight), a competing in-flight claimant that took the page while it was
+# sealed is now caught at draft time. A SEALED overlapping owner never blocks a
+# draft (its lease was released). Reopen is the EXISTING review verb — no new verb.
+
+
+@pytest.mark.asyncio
+async def test_draft_recheck_refuses(repo):
+    # OWN-03: unit A is about to draft p.md, but an in-flight neighbour B already
+    # claims p.md — the draft-time lease re-check refuses, naming the in-flight
+    # owner. (B is planted directly on disk: the declare guard would otherwise
+    # refuse two units claiming one in-flight page.)
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    _declare(store, repo, unit="A", sphinx_target="p.md")
+    _steer(store, repo, clock, unit="A")  # signed off, in-flight, ready to draft
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    store.write_provenance(Provenance(unit_id="B"), root=repo)  # readable, in-flight
+
+    with pytest.raises(TargetClaimedError) as excinfo:
+        await _draft(store, repo, clock, unit="A")
+
+    message = str(excinfo.value)
+    assert "B" in message
+    assert "p.md" in message
+
+
+@pytest.mark.asyncio
+async def test_reopen_via_fix_reclaims_lease(repo):
+    # OWN-05/D-02: reopening a sealed unit goes through the EXISTING review verb
+    # (no new verb). A post-accept `fix` verdict flips is_sealed back to False,
+    # re-arming the lease so the draft re-check can fire again.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    await _seal(store, repo, clock, unit="A", sphinx_target="p.md")
+    assert is_sealed(store.read_provenance("A", root=repo)) is True
+
+    _review(store, repo, clock, "please fix", unit="A", verdict=ReviewVerdict.fix)
+
+    assert is_sealed(store.read_provenance("A", root=repo)) is False
+
+
+@pytest.mark.asyncio
+async def test_draft_no_conflict_passes(repo):
+    # OWN-03: a SEALED overlapping owner does not block a draft — its lease was
+    # released. B takes over A's sealed page (allowed) and drafts with no raise.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    await _seal(store, repo, clock, unit="A", sphinx_target="p.md")  # A sealed on p.md
+    _declare(store, repo, unit="B", sphinx_target="p.md")  # takeover (A sealed)
+    _steer(store, repo, clock, unit="B")
+
+    path = await _draft(store, repo, clock, unit="B")  # must not raise
+
+    assert path == repo / "docs" / "p.md"
