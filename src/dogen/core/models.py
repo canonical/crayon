@@ -40,7 +40,7 @@ never writes, so a repo may hold mixed v1/v2 sidecars indefinitely.
 
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import PurePosixPath, PureWindowsPath
 from typing import Any
@@ -949,7 +949,19 @@ def _latest_accept_at(prov: Provenance) -> datetime | None:
     edit = _latest_accept_edit(prov)
     if edit is None:
         return None
-    return datetime.fromisoformat(edit.at.replace("Z", "+00:00"))
+    # CR-02: ``at`` is an unvalidated ``str`` — a poisoned/hand-edited non-ISO
+    # stamp must not crash the repo-wide scan. Fail closed: an un-parseable seal
+    # time cannot participate in newest-accept ordering, so it is excluded
+    # (``None``) rather than raised.
+    try:
+        dt = datetime.fromisoformat(edit.at.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    # WR-02: the ``Z`` → ``+00:00`` swap only fixes the *form* of an already
+    # offset stamp; a genuinely tz-less stamp parses naive and then raises
+    # ``TypeError`` when compared against an aware one. Assume UTC when naive so
+    # every comparison operates on aware datetimes.
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
 
 
 @dataclass(frozen=True)
