@@ -1036,6 +1036,35 @@ class FilesystemPlanningStore:
                 f"({_in_flight_detail(prov)}): " + ", ".join(sorted(overlap))
             )
 
+    def assert_draft_targets_unclaimed(
+        self, unit_id: str, targets: list[str], *, root: Path
+    ) -> None:
+        """Draft-time lease re-check (OWN-03/D-03): refuse an in-flight overlap.
+
+        The draft-time half of the lease reuses the exact declare/edit scan:
+        :meth:`_assert_targets_unclaimed` already refuses only an *in-flight*
+        overlapping owner (naming it + its derived state), allows a *sealed* one,
+        and skips an absent/unreadable neighbour WR-01-tolerantly. Calling it
+        here — after a sealed owner may have reopened (D-02) — closes the reverse
+        hole: a competitor that took the page while it was sealed is now refused
+        at draft time via :class:`TargetClaimedError`.
+
+        Parameters
+        ----------
+        unit_id : str
+            The unit about to draft (excluded from the scan).
+        targets : list of str
+            The unit's full docs-relative page set (primary + extras).
+        root : Path
+            The repo root.
+
+        Raises
+        ------
+        TargetClaimedError
+            If any overlapping owner is in-flight (holds its lease).
+        """
+        self._assert_targets_unclaimed(unit_id, targets, root=root)
+
     def plan_takeovers(
         self, unit_id: str, targets: list[str], *, root: Path
     ) -> list[Takeover]:

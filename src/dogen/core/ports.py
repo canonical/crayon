@@ -224,6 +224,40 @@ class PlanningStore(Protocol):
         """
         ...
 
+    def assert_draft_targets_unclaimed(
+        self, unit_id: str, targets: list[str], *, root: Path
+    ) -> None:
+        """Refuse a draft when another *in-flight* unit claims any target (OWN-03).
+
+        The draft-time half of the lease (D-03): ownership is held only while a
+        unit is in flight, so before a unit writes its pages the store re-checks
+        that no *other* in-flight unit claims any of ``targets``. This closes the
+        reverse hole — a sealed owner that reopened via a post-accept
+        ``fix``/``redraft`` (D-02, its lease re-armed) now blocks a competitor
+        that took the page while it was sealed. A *sealed* overlapping owner does
+        not block (its lease was released); an absent/unreadable neighbour is
+        skipped WR-01-tolerantly, never wedging a draft.
+
+        The type raised is the store's own ``TargetClaimedError`` (a
+        ``FileExistsError`` subclass) — the same the write guard raises — so the
+        core caller need not name an adapter type across the provider seam.
+
+        Parameters
+        ----------
+        unit_id : str
+            The unit about to draft (excluded from the scan).
+        targets : list of str
+            The unit's full docs-relative page set (primary + extras).
+        root : Path
+            The repo root the store reads beneath.
+
+        Raises
+        ------
+        FileExistsError
+            (``TargetClaimedError``) if any overlapping owner is in-flight.
+        """
+        ...
+
     def delete_unit(
         self,
         unit_id: str,
