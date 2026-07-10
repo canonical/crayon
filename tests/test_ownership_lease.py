@@ -19,7 +19,6 @@ import subprocess
 
 import pytest
 
-from dogen.adapters.planning_fs import FilesystemPlanningStore
 from dogen.app import compose
 from dogen.core.models import (
     Intent,
@@ -99,7 +98,9 @@ async def _draft(store, root, clock, *, unit="u"):
     ).path
 
 
-def _review(store, root, clock, note, *, unit="u", verdict=ReviewVerdict.fix):
+def _review(  # noqa: PLR0913
+    store, root, clock, note, *, unit="u", verdict=ReviewVerdict.fix
+):
     return review(
         compose.build_review_request(
             unit, root=root, store=store, note=note, now=clock, verdict=verdict
@@ -107,7 +108,9 @@ def _review(store, root, clock, note, *, unit="u", verdict=ReviewVerdict.fix):
     )
 
 
-async def _seal(store, root, clock, *, unit="A", sphinx_target=None, extra_targets=None):
+async def _seal(  # noqa: PLR0913
+    store, root, clock, *, unit="A", sphinx_target=None, extra_targets=None
+):
     """Drive declare→steer→draft→review-accept for ``unit`` and return its id.
 
     The shared fixture later waves reuse to stand up a sealed neighbour on
