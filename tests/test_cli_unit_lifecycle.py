@@ -23,6 +23,8 @@ from dogen.core.models import (
     Generation,
     Intent,
     Provenance,
+    ReviewerEdit,
+    ReviewVerdict,
     Signoff,
 )
 
@@ -215,3 +217,95 @@ def test_mv_source_missing_exits_not_found(repo):
     result = runner.invoke(app, ["unit", "mv", "ghost", "new", "--json"])
     assert result.exit_code == 1, result.output
     assert _payload(result)["reason"] == "unit_not_found"
+
+
+# --------------------------------------------------------------------------- #
+# unit show --by-draft multi-owner display (OWN-04, D-06/D-07)
+# --------------------------------------------------------------------------- #
+#
+# A page covered by more than one unit resolves to a winner (in-flight first,
+# else newest-accept) AND surfaces the full owner set: owners[] in --json (D-06)
+# and one "also claimed by" line in plain output (D-07). Single-owner output is
+# unchanged. The multi-owner fixtures are planted directly on disk (the declare
+# guard would refuse two units claiming one in-flight page).
+
+
+def _plant_unit(store, root, unit_id, *, targets):
+    """Write a unit.md pointing at ``targets`` (bypasses the declare guard)."""
+    primary, *extras = targets
+    md_path = store._unit_md_path(unit_id, root=root)
+    md_path.parent.mkdir(parents=True, exist_ok=True)
+    md_path.write_text(
+        store._render_unit_md(
+            unit_id,
+            intent=Intent.reference,
+            audience="devs",
+            sphinx_target=primary,
+            extra_targets=extras or None,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _plant_sealed(store, root, unit_id, at):
+    """Plant a sealed provenance (latest verdict ``accept`` at ``at``)."""
+    store.write_provenance(
+        Provenance(
+            unit_id=unit_id,
+            reviewer_edits=[
+                ReviewerEdit(
+                    at=at, reviewer="Ada", summary="ok", verdict=ReviewVerdict.accept
+                )
+            ],
+        ),
+        root=root,
+    )
+
+
+def test_show_by_draft_owners_json(repo):
+    # D-06: a page covered by >1 unit gains an owners[] array in --json, alongside
+    # the resolved (in-flight) winner. A single-owner page omits owners[].
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "A", targets=["p.md"])
+    _plant_sealed(store, repo, "A", "2026-01-01T00:00:01Z")  # sealed owner
+    _plant_unit(store, repo, "X", targets=["p.md"])  # in-flight (no provenance)
+
+    result = runner.invoke(app, ["unit", "show", "--by-draft", "docs/p.md", "--json"])
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["unit"]["unit_id"] == "X"  # in-flight owner wins
+    owners = {o["unit"]: o for o in payload["owners"]}
+    assert set(owners) == {"A", "X"}
+    assert owners["A"]["sealed"] is True
+    assert owners["X"]["sealed"] is False
+
+    # Single-owner page: owners[] is omitted — the shape is unchanged.
+    _plant_unit(store, repo, "S", targets=["solo.md"])
+    single = _payload(
+        runner.invoke(app, ["unit", "show", "--by-draft", "docs/solo.md", "--json"])
+    )
+    assert single["unit"]["unit_id"] == "S"
+    assert "owners" not in single
+
+
+def test_show_by_draft_also_claimed(repo):
+    # D-07: plain --by-draft output for a >1-owner page renders the winner's full
+    # detail PLUS one "also claimed by" line naming the non-winner owner(s).
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "A", targets=["p.md"])
+    _plant_sealed(store, repo, "A", "2026-01-01T00:00:01Z")  # sealed owner
+    _plant_unit(store, repo, "X", targets=["p.md"])  # in-flight winner
+
+    result = runner.invoke(app, ["unit", "show", "--by-draft", "docs/p.md"])
+    assert result.exit_code == 0, result.output
+    assert "unit:      X" in result.output  # winner detail is X's
+    also = next(
+        line for line in result.output.splitlines() if "also claimed by" in line
+    )
+    assert "A" in also
+
+    # Single-owner plain output has NO "also claimed by" line (unchanged).
+    _plant_unit(store, repo, "S", targets=["solo.md"])
+    solo = runner.invoke(app, ["unit", "show", "--by-draft", "docs/solo.md"])
+    assert solo.exit_code == 0, solo.output
+    assert "also claimed by" not in solo.output
