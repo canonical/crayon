@@ -19,6 +19,7 @@ import subprocess
 
 import pytest
 
+from dogen.adapters.planning_fs import FilesystemPlanningStore
 from dogen.app import compose
 from dogen.core.models import (
     Intent,
@@ -29,8 +30,12 @@ from dogen.core.models import (
     is_sealed,
 )
 from dogen.core.orchestrator import (
+    OwnerRef,
+    ResolvedOwners,
     declare,
     draft,
+    find_unit_by_draft,
+    resolve_owners,
     review,
 )
 from dogen.core.orchestrator import (
@@ -215,3 +220,126 @@ def test_latest_accept_at_normalizes_forms():
     assert at_z < at_offset
     assert _latest_accept_at(prov_none) is None
     assert _latest_accept_at(Provenance(unit_id="D")) is None
+
+
+# --------------------------------------------------------------------------- #
+# Task 2 — resolve_owners multi-owner resolver + WR-01-tolerant scan loader
+# --------------------------------------------------------------------------- #
+#
+# The declare/edit overlap guard (`_assert_targets_unclaimed`) still refuses ANY
+# overlap in this plan — its sealed-vs-in-flight split is a later Phase-7 wave.
+# So multi-owner fixtures are planted directly on disk (unit.md + provenance),
+# bypassing that guard, to exercise `resolve_owners` in isolation.
+
+
+def _plant_unit(store, root, unit_id, *, targets):
+    """Write a unit.md pointing at ``targets`` (bypasses the declare guard)."""
+    primary, *extras = targets
+    md_path = store._unit_md_path(unit_id, root=root)
+    md_path.parent.mkdir(parents=True, exist_ok=True)
+    md_path.write_text(
+        store._render_unit_md(
+            unit_id,
+            intent=Intent.reference,
+            audience="devs",
+            sphinx_target=primary,
+            extra_targets=extras or None,
+        ),
+        encoding="utf-8",
+    )
+    return md_path
+
+
+def _plant_accept(store, root, unit_id, at):
+    """Plant a sealed provenance (latest verdict ``accept`` at ``at``)."""
+    store.write_provenance(
+        Provenance(unit_id=unit_id, reviewer_edits=[_edit(at, verdict=ReviewVerdict.accept)]),
+        root=root,
+    )
+
+
+def _plant_corrupt(store, root, unit_id):
+    """Plant a schema-newer provenance.yaml (read raises SchemaUnsupportedError)."""
+    md_path = store._unit_md_path(unit_id, root=root)
+    (md_path.parent / "provenance.yaml").write_text(
+        f"schema_version: 999\nunit_id: {unit_id}\n", encoding="utf-8"
+    )
+
+
+def test_resolve_prefers_inflight(repo):
+    # A page covered by one in-flight owner and one sealed owner ⇒ the in-flight
+    # owner wins (it still holds its lease).
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "A", targets=["p.md"])
+    _plant_accept(store, repo, "A", "2026-01-01T00:00:01Z")  # sealed
+    _plant_unit(store, repo, "X", targets=["p.md"])  # in-flight (no provenance)
+    request = compose.build_list_request(root=repo, store=store)
+
+    resolved = resolve_owners(request, "p.md")
+
+    assert resolved.winner_id == "X"
+    assert {o.unit_id for o in resolved.owners} == {"A", "X"}
+
+
+def test_resolve_newest_accept(repo):
+    # Among sealed owners the newest accept wins across mixed Z/+00:00 forms;
+    # a same-timestamp tie is broken deterministically by unit id (smallest).
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "A", targets=["p.md"])
+    _plant_accept(store, repo, "A", "2026-01-01T00:00:01Z")  # older, Z form
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    _plant_accept(store, repo, "B", "2026-01-01T00:00:05+00:00")  # newer, offset form
+    request = compose.build_list_request(root=repo, store=store)
+
+    assert resolve_owners(request, "p.md").winner_id == "B"
+
+    # Tie: identical accept timestamps (one Z, one +00:00) ⇒ smallest unit id.
+    _plant_unit(store, repo, "C", targets=["q.md"])
+    _plant_accept(store, repo, "C", "2026-02-02T00:00:00Z")
+    _plant_unit(store, repo, "D", targets=["q.md"])
+    _plant_accept(store, repo, "D", "2026-02-02T00:00:00+00:00")
+
+    assert resolve_owners(request, "q.md").winner_id == "C"
+
+
+def test_resolve_owners_lists_all(repo):
+    # resolve_owners lists every covering owner with its sealed flag + accept_at,
+    # and find_unit_by_draft is the thin winner-only wrapper over it.
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "A", targets=["p.md"])
+    _plant_accept(store, repo, "A", "2026-01-01T00:00:01Z")  # sealed
+    _plant_unit(store, repo, "X", targets=["p.md"])  # in-flight
+    request = compose.build_list_request(root=repo, store=store)
+
+    resolved = resolve_owners(request, "docs/p.md")
+
+    assert isinstance(resolved, ResolvedOwners)
+    by_id = {o.unit_id: o for o in resolved.owners}
+    assert isinstance(by_id["A"], OwnerRef)
+    assert by_id["A"].sealed is True and by_id["A"].accept_at is not None
+    assert by_id["X"].sealed is False and by_id["X"].accept_at is None
+    assert resolved.winner_id == "X"
+    # Winner-only wrapper stays stable for existing callers.
+    assert find_unit_by_draft(request, "p.md") == "X"
+
+
+def test_scan_tolerates_bad_neighbour_resolve(repo, capsys):
+    # WR-01: an unreadable (schema-newer) neighbour covering the page is skipped
+    # from sealed-eligibility — it holds its lease, is warned about, and never
+    # aborts resolution.
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "A", targets=["p.md"])
+    _plant_accept(store, repo, "A", "2026-01-01T00:00:01Z")  # sealed
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    _plant_corrupt(store, repo, "B")  # schema_version 999 ⇒ unreadable
+    request = compose.build_list_request(root=repo, store=store)
+
+    resolved = resolve_owners(request, "p.md")  # must not raise
+
+    by_id = {o.unit_id: o for o in resolved.owners}
+    assert set(by_id) == {"A", "B"}
+    assert by_id["A"].sealed is True
+    # B cannot be proven sealed ⇒ treated as in-flight, keeps its lease (wins).
+    assert by_id["B"].sealed is False
+    assert resolved.winner_id == "B"
+    assert "B" in capsys.readouterr().err  # stderr warning names the skipped unit
