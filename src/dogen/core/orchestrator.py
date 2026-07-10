@@ -32,7 +32,7 @@ deterministic.
 
 import hashlib
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from importlib import metadata as _metadata
@@ -55,6 +55,7 @@ from dogen.core.models import (
     SourceRef,
     SteeringEntry,
     SteeringOrigin,
+    Takeover,
     Unit,
     UnitSummary,
     _latest_accept_at,
@@ -233,6 +234,34 @@ def _body_note(note: str, *, limit: int = 400) -> str:
     return collapsed
 
 
+def _takeover_body(takeovers: list[Takeover]) -> str:
+    """Render superseded owners as one trailer-safe body line (D-05).
+
+    Each :class:`~dogen.core.models.Takeover` becomes ``docs/<page> extends unit
+    <owner> (sealed <sha12>)``; the joined text passes through :func:`_body_note`
+    so a crafted unit id or page cannot inject a newline and forge a trailer
+    block (T-07-01). Returns ``""`` for no takeovers, so a transition with no
+    supersede is byte-identical to prior behavior.
+
+    Parameters
+    ----------
+    takeovers : list of Takeover
+        The supersede edges recorded for this transition.
+
+    Returns
+    -------
+    str
+        A single sanitized ``·``-joined body line, or ``""`` when empty.
+    """
+    if not takeovers:
+        return ""
+    parts = [
+        f"docs/{t.page} extends unit {t.owner_id} (sealed {t.sealed_sha12})"
+        for t in takeovers
+    ]
+    return _body_note(" · ".join(parts))
+
+
 def _transition_message(  # noqa: PLR0913
     unit_id: str,
     *,
@@ -243,6 +272,7 @@ def _transition_message(  # noqa: PLR0913
     provider: str = "",
     model: str = "",
     draft_sha: str = "",
+    extends: Sequence[str] = (),
 ) -> str:
     """Build the commit-seam message for one lifecycle transition (v1).
 
@@ -276,6 +306,12 @@ def _transition_message(  # noqa: PLR0913
     draft_sha : str
         The draft's content hash, stamped as ``Dogen-Draft`` (first 12 hex)
         when non-empty.
+    extends : sequence of str
+        Superseded sealed owner ids (D-05); each is emitted as a repeatable
+        ``Dogen-Extends: <owner>`` trailer after the existing trailers, before
+        the message ends. Owners are validated single path segments. Empty by
+        default, so a transition with no takeover is byte-identical to prior
+        behavior.
 
     Returns
     -------
@@ -294,6 +330,8 @@ def _transition_message(  # noqa: PLR0913
         lines.append(f"Dogen-Model: {model}")
     if draft_sha:
         lines.append(f"Dogen-Draft: {draft_sha[:12]}")
+    for owner in extends:
+        lines.append(f"Dogen-Extends: {owner}")
     return "\n".join(lines)
 
 
@@ -310,6 +348,7 @@ def _commit_transition(  # noqa: PLR0913
     provider: str = "",
     model: str = "",
     draft_sha: str = "",
+    extends: Sequence[str] = (),
 ) -> str:
     """Record one transition commit through the seam, if one is injected.
 
@@ -340,6 +379,9 @@ def _commit_transition(  # noqa: PLR0913
         The model identity for the ``Dogen-Model`` trailer, when applicable.
     draft_sha : str
         The draft hash for the ``Dogen-Draft`` trailer, when applicable.
+    extends : sequence of str
+        Superseded sealed owner ids for the repeatable ``Dogen-Extends``
+        trailer (D-05); empty when the transition supersedes nothing.
 
     Returns
     -------
@@ -361,6 +403,7 @@ def _commit_transition(  # noqa: PLR0913
             provider=provider,
             model=model,
             draft_sha=draft_sha,
+            extends=extends,
         ),
     )
 
@@ -575,6 +618,13 @@ def declare(request: DeclareRequest) -> Path:
         extra_targets=list(request.extra_targets),
         force=request.force,
     )
+    # The write guard already refused any in-flight overlap; plan_takeovers reads
+    # the final target set and records a supersede per sealed owner (D-05).
+    takeovers = request.store.plan_takeovers(
+        request.unit_id,
+        request.store.load_unit(request.unit_id, root=request.root).targets,
+        root=request.root,
+    )
     _commit_transition(
         request.repo,
         root=request.root,
@@ -585,6 +635,8 @@ def declare(request: DeclareRequest) -> Path:
         unit_id=request.unit_id,
         phase="declared",
         summary=request.title or request.unit_id,
+        body=_takeover_body(takeovers),
+        extends=[t.owner_id for t in takeovers],
     )
     return written
 
@@ -736,6 +788,17 @@ def edit_unit(request: EditRequest) -> Path:
     if request.re_sign and provenance is not None:
         resign_note = _fold_re_sign(request, provenance, stamp=stamp)
         body_line = f"{body_line} · {resign_note}" if body_line else resign_note
+    # An edit may add a target sealed by another owner (e.g. --also-target onto a
+    # sealed page): record the same supersede note/extends/trailer (D-05). The
+    # write guard already refused any in-flight overlap.
+    takeovers = request.store.plan_takeovers(
+        request.unit_id,
+        request.store.load_unit(request.unit_id, root=request.root).targets,
+        root=request.root,
+    )
+    takeover_body = _takeover_body(takeovers)
+    if takeover_body:
+        body_line = f"{body_line} · {takeover_body}" if body_line else takeover_body
     paths = [_unit_dir(request.root, request.unit_id)]
     if moved is not None:
         paths.extend(request.root / "docs" / target for target in moved)
@@ -749,6 +812,7 @@ def edit_unit(request: EditRequest) -> Path:
             f"plan amended; draft moved to docs/{moved[1]}" if moved else "plan amended"
         ),
         body=body_line,
+        extends=[t.owner_id for t in takeovers],
     )
     return written
 

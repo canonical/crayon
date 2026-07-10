@@ -106,7 +106,7 @@ def _declare(  # noqa: PLR0913
     )
 
 
-def _steer(store, root, clock, *, unit="u", force=False, repo=None):
+def _steer(store, root, clock, *, unit="u", force=False, repo=None):  # noqa: PLR0913
     return steer(
         compose.build_signoff_request(
             unit, root=root, store=store, now=clock, force=force, repo=repo
@@ -161,7 +161,13 @@ async def _seal(  # noqa: PLR0913
     _steer(store, root, clock, unit=unit, repo=repo)
     await _draft(store, root, clock, unit=unit, repo=repo)
     _review(
-        store, root, clock, "accepted", unit=unit, verdict=ReviewVerdict.accept, repo=repo
+        store,
+        root,
+        clock,
+        "accepted",
+        unit=unit,
+        verdict=ReviewVerdict.accept,
+        repo=repo,
     )
     return unit
 
