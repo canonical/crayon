@@ -19,6 +19,7 @@ from dogen.core.models import (
     Provenance,
     Signoff,
     SourceRef,
+    Takeover,
     Unit,
 )
 
@@ -189,6 +190,37 @@ class PlanningStore(Protocol):
         -------
         Unit
             The validated unit model.
+        """
+        ...
+
+    def plan_takeovers(
+        self, unit_id: str, targets: list[str], *, root: Path
+    ) -> list[Takeover]:
+        """Plan the supersede edges a unit's claim records over sealed owners.
+
+        The read-only companion to :meth:`scaffold_unit`/:meth:`update_unit`:
+        after a unit is written, its final target set is scanned against every
+        other declared unit. Ownership is a **lease** (D-01): an *in-flight*
+        overlap has already been refused by the write guard, so every remaining
+        overlapping owner is *sealed* and may be superseded. For each page,
+        the newest-accept sealed owner (D-04 ordering, tie by smaller unit id)
+        yields one :class:`~dogen.core.models.Takeover`; a corrupt/absent
+        neighbour is skipped (WR-01), never aborting the scan.
+
+        Parameters
+        ----------
+        unit_id : str
+            The claiming unit (excluded from the scan).
+        targets : list of str
+            The unit's final docs-relative page set (primary + extras).
+        root : Path
+            The repo root the store reads beneath.
+
+        Returns
+        -------
+        list of Takeover
+            One supersede edge per superseded sealed page, page-sorted; empty
+            when the claim overlaps no sealed owner.
         """
         ...
 
