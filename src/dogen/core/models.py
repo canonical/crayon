@@ -39,6 +39,7 @@ never writes, so a repo may hold mixed v1/v2 sidecars indefinitely.
 """
 
 import re
+from datetime import datetime
 from enum import StrEnum
 from pathlib import PurePosixPath, PureWindowsPath
 from typing import Any
@@ -857,6 +858,71 @@ def derive_progress(prov: Provenance) -> ProgressState:
     if len(prov.reviewer_edits) > latest.reviewer_edit_count:
         return ProgressState.reviewed
     return ProgressState.drafted
+
+
+def is_sealed(prov: Provenance) -> bool:
+    """Derive whether a unit has *sealed* — released its target lease (D-01/D-03).
+
+    A unit's claim on its target pages is a **lease**, held only while the unit
+    is *in flight* and released the moment it seals. Sealed is defined purely
+    over the loaded provenance record (D-01): a unit is sealed **iff the most
+    recent verdict-bearing** ``reviewer_edits[]`` **entry is** ``accept``. A
+    trailing non-verdict note appended after an accept is ignored (the scan
+    stops at the first verdict-bearing entry, D-01); an empty or no-verdict
+    history, or a latest verdict of ``fix``/``redraft``, is **in-flight** and
+    holds its lease (D-03).
+
+    Like :func:`derive_progress`, this is a **record-only** derivation
+    (PROV-04): sealed is *derived on read*, never stored, so nothing can desync
+    — there is no ``sealed`` field on :class:`Provenance` and none is added. It
+    reads only the in-memory record: no ``Path``, no ``os.stat``, no git.
+
+    Parameters
+    ----------
+    prov : Provenance
+        The already-validated, in-memory provenance record.
+
+    Returns
+    -------
+    bool
+        ``True`` iff the latest verdict-bearing reviewer edit is ``accept``.
+    """
+    for edit in reversed(prov.reviewer_edits):
+        if edit.verdict is not None:
+            return edit.verdict is ReviewVerdict.accept
+    return False
+
+
+def _latest_accept_at(prov: Provenance) -> datetime | None:
+    """Return the aware timestamp of a unit's most recent ``accept`` (D-04).
+
+    The cross-unit ordering key for multi-owner resolution: among several sealed
+    owners of one page, the newest ``accept`` wins. This scans backward for the
+    first ``accept`` reviewer edit and parses its ``at`` timestamp to an aware
+    :class:`~datetime.datetime`.
+
+    Stored ``at`` values mix ``Z`` and ``+00:00`` UTC forms, which
+    :func:`datetime.datetime.fromisoformat` on older Pythons — and raw string
+    ordering everywhere — handle inconsistently. Normalizing ``Z`` → ``+00:00``
+    before parsing yields a comparable aware datetime, defeating the mixed-form
+    trap (never compare raw ``at`` strings). Like :func:`is_sealed`, this is
+    record-only: no ``os.stat``, no git seal-commit time.
+
+    Parameters
+    ----------
+    prov : Provenance
+        The already-validated, in-memory provenance record.
+
+    Returns
+    -------
+    datetime or None
+        The aware timestamp of the latest ``accept`` edit, or ``None`` when the
+        record carries no ``accept`` verdict.
+    """
+    for edit in reversed(prov.reviewer_edits):
+        if edit.verdict is ReviewVerdict.accept:
+            return datetime.fromisoformat(edit.at.replace("Z", "+00:00"))
+    return None
 
 
 class UnitSummary(BaseModel):
