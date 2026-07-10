@@ -1010,6 +1010,44 @@ class FilesystemPlanningStore:
             )
             return None
 
+    def _load_unit_tolerant(self, unit_id: str, *, root: Path) -> Unit | None:
+        """Load a neighbour's ``unit.md`` for a lease scan, tolerating corruption.
+
+        The WR-01 counterpart to :meth:`_read_provenance_tolerant`, one step
+        earlier in every scan loop: a repo-wide lease scan reads *every*
+        neighbour's ``unit.md`` to test target overlap, and ``list_unit_ids``
+        only guarantees the file *exists*, not that it parses. ``load_unit``
+        raises :class:`ValueError` on a malformed neighbour (a missing/duplicated
+        front-matter fence via ``split_front_matter``, a failed :class:`Unit`
+        validation, or the ``unit_id``/directory-mismatch check). A single such
+        poisoned neighbour must never abort an unrelated declare/edit/draft.
+
+        A neighbour whose ``unit.md`` cannot be parsed cannot be proven to
+        overlap the claimed pages, so it is skipped (returns ``None``) with a
+        one-line ``stderr`` warning — the conservative, non-aborting choice.
+
+        Parameters
+        ----------
+        unit_id : str
+            The neighbour whose ``unit.md`` is loaded.
+        root : Path
+            The repo root the store reads beneath.
+
+        Returns
+        -------
+        Unit or None
+            The loaded unit, or ``None`` when it is absent or unreadable.
+        """
+        try:
+            return self.load_unit(unit_id, root=root)
+        except (FileNotFoundError, ValueError) as exc:
+            print(
+                f"warning: skipping unit {unit_id!r} from the lease scan "
+                f"(unreadable unit.md): {exc}",
+                file=sys.stderr,
+            )
+            return None
+
     def _assert_targets_unclaimed(
         self, unit_id: str, targets: list[str], *, root: Path
     ) -> None:
@@ -1050,7 +1088,12 @@ class FilesystemPlanningStore:
         for other_id in self.list_unit_ids(root=root):
             if other_id == unit_id:
                 continue
-            overlap = claimed.intersection(self.load_unit(other_id, root=root).targets)
+            other = self._load_unit_tolerant(other_id, root=root)
+            if other is None:
+                # WR-01: a malformed neighbour unit.md cannot be proven to
+                # overlap, so it never aborts this scan (skip, warned).
+                continue
+            overlap = claimed.intersection(other.targets)
             if not overlap:
                 continue
             prov = self._read_provenance_tolerant(other_id, root=root)
@@ -1129,7 +1172,12 @@ class FilesystemPlanningStore:
         for other_id in self.list_unit_ids(root=root):
             if other_id == unit_id:
                 continue
-            overlap = claimed.intersection(self.load_unit(other_id, root=root).targets)
+            other = self._load_unit_tolerant(other_id, root=root)
+            if other is None:
+                # WR-01: a malformed neighbour unit.md cannot be proven to
+                # overlap, so it never aborts takeover planning (skip, warned).
+                continue
+            overlap = claimed.intersection(other.targets)
             if not overlap:
                 continue
             prov = self._read_provenance_tolerant(other_id, root=root)

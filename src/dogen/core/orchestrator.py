@@ -1763,6 +1763,47 @@ def _scan_load_provenance(
         return None
 
 
+def _scan_load_unit(store: PlanningStore, unit_id: str, *, root: Path) -> Unit | None:
+    """Load a neighbour's ``unit.md`` for a lease scan, tolerating corruption (WR-01).
+
+    The unit-load counterpart to :func:`_scan_load_provenance`, one step earlier
+    in the resolve loop: ``resolve_owners`` reads *every* declared unit's
+    ``unit.md`` to test page coverage, and ``list_unit_ids`` only guarantees the
+    file *exists*, not that it parses. ``load_unit`` raises ``ValueError`` (and,
+    on a race, ``FileNotFoundError``) on a malformed neighbour — a single such
+    poisoned ``unit.md`` must never abort an unrelated resolve. A neighbour that
+    cannot be parsed cannot be proven to cover the page, so it is skipped
+    (returns ``None``) with a one-line ``stderr`` warning.
+
+    The ``dogen.core`` seam forbids importing the adapter's exception types, so
+    the shared ``ValueError``/``FileNotFoundError`` bases are matched here — the
+    same posture ``_scan_load_provenance`` uses for provenance.
+
+    Parameters
+    ----------
+    store : PlanningStore
+        The injected planning-directory store.
+    unit_id : str
+        The neighbour whose ``unit.md`` is loaded.
+    root : Path
+        The repo root the store reads beneath.
+
+    Returns
+    -------
+    Unit or None
+        The loaded unit, or ``None`` when it is absent or unreadable.
+    """
+    try:
+        return store.load_unit(unit_id, root=root)
+    except (FileNotFoundError, ValueError) as exc:
+        print(
+            f"warning: skipping unit {unit_id!r} from lease resolution "
+            f"(unreadable unit.md): {exc}",
+            file=sys.stderr,
+        )
+        return None
+
+
 @dataclass(frozen=True)
 class ListRequest:
     """The injected collaborators for listing declared units (unit ls).
@@ -2042,7 +2083,11 @@ def resolve_owners(request: ListRequest, draft_path: str) -> ResolvedOwners:
     normalized = PurePosixPath(draft_path).as_posix().removeprefix("docs/")
     owners: list[OwnerRef] = []
     for unit_id in request.store.list_unit_ids(root=request.root):
-        unit = request.store.load_unit(unit_id, root=request.root)
+        unit = _scan_load_unit(request.store, unit_id, root=request.root)
+        if unit is None:
+            # WR-01: a malformed neighbour unit.md cannot be proven to cover the
+            # page, so it never aborts resolution (skip, warned).
+            continue
         if not any(
             PurePosixPath(target).as_posix() == normalized for target in unit.targets
         ):
