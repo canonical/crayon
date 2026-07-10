@@ -20,6 +20,7 @@ import subprocess
 
 import pytest
 
+from dogen.adapters.git_repo import GitRepoSeam
 from dogen.adapters.planning_fs import FilesystemPlanningStore, TargetClaimedError
 from dogen.app import compose
 from dogen.core.models import (
@@ -37,6 +38,7 @@ from dogen.core.orchestrator import (
     ResolvedOwners,
     declare,
     draft,
+    edit_unit,
     find_unit_by_draft,
     resolve_owners,
     review,
@@ -44,6 +46,17 @@ from dogen.core.orchestrator import (
 from dogen.core.orchestrator import (
     signoff as steer,
 )
+
+
+def _head_message(root) -> str:
+    """Return the HEAD commit's full message (subject + body + trailers)."""
+    completed = subprocess.run(
+        ["git", "-C", str(root), "log", "-1", "--format=%B"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return completed.stdout
 
 
 class _Clock:
@@ -76,7 +89,9 @@ def repo(tmp_path, monkeypatch):
     return tmp_path
 
 
-def _declare(store, root, *, unit="u", sphinx_target=None, extra_targets=None):
+def _declare(  # noqa: PLR0913
+    store, root, *, unit="u", sphinx_target=None, extra_targets=None, repo=None
+):
     declare(
         compose.build_declare_request(
             unit,
@@ -86,44 +101,54 @@ def _declare(store, root, *, unit="u", sphinx_target=None, extra_targets=None):
             audience="devs",
             sphinx_target=sphinx_target,
             extra_targets=extra_targets,
+            repo=repo,
         )
     )
 
 
-def _steer(store, root, clock, *, unit="u", force=False):
+def _steer(store, root, clock, *, unit="u", force=False, repo=None):
     return steer(
         compose.build_signoff_request(
-            unit, root=root, store=store, now=clock, force=force
+            unit, root=root, store=store, now=clock, force=force, repo=repo
         )
     )
 
 
-async def _draft(store, root, clock, *, unit="u"):
+async def _draft(store, root, clock, *, unit="u", repo=None):
     return (
         await draft(
-            compose.build_draft_request(unit, root=root, store=store, now=clock)
+            compose.build_draft_request(
+                unit, root=root, store=store, now=clock, repo=repo
+            )
         )
     ).path
 
 
 def _review(  # noqa: PLR0913
-    store, root, clock, note, *, unit="u", verdict=ReviewVerdict.fix
+    store, root, clock, note, *, unit="u", verdict=ReviewVerdict.fix, repo=None
 ):
     return review(
         compose.build_review_request(
-            unit, root=root, store=store, note=note, now=clock, verdict=verdict
+            unit,
+            root=root,
+            store=store,
+            note=note,
+            now=clock,
+            verdict=verdict,
+            repo=repo,
         )
     )
 
 
 async def _seal(  # noqa: PLR0913
-    store, root, clock, *, unit="A", sphinx_target=None, extra_targets=None
+    store, root, clock, *, unit="A", sphinx_target=None, extra_targets=None, repo=None
 ):
     """Drive declare→steer→draft→review-accept for ``unit`` and return its id.
 
     The shared fixture later waves reuse to stand up a sealed neighbour on
     disk: the unit's latest verdict is ``accept`` (D-01), so it releases its
-    lease on the pages in ``unit.targets``.
+    lease on the pages in ``unit.targets``. Pass ``repo`` to record real seam
+    commits (needed by the takeover-trailer integration tests).
     """
     _declare(
         store,
@@ -131,10 +156,13 @@ async def _seal(  # noqa: PLR0913
         unit=unit,
         sphinx_target=sphinx_target,
         extra_targets=extra_targets,
+        repo=repo,
     )
-    _steer(store, root, clock, unit=unit)
-    await _draft(store, root, clock, unit=unit)
-    _review(store, root, clock, "accepted", unit=unit, verdict=ReviewVerdict.accept)
+    _steer(store, root, clock, unit=unit, repo=repo)
+    await _draft(store, root, clock, unit=unit, repo=repo)
+    _review(
+        store, root, clock, "accepted", unit=unit, verdict=ReviewVerdict.accept, repo=repo
+    )
     return unit
 
 
@@ -481,3 +509,72 @@ def test_plan_takeovers_returns_records(repo):
     assert takeover.owner_id == "A"
     assert takeover.accept_at == "2026-01-01T00:00:01Z"
     assert takeover.sealed_sha12 == files[0].sha256[:12]
+
+
+# --------------------------------------------------------------------------- #
+# Task 2 (Wave 2) — Dogen-Extends trailer + declare/edit thread takeovers into
+# the commit (OWN-02, D-05)
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.asyncio
+async def test_takeover_trailer_recorded(repo):
+    # OWN-02/D-05: declaring onto a sealed owner's page records the supersede on
+    # the declare commit — a `docs/<page> extends unit <owner> (sealed <sha12>)`
+    # body line and a repeatable `Dogen-Extends: <owner>` trailer.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    seam = GitRepoSeam()
+    await _seal(store, repo, clock, unit="A", sphinx_target="p.md", repo=seam)
+
+    _declare(store, repo, unit="B", sphinx_target="p.md", repo=seam)
+
+    message = _head_message(repo)
+    assert "Dogen-Extends: A" in message
+    assert "docs/p.md extends unit A (sealed " in message
+
+
+@pytest.mark.asyncio
+async def test_multi_owner_repeated_trailers(repo):
+    # D-05: a single declare overlapping two distinct sealed owners records two
+    # repeated `Dogen-Extends:` trailers and one extends: body line each (git
+    # -idiomatic, like Co-Authored-By).
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    seam = GitRepoSeam()
+    await _seal(store, repo, clock, unit="A", sphinx_target="p.md", repo=seam)
+    await _seal(store, repo, clock, unit="C", sphinx_target="q.md", repo=seam)
+
+    # B claims p.md (sealed by A) as primary and q.md (sealed by C) as an extra.
+    _declare(
+        store, repo, unit="B", sphinx_target="p.md", extra_targets=["q.md"], repo=seam
+    )
+
+    message = _head_message(repo)
+    assert message.count("Dogen-Extends:") == 2
+    assert "Dogen-Extends: A" in message
+    assert "Dogen-Extends: C" in message
+    assert "docs/p.md extends unit A (sealed " in message
+    assert "docs/q.md extends unit C (sealed " in message
+
+
+@pytest.mark.asyncio
+async def test_edit_onto_sealed_records_takeover(repo):
+    # OWN-02: editing an existing unit to add a target sealed by another owner
+    # records the same note/extends/trailer at the edit commit.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    seam = GitRepoSeam()
+    await _seal(store, repo, clock, unit="A", sphinx_target="p.md", repo=seam)
+    # B starts on its own page, then edits to also target A's sealed page.
+    _declare(store, repo, unit="B", sphinx_target="b.md", repo=seam)
+
+    edit_unit(
+        compose.build_edit_request(
+            "B", root=repo, store=store, add_targets=["p.md"], repo=seam
+        )
+    )
+
+    message = _head_message(repo)
+    assert "Dogen-Extends: A" in message
+    assert "docs/p.md extends unit A (sealed " in message
