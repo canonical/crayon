@@ -1508,6 +1508,18 @@ async def _run_draft(
             len(provenance.steering) <= last.steering_count
             and len(provenance.reviewer_edits) <= last.reviewer_edit_count
         )
+    # OWN-03 (D-03): draft-time lease re-check, before any page is written.
+    # Ownership is a lease held only while a unit is in flight; a sealed owner
+    # released its page (superseded via plan_takeovers). Refuse if ANOTHER
+    # in-flight unit claims any of this unit's targets — closing the reverse
+    # hole where a sealed owner reopens (D-02: `review --verdict fix|redraft`
+    # appends a non-accept verdict, flipping is_sealed back to in-flight) after
+    # a competitor took the page. The store raises TargetClaimedError (its type
+    # stays adapter-side, so the core seam is untouched); the CLI maps it to a
+    # clean target_claimed refusal instead of an uncaught traceback.
+    request.store.assert_draft_targets_unclaimed(
+        request.unit_id, list(unit.targets), root=request.root
+    )
     with observability.draft_span() as (span, run_id):
         observability.set_draft_attributes(
             span,
