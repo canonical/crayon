@@ -15,17 +15,20 @@ winner-only wrapper over it. The ``_scan_load_provenance`` loader tolerates a
 corrupt/schema-newer neighbour (WR-01): it skips, warns, and never crashes.
 """
 
+import hashlib
 import subprocess
 
 import pytest
 
-from dogen.adapters.planning_fs import FilesystemPlanningStore
+from dogen.adapters.planning_fs import FilesystemPlanningStore, TargetClaimedError
 from dogen.app import compose
 from dogen.core.models import (
+    FileDigest,
     Intent,
     Provenance,
     ReviewerEdit,
     ReviewVerdict,
+    Takeover,
     _latest_accept_at,
     is_sealed,
 )
@@ -346,3 +349,135 @@ def test_scan_tolerates_bad_neighbour_resolve(repo, capsys):
     assert by_id["B"].sealed is False
     assert resolved.winner_id == "B"
     assert "B" in capsys.readouterr().err  # stderr warning names the skipped unit
+
+
+# --------------------------------------------------------------------------- #
+# Task 1 (Wave 2) — sealed-vs-in-flight split of the declare/edit overlap guard
+# + plan_takeovers (OWN-01/OWN-02/OWN-06/WR-01)
+# --------------------------------------------------------------------------- #
+#
+# The overlap guard (`_assert_targets_unclaimed`) no longer refuses ANY overlap:
+# it splits on `is_sealed`. An in-flight owner still refuses (it holds its
+# lease); a sealed owner is allowed and its supersede is recorded separately by
+# `plan_takeovers`. A `_seal(...)` neighbour is stood up via the real path; an
+# in-flight neighbour needs only a signoff act (provenance with no verdict yet);
+# a sealed multi-target owner is planted directly (the mock driver only drafts
+# the primary, so a real multi-page seal is out of scope for these unit tests).
+
+
+def _plant_sealed(store, root, unit_id, *, targets, at):
+    """Plant a unit.md + a sealed provenance whose accept edit seals ``targets``.
+
+    The accept edit carries a :class:`FileDigest` per page (``docs/<t>``), so
+    ``plan_takeovers`` can read each page's sealed sha12. Returns the planted
+    ``files`` list for digest assertions.
+    """
+    _plant_unit(store, root, unit_id, targets=targets)
+    files = [
+        FileDigest(path=f"docs/{t}", sha256=hashlib.sha256(t.encode()).hexdigest())
+        for t in targets
+    ]
+    store.write_provenance(
+        Provenance(
+            unit_id=unit_id,
+            reviewer_edits=[
+                ReviewerEdit(
+                    at=at,
+                    reviewer="Ada",
+                    summary="accepted",
+                    verdict=ReviewVerdict.accept,
+                    files=files,
+                )
+            ],
+        ),
+        root=root,
+    )
+    return files
+
+
+@pytest.mark.asyncio
+async def test_declare_onto_inflight_refuses(repo):
+    # OWN-01/D-01: declaring onto a page held by an in-flight (drafted, not
+    # accepted) owner refuses, naming the owner id + its derived state.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    _declare(store, repo, unit="A", sphinx_target="p.md")
+    _steer(store, repo, clock, unit="A")
+    await _draft(store, repo, clock, unit="A")  # in-flight: drafted, not accepted
+
+    with pytest.raises(TargetClaimedError) as excinfo:
+        _declare(store, repo, unit="B", sphinx_target="p.md")
+
+    message = str(excinfo.value)
+    assert "A" in message
+    assert "not accepted" in message
+
+
+@pytest.mark.asyncio
+async def test_declare_onto_sealed_succeeds(repo):
+    # OWN-02/D-01: once A seals (latest verdict accept), it releases its lease —
+    # B may claim A's page and the declare succeeds (no raise).
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    await _seal(store, repo, clock, unit="A", sphinx_target="p.md")
+
+    _declare(store, repo, unit="B", sphinx_target="p.md")  # must not raise
+
+    assert store.load_unit("B", root=repo).sphinx_target == "p.md"
+
+
+@pytest.mark.asyncio
+async def test_extras_lease_parity(repo):
+    # OWN-06: the lease scan iterates unit.targets uniformly, so an EXTRA
+    # (non-primary) target refuses and supersedes exactly like a primary.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+
+    # Refuse leg: an in-flight owner A holds an extra page e.md; a new claim on
+    # e.md refuses, just as a primary overlap would.
+    _declare(store, repo, unit="A", sphinx_target="a.md", extra_targets=["e.md"])
+    _steer(store, repo, clock, unit="A")  # in-flight: signed off, not drafted
+    with pytest.raises(TargetClaimedError):
+        _declare(store, repo, unit="B", sphinx_target="e.md")
+
+    # Takeover leg: a sealed owner S holds an extra page x.md; plan_takeovers
+    # supersedes it identically to a primary.
+    files = _plant_sealed(store, repo, "S", targets=["s.md", "x.md"], at="2026-05-05Z")
+    takeovers = store.plan_takeovers("N", ["x.md"], root=repo)
+
+    assert [t.owner_id for t in takeovers] == ["S"]
+    assert takeovers[0].page == "x.md"
+    expected_sha = next(f.sha256 for f in files if f.path == "docs/x.md")
+    assert takeovers[0].sealed_sha12 == expected_sha[:12]
+
+
+def test_scan_tolerates_bad_neighbour(repo, capsys):
+    # WR-01: a corrupt/schema-newer neighbour overlapping the claimed page is
+    # skipped from the guard (warned, not sealed-eligible) — the declare of the
+    # new unit still succeeds with no traceback.
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    _plant_corrupt(store, repo, "B")  # schema_version 999 ⇒ unreadable, overlaps
+
+    _declare(store, repo, unit="C", sphinx_target="p.md")  # must not raise
+
+    assert store.load_unit("C", root=repo).sphinx_target == "p.md"
+    assert "B" in capsys.readouterr().err  # stderr warning names the skipped unit
+
+
+def test_plan_takeovers_returns_records(repo):
+    # OWN-02: plan_takeovers over a page sealed by A returns one Takeover naming
+    # A, the page, the sealed sha12 (first 12 hex of the accept files[] digest),
+    # and the accept timestamp.
+    store = FilesystemPlanningStore()
+    files = _plant_sealed(store, repo, "A", targets=["p.md"], at="2026-01-01T00:00:01Z")
+
+    takeovers = store.plan_takeovers("B", ["p.md"], root=repo)
+
+    assert len(takeovers) == 1
+    (takeover,) = takeovers
+    assert isinstance(takeover, Takeover)
+    assert takeover.page == "p.md"
+    assert takeover.owner_id == "A"
+    assert takeover.accept_at == "2026-01-01T00:00:01Z"
+    assert takeover.sealed_sha12 == files[0].sha256[:12]
