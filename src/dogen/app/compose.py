@@ -335,6 +335,164 @@ def provider_resolution_source(
     return "default"
 
 
+def resolve_model_name(
+    flag: str | None = None,
+    env: str | None = None,
+    configured: str | None = None,
+) -> str:
+    """Resolve the effective drafting model by the explicit §D4 precedence.
+
+    ``--model`` flag > ``DOGEN_MODEL`` env > repo config, with **no default** —
+    an unresolved model is a legal, honest-empty value (``""``) that fires
+    ``model_unrecorded`` downstream. This is the one divergence from
+    :func:`resolve_provider_name`: the provider falls back to the built-in
+    ``host-harness`` passenger, but a model has no host-harness analog to
+    silently assume, so absence is recorded truthfully rather than defaulted
+    (D-03, MODEL-01).
+
+    Parameters
+    ----------
+    flag : str or None
+        The explicit ``--model`` value, or ``None`` / ``""`` when omitted.
+    env : str or None
+        The ``DOGEN_MODEL`` environment value, or ``None`` / ``""``.
+    configured : str or None
+        The repo config's ``model`` value, or ``None`` / ``""`` when unset.
+
+    Returns
+    -------
+    str
+        The resolved model name, or ``""`` when all three inputs are falsy.
+    """
+    return flag or env or configured or ""
+
+
+def model_resolution_source(
+    flag: str | None = None,
+    env: str | None = None,
+    configured: str | None = None,
+) -> str:
+    """Name the precedence level that decided the model (``model show`` label).
+
+    The show-source label keeps ``env`` distinct (it reports *where* the value
+    came from), unlike :func:`model_generation_origin`, which folds ``env`` into
+    the ``flag`` operator-override tier for the vouch record. The two diverge by
+    design (D-03) and must stay separate functions.
+
+    Parameters
+    ----------
+    flag : str or None
+        The explicit ``--model`` value.
+    env : str or None
+        The ``DOGEN_MODEL`` environment value.
+    configured : str or None
+        The repo config's ``model`` value (``None`` / ``""`` when unset).
+
+    Returns
+    -------
+    str
+        One of ``"flag"``, ``"env"``, ``"repo config"``, or ``"default"``.
+    """
+    if flag:
+        return "flag"
+    if env:
+        return "env"
+    if configured:
+        return "repo config"
+    return "default"
+
+
+def model_generation_origin(
+    flag: str | None = None,
+    env: str | None = None,
+    configured: str | None = None,
+    configured_origin: str | None = None,
+) -> str:
+    """Derive the ``model_origin`` stamped on a generation (the D-03 vouch table).
+
+    Encodes **who vouched** for the resolved model, reconciled with the
+    precedence chain (D-03), in the frozen ``""|ta|self|config|flag`` vocab:
+
+    * ``--model`` flag set → ``flag``.
+    * ``DOGEN_MODEL`` env set (no flag) → ``flag`` (same operator-override tier;
+      env carries no ta/self vouch and has no dedicated slot in the vocab).
+    * config model (no flag/env) with ``configured_origin`` ``ta`` → ``ta``;
+      ``self`` → ``self`` (the human/agent vouch carried through onto the
+      generation).
+    * config model present but unattributed (``configured_origin`` empty, e.g. a
+      hand-edited config) → ``config`` (the honest fallback).
+    * nothing resolved → ``""`` (fires ``model_unrecorded``).
+
+    This is the show-source label's divergent twin: it must **not** be collapsed
+    into :func:`model_resolution_source` (env → label ``env`` but origin
+    ``flag``).
+
+    Parameters
+    ----------
+    flag : str or None
+        The explicit ``--model`` value.
+    env : str or None
+        The ``DOGEN_MODEL`` environment value.
+    configured : str or None
+        The repo config's ``model`` value.
+    configured_origin : str or None
+        The repo config's stored ``model_origin`` (``ta`` / ``self`` / ``""``);
+        consulted only when ``configured`` is the deciding level.
+
+    Returns
+    -------
+    str
+        One of ``""``, ``"ta"``, ``"self"``, ``"config"``, or ``"flag"``.
+    """
+    if flag or env:
+        return "flag"
+    if configured:
+        if configured_origin in ("ta", "self"):
+            return configured_origin
+        return "config"
+    return ""
+
+
+def validate_model_name(name: str) -> str:
+    """Validate a model name before it enters a trailer or a YAML scalar (V5).
+
+    A model name crosses from the operator into a ``.dogen/config.yaml`` scalar
+    and later a ``Dogen-Model:`` commit trailer (the audit-replay contract), so
+    it must be a single, non-empty, control-char-free line — mirroring the
+    ``extends``-owner single-segment validation precedent
+    (:func:`dogen.core.orchestrator._transition_message`). This refuses the
+    newline / control-char injection surface (threats T-08-01 / T-08-02) at the
+    boundary, before persistence or stamping.
+
+    Parameters
+    ----------
+    name : str
+        The candidate model name supplied by the operator.
+
+    Returns
+    -------
+    str
+        The validated name, unchanged, for the caller to persist or stamp.
+
+    Raises
+    ------
+    ValueError
+        If ``name`` is empty or contains a newline or any other control
+        character (a name that could break the trailer or YAML scalar).
+    """
+    if not name:
+        raise ValueError("model name must not be empty")
+    # ``str.isprintable`` is False for any control character (newline, tab, NUL,
+    # DEL, …) while keeping ordinary spaces printable — exactly the single-line,
+    # no-control-char rule, with no magic ordinals.
+    if not name.isprintable():
+        raise ValueError(
+            "model name must be a single line with no control characters "
+            f"(got {name!r})"
+        )
+    return name
+
+
 def _read_draft_file(draft_file: Path) -> str:
     """Read the host's draft text from ``--draft-file`` at the compose root (D-03).
 
