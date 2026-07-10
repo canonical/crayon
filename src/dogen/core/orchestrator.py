@@ -32,9 +32,9 @@ deterministic.
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from importlib import metadata as _metadata
 from pathlib import Path, PurePosixPath
 
-from dogen import __version__
 from dogen.core import observability
 from dogen.core.models import (
     ContextReport,
@@ -158,18 +158,38 @@ def _page_digest(target: str, *, sha: str) -> FileDigest:
     return FileDigest(path=str(PurePosixPath("docs") / target), sha256=sha)
 
 
-def _same_seal(last: ReviewerEdit, *, draft_sha: str, files: list[FileDigest]) -> bool:
-    """Report whether a prior accept sealed the identical page set (v1.2).
+def same_file_digests(a: list[FileDigest], b: list[FileDigest]) -> bool:
+    """Report whether two file lists carry the identical ``{path: sha256}`` set.
 
-    Compares full digest lists when the prior accept recorded them; falls
-    back to the legacy primary-hash compare for pre-v1.2 records.
+    Order-agnostic (D-10): target paths are unique (containment validation), so
+    the path-keyed mapping compare is lossless and immune to spurious mismatches
+    from reordered or repointed extras. The single shared digest-set compare —
+    consumed by :func:`_same_seal` now and by Phase 8's identical-redraft
+    suppression later, so the two cannot drift.
+
+    Parameters
+    ----------
+    a, b : list of FileDigest
+        The two digest lists to compare.
+
+    Returns
+    -------
+    bool
+        ``True`` when both lists map every path to the same hash.
+    """
+    return {f.path: f.sha256 for f in a} == {f.path: f.sha256 for f in b}
+
+
+def _same_seal(last: ReviewerEdit, *, files: list[FileDigest]) -> bool:
+    """Report whether a prior accept sealed the identical page set (v2, D-11).
+
+    Every loaded record carries ``files ≥ 1`` after migration, so the compare is
+    files-only — the legacy primary-hash fallback branch is gone.
 
     Parameters
     ----------
     last : ReviewerEdit
         The most recent reviewer edit (an ``accept``).
-    draft_sha : str
-        The current primary page hash.
     files : list of FileDigest
         The current full digest list.
 
@@ -178,11 +198,27 @@ def _same_seal(last: ReviewerEdit, *, draft_sha: str, files: list[FileDigest]) -
     bool
         ``True`` when nothing changed since the prior seal.
     """
-    if last.files:
-        return [(f.path, f.sha256) for f in last.files] == [
-            (f.path, f.sha256) for f in files
-        ]
-    return bool(last.draft_sha256) and last.draft_sha256 == draft_sha
+    return same_file_digests(last.files, files)
+
+
+def tooling_version() -> str:
+    """Return the installed ``dogen`` distribution version (PROV-06).
+
+    Reads the real installed-dist metadata rather than a hardcoded constant. The
+    version string stays ``"0.0.0"`` until ``pyproject.toml`` is bumped at
+    release time — a distinct release concern, deliberately not this phase.
+
+    Returns
+    -------
+    str
+        ``importlib.metadata.version("dogen")``, or the honest non-semver
+        sentinel ``"0+unknown"`` when the dist cannot be resolved
+        (editable/uninstalled edge).
+    """
+    try:
+        return _metadata.version("dogen")
+    except _metadata.PackageNotFoundError:
+        return "0+unknown"
 
 
 def _body_note(note: str, *, limit: int = 400) -> str:
@@ -1167,7 +1203,7 @@ def review(request: ReviewRequest) -> ReviewOutcome:
         if (
             last is not None
             and last.verdict is ReviewVerdict.accept
-            and _same_seal(last, draft_sha=draft_sha, files=sealed_files)
+            and _same_seal(last, files=sealed_files)
         ):
             raise AlreadyAcceptedError(
                 f"this draft is already accepted (sealed {draft_sha[:12]}); "
@@ -1180,7 +1216,6 @@ def review(request: ReviewRequest) -> ReviewOutcome:
             reviewer=reviewer,
             summary=request.note,
             verdict=request.verdict,
-            draft_sha256=draft_sha,
             files=sealed_files,
         )
     )
@@ -1479,7 +1514,7 @@ async def _run_draft(
         run_id=run_id,
         provider=request.provider_name,
         model=generation.model,
-        draft_sha=generation.draft_sha256,
+        draft_sha=generation.files[0].sha256,
     )
     return DraftOutcome(
         path=draft_path,
@@ -1557,7 +1592,7 @@ def _record_generation(  # noqa: PLR0913
             model=result.model,
             model_version=result.model_version,
             effort=effort,
-            tooling_version=__version__,
+            tooling_version=tooling_version(),
             # D-14/D-12: provider-reported, read verbatim from the DraftResult —
             # never a hard-coded module constant.
             sdk=result.sdk,
@@ -1577,8 +1612,6 @@ def _record_generation(  # noqa: PLR0913
             run_id=run_id,
             at=request.now(),
             action=_DRAFT_ACTION,
-            draft_path=str(PurePosixPath("docs") / unit.sphinx_target),
-            draft_sha256=_sha256(result.text),
             handoff_path=request.handoff_path,
             source_commit=source_commit,
             steering_count=len(provenance.steering),

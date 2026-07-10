@@ -163,17 +163,17 @@ def test_full_loop_is_reconstructable_from_git_log(repo):
     assert generation.source_commit
     draft_text = (repo / "docs" / "u.md").read_text(encoding="utf-8")
     assert (
-        generation.draft_sha256
+        generation.files[0].sha256
         == hashlib.sha256(draft_text.encode("utf-8")).hexdigest()
     )
-    assert generation.draft_path == "docs/u.md"
+    assert generation.files[0].path == "docs/u.md"
     # The drafted run is correlated into the progress history (v1 cross-ref).
     progress = store.read_progress("u", root=repo)
     assert any(e.run_id == generation.run_id for e in progress.history)
     # accept sealed the exact reviewed text (the second bookend).
     accept = prov.reviewer_edits[-1]
     assert accept.verdict is not None and accept.verdict.value == "accept"
-    assert accept.draft_sha256 == generation.draft_sha256
+    assert accept.files[0].sha256 == generation.files[0].sha256
     # The manual steer note is durable in the stream.
     assert [e.origin for e in prov.steering] == [SteeringOrigin.manual]
 
@@ -194,7 +194,7 @@ def test_fix_verdict_appends_a_review_steering_entry(repo):
     assert prov.steering[0].note == "drop the Go names"
     assert prov.reviewer_edits[-1].verdict is not None
     assert prov.reviewer_edits[-1].verdict.value == "redraft"
-    assert prov.reviewer_edits[-1].draft_sha256 == ""  # only accept seals
+    assert prov.reviewer_edits[-1].files == []  # only accept seals
 
 
 def test_commits_off_disables_the_seam(repo):
@@ -999,7 +999,7 @@ def test_commit_bodies_and_trailers_carry_the_forensic_detail(repo):
     accepted = _git(repo, "log", "-1", "--format=%B")
     assert "Dogen-Draft: " in accepted
     store = FilesystemPlanningStore()
-    sealed = store.read_provenance("u", root=repo).reviewer_edits[-1].draft_sha256
+    sealed = store.read_provenance("u", root=repo).reviewer_edits[-1].files[0].sha256
     assert f"Dogen-Draft: {sealed[:12]}" in accepted
 
 
@@ -1304,7 +1304,6 @@ def test_draft_dir_maps_pages_onto_the_target_set(repo):
     ]
     a_text = (repo / "docs" / "guide" / "a.md").read_text(encoding="utf-8")
     assert gen.files[0].sha256 == hashlib.sha256(a_text.encode("utf-8")).hexdigest()
-    assert gen.draft_sha256 == gen.files[0].sha256  # legacy field mirrors primary
 
 
 def test_draft_dir_refuses_incomplete_and_undeclared_handoffs(repo):

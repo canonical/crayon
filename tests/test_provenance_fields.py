@@ -6,6 +6,8 @@ honest defaults and the mock's driver identity so the SDK-free mock can never
 again fabricate ``github-copilot-sdk==1.0.2`` / ``local`` provenance (T-03-03).
 """
 
+import importlib
+
 import pytest
 
 from dogen.adapters.mock_provider import MockDraftingProvider
@@ -79,10 +81,11 @@ def test_deleted_legacy_fields_absent_from_v2_models() -> None:
     assert "draft_sha256" not in Generation.model_fields
     assert "draft_sha256" not in ReviewerEdit.model_fields
     assert "verification" not in Provenance.model_fields
-    with pytest.raises(ImportError):
-        from dogen.core.models import Verification  # noqa: F401, PLC0415
-    with pytest.raises(ImportError):
-        from dogen.core.models import VerificationStep  # noqa: F401, PLC0415
+    # The verification block classes are gone — `from dogen.core.models import
+    # Verification` would raise ImportError (asserted here as absence).
+    models = importlib.import_module("dogen.core.models")
+    assert not hasattr(models, "Verification")
+    assert not hasattr(models, "VerificationStep")
 
 
 def test_generation_omits_empty_effort_model_version_sdk_no_over_drop() -> None:
@@ -105,4 +108,4 @@ def test_generation_retains_non_empty_omit_fields() -> None:
 
 
 def test_generation_model_origin_defaults_empty() -> None:
-    assert _generation().model_origin == ""  # ty: ignore[unresolved-attribute]
+    assert _generation().model_origin == ""
