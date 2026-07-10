@@ -11,8 +11,6 @@ from dogen.core.models import (
     FileDigest,
     Generation,
     Intent,
-    Progress,
-    ProgressEntry,
     ProgressState,
     Provenance,
     ReadRecord,
@@ -70,14 +68,6 @@ def test_effort_includes_xhigh() -> None:
 def test_machine_models_default_schema_version_current() -> None:
     assert Unit(**_valid_front_matter()).schema_version == SCHEMA_VERSION
     assert Provenance(unit_id="cli-usage").schema_version == SCHEMA_VERSION
-    assert (
-        Progress(
-            unit_id="cli-usage",
-            state=ProgressState.pending,
-            history=[],
-        ).schema_version
-        == SCHEMA_VERSION
-    )
 
 
 def test_provenance_reserves_empty_reviewer_edits_and_generations() -> None:
@@ -90,30 +80,13 @@ def test_provenance_reserves_empty_reviewer_edits_and_generations() -> None:
     assert prov.steering == []
 
 
-def test_progress_accepts_lifecycle_ordering_in_history() -> None:
-    order = [
-        ProgressState.pending,
-        ProgressState.sourced,
-        ProgressState.drafted,
-        ProgressState.reviewed,
-        ProgressState.committed,
-    ]
-    progress = Progress(
-        unit_id="cli-usage",
-        state=ProgressState.drafted,
-        history=[ProgressEntry(at="2026-06-20T00:00:00Z", state=s) for s in order],
-    )
-    assert [e.state for e in progress.history] == order
-
-
-def test_committed_exists_in_enum_but_no_setter_helper() -> None:
-    assert ProgressState.committed.value == "committed"
-    # The schema exposes no method that advances a Progress to committed; the
-    # gate lives in the orchestrator (plan 02). Guard against a helper slipping in.
-    assert not any(
-        callable(getattr(Progress, name, None)) and "commit" in name.lower()
-        for name in dir(Progress)
-    )
+def test_progress_state_is_exactly_the_three_derived_members() -> None:
+    # PROV-04: lifecycle state is derived from provenance, so the enum carries
+    # only the three states derive_progress can yield — the retired persisted
+    # ladder (sourced) and the terminal publish state (committed) are gone.
+    assert [m.value for m in ProgressState] == ["pending", "drafted", "reviewed"]
+    assert not hasattr(ProgressState, "sourced")
+    assert not hasattr(ProgressState, "committed")
 
 
 def test_sources_and_context_origins_are_distinct_fields() -> None:

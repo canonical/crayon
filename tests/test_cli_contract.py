@@ -146,8 +146,8 @@ def test_unit_new_clobber_exits_domain_refusal_unit_exists(repo):
 
 
 def test_review_undrafted_exits_not_drafted(repo):
-    # A steered-but-never-drafted unit has no progress.yaml, so review is
-    # bad-input — exit 2, reason="not_drafted" (D-10).
+    # A steered-but-never-drafted unit has an empty generations stream (derived
+    # state pending), so review is bad-input — exit 2, reason="not_drafted" (D-10).
     store = _declare_unit(repo)
     _seed_steering(store, repo)
 
