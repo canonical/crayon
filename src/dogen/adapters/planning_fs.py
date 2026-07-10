@@ -15,9 +15,11 @@ import tempfile
 from pathlib import Path, PurePosixPath
 
 import yaml
+from pydantic import ValidationError
 
 from dogen.core.models import (
     PAGE_FORMATS,
+    SCHEMA_VERSION,
     DogenConfig,
     Intent,
     Progress,
@@ -75,6 +77,41 @@ class TargetClaimedError(FileExistsError):
     pass silently overwrite another's — refused eagerly at declare/edit time
     (v1.2).
     """
+
+
+class SchemaUnsupportedError(ValueError):
+    """Raised when a provenance record declares a newer ``schema_version`` (D-08).
+
+    The loader refuses a record whose ``schema_version`` exceeds the tool's
+    :data:`~dogen.core.models.SCHEMA_VERSION` *before* constructing the model —
+    no partial/best-effort read of a shape the tool does not understand
+    (threat T-05-04). Subclasses :class:`ValueError` so existing write-verb
+    callers that catch ``ValueError`` do not crash; ``unit show`` classifies it
+    by type-name into the stable ``schema_unsupported`` reason.
+    """
+
+    def __init__(self, found: int, supported: int) -> None:
+        self.found = found
+        self.supported = supported
+        super().__init__(
+            f"provenance schema_version {found} is newer than this tool "
+            f"supports ({supported}); upgrade dogen to read it"
+        )
+
+
+class ProvenanceInvalidError(ValueError):
+    """Raised when a present provenance record fails to parse/validate (D-09).
+
+    A unit whose ``provenance.yaml`` exists but is malformed refuses cleanly
+    with the parse/validation detail instead of masquerading as a missing unit
+    (threat T-05-05). Subclasses :class:`ValueError`; ``unit show`` maps it to
+    the stable ``provenance_invalid`` reason (never ``unit_not_found``).
+    """
+
+    def __init__(self, unit_id: str, *, detail: str) -> None:
+        self.unit_id = unit_id
+        self.detail = detail
+        super().__init__(f"provenance for unit {unit_id!r} is invalid: {detail}")
 
 
 def _dominant_page_extension(root: Path) -> str:
@@ -584,8 +621,33 @@ class FilesystemPlanningStore:
         -------
         Provenance
             The validated provenance model.
+
+        Raises
+        ------
+        FileNotFoundError
+            When the sidecar is absent (unchanged — maps to ``unit_not_found``).
+        SchemaUnsupportedError
+            When the record declares a ``schema_version`` newer than
+            :data:`~dogen.core.models.SCHEMA_VERSION` (D-08). Raised at the
+            loader boundary, before model construction, so the refusal is not a
+            best-effort read of an unknown shape.
+        ProvenanceInvalidError
+            When the record is present but fails Pydantic validation (D-09),
+            carrying the validation-error location so a corrupt sidecar refuses
+            cleanly rather than surfacing as ``unit_not_found``.
         """
-        return Provenance(**self._read_yaml(unit_id, "provenance.yaml", root=root))
+        raw = self._read_yaml(unit_id, "provenance.yaml", root=root)
+        # D-08: gate on the declared version BEFORE Provenance(**raw). The gate
+        # must live here (not in a model_validator) so a future version yields
+        # the distinct schema_unsupported reason rather than collapsing into a
+        # ValidationError -> provenance_invalid.
+        found = raw.get("schema_version", 1)
+        if isinstance(found, int) and found > SCHEMA_VERSION:
+            raise SchemaUnsupportedError(found, SCHEMA_VERSION)
+        try:
+            return Provenance(**raw)
+        except ValidationError as exc:
+            raise ProvenanceInvalidError(unit_id, detail=str(exc)) from exc
 
     def write_provenance(self, provenance: Provenance, *, root: Path) -> Path:
         """Persist a unit's provenance record.

@@ -7,8 +7,8 @@ import pytest
 from dogen.adapters.git_identity import GitIdentityError, read_git_identity
 from dogen.adapters.planning_fs import (
     FilesystemPlanningStore,
-    ProvenanceInvalidError,  # ty: ignore[unresolved-import]
-    SchemaUnsupportedError,  # ty: ignore[unresolved-import]
+    ProvenanceInvalidError,
+    SchemaUnsupportedError,
     UnitExistsError,
     split_front_matter,
 )

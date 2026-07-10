@@ -47,6 +47,8 @@ import typer
 
 from dogen.adapters.git_identity import GitIdentityError
 from dogen.adapters.planning_fs import (
+    ProvenanceInvalidError,
+    SchemaUnsupportedError,
     TargetClaimedError,
     UnitExistsError,
     UnitNotFoundError,
@@ -119,6 +121,15 @@ _REASON_UNDECLARED_TARGET = "undeclared_target"
 #: Emitted by ``draft`` when a driver provider is asked to draft a
 #: multi-file unit (drivers are single-page this cycle; use the passenger).
 _REASON_MULTI_TARGET_UNSUPPORTED = "multi_target_unsupported"
+#: Emitted by ``unit show`` when a provenance record declares a
+#: ``schema_version`` newer than this tool supports (D-08) — the loader refuses
+#: an unknown shape instead of a best-effort read; the message names found vs
+#: supported.
+_REASON_SCHEMA_UNSUPPORTED = "schema_unsupported"
+#: Emitted by ``unit show`` when a present provenance record fails to
+#: parse/validate (D-09) — a corrupt-but-present sidecar refuses with the
+#: validation-error location instead of masquerading as ``unit_not_found``.
+_REASON_PROVENANCE_INVALID = "provenance_invalid"
 
 # mvp-1's coarse exit codes (carried, D-10).
 _EXIT_OK = 0
@@ -960,6 +971,27 @@ def unit_show(
         )
     try:
         unit, state, provenance = _gather_unit_detail(store, root, unit_id)
+    except SchemaUnsupportedError as exc:
+        # D-08: order matters — SchemaUnsupportedError subclasses ValueError, so
+        # this specific handler must precede the generic clause below.
+        raise _fail(
+            unit_id,
+            message=f"Cannot read unit {unit_id!r}: {exc}",
+            reason=_REASON_SCHEMA_UNSUPPORTED,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
+    except ProvenanceInvalidError as exc:
+        # D-09: a present-but-invalid provenance is a distinct refusal, never
+        # the not-found conflation. ProvenanceInvalidError also subclasses
+        # ValueError, so it too precedes the generic clause.
+        raise _fail(
+            unit_id,
+            message=f"Cannot read unit {unit_id!r}: {exc}",
+            reason=_REASON_PROVENANCE_INVALID,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
     except (FileNotFoundError, ValueError) as exc:
         raise _fail(
             unit_id,
@@ -976,6 +1008,9 @@ def unit_show(
                 {
                     "unit": unit.model_dump(mode="json"),
                     "format": unit.format,
+                    # D-06: additive top-level targets[] (docs paths, primary
+                    # first) — changes no existing key.
+                    "targets": [f"docs/{t}" for t in unit.targets],
                     "progress": state,
                     "signoff": prov_dump["signoff"],
                     "steering": prov_dump["steering"],
@@ -1044,7 +1079,15 @@ def _render_unit_detail(unit: Unit, state: str, provenance: Provenance) -> list[
         f"title:     {unit.title}",
         f"intent:    {unit.intent.value}",
         f"audience:  {unit.audience}",
-        f"target:    docs/{unit.sphinx_target}",
+        f"targets:   {len(unit.targets)} page(s)",
+    ]
+    # D-04/D-05: one indented docs path per target, primary first, with a
+    # (primary) marker on the primary entry only. A single-file unit reads
+    # identically with count 1. Mirrors the sources: idiom below.
+    for index, target in enumerate(unit.targets):
+        marker = " (primary)" if index == 0 else ""
+        lines.append(f"  - docs/{target}{marker}")
+    lines += [
         f"format:    {unit.format}",
         f"progress:  {state}",
         f"sources:   {len(unit.sources)}",
