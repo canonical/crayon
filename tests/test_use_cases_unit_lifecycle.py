@@ -21,11 +21,10 @@ from dogen.core.models import (
     FileDigest,
     Generation,
     Intent,
-    Progress,
-    ProgressEntry,
     ProgressState,
     Provenance,
     Signoff,
+    derive_progress,
 )
 from dogen.core.orchestrator import (
     ListRequest,
@@ -191,16 +190,6 @@ def _seed_full(store: FilesystemPlanningStore, root: Path, unit_id: str) -> None
         ),
         root=root,
     )
-    store.write_progress(
-        Progress(
-            unit_id=unit_id,
-            state=ProgressState.drafted,
-            history=[
-                ProgressEntry(at="2026-01-01T00:00:02Z", state=ProgressState.drafted)
-            ],
-        ),
-        root=root,
-    )
     store.write_draft(
         store.load_unit(unit_id, root=root), f"# {unit_id} body\n", root=root
     )
@@ -224,10 +213,9 @@ def test_rename_moves_dir_and_rewrites_all_refs(tmp_path: Path) -> None:
     assert prov.signoff is not None
     assert prov.signoff.author == "Ada Lovelace"
     assert len(prov.generations) == 1
-    prog = store.read_progress("new", root=tmp_path)
-    assert prog.unit_id == "new"
-    assert prog.state is ProgressState.drafted
-    assert any(e.state is ProgressState.drafted for e in prog.history)
+    # Progress is derived from the renamed unit's provenance, not a copied
+    # progress.yaml: a drafted generation ⇒ drafted state.
+    assert derive_progress(prov) is ProgressState.drafted
     assert not (tmp_path / "docs" / "old.md").exists()
     assert (tmp_path / "docs" / "new.md").read_text(encoding="utf-8") == original
 

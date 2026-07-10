@@ -24,8 +24,6 @@ from dogen.adapters.host_harness import HostHarnessDraftingProvider
 from dogen.adapters.planning_fs import FilesystemPlanningStore, split_front_matter
 from dogen.core.models import (
     Intent,
-    Progress,
-    ProgressState,
     Provenance,
     Signoff,
     SourceRef,
@@ -74,7 +72,6 @@ def _seed_steered_unit(root: Path) -> FilesystemPlanningStore:
         audience="devs",
     )
     store.write_provenance(Provenance(unit_id="u", signoff=steering), root=root)
-    store.write_progress(Progress(unit_id="u", state=ProgressState.pending), root=root)
     return store
 
 

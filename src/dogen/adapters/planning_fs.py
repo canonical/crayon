@@ -3,8 +3,9 @@
 This adapter implements :class:`dogen.core.ports.PlanningStore`. It serializes
 the F1 Pydantic models to disk and **never writes anywhere under ``.planning/``**
 (D-30) — that is GSD's directory and is an explicit, enforced guard, not a
-convention (threat T-02.1-01). Machine-written files (``provenance.yaml`` /
-``progress.yaml``) use PyYAML; ``unit.md`` is only ever *created* here (the
+convention (threat T-02.1-01). The machine-written ``provenance.yaml`` uses
+PyYAML; progress is **derived** from that record, not persisted (PROV-04 /
+D-01/D-02). ``unit.md`` is only ever *created* here (the
 operator hand-edits it afterward), so PyYAML suffices and ruamel.yaml is not
 needed for round-trip comment preservation (A4 decision — recorded in SUMMARY).
 """
@@ -22,7 +23,6 @@ from dogen.core.models import (
     SCHEMA_VERSION,
     DogenConfig,
     Intent,
-    Progress,
     Provenance,
     SourceRef,
     Unit,
@@ -477,8 +477,9 @@ class FilesystemPlanningStore:
     def rename_unit(self, old_id: str, new_id: str, *, root: Path) -> None:
         """Rename a unit's id everywhere, rollback-safe (unit mv).
 
-        Rewrites ``unit_id`` in ``unit.md`` + ``provenance.yaml`` +
-        ``progress.yaml``, re-derives ``sphinx_target``'s **basename** to
+        Rewrites ``unit_id`` in ``unit.md`` + ``provenance.yaml`` (lifecycle
+        state is derived from provenance, so nothing else travels with the
+        rename), re-derives ``sphinx_target``'s **basename** to
         ``<new_id><ext>`` only when it was the id-derived ``<old_id><ext>``
         (the extension — the unit's format — survives, as do a custom basename
         set via ``--target`` and the directory portion), and moves the draft
@@ -525,7 +526,6 @@ class FilesystemPlanningStore:
         )
         old_sphinx = front.get("sphinx_target")
         prov_text = self._read_if_exists(old_dir / "provenance.yaml")
-        prog_text = self._read_if_exists(old_dir / "progress.yaml")
         try:
             new_dir.mkdir(parents=True, exist_ok=False)
             # Patch only unit_id + sphinx_target; preserve every other front-matter
@@ -551,7 +551,6 @@ class FilesystemPlanningStore:
                 new_dir / "unit.md", f"{fence}\n{front_yaml}\n{fence}\n{body}"
             )
             self._rewrite_unit_id_yaml(prov_text, new_dir / "provenance.yaml", new_id)
-            self._rewrite_unit_id_yaml(prog_text, new_dir / "progress.yaml", new_id)
             # Move the drafted output if present, under the same containment checks.
             if old_sphinx:
                 old_docs = self._resolve_docs_target(old_sphinx, root=root)
@@ -676,40 +675,6 @@ class FilesystemPlanningStore:
         # unit_id join); ``missing_ok`` avoids a TOCTOU exists-check.
         (path.parent / "progress.yaml").unlink(missing_ok=True)
         return path
-
-    def read_progress(self, unit_id: str, *, root: Path) -> Progress:
-        """Load a unit's progress state machine.
-
-        Parameters
-        ----------
-        unit_id : str
-            The unit to read.
-        root : Path
-            The repo root to read beneath.
-
-        Returns
-        -------
-        Progress
-            The validated progress model.
-        """
-        return Progress(**self._read_yaml(unit_id, "progress.yaml", root=root))
-
-    def write_progress(self, progress: Progress, *, root: Path) -> Path:
-        """Persist a unit's progress state machine.
-
-        Parameters
-        ----------
-        progress : Progress
-            The progress model to serialize.
-        root : Path
-            The repo root to write beneath.
-
-        Returns
-        -------
-        Path
-            The path to the written ``progress.yaml``.
-        """
-        return self._write_yaml(progress.unit_id, "progress.yaml", progress, root=root)
 
     def read_unit_text(self, unit_id: str, *, root: Path) -> str:
         """Return the full raw text of a unit's ``unit.md`` (v1).
@@ -1357,7 +1322,7 @@ class FilesystemPlanningStore:
         unit_id : str
             The unit id.
         name : str
-            The file name (``provenance.yaml`` / ``progress.yaml``).
+            The file name (e.g. ``provenance.yaml``).
         root : Path
             The repo root.
 
@@ -1374,7 +1339,7 @@ class FilesystemPlanningStore:
         self,
         unit_id: str,
         name: str,
-        model: Provenance | Progress,
+        model: Provenance,
         *,
         root: Path,
     ) -> Path:
@@ -1386,7 +1351,7 @@ class FilesystemPlanningStore:
             The unit id.
         name : str
             The target file name.
-        model : Provenance or Progress
+        model : Provenance
             The model to serialize.
         root : Path
             The repo root.
@@ -1401,7 +1366,7 @@ class FilesystemPlanningStore:
         self._assert_within_root(target, root=root)
         self._assert_not_under_planning(target, root=root)
         target.parent.mkdir(parents=True, exist_ok=True)
-        # Atomic (WR-03): provenance/progress are the audit trail; a torn write
+        # Atomic (WR-03): provenance is the audit trail; a torn write
         # must never leave a half-serialized YAML. temp-then-rename guarantees
         # the on-disk file is either the prior or the new content, never partial.
         self._atomic_write_text(
