@@ -7,7 +7,6 @@ coding-guide §4). OBS-03 correlation is checked with a test-only in-memory OTel
 SDK exporter; the core itself stays API-only.
 """
 
-import ast
 from pathlib import Path
 
 import pytest
@@ -207,17 +206,6 @@ async def test_redraft_of_reviewed_resets_to_drafted(tmp_path: Path) -> None:
         derive_progress(store.read_provenance("u", root=tmp_path))
         is ProgressState.drafted
     )
-
-
-def test_orchestrator_never_writes_committed() -> None:
-    source = Path(orchestrator.__file__).read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Attribute) and node.attr == "committed":
-            value = node.value
-            assert not (isinstance(value, ast.Name) and value.id == "ProgressState"), (
-                "orchestrator must never reference ProgressState.committed (SKEL-03)"
-            )
 
 
 @pytest.mark.asyncio

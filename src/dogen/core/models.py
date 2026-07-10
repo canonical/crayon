@@ -1,8 +1,9 @@
 """The F1 planning-directory schema (v1) as pure Pydantic v2 models.
 
 This is the on-disk audit and provenance surface every later command writes to
-(``unit.md`` front-matter, ``provenance.yaml``, ``progress.yaml``,
-``config.yaml``). It is pure domain code: it carries **zero vendor imports** so
+(``unit.md`` front-matter, ``provenance.yaml``, ``config.yaml``); lifecycle
+state is derived from provenance, not persisted (PROV-04). It is pure domain
+code: it carries **zero vendor imports** so
 the provider seam (SEAM-01) stays real, and every machine-readable model carries
 a ``schema_version`` so future migrations are explicit and detectable
 (D-34/PLAN-02).
@@ -72,19 +73,17 @@ class Intent(StrEnum):
 
 
 class ProgressState(StrEnum):
-    """Lifecycle state of a single unit (D-38).
+    """Lifecycle state of a single unit, **derived** from provenance (PROV-04).
 
-    The tool advances ``pending → sourced → drafted`` automatically and sets
-    ``reviewed`` on review; it **never** sets ``committed`` — that member exists
-    only to encode the scope border (the human owns the publishing commit; the
-    commit seam records dogen's own artifacts, it never publishes).
+    Not persisted: :func:`derive_progress` maps a unit's provenance record onto
+    exactly one of three states — ``pending`` (no draft generation yet),
+    ``drafted`` (a draft generation exists), and ``reviewed`` (a reviewer edit
+    exists). Publishing stays the human's job and is never encoded here.
     """
 
     pending = "pending"
-    sourced = "sourced"
     drafted = "drafted"
     reviewed = "reviewed"
-    committed = "committed"
 
 
 class Effort(StrEnum):
@@ -165,9 +164,9 @@ class Unit(BaseModel):
     The operator authors this via ``dogen unit new`` / ``dogen unit edit`` (or a
     hand-edit): it records intent, audience, title, the human-pointed sources,
     the Sphinx output target, and free-form steering notes. The v0 reserved
-    ``status`` mirror is retired in v1 — ``progress.yaml`` is the sole lifecycle
-    authority (D-38), and a stale extra ``status`` key in an old file is ignored
-    on load.
+    ``status`` mirror is retired in v1 — lifecycle state is derived from the
+    provenance record (PROV-04), and a stale extra ``status`` key in an old file
+    is ignored on load.
 
     Parameters
     ----------
@@ -827,7 +826,7 @@ def derive_progress(prov: Provenance) -> ProgressState:
     This is a **record-only** derivation (PROV-04): it reads the generation count
     and the latest generation's ``reviewer_edit_count`` snapshot, and never stats
     the drafted docs file, re-hashes the working tree, or opens any second stored
-    artefact such as ``progress.yaml``. Because the value is computed rather than
+    artefact. Because the value is computed rather than
     stored, a read can never disagree with provenance — the desync class that
     motivated PROV-04 (git / provenance / progress divergence) is structurally
     impossible on the read side.
@@ -860,46 +859,6 @@ def derive_progress(prov: Provenance) -> ProgressState:
     return ProgressState.drafted
 
 
-class ProgressEntry(BaseModel):
-    """One transition in a unit's progress history (D-38).
-
-    Parameters
-    ----------
-    at : str
-        ISO-8601 timestamp of the transition.
-    state : ProgressState
-        The state entered at this transition.
-    run_id : str
-        The draft run (or review act) that caused the transition, when one did
-        (v1 cross-ref); ``""`` on migrated v0 entries and manual transitions.
-    """
-
-    at: str
-    state: ProgressState
-    run_id: str = ""
-
-
-class Progress(BaseModel):
-    """The per-unit state machine (``progress.yaml``, D-38/PLAN-06).
-
-    Parameters
-    ----------
-    schema_version : int
-        On-disk schema version (D-34); defaults to :data:`SCHEMA_VERSION`.
-    unit_id : str
-        The unit this record belongs to.
-    state : ProgressState
-        Current lifecycle state.
-    history : list of ProgressEntry
-        Ordered transition log.
-    """
-
-    schema_version: int = SCHEMA_VERSION
-    unit_id: str
-    state: ProgressState
-    history: list[ProgressEntry] = Field(default_factory=list)
-
-
 class UnitSummary(BaseModel):
     """A transient read-model summarizing one declared unit for listing.
 
@@ -918,8 +877,8 @@ class UnitSummary(BaseModel):
     intent : Intent
         The unit's steered Diátaxis direction.
     state : ProgressState
-        The unit's resolved lifecycle state (``pending`` when it has no
-        ``progress.yaml`` yet — declared but not yet drafted).
+        The unit's derived lifecycle state (``pending`` when it has no draft
+        generation yet — declared but not yet drafted).
     """
 
     unit_id: str
