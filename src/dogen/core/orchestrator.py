@@ -56,6 +56,7 @@ from dogen.core.models import (
     SteeringOrigin,
     Unit,
     UnitSummary,
+    derive_progress,
 )
 from dogen.core.ports import DraftingProvider, Identity, PlanningStore, RepoSeam
 
@@ -1745,10 +1746,11 @@ def list_units(request: ListRequest) -> list[UnitSummary]:
     summaries: list[UnitSummary] = []
     for unit_id in request.store.list_unit_ids(root=request.root):
         unit = request.store.load_unit(unit_id, root=request.root)
-        try:
-            state = request.store.read_progress(unit_id, root=request.root).state
-        except FileNotFoundError:
-            state = ProgressState.pending
+        # PROV-04: derive lifecycle state from provenance (Pitfall 1 — list_units
+        # did not previously load provenance). An absent record ⇒ empty
+        # generations ⇒ pending, so no FileNotFoundError guard is needed.
+        provenance = _load_or_init_provenance(request.store, unit_id, root=request.root)
+        state = derive_progress(provenance)
         summaries.append(
             UnitSummary(
                 unit_id=unit_id,
@@ -1879,11 +1881,10 @@ def unit_statuses(request: ListRequest) -> list[UnitStatus]:
     rows: list[UnitStatus] = []
     for unit_id in request.store.list_unit_ids(root=request.root):
         unit = request.store.load_unit(unit_id, root=request.root)
-        try:
-            state = request.store.read_progress(unit_id, root=request.root).state
-        except FileNotFoundError:
-            state = ProgressState.pending
         provenance = _load_or_init_provenance(request.store, unit_id, root=request.root)
+        # PROV-04: derive lifecycle state from the same provenance record used
+        # for the signoff/stale checks below — one source of truth, no second read.
+        state = derive_progress(provenance)
         signed = provenance.signoff is not None
         stale = False
         if signed and provenance.signoff is not None and provenance.signoff.plan_hash:
