@@ -1179,13 +1179,13 @@ def review(request: ReviewRequest) -> ReviewOutcome:
     """
     reviewer, _email = request.identity()
     provenance = request.store.read_provenance(request.unit_id, root=request.root)
-    try:
-        progress = request.store.read_progress(request.unit_id, root=request.root)
-    except FileNotFoundError as exc:
+    # PROV-04 (Pitfall 2): "not drafted" now keys on an empty generation stream,
+    # not a missing progress.yaml — the record is the single source of truth.
+    if not provenance.generations:
         raise NotDraftedError(
             f"cannot review {request.unit_id!r}: it has not been drafted yet — "
             "run the draft use-case first"
-        ) from exc
+        )
     draft_sha = ""
     sealed_files: list[FileDigest] = []
     unapplied_steering = False
@@ -1231,14 +1231,13 @@ def review(request: ReviewRequest) -> ReviewOutcome:
             )
         )
     request.store.write_provenance(provenance, root=request.root)
-    # Idempotent transition (WR-05): the edit above is per-invocation, but the
-    # progress transition is stamped once (D-38).
-    if progress.state is not ProgressState.reviewed:
-        progress.state = ProgressState.reviewed
-        progress.history.append(
-            ProgressEntry(at=request.now(), state=ProgressState.reviewed)
-        )
-        request.store.write_progress(progress, root=request.root)
+    # PROV-04 (D-01/D-02): no progress.yaml is written — the reviewer-edit append
+    # above is the only durable state change, and write_provenance self-cleans any
+    # stale sibling progress.yaml. The lifecycle state is derived from the record
+    # after the append, so a landed review yields ``reviewed`` (WR-05 idempotency
+    # falls out of the count-based rule: re-review appends another edit but the
+    # derived state stays reviewed).
+    state = derive_progress(provenance)
     _commit_transition(
         request.repo,
         root=request.root,
@@ -1255,14 +1254,14 @@ def review(request: ReviewRequest) -> ReviewOutcome:
         text = request.store.read_unit_text(request.unit_id, root=request.root)
         stale = _sha256(text) != provenance.signoff.plan_hash
     next_id, next_action = _suggest_next(
-        progress.state,
+        state,
         signed_off=signed,
         stale_plan=stale,
         last_verdict=request.verdict,
         unit_id=request.unit_id,
     )
     return ReviewOutcome(
-        state=progress.state,
+        state=state,
         next_action=next_action,
         next_id=next_id,
         unapplied_steering=unapplied_steering,
@@ -1495,7 +1494,9 @@ async def _run_draft(
         # atomically (temp-then-rename) so a partial step never tears a file.
         _record_generation(provenance, request, unit=unit, result=result, run_id=run_id)
         request.store.write_provenance(provenance, root=request.root)
-        _advance_progress(request, run_id=run_id)
+        # PROV-04 (D-01/D-02): draft no longer writes progress.yaml — the recorded
+        # generation above IS the drafted state (derived on read), and the
+        # write_provenance call self-cleans any stale sibling progress.yaml.
         draft_path = request.store.write_draft(unit, result.text, root=request.root)
         extra_paths = [
             request.store.write_page(target, result.pages[target], root=request.root)
@@ -1848,7 +1849,7 @@ def _suggest_next(
         key = "sign_off"
     elif stale_plan:
         key = "re_sign"
-    elif state in (ProgressState.pending, ProgressState.sourced):
+    elif state is ProgressState.pending:
         key = "draft"
     elif state is ProgressState.drafted:
         key = "review"

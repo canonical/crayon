@@ -25,12 +25,13 @@ from dogen.core.models import (
     Effort,
     Intent,
     Progress,
-    ProgressEntry,
     ProgressState,
     Provenance,
+    ReviewerEdit,
     Signoff,
     SourceRef,
     Unit,
+    derive_progress,
 )
 from dogen.core.orchestrator import DraftRequest, SignoffRequiredError, draft
 
@@ -157,59 +158,54 @@ async def test_generation_stamps_provider_and_mode(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_draft_advances_progress_to_drafted(tmp_path: Path) -> None:
+    # PROV-04: the recorded generation IS the drafted state — derived from the
+    # record, never a stamped ladder in a second stored artefact.
     store = _seed_unit(tmp_path, with_steering=True)
     await draft(_request(tmp_path, store))
-    progress = store.read_progress("u", root=tmp_path)
-    assert progress.state is ProgressState.drafted
-    states = [e.state for e in progress.history]
-    assert ProgressState.sourced in states
-    assert ProgressState.drafted in states
-    assert ProgressState.committed not in states
+    provenance = store.read_provenance("u", root=tmp_path)
+    assert derive_progress(provenance) is ProgressState.drafted
 
 
 @pytest.mark.asyncio
 async def test_redraft_does_not_move_progress_backward(tmp_path: Path) -> None:
-    # Re-drafting an already-drafted unit must not regress to sourced nor
-    # append spurious history entries (WR-04: monotonic, idempotent advance).
+    # Re-drafting an already-drafted unit stays drafted — the count-based rule is
+    # monotonic by construction (PROV-04), so there is no backward walk to guard.
     store = _seed_unit(tmp_path, with_steering=True)
     await draft(_request(tmp_path, store))
-    first = store.read_progress("u", root=tmp_path)
-    first_history = list(first.history)
+    assert (
+        derive_progress(store.read_provenance("u", root=tmp_path))
+        is ProgressState.drafted
+    )
     await draft(_request(tmp_path, store))
-    second = store.read_progress("u", root=tmp_path)
-    # State stays drafted and no extra transitions were stamped on re-draft.
-    assert second.state is ProgressState.drafted
-    assert [e.state for e in second.history] == [e.state for e in first_history]
-    assert ProgressState.sourced not in [
-        e.state for e in second.history[len(first_history) :]
-    ]
+    assert (
+        derive_progress(store.read_provenance("u", root=tmp_path))
+        is ProgressState.drafted
+    )
 
 
 @pytest.mark.asyncio
 async def test_redraft_of_reviewed_resets_to_drafted(tmp_path: Path) -> None:
-    # Re-drafting a *reviewed* unit supersedes the now-stale review and resets
-    # the unit to ``drafted`` in one clean transition — never the backward walk
-    # through ``sourced`` the first WR-04 fix left in place (verifier follow-up).
+    # Re-drafting a *reviewed* unit supersedes the now-stale review and derives
+    # back to ``drafted``: the fresh generation snapshots the current
+    # reviewer-edit count, so the count is no longer strictly greater (PROV-04).
     store = _seed_unit(tmp_path, with_steering=True)
     await draft(_request(tmp_path, store))
-    # Simulate a completed review by advancing progress to ``reviewed``.
-    reviewed = store.read_progress("u", root=tmp_path)
-    reviewed.state = ProgressState.reviewed
-    reviewed.history.append(
-        ProgressEntry(at="2026-01-01T00:01:00Z", state=ProgressState.reviewed)
+    # Simulate a completed review by appending a reviewer edit to the record.
+    prov = store.read_provenance("u", root=tmp_path)
+    prov.reviewer_edits.append(
+        ReviewerEdit(at="2026-01-01T00:01:00Z", reviewer="Ada", summary="reviewed")
     )
-    store.write_progress(reviewed, root=tmp_path)
-    before_states = [e.state for e in reviewed.history]
-    # Re-draft the reviewed unit.
+    store.write_provenance(prov, root=tmp_path)
+    assert (
+        derive_progress(store.read_provenance("u", root=tmp_path))
+        is ProgressState.reviewed
+    )
+    # Re-draft the reviewed unit — it falls back to drafted.
     await draft(_request(tmp_path, store))
-    after = store.read_progress("u", root=tmp_path)
-    after_states = [e.state for e in after.history]
-    # The fresh draft lands the unit back at ``drafted``...
-    assert after.state is ProgressState.drafted
-    # ...recorded as exactly one new ``drafted`` transition (no backward
-    # ``sourced`` re-stamp, so the audit history stays trustworthy).
-    assert after_states == [*before_states, ProgressState.drafted]
-    assert after_states.count(ProgressState.sourced) == 1
+    assert (
+        derive_progress(store.read_provenance("u", root=tmp_path))
+        is ProgressState.drafted
+    )
 
 
 def test_orchestrator_never_writes_committed() -> None:
@@ -322,10 +318,10 @@ async def test_generation_falls_back_to_requested_effort(tmp_path: Path) -> None
 
 @pytest.mark.asyncio
 async def test_provenance_is_durable_before_draft_write(tmp_path: Path) -> None:
-    # WR-03: the audit record (provenance + progress) must be written BEFORE the
-    # draft file, so a failure during the draft write can never leave a drafted
-    # output with no recorded generation. Here write_draft raises; the generation
-    # and progress advance must already be on disk, and no draft .md must exist.
+    # WR-03: the audit record (provenance) must be written BEFORE the draft file,
+    # so a failure during the draft write can never leave a drafted output with no
+    # recorded generation. Here write_draft raises; the generation must already be
+    # on disk (drafted state derives from it), and no draft .md must exist.
     store = _seed_unit(tmp_path, with_steering=True)
 
     class _FailingDraftStore(FilesystemPlanningStore):
@@ -349,8 +345,9 @@ async def test_provenance_is_durable_before_draft_write(tmp_path: Path) -> None:
     with pytest.raises(OSError, match="disk full"):
         await draft(request)
     # Audit row is durable even though the draft write failed.
-    assert len(store.read_provenance("u", root=tmp_path).generations) == 1
-    assert store.read_progress("u", root=tmp_path).state is ProgressState.drafted
+    provenance = store.read_provenance("u", root=tmp_path)
+    assert len(provenance.generations) == 1
+    assert derive_progress(provenance) is ProgressState.drafted
     # The draft .md was never written (no orphan output without provenance).
     assert not (tmp_path / "docs" / "u.md").exists()
 

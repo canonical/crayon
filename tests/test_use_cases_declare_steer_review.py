@@ -22,12 +22,11 @@ from dogen.core.models import (
     FileDigest,
     Generation,
     Intent,
-    Progress,
-    ProgressEntry,
     ProgressState,
     Provenance,
     Signoff,
     Unit,
+    derive_progress,
 )
 from dogen.core.orchestrator import (
     DeclareRequest,
@@ -239,7 +238,11 @@ def _review_request(
 
 
 def _seed_drafted(store: FilesystemPlanningStore, root: Path) -> None:
-    """Seed a steered + drafted unit (provenance + drafted progress)."""
+    """Seed a steered + drafted unit (provenance with one landed generation).
+
+    PROV-04: the drafted state is derived from the recorded generation; no
+    ``progress.yaml`` is seeded.
+    """
     store.write_provenance(
         Provenance(
             unit_id="u",
@@ -249,15 +252,18 @@ def _seed_drafted(store: FilesystemPlanningStore, root: Path) -> None:
                 intent=Intent.reference,
                 audience="devs",
             ),
-        ),
-        root=root,
-    )
-    store.write_progress(
-        Progress(
-            unit_id="u",
-            state=ProgressState.drafted,
-            history=[
-                ProgressEntry(at="2026-01-01T00:00:01Z", state=ProgressState.drafted)
+            generations=[
+                Generation(
+                    model="m",
+                    model_version="v",
+                    effort=Effort.medium,
+                    tooling_version="0.0.0",
+                    sdk="",
+                    files=[FileDigest(path="docs/u.md", sha256="ab12")],
+                    run_id="r",
+                    at="2026-01-01T00:00:01Z",
+                    action="draft",
+                )
             ],
         ),
         root=root,
@@ -272,13 +278,12 @@ def test_review_appends_edit_and_sets_reviewed(tmp_path: Path) -> None:
     assert len(provenance.reviewer_edits) == 1
     assert provenance.reviewer_edits[0].reviewer == "Ada Lovelace"
     assert provenance.reviewer_edits[0].summary == "fixed a typo"
-    progress = store.read_progress("u", root=tmp_path)
-    assert progress.state is ProgressState.reviewed
-    reviewed = [e for e in progress.history if e.state is ProgressState.reviewed]
-    assert len(reviewed) == 1
+    # PROV-04: reviewed state derives from the record — the landed reviewer edit
+    # now outnumbers the latest generation's reviewer_edit_count snapshot.
+    assert derive_progress(provenance) is ProgressState.reviewed
 
 
-def test_review_is_idempotent_single_transition(tmp_path: Path) -> None:
+def test_review_is_idempotent_stays_reviewed(tmp_path: Path) -> None:
     store = _store_with_unit(tmp_path)
     _seed_drafted(store, tmp_path)
     clock = _Clock()
@@ -287,15 +292,15 @@ def test_review_is_idempotent_single_transition(tmp_path: Path) -> None:
     provenance = store.read_provenance("u", root=tmp_path)
     # Each review records its own edit...
     assert len(provenance.reviewer_edits) == 2
-    progress = store.read_progress("u", root=tmp_path)
-    # ...but the reviewed transition is stamped exactly once (WR-05 idempotent).
-    reviewed = [e for e in progress.history if e.state is ProgressState.reviewed]
-    assert len(reviewed) == 1
+    # ...but the derived state stays reviewed idempotently (WR-05 falls out of the
+    # count-based rule — no separately-stamped transition to double up).
+    assert derive_progress(provenance) is ProgressState.reviewed
 
 
 def test_review_before_draft_raises_not_drafted(tmp_path: Path) -> None:
     store = _store_with_unit(tmp_path)
-    # Steered (provenance written) but never drafted: no progress.yaml exists.
+    # Steered (provenance written) but never drafted: no recorded generation, so
+    # NotDraftedError now keys on empty provenance.generations (not a missing file).
     store.write_provenance(
         Provenance(
             unit_id="u",
@@ -316,6 +321,7 @@ def test_review_never_sets_committed(tmp_path: Path) -> None:
     store = _store_with_unit(tmp_path)
     _seed_drafted(store, tmp_path)
     review(_review_request(tmp_path, store, _Clock()))
-    progress = store.read_progress("u", root=tmp_path)
-    assert ProgressState.committed not in [e.state for e in progress.history]
-    assert progress.state is not ProgressState.committed
+    # PROV-04: the derived vocabulary is pending|drafted|reviewed only —
+    # publishing (committed) is never a state the loop can reach (SKEL-03/D-38).
+    provenance = store.read_provenance("u", root=tmp_path)
+    assert derive_progress(provenance) is ProgressState.reviewed

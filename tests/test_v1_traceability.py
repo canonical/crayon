@@ -167,9 +167,10 @@ def test_full_loop_is_reconstructable_from_git_log(repo):
         == hashlib.sha256(draft_text.encode("utf-8")).hexdigest()
     )
     assert generation.files[0].path == "docs/u.md"
-    # The drafted run is correlated into the progress history (v1 cross-ref).
-    progress = store.read_progress("u", root=repo)
-    assert any(e.run_id == generation.run_id for e in progress.history)
+    # The drafted run's correlation now lives in provenance — the single source
+    # of truth (PROV-04): the recorded generation carries the run_id, no second
+    # stored artefact (progress.yaml) is consulted.
+    assert any(g.run_id == generation.run_id for g in prov.generations)
     # accept sealed the exact reviewed text (the second bookend).
     accept = prov.reviewer_edits[-1]
     assert accept.verdict is not None and accept.verdict.value == "accept"

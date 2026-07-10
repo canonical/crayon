@@ -664,9 +664,18 @@ class FilesystemPlanningStore:
         Path
             The path to the written ``provenance.yaml``.
         """
-        return self._write_yaml(
+        path = self._write_yaml(
             provenance.unit_id, "provenance.yaml", provenance, root=root
         )
+        # D-01/D-02: silently drop any stale sibling progress.yaml. State is now
+        # derived from provenance (PROV-04), so the second stored artefact is
+        # never kept — a pre-existing one self-cleans on the next write, riding
+        # the verb's own transition commit (no narration). The target is derived
+        # from ``path.parent`` of the guarded write above, so it inherits
+        # ``_reject_unsafe_unit_id`` / ``_assert_within_root`` (never a fresh
+        # unit_id join); ``missing_ok`` avoids a TOCTOU exists-check.
+        (path.parent / "progress.yaml").unlink(missing_ok=True)
+        return path
 
     def read_progress(self, unit_id: str, *, root: Path) -> Progress:
         """Load a unit's progress state machine.

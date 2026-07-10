@@ -27,7 +27,7 @@ import pytest
 
 from dogen.adapters.copilot.provider import CopilotDraftingProvider
 from dogen.adapters.planning_fs import FilesystemPlanningStore
-from dogen.core.models import Intent, ProgressState
+from dogen.core.models import Intent, ProgressState, derive_progress
 from dogen.core.orchestrator import (
     DeclareRequest,
     DraftRequest,
@@ -115,5 +115,5 @@ async def test_live_driver_draft_records_authoritative_provenance(
     assert generation.sdk == _DRIVER_SDK
     assert generation.provider == "copilot"
 
-    progress = store.read_progress(_UNIT_ID, root=tmp_path)
-    assert progress.state is ProgressState.drafted
+    # PROV-04: the drafted state derives from the recorded generation.
+    assert derive_progress(provenance) is ProgressState.drafted
