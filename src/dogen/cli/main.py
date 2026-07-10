@@ -1417,7 +1417,7 @@ def steer(
 
 
 @app.command("draft")
-def draft(  # noqa: PLR0913, C901, PLR0912
+def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
     unit_id: Annotated[str, typer.Argument(help="Unit to draft.")],
     provider: Annotated[
         str | None,
@@ -1577,6 +1577,19 @@ def draft(  # noqa: PLR0913, C901, PLR0912
             unit_id,
             message=f"Refusing to draft: {exc}",
             reason=_REASON_SIGNOFF_REQUIRED,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+            provider=provider_name,
+        ) from exc
+    except TargetClaimedError as exc:
+        # OWN-03: the draft-time lease re-check refused an in-flight overlap.
+        # Placed BEFORE the (FileNotFoundError, ValueError) clause because
+        # TargetClaimedError subclasses FileExistsError — a clean domain refusal,
+        # not an uncaught traceback (mirrors the declare/edit handlers).
+        raise _fail(
+            unit_id,
+            message=f"Refusing to draft: {exc}",
+            reason=_REASON_TARGET_CLAIMED,
             code=_EXIT_DOMAIN_REFUSAL,
             json_output=json_output,
             provider=provider_name,
