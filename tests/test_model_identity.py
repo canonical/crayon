@@ -177,3 +177,118 @@ def test_old_config_without_model_key_loads_as_empty():
     config = DogenConfig(**{"schema_version": 2, "provider": "host-harness"})
     assert config.model == ""
     assert config.model_origin == ""
+
+
+# --------------------------------------------------------------------------- #
+# Task 2 — resolve_model_name precedence (-k resolve / -k unrecorded)
+# --------------------------------------------------------------------------- #
+
+
+def test_resolve_model_name_flag_beats_env_and_config():
+    assert compose.resolve_model_name("gpt-a", "gpt-b", "gpt-c") == "gpt-a"
+
+
+def test_resolve_model_name_env_beats_config_when_no_flag():
+    assert compose.resolve_model_name(None, "gpt-b", "gpt-c") == "gpt-b"
+
+
+def test_resolve_model_name_config_when_no_flag_or_env():
+    assert compose.resolve_model_name(None, None, "gpt-c") == "gpt-c"
+
+
+def test_resolve_model_name_honest_empty_when_all_absent():
+    # No default — an unresolved model is legal honest-empty (unlike provider).
+    assert compose.resolve_model_name(None, None, None) == ""
+
+
+def test_model_unrecorded_iff_all_three_falsy():
+    # Resolved value is "" iff flag AND env AND configured are all falsy.
+    assert compose.resolve_model_name(None, None, None) == ""
+    assert compose.resolve_model_name("", "", "") == ""
+    assert compose.resolve_model_name(None, None, "gpt-c") != ""
+    assert compose.resolve_model_name(None, "gpt-b", None) != ""
+    assert compose.resolve_model_name("gpt-a", None, None) != ""
+
+
+def test_model_resolution_source_labels_each_level():
+    assert compose.model_resolution_source("gpt-a", "gpt-b", "gpt-c") == "flag"
+    assert compose.model_resolution_source(None, "gpt-b", "gpt-c") == "env"
+    assert compose.model_resolution_source(None, None, "gpt-c") == "repo config"
+    assert compose.model_resolution_source(None, None, None) == "default"
+
+
+# --------------------------------------------------------------------------- #
+# Task 2 — model_generation_origin: the D-03 vouch table (-k origin)
+# --------------------------------------------------------------------------- #
+
+
+def test_origin_flag_set_stamps_flag():
+    assert compose.model_generation_origin("gpt-a", None, None, None) == "flag"
+
+
+def test_origin_env_folds_into_flag():
+    # DOGEN_MODEL env is an operator override — same tier as --model flag.
+    assert compose.model_generation_origin(None, "gpt-b", None, None) == "flag"
+    # A config origin is irrelevant while env (higher precedence) decides.
+    assert compose.model_generation_origin(None, "gpt-b", "gpt-c", "ta") == "flag"
+
+
+def test_origin_config_ta_carries_through():
+    assert compose.model_generation_origin(None, None, "gpt-c", "ta") == "ta"
+
+
+def test_origin_config_self_carries_through():
+    assert compose.model_generation_origin(None, None, "gpt-c", "self") == "self"
+
+
+def test_origin_config_present_but_unattributed_yields_config():
+    assert compose.model_generation_origin(None, None, "gpt-c", "") == "config"
+    assert compose.model_generation_origin(None, None, "gpt-c", None) == "config"
+
+
+def test_origin_nothing_set_is_empty():
+    assert compose.model_generation_origin(None, None, None, None) == ""
+
+
+def test_origin_returns_only_frozen_vocab_values():
+    # Every input row must return exactly one of "" | ta | self | config | flag.
+    allowed = {"", "ta", "self", "config", "flag"}
+    rows = [
+        ("gpt-a", None, None, None),
+        (None, "gpt-b", None, None),
+        (None, None, "gpt-c", "ta"),
+        (None, None, "gpt-c", "self"),
+        (None, None, "gpt-c", ""),
+        (None, None, None, None),
+    ]
+    for flag, env, configured, configured_origin in rows:
+        assert (
+            compose.model_generation_origin(flag, env, configured, configured_origin)
+            in allowed
+        )
+
+
+# --------------------------------------------------------------------------- #
+# Task 2 — validate_model_name (-k validate)
+# --------------------------------------------------------------------------- #
+
+
+def test_validate_model_name_accepts_ordinary_name():
+    assert compose.validate_model_name("gpt-4o") == "gpt-4o"
+
+
+def test_validate_model_name_rejects_empty():
+    with pytest.raises(ValueError):  # noqa: PT011
+        compose.validate_model_name("")
+
+
+def test_validate_model_name_rejects_newline():
+    with pytest.raises(ValueError):  # noqa: PT011
+        compose.validate_model_name("gpt\n4o")
+
+
+def test_validate_model_name_rejects_control_char():
+    with pytest.raises(ValueError):  # noqa: PT011
+        compose.validate_model_name("gpt\x004o")
+    with pytest.raises(ValueError):  # noqa: PT011
+        compose.validate_model_name("gpt\t4o")
