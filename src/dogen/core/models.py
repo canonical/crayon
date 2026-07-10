@@ -1118,11 +1118,24 @@ class DogenConfig(BaseModel):
         ``mock``); defaults to ``host-harness``.
     commits : CommitMode
         Whether the commit seam records transitions automatically.
+    model : str
+        The repo's persisted drafting model identity (additive, v1.1); ``""``
+        when unrecorded, which fires ``model_unrecorded`` downstream. Resolved
+        below an explicit ``--model`` flag and the ``DOGEN_MODEL`` env, above the
+        built-in honest-empty. Old configs that predate this field simply lack
+        it and load as ``""`` (no migration, no schema bump).
+    model_origin : str
+        Who vouched for :attr:`model` (the D-03 vocab ``""|ta|self|config|flag``);
+        set to ``ta``/``self`` by ``dogen model set --origin`` and carried onto
+        the generation's ``model_origin`` at draft time. ``""`` when no model is
+        recorded.
     """
 
     schema_version: int = SCHEMA_VERSION
     provider: str = "host-harness"
     commits: CommitMode = CommitMode.auto
+    model: str = ""
+    model_origin: str = ""
 
 
 class DraftResult(BaseModel):
