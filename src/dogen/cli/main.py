@@ -67,9 +67,11 @@ from dogen.core.models import (
 from dogen.core.orchestrator import (
     AlreadyAcceptedError,
     NotDraftedError,
+    OwnerRef,
+    ResolvedOwners,
     SignoffExistsError,
     SignoffRequiredError,
-    find_unit_by_draft,
+    resolve_owners,
 )
 from dogen.core.orchestrator import add_context_artifact as context_add_use_case
 from dogen.core.orchestrator import add_steering_note as steer_use_case
@@ -909,7 +911,7 @@ def unit_ls(json_output: _JsonOutput = False) -> None:
 
 
 @unit_app.command("show")
-def unit_show(
+def unit_show(  # noqa: C901
     unit_id: Annotated[
         str | None,
         typer.Argument(help="Unit to inspect (omit with --by-draft)."),
@@ -955,11 +957,16 @@ def unit_show(
     """
     store = compose.default_store()
     root = Path.cwd()
+    resolved_owners: ResolvedOwners | None = None
     if by_draft is not None:
-        resolved = find_unit_by_draft(
+        # OWN-04: resolve every covering owner (D-06/D-07), not just the winner —
+        # the winner still drives the single-unit detail render below so the
+        # common single-owner path stays byte-stable, while a >1-owner page also
+        # surfaces owners[] (--json) / an "also claimed by" line (plain).
+        resolved_owners = resolve_owners(
             compose.build_list_request(root=root, store=store), by_draft
         )
-        if resolved is None:
+        if resolved_owners.winner_id is None:
             raise _fail(
                 by_draft,
                 message=f"No declared unit targets {by_draft!r}.",
@@ -967,7 +974,7 @@ def unit_show(
                 code=_EXIT_DOMAIN_REFUSAL,
                 json_output=json_output,
             )
-        unit_id = resolved
+        unit_id = resolved_owners.winner_id
     if unit_id is None:
         raise _fail(
             "",
@@ -1010,26 +1017,50 @@ def unit_show(
     if json_output:
         prov_dump = provenance.model_dump(mode="json")
         generations = prov_dump["generations"]
-        typer.echo(
-            json.dumps(
+        payload: dict[str, object] = {
+            "unit": unit.model_dump(mode="json"),
+            "format": unit.format,
+            # D-06: additive top-level targets[] (docs paths, primary
+            # first) — changes no existing key.
+            "targets": [f"docs/{t}" for t in unit.targets],
+            "progress": state,
+            "signoff": prov_dump["signoff"],
+            "steering": prov_dump["steering"],
+            "generations": generations[-1:] if latest else generations,
+            "generations_count": len(generations),
+            "reviewer_edits": prov_dump["reviewer_edits"],
+        }
+        # D-06: when a --by-draft page is covered by more than one unit, add an
+        # owners[] array alongside the resolved winner. A single-owner page omits
+        # it entirely, so the pre-existing shape is unchanged.
+        if resolved_owners is not None and len(resolved_owners.owners) > 1:
+            payload["owners"] = [
                 {
-                    "unit": unit.model_dump(mode="json"),
-                    "format": unit.format,
-                    # D-06: additive top-level targets[] (docs paths, primary
-                    # first) — changes no existing key.
-                    "targets": [f"docs/{t}" for t in unit.targets],
-                    "progress": state,
-                    "signoff": prov_dump["signoff"],
-                    "steering": prov_dump["steering"],
-                    "generations": generations[-1:] if latest else generations,
-                    "generations_count": len(generations),
-                    "reviewer_edits": prov_dump["reviewer_edits"],
+                    "unit": owner.unit_id,
+                    "sealed": owner.sealed,
+                    "accept_at": (
+                        owner.accept_at.isoformat()
+                        if owner.accept_at is not None
+                        else None
+                    ),
                 }
-            )
-        )
+                for owner in resolved_owners.owners
+            ]
+        typer.echo(json.dumps(payload))
         return
     for line in _render_unit_detail(unit, state, provenance):
         typer.echo(line)
+    # D-07: when a --by-draft page is covered by more than one unit, the plain
+    # output keeps the winner's full detail and adds one "also claimed by" line
+    # naming the non-winner owner(s); a single-owner page prints nothing extra.
+    if resolved_owners is not None and len(resolved_owners.owners) > 1:
+        others = [
+            owner
+            for owner in resolved_owners.owners
+            if owner.unit_id != resolved_owners.winner_id
+        ]
+        note = ", ".join(_owner_note(owner) for owner in others)
+        typer.echo(f"also claimed by: {note}")
 
 
 def _load_or_init_provenance(
@@ -1073,6 +1104,19 @@ def _gather_unit_detail(
     # so the former FileNotFoundError→"pending" guard is no longer needed.
     state = derive_progress(provenance).value
     return unit, state, provenance
+
+
+def _owner_note(owner: OwnerRef) -> str:
+    """Render one non-winner owner for the ``also claimed by`` line (D-07).
+
+    A sealed owner reads ``<id> (sealed <date>)`` (the accept date is the D-04
+    ordering key); an in-flight owner with no accept reads ``<id> (in-flight)``.
+    """
+    if owner.sealed and owner.accept_at is not None:
+        return f"{owner.unit_id} (sealed {owner.accept_at.date().isoformat()})"
+    if owner.sealed:
+        return f"{owner.unit_id} (sealed)"
+    return f"{owner.unit_id} (in-flight)"
 
 
 def _render_unit_detail(unit: Unit, state: str, provenance: Provenance) -> list[str]:
