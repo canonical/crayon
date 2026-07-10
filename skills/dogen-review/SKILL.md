@@ -218,7 +218,7 @@ end-to-end scenario:
 - unit **B** declares onto `docs/guide.md`. Because A is sealed (not in-flight), the
   claim is allowed rather than refused.
 - *After:* B's declare commit records the takeover — a body line
-  `note: docs/guide.md extends unit A (sealed <sha12>)` plus a `Dogen-Extends: A`
+  `extends: docs/guide.md extends unit A (sealed <sha12>)` plus a `Dogen-Extends: A`
   trailer — and B then drafts and reviews as usual until **B seals `docs/guide.md`**.
   (Had A still been in-flight, B's declare would instead refuse with `target_claimed`.)
 

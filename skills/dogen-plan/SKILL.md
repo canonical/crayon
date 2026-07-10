@@ -144,7 +144,7 @@ Collect the mechanical fields directly (these are not Socratic — just ask for 
   refuses with `target_claimed` — surface which unit holds it; but a page whose
   owner has already **sealed** it (its last review was an accept) is claimable,
   and declaring or editing onto it *supersedes* the seal — the CLI records a
-  `note:` line and a `Dogen-Extends: <owner-id>` trailer rather than refusing.
+  `extends:` body line and a `Dogen-Extends: <owner-id>` trailer rather than refusing.
 
 If the TA has not decided a unit id or title, help them settle one; do not invent
 sources they did not confirm.
