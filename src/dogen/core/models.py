@@ -821,6 +821,45 @@ class Provenance(BaseModel):
         return data
 
 
+def derive_progress(prov: Provenance) -> ProgressState:
+    """Derive a unit's lifecycle state from its provenance record alone (D-05).
+
+    This is a **record-only** derivation (PROV-04): it reads the generation count
+    and the latest generation's ``reviewer_edit_count`` snapshot, and never stats
+    the drafted docs file, re-hashes the working tree, or opens any second stored
+    artefact such as ``progress.yaml``. Because the value is computed rather than
+    stored, a read can never disagree with provenance — the desync class that
+    motivated PROV-04 (git / provenance / progress divergence) is structurally
+    impossible on the read side.
+
+    The count-based rule:
+
+    * no generations                                        ⇒ ``pending``
+    * ``len(reviewer_edits) > latest.reviewer_edit_count``   ⇒ ``reviewed``
+    * otherwise                                             ⇒ ``drafted``
+
+    A redraft after a review falls back to ``drafted`` because the new generation
+    snapshots the current ``len(reviewer_edits)`` into its ``reviewer_edit_count``,
+    so the count is no longer strictly greater.
+
+    Parameters
+    ----------
+    prov : Provenance
+        The already-validated, in-memory provenance record.
+
+    Returns
+    -------
+    ProgressState
+        The derived lifecycle state (``pending``, ``drafted``, or ``reviewed``).
+    """
+    if not prov.generations:
+        return ProgressState.pending
+    latest = prov.generations[-1]
+    if len(prov.reviewer_edits) > latest.reviewer_edit_count:
+        return ProgressState.reviewed
+    return ProgressState.drafted
+
+
 class ProgressEntry(BaseModel):
     """One transition in a unit's progress history (D-38).
 
