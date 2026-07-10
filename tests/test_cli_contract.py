@@ -167,6 +167,128 @@ def test_full_verb_matrix_is_exposed():
         assert verb in result.output
 
 
+def _write_raw_provenance(root: Path, unit_id: str, body: str) -> None:
+    """Write a raw provenance.yaml directly into a scaffolded unit's dir."""
+    prov = root / ".dogen" / "units" / unit_id / "provenance.yaml"
+    prov.write_text(body, encoding="utf-8")
+
+
+def test_unit_show_future_schema_version_exits_schema_unsupported(repo):
+    # D-08: a sidecar declaring schema_version 99 refuses at load — `unit show`
+    # exits non-zero with the stable reason "schema_unsupported" (the unit dir
+    # genuinely exists, proving this is not a not-found conflation).
+    _declare_unit(repo)
+    _write_raw_provenance(repo, "u", "schema_version: 99\nunit_id: u\n")
+
+    result = runner.invoke(app, ["unit", "show", "u", "--json"])
+    assert result.exit_code != 0, result.output
+    assert _payload(result)["reason"] == "schema_unsupported"
+
+    # The plain-mode message names found (99) vs the supported version.
+    plain = runner.invoke(app, ["unit", "show", "u"])
+    assert plain.exit_code != 0, plain.output
+    assert "99" in plain.output
+
+
+def test_unit_show_corrupt_provenance_exits_provenance_invalid(repo):
+    # D-09: a present-but-invalid provenance (a generation missing required
+    # keys) refuses with "provenance_invalid" — never "unit_not_found".
+    _declare_unit(repo)
+    _write_raw_provenance(
+        repo, "u", "schema_version: 2\nunit_id: u\ngenerations:\n  - model: m\n"
+    )
+
+    result = runner.invoke(app, ["unit", "show", "u", "--json"])
+    assert result.exit_code != 0, result.output
+    reason = _payload(result)["reason"]
+    assert reason == "provenance_invalid"
+    assert reason != "unit_not_found"
+
+
+def test_unit_show_missing_unit_still_exits_unit_not_found(repo):
+    # No regression: a genuinely missing unit still yields "unit_not_found".
+    result = runner.invoke(app, ["unit", "show", "ghost", "--json"])
+    assert result.exit_code != 0, result.output
+    assert _payload(result)["reason"] == "unit_not_found"
+
+
+def test_unit_show_json_carries_additive_targets_array(repo):
+    # D-06: a multi-file unit's --json payload gains a top-level targets[]
+    # (docs paths, primary first) and changes no pre-existing key.
+    store = FilesystemPlanningStore()
+    store.scaffold_unit(
+        "u",
+        root=repo,
+        intent=Intent.reference,
+        audience="devs",
+        sphinx_target="guide.md",
+        extra_targets=["appendix.md"],
+    )
+
+    result = runner.invoke(app, ["unit", "show", "u", "--json"])
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["targets"] == ["docs/guide.md", "docs/appendix.md"]
+    for key in (
+        "unit",
+        "format",
+        "progress",
+        "signoff",
+        "steering",
+        "generations",
+        "generations_count",
+        "reviewer_edits",
+    ):
+        assert key in payload, key
+
+
+def test_unit_show_plain_lists_every_target_primary_first(repo):
+    # D-04/D-05: plain `unit show` prints a "targets:" count line ("2 page(s)")
+    # then one indented docs path per target, with "(primary)" on the primary
+    # entry only.
+    store = FilesystemPlanningStore()
+    store.scaffold_unit(
+        "u",
+        root=repo,
+        intent=Intent.reference,
+        audience="devs",
+        sphinx_target="guide.md",
+        extra_targets=["appendix.md"],
+    )
+
+    result = runner.invoke(app, ["unit", "show", "u"])
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    targets_line = next(line for line in lines if line.startswith("targets:"))
+    assert "2 page(s)" in targets_line
+    primary = next(line for line in lines if "docs/guide.md" in line)
+    extra = next(line for line in lines if "docs/appendix.md" in line)
+    assert "(primary)" in primary
+    assert "(primary)" not in extra
+    assert primary.strip().startswith("-")
+    # Old single-line surface is gone.
+    assert "target:    docs/guide.md" not in result.output
+
+
+def test_unit_show_single_file_unit_renders_count_one(repo):
+    # A single-file unit reads identically: "1 page(s)" with one "(primary)".
+    store = FilesystemPlanningStore()
+    store.scaffold_unit(
+        "u",
+        root=repo,
+        intent=Intent.reference,
+        audience="devs",
+        sphinx_target="solo.md",
+    )
+
+    result = runner.invoke(app, ["unit", "show", "u"])
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    targets_line = next(line for line in lines if line.startswith("targets:"))
+    assert "1 page(s)" in targets_line
+    assert sum("(primary)" in line for line in lines) == 1
+
+
 def test_cli_module_imports_no_sdk():
     # The CLI classifies backend errors by type-name; it must never import the
     # Copilot SDK/adapter (the mock/host-harness path stays SDK-free). Parse the

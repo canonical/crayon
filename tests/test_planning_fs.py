@@ -7,10 +7,12 @@ import pytest
 from dogen.adapters.git_identity import GitIdentityError, read_git_identity
 from dogen.adapters.planning_fs import (
     FilesystemPlanningStore,
+    ProvenanceInvalidError,  # ty: ignore[unresolved-import]
+    SchemaUnsupportedError,  # ty: ignore[unresolved-import]
     UnitExistsError,
     split_front_matter,
 )
-from dogen.core.models import Intent, ProgressState, Unit
+from dogen.core.models import SCHEMA_VERSION, Intent, ProgressState, Unit
 
 
 def test_scaffold_unit_writes_editable_unit_md(tmp_path: Path) -> None:
@@ -169,6 +171,56 @@ def test_split_front_matter_handles_crlf() -> None:
 def test_split_front_matter_rejects_missing_front_matter() -> None:
     with pytest.raises(ValueError):
         split_front_matter("# Just a body, no front-matter\n")
+
+
+def _write_raw_provenance(root: Path, unit_id: str, body: str) -> Path:
+    """Write a raw provenance.yaml directly into a scaffolded unit's dir."""
+    prov = root / ".dogen" / "units" / unit_id / "provenance.yaml"
+    prov.write_text(body, encoding="utf-8")
+    return prov
+
+
+def test_read_provenance_refuses_future_schema_version(tmp_path: Path) -> None:
+    # D-08: a sidecar declaring a schema_version above the tool's SCHEMA_VERSION
+    # must refuse at the loader boundary (not best-effort read) with a typed
+    # SchemaUnsupportedError exposing the found and supported version numbers.
+    store = FilesystemPlanningStore()
+    store.scaffold_unit("u", root=tmp_path)
+    _write_raw_provenance(
+        tmp_path, "u", f"schema_version: {SCHEMA_VERSION + 1}\nunit_id: u\n"
+    )
+    with pytest.raises(SchemaUnsupportedError) as excinfo:
+        store.read_provenance("u", root=tmp_path)
+    assert excinfo.value.found == SCHEMA_VERSION + 1
+    assert excinfo.value.supported == SCHEMA_VERSION
+
+
+def test_read_provenance_wraps_invalid_record(tmp_path: Path) -> None:
+    # D-09: a present but schema-invalid sidecar (a generation missing required
+    # keys) must surface as a typed ProvenanceInvalidError carrying the unit id
+    # and a validation-error detail — never a silent unit_not_found.
+    store = FilesystemPlanningStore()
+    store.scaffold_unit("u", root=tmp_path)
+    _write_raw_provenance(
+        tmp_path,
+        "u",
+        f"schema_version: {SCHEMA_VERSION}\nunit_id: u\ngenerations:\n  - model: m\n",
+    )
+    with pytest.raises(ProvenanceInvalidError) as excinfo:
+        store.read_provenance("u", root=tmp_path)
+    assert excinfo.value.unit_id == "u"
+    assert "run_id" in str(excinfo.value)
+
+
+def test_read_provenance_missing_file_still_raises_file_not_found(
+    tmp_path: Path,
+) -> None:
+    # A genuinely absent sidecar keeps raising FileNotFoundError (unchanged) so
+    # the CLI still maps a missing unit to unit_not_found, not provenance_invalid.
+    store = FilesystemPlanningStore()
+    store.scaffold_unit("u", root=tmp_path)
+    with pytest.raises(FileNotFoundError):
+        store.read_provenance("u", root=tmp_path)
 
 
 def test_read_git_identity_returns_configured_values() -> None:
