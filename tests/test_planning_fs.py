@@ -12,7 +12,7 @@ from dogen.adapters.planning_fs import (
     UnitExistsError,
     split_front_matter,
 )
-from dogen.core.models import SCHEMA_VERSION, Intent, ProgressState, Unit
+from dogen.core.models import SCHEMA_VERSION, Intent, ProgressState, Provenance, Unit
 
 
 def test_scaffold_unit_writes_editable_unit_md(tmp_path: Path) -> None:
@@ -221,6 +221,33 @@ def test_read_provenance_missing_file_still_raises_file_not_found(
     store.scaffold_unit("u", root=tmp_path)
     with pytest.raises(FileNotFoundError):
         store.read_provenance("u", root=tmp_path)
+
+
+def test_write_provenance_unlinks_stale_progress(tmp_path: Path) -> None:
+    # D-01/D-02: state is derived from provenance (PROV-04), so the second stored
+    # artefact is never kept. A pre-existing progress.yaml sitting next to the
+    # record must be silently unlinked on the next provenance write — riding the
+    # verb's transition commit, no exception, no narration. The deletion targets
+    # exactly <validated_unit_dir>/progress.yaml (path.parent of the guarded write).
+    store = FilesystemPlanningStore()
+    store.scaffold_unit("u", root=tmp_path)
+    unit_dir = tmp_path / ".dogen" / "units" / "u"
+    stale_progress = unit_dir / "progress.yaml"
+    stale_progress.write_text(
+        "schema_version: 1\nunit_id: u\nstate: pending\nhistory: []\n",
+        encoding="utf-8",
+    )
+    assert stale_progress.exists()
+
+    path = store.write_provenance(Provenance(unit_id="u"), root=tmp_path)
+
+    assert path == (unit_dir / "provenance.yaml").resolve()
+    assert path.exists()
+    assert not stale_progress.exists()
+
+    # A second write with no progress.yaml present must not raise (missing_ok).
+    store.write_provenance(Provenance(unit_id="u"), root=tmp_path)
+    assert not stale_progress.exists()
 
 
 def test_read_git_identity_returns_configured_values() -> None:

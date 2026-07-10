@@ -1032,6 +1032,20 @@ def unit_show(
         typer.echo(line)
 
 
+def _load_or_init_provenance(
+    store: PlanningStore, root: Path, unit_id: str
+) -> Provenance:
+    """Load a unit's provenance, returning an empty record when none exists yet.
+
+    PROV-04: the single load-or-init seam the CLI derives lifecycle state from —
+    an absent record ⇒ empty generations ⇒ ``pending`` with no special-casing.
+    """
+    try:
+        return store.read_provenance(unit_id, root=root)
+    except FileNotFoundError:
+        return Provenance(unit_id=unit_id)
+
+
 def _gather_unit_detail(
     store: PlanningStore, root: Path, unit_id: str
 ) -> tuple[Unit, str, Provenance]:
@@ -1053,10 +1067,7 @@ def _gather_unit_detail(
         empty record when none exists yet).
     """
     unit = store.load_unit(unit_id, root=root)
-    try:
-        provenance = store.read_provenance(unit_id, root=root)
-    except FileNotFoundError:
-        provenance = Provenance(unit_id=unit_id)
+    provenance = _load_or_init_provenance(store, root, unit_id)
     # PROV-04: derive lifecycle state from provenance rather than reading a
     # second stored artefact. An empty/absent record derives to ``pending``,
     # so the former FileNotFoundError→"pending" guard is no longer needed.
@@ -1624,11 +1635,7 @@ def draft(  # noqa: PLR0913, C901, PLR0912
             "wrote the page and pass --model so the provenance names it.",
             err=True,
         )
-    try:
-        provenance = store.read_provenance(unit_id, root=root)
-    except FileNotFoundError:
-        provenance = Provenance(unit_id=unit_id)
-    progress = derive_progress(provenance).value
+    progress = derive_progress(_load_or_init_provenance(store, root, unit_id)).value
     sha = _report_git(seam, no_commit=no_commit)
     if json_output:
         _emit_json(

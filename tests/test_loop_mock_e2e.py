@@ -20,7 +20,7 @@ import pytest
 from dogen.adapters.mock_provider import select_provider
 from dogen.adapters.planning_fs import FilesystemPlanningStore
 from dogen.app import compose
-from dogen.core.models import Intent, ProgressState
+from dogen.core.models import Intent, ProgressState, derive_progress
 from dogen.core.orchestrator import (
     NotDraftedError,
     SignoffExistsError,
@@ -93,7 +93,10 @@ def _review(store, root, clock, note):
 
 
 @pytest.mark.asyncio
-async def test_full_loop_reaches_reviewed(repo):
+async def test_no_progress_yaml_written(repo):
+    # PROV-04 (D-01/D-02): a full draft→review loop derives its state from the
+    # provenance record and never writes the second stored artefact — the
+    # unit dir carries unit.md + provenance.yaml but NO progress.yaml.
     store = FilesystemPlanningStore()
     clock = _Clock()
     _declare(store, repo)
@@ -104,19 +107,22 @@ async def test_full_loop_reaches_reviewed(repo):
     unit_dir = repo / ".dogen" / "units" / "u"
     assert (unit_dir / "unit.md").exists()
     assert (unit_dir / "provenance.yaml").exists()
-    assert (unit_dir / "progress.yaml").exists()
+    assert not (unit_dir / "progress.yaml").exists()
     unit = store.load_unit("u", root=repo)
     assert (repo / "docs" / unit.sphinx_target).exists()
 
-    progress = store.read_progress("u", root=repo)
-    assert progress.state is ProgressState.reviewed
-    assert ProgressState.committed not in [e.state for e in progress.history]
+    # State is derived from the record: one generation plus a landed reviewer
+    # edit ⇒ reviewed. There is no ``committed`` state (publishing is the human's).
+    provenance = store.read_provenance("u", root=repo)
+    assert derive_progress(provenance) is ProgressState.reviewed
 
 
 @pytest.mark.asyncio
-async def test_review_twice_appends_single_reviewed_transition(repo):
-    # WR-05: each reviewer edit is recorded, but the `reviewed` progress
-    # transition is stamped only once (idempotent lifecycle history).
+async def test_review_twice_stays_reviewed(repo):
+    # WR-05 / PROV-04: each reviewer edit is recorded on the provenance record,
+    # but the derived state stays `reviewed` idempotently — the count-based rule
+    # (len(reviewer_edits) > latest generation's reviewer_edit_count) needs no
+    # separately-stamped transition history.
     store = FilesystemPlanningStore()
     clock = _Clock()
     _declare(store, repo)
@@ -126,11 +132,8 @@ async def test_review_twice_appends_single_reviewed_transition(repo):
     _review(store, repo, clock, "second pass")
 
     provenance = store.read_provenance("u", root=repo)
-    progress = store.read_progress("u", root=repo)
     assert len(provenance.reviewer_edits) == 2
-    reviewed = [e for e in progress.history if e.state is ProgressState.reviewed]
-    assert len(reviewed) == 1
-    assert progress.state is ProgressState.reviewed
+    assert derive_progress(provenance) is ProgressState.reviewed
 
 
 @pytest.mark.asyncio
@@ -145,13 +148,13 @@ async def test_draft_refuses_without_steer_with_zero_side_effects(repo):
     assert not (repo / "docs" / "u.md").exists()
     with pytest.raises(FileNotFoundError):
         store.read_provenance("u", root=repo)
-    with pytest.raises(FileNotFoundError):
-        store.read_progress("u", root=repo)
+    assert not (repo / ".dogen" / "units" / "u" / "progress.yaml").exists()
 
 
 def test_review_before_draft_raises_not_drafted(repo):
-    # WR-05 "draft first": a steered-but-never-drafted unit has no progress.yaml,
-    # so review raises a clear domain error rather than a bare FileNotFoundError.
+    # WR-05 "draft first": a steered-but-never-drafted unit has no recorded
+    # generation, so review raises a clear domain error (NotDraftedError now keys
+    # on empty provenance.generations) rather than a bare FileNotFoundError.
     store = FilesystemPlanningStore()
     clock = _Clock()
     _declare(store, repo)

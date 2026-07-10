@@ -28,7 +28,7 @@ import pytest
 
 from dogen.adapters.copilot.provider import CopilotDraftingProvider
 from dogen.adapters.planning_fs import FilesystemPlanningStore
-from dogen.core.models import Intent, ProgressState
+from dogen.core.models import Intent, ProgressState, derive_progress
 from dogen.core.orchestrator import (
     DeclareRequest,
     DraftRequest,
@@ -121,9 +121,9 @@ async def test_offline_driver_e2e_records_authoritative_provenance(
     assert generation.sdk == _DRIVER_SDK
     assert generation.provider == "copilot"
 
-    # (c) provenance-before-output ordering held (WR-03): the generation row and
-    # the auto-advanced progress transition were both persisted for this run.
+    # (c) provenance-before-output ordering held (WR-03): the generation row was
+    # persisted for this run and IS the drafted state — derived from the record
+    # (PROV-04), never a separately-persisted progress transition.
     assert generation.action == "draft"
     assert generation.run_id  # correlated to the draft span
-    progress = store.read_progress(_UNIT_ID, root=tmp_path)
-    assert progress.state is ProgressState.drafted
+    assert derive_progress(provenance) is ProgressState.drafted
