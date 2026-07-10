@@ -39,6 +39,7 @@ never writes, so a repo may hold mixed v1/v2 sidecars indefinitely.
 """
 
 import re
+from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from pathlib import PurePosixPath, PureWindowsPath
@@ -893,13 +894,39 @@ def is_sealed(prov: Provenance) -> bool:
     return False
 
 
+def _latest_accept_edit(prov: Provenance) -> ReviewerEdit | None:
+    """Return a unit's most recent ``accept`` reviewer edit, or ``None`` (D-04).
+
+    The single backward scan that both the ordering key
+    (:func:`_latest_accept_at`) and the supersede recorder (``plan_takeovers``,
+    which reads the accept's ``files[]`` digest for a page) share, so the
+    "newest accept" derivation lives in exactly one place and cannot drift.
+    Record-only: no ``os.stat``, no git.
+
+    Parameters
+    ----------
+    prov : Provenance
+        The already-validated, in-memory provenance record.
+
+    Returns
+    -------
+    ReviewerEdit or None
+        The latest ``accept`` reviewer edit, or ``None`` when the record carries
+        no ``accept`` verdict.
+    """
+    for edit in reversed(prov.reviewer_edits):
+        if edit.verdict is ReviewVerdict.accept:
+            return edit
+    return None
+
+
 def _latest_accept_at(prov: Provenance) -> datetime | None:
     """Return the aware timestamp of a unit's most recent ``accept`` (D-04).
 
     The cross-unit ordering key for multi-owner resolution: among several sealed
-    owners of one page, the newest ``accept`` wins. This scans backward for the
-    first ``accept`` reviewer edit and parses its ``at`` timestamp to an aware
-    :class:`~datetime.datetime`.
+    owners of one page, the newest ``accept`` wins. This reads the latest
+    ``accept`` reviewer edit (:func:`_latest_accept_edit`) and parses its ``at``
+    timestamp to an aware :class:`~datetime.datetime`.
 
     Stored ``at`` values mix ``Z`` and ``+00:00`` UTC forms, which
     :func:`datetime.datetime.fromisoformat` on older Pythons — and raw string
@@ -919,10 +946,42 @@ def _latest_accept_at(prov: Provenance) -> datetime | None:
         The aware timestamp of the latest ``accept`` edit, or ``None`` when the
         record carries no ``accept`` verdict.
     """
-    for edit in reversed(prov.reviewer_edits):
-        if edit.verdict is ReviewVerdict.accept:
-            return datetime.fromisoformat(edit.at.replace("Z", "+00:00"))
-    return None
+    edit = _latest_accept_edit(prov)
+    if edit is None:
+        return None
+    return datetime.fromisoformat(edit.at.replace("Z", "+00:00"))
+
+
+@dataclass(frozen=True)
+class Takeover:
+    """One recorded supersede edge: a new claim over a sealed owner's page (D-05).
+
+    A pure, immutable provenance-edge value produced by the adapter's lease scan
+    (``plan_takeovers``) and carried up to the orchestrator commit, where it
+    becomes a ``docs/<page> extends unit <owner> (sealed <sha12>)`` body line and
+    a repeatable ``Dogen-Extends: <owner-id>`` trailer. It lives in
+    :mod:`dogen.core.models` so both the adapter (which builds it) and the core
+    orchestrator (which renders it) may import it without crossing the
+    provider seam. Modeled on the frozen request dataclasses: no I/O, no
+    behavior, just the four fields that name the edge.
+
+    Parameters
+    ----------
+    page : str
+        The docs-relative page the new unit claims (e.g. ``guide.md``).
+    owner_id : str
+        The superseded sealed owner's unit id (a validated single path segment).
+    sealed_sha12 : str
+        The first 12 hex of the owner's latest-accept ``files[]`` digest for
+        ``page`` — the exact text its seal attests (A3).
+    accept_at : str
+        The owner's latest ``accept`` timestamp, verbatim from provenance.
+    """
+
+    page: str
+    owner_id: str
+    sealed_sha12: str
+    accept_at: str
 
 
 class UnitSummary(BaseModel):

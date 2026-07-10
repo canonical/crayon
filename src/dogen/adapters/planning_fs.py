@@ -12,7 +12,9 @@ needed for round-trip comment preservation (A4 decision — recorded in SUMMARY)
 
 import os
 import shutil
+import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path, PurePosixPath
 
 import yaml
@@ -24,8 +26,14 @@ from dogen.core.models import (
     DogenConfig,
     Intent,
     Provenance,
+    ReviewerEdit,
     SourceRef,
+    Takeover,
     Unit,
+    _latest_accept_at,
+    _latest_accept_edit,
+    derive_progress,
+    is_sealed,
 )
 
 _UNITS_SUBDIR = ".dogen/units"
@@ -112,6 +120,62 @@ class ProvenanceInvalidError(ValueError):
         self.unit_id = unit_id
         self.detail = detail
         super().__init__(f"provenance for unit {unit_id!r} is invalid: {detail}")
+
+
+def _in_flight_detail(prov: Provenance) -> str:
+    """Compose an in-flight owner's state phrase for the refuse message (D-01).
+
+    ``derive_progress`` alone cannot distinguish ``fix`` from ``redraft`` (both
+    read as ``reviewed``), so the latest verdict is appended when present — the
+    refuse names the owner's derived state and why it still holds its lease
+    ("drafted, not accepted" / "reviewed, fix, not accepted").
+
+    Parameters
+    ----------
+    prov : Provenance
+        The overlapping in-flight owner's provenance record.
+
+    Returns
+    -------
+    str
+        The parenthetical state phrase, without surrounding parentheses.
+    """
+    state = derive_progress(prov)
+    last_verdict = next(
+        (e.verdict for e in reversed(prov.reviewer_edits) if e.verdict is not None),
+        None,
+    )
+    if last_verdict is None:
+        return f"{state.value}, not accepted"
+    return f"{state.value}, {last_verdict.value}, not accepted"
+
+
+def _page_sha12(edit: ReviewerEdit, page: str) -> str:
+    """Return the first 12 hex of ``edit``'s sealed digest for ``page`` (A3).
+
+    The seal authority is the ``accept`` reviewer edit's ``files[]``, each a
+    ``docs/<page>`` digest. This looks up the digest for ``page`` and returns
+    its 12-hex prefix — the exact text the owner's seal attests.
+
+    Parameters
+    ----------
+    edit : ReviewerEdit
+        The owner's latest ``accept`` reviewer edit.
+    page : str
+        The docs-relative page (e.g. ``guide.md``) to look up.
+
+    Returns
+    -------
+    str
+        The 12-hex digest prefix, or ``""`` when the page carries no sealed
+        digest (defensive — a sealed page in the owner's target set always has
+        one).
+    """
+    wanted = PurePosixPath("docs") / page
+    for digest in edit.files:
+        if PurePosixPath(digest.path) == wanted:
+            return digest.sha256[:12]
+    return ""
 
 
 def _dominant_page_extension(root: Path) -> str:
@@ -882,35 +946,163 @@ class FilesystemPlanningStore:
                 extras.append(candidate)
         unit.extra_targets = extras
 
+    def _read_provenance_tolerant(
+        self, unit_id: str, *, root: Path
+    ) -> Provenance | None:
+        """Load a neighbour's provenance for a lease scan, tolerating corruption.
+
+        The adapter-side WR-01 loader (mirrors the orchestrator's
+        ``_scan_load_provenance``): a repo-wide lease scan reads *every*
+        overlapping neighbour's ``provenance.yaml``, so one schema-newer or
+        malformed sidecar must never abort an unrelated declare/edit. Returns
+        ``None`` for an absent (declared-but-not-drafted) or unreadable record;
+        the corruption case emits a one-line ``stderr`` warning naming the
+        skipped unit.
+
+        Parameters
+        ----------
+        unit_id : str
+            The neighbour whose provenance is loaded.
+        root : Path
+            The repo root the store reads beneath.
+
+        Returns
+        -------
+        Provenance or None
+            The loaded record, or ``None`` when it is absent or unreadable.
+        """
+        try:
+            return self.read_provenance(unit_id, root=root)
+        except FileNotFoundError:
+            return None
+        except (SchemaUnsupportedError, ProvenanceInvalidError) as exc:
+            print(
+                f"warning: skipping unit {unit_id!r} from the lease scan "
+                f"(unreadable provenance): {exc}",
+                file=sys.stderr,
+            )
+            return None
+
     def _assert_targets_unclaimed(
         self, unit_id: str, targets: list[str], *, root: Path
     ) -> None:
-        """Refuse a target set that overlaps another unit's page set (v1.2).
+        """Refuse a target set overlapping an *in-flight* owner's pages (D-01).
+
+        Ownership is a **lease** (Phase 7): an overlap is a conflict only while
+        the overlapping owner is *in flight*. This scans every other declared
+        unit whose ``unit.targets`` overlap ``targets`` (primary and extras
+        alike — OWN-06) and splits on :func:`~dogen.core.models.is_sealed`:
+
+        * an **in-flight** owner (readable provenance whose latest verdict is not
+          ``accept``) still refuses — :class:`TargetClaimedError` names the owner
+          and its derived state ("claimed by in-flight unit 'x' (drafted, not
+          accepted)");
+        * a **sealed** owner is *not* a conflict here — the claim is allowed and
+          its supersede is recorded separately by :meth:`plan_takeovers`.
+
+        A neighbour whose provenance is absent (declared-but-not-drafted) or
+        unreadable (schema-newer/corrupt) is skipped WR-01-tolerantly: it cannot
+        be proven in-flight from a record, so it never aborts an unrelated
+        declare/edit (a corrupt sidecar must not wedge every future claim).
 
         Parameters
         ----------
         unit_id : str
             The unit being declared or amended (excluded from the scan).
         targets : list of str
-            The unit's prospective full page set.
+            The unit's prospective full page set (primary + extras).
         root : Path
             The repo root.
 
         Raises
         ------
         TargetClaimedError
-            If any target already belongs to another unit.
+            If any overlapping owner is in-flight (holds its lease).
         """
         claimed = set(targets)
         for other_id in self.list_unit_ids(root=root):
             if other_id == unit_id:
                 continue
             overlap = claimed.intersection(self.load_unit(other_id, root=root).targets)
-            if overlap:
-                raise TargetClaimedError(
-                    f"docs target(s) already claimed by unit {other_id!r}: "
-                    + ", ".join(sorted(overlap))
+            if not overlap:
+                continue
+            prov = self._read_provenance_tolerant(other_id, root=root)
+            if prov is None or is_sealed(prov):
+                # Absent/unreadable ⇒ cannot prove in-flight (WR-01 skip);
+                # sealed ⇒ lease released, superseded via plan_takeovers.
+                continue
+            raise TargetClaimedError(
+                f"docs target(s) claimed by in-flight unit {other_id!r} "
+                f"({_in_flight_detail(prov)}): " + ", ".join(sorted(overlap))
+            )
+
+    def plan_takeovers(
+        self, unit_id: str, targets: list[str], *, root: Path
+    ) -> list[Takeover]:
+        """Plan the supersede edges a claim records over sealed owners (D-04/D-05).
+
+        The read-only companion to the write guard: after the unit is written,
+        its final target set is re-scanned. An in-flight overlap has already been
+        refused by :meth:`_assert_targets_unclaimed`, so every remaining
+        overlapping owner is *sealed* and may be superseded. Per page, the
+        newest-accept sealed owner wins (:func:`_latest_accept_at` ordering, tie
+        by smaller unit id — the same D-04 order as ``resolve_owners``, delegated
+        to the shared derivation so the two cannot disagree). A corrupt/absent
+        neighbour is skipped WR-01-tolerantly.
+
+        The deliberate second neighbour scan (the guard scans first) is the trade
+        for keeping ``scaffold_unit``/``update_unit`` return types stable.
+
+        Parameters
+        ----------
+        unit_id : str
+            The claiming unit (excluded from the scan).
+        targets : list of str
+            The unit's final docs-relative page set (primary + extras).
+        root : Path
+            The repo root the store reads beneath.
+
+        Returns
+        -------
+        list of Takeover
+            One supersede edge per superseded sealed page, page-sorted.
+        """
+        claimed = set(targets)
+        # page -> (owner_id, accept_at, accept_edit) for the newest-accept owner.
+        best: dict[str, tuple[str, datetime, ReviewerEdit]] = {}
+        for other_id in self.list_unit_ids(root=root):
+            if other_id == unit_id:
+                continue
+            overlap = claimed.intersection(self.load_unit(other_id, root=root).targets)
+            if not overlap:
+                continue
+            prov = self._read_provenance_tolerant(other_id, root=root)
+            if prov is None or not is_sealed(prov):
+                continue
+            accept_edit = _latest_accept_edit(prov)
+            accept_at = _latest_accept_at(prov)
+            if accept_edit is None or accept_at is None:
+                continue  # sealed always carries an accept — defensive guard.
+            for page in overlap:
+                current = best.get(page)
+                if (
+                    current is None
+                    or accept_at > current[1]
+                    or (accept_at == current[1] and other_id < current[0])
+                ):
+                    best[page] = (other_id, accept_at, accept_edit)
+        return sorted(
+            (
+                Takeover(
+                    page=page,
+                    owner_id=owner_id,
+                    sealed_sha12=_page_sha12(accept_edit, page),
+                    accept_at=accept_edit.at,
                 )
+                for page, (owner_id, _at, accept_edit) in best.items()
+            ),
+            key=lambda takeover: takeover.page,
+        )
 
     @staticmethod
     def _dump_unit_front(unit: Unit) -> dict:
