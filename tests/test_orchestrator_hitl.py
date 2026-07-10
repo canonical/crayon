@@ -366,3 +366,49 @@ async def test_draft_reads_prior_steering_act(tmp_path: Path) -> None:
     after = store.read_provenance("u", root=tmp_path)
     assert after.signoff is not None
     assert after.signoff.at < after.generations[0].at
+
+
+# --- Phase 5: shared seal helper + real tooling_version (PROV-01/PROV-06) ------
+
+
+def test_same_file_digests_is_order_agnostic() -> None:
+    from dogen.core.models import FileDigest  # noqa: PLC0415
+    from dogen.core.orchestrator import (  # noqa: PLC0415
+        same_file_digests,  # ty: ignore[unresolved-import]
+    )
+
+    a = [
+        FileDigest(path="docs/a.md", sha256="1"),
+        FileDigest(path="docs/b.md", sha256="2"),
+    ]
+    reordered = [
+        FileDigest(path="docs/b.md", sha256="2"),
+        FileDigest(path="docs/a.md", sha256="1"),
+    ]
+    changed = [
+        FileDigest(path="docs/a.md", sha256="1"),
+        FileDigest(path="docs/b.md", sha256="CHANGED"),
+    ]
+    assert same_file_digests(a, reordered) is True
+    assert same_file_digests(a, changed) is False
+
+
+def test_tooling_version_reads_installed_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(orchestrator._metadata, "version", lambda name: "9.9.9")  # ty: ignore[unresolved-attribute]
+    assert orchestrator.tooling_version() == "9.9.9"  # ty: ignore[unresolved-attribute]
+
+
+def test_tooling_version_falls_back_on_missing_package(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import importlib.metadata  # noqa: PLC0415
+
+    def _raise(name: str) -> str:
+        raise importlib.metadata.PackageNotFoundError(name)
+
+    monkeypatch.setattr(orchestrator._metadata, "version", _raise)  # ty: ignore[unresolved-attribute]
+    fallback = orchestrator.tooling_version()  # ty: ignore[unresolved-attribute]
+    # Honest, non-semver sentinel — not a fabricated version string.
+    assert "+" in fallback

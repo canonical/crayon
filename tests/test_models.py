@@ -1,5 +1,7 @@
 """Behaviour tests for the F1 planning-directory schema v1 (core/models.py)."""
 
+import copy
+
 import pytest
 from pydantic import ValidationError
 
@@ -13,6 +15,7 @@ from dogen.core.models import (
     ProgressState,
     Provenance,
     ReadRecord,
+    ReviewerEdit,
     Signoff,
     SourceRef,
     Unit,
@@ -208,3 +211,184 @@ def test_provenance_migrates_v0_steering_mapping_to_signoff() -> None:
     assert prov.signoff.plan_hash == ""
     assert prov.steering == []
     assert prov.schema_version == SCHEMA_VERSION
+
+
+# --- Phase 5: schema v2 migration (PROV-01/PROV-02/PROV-03) --------------------
+
+
+def _legacy_generation(**overrides: object) -> dict:
+    """A raw v1 legacy-only generation dict (draft_path/draft_sha256, no files)."""
+    gen: dict = {
+        "model": "m",
+        "model_version": "v",
+        "effort": "medium",
+        "tooling_version": "0.0.0",
+        "sdk": "",
+        "run_id": "r",
+        "at": "2026-01-01T00:00:00Z",
+        "action": "draft",
+        "draft_path": "docs/a.md",
+        "draft_sha256": "ab12",
+    }
+    gen.update(overrides)
+    return gen
+
+
+def test_migrates_v1_legacy_only_generation_synthesizes_files() -> None:
+    raw = {
+        "unit_id": "u",
+        "schema_version": 1,
+        "generations": [_legacy_generation()],
+    }
+    prov = Provenance.model_validate(raw)
+    assert prov.schema_version == SCHEMA_VERSION
+    gen = prov.generations[0]
+    assert [(f.path, f.sha256) for f in gen.files] == [("docs/a.md", "ab12")]
+    assert not hasattr(gen, "draft_path")
+    assert not hasattr(gen, "draft_sha256")
+
+
+def test_migrates_v1_2_dual_field_disagreement_prefers_files() -> None:
+    raw = {
+        "unit_id": "u",
+        "schema_version": 1,
+        "generations": [
+            _legacy_generation(
+                files=[{"path": "docs/a.md", "sha256": "files_wins"}],
+                draft_sha256="legacy_loses",
+            )
+        ],
+    }
+    prov = Provenance.model_validate(raw)
+    gen = prov.generations[0]
+    assert [(f.path, f.sha256) for f in gen.files] == [("docs/a.md", "files_wins")]
+    assert not hasattr(gen, "draft_sha256")
+
+
+def test_migrates_reviewer_edit_borrows_path_from_paired_generation() -> None:
+    raw = {
+        "unit_id": "u",
+        "schema_version": 1,
+        "generations": [
+            _legacy_generation(draft_path="docs/a.md", draft_sha256="ab12")
+        ],
+        "reviewer_edits": [
+            {
+                "at": "2026-01-01T00:01:00Z",
+                "reviewer": "rev",
+                "summary": "ok",
+                "verdict": "accept",
+                "draft_sha256": "ab12",
+            }
+        ],
+    }
+    prov = Provenance.model_validate(raw)
+    edit = prov.reviewer_edits[0]
+    assert [(f.path, f.sha256) for f in edit.files] == [("docs/a.md", "ab12")]
+    assert not hasattr(edit, "draft_sha256")
+
+
+def test_migrates_non_accept_reviewer_edit_to_empty_files() -> None:
+    raw = {
+        "unit_id": "u",
+        "schema_version": 1,
+        "generations": [_legacy_generation()],
+        "reviewer_edits": [
+            {
+                "at": "2026-01-01T00:01:00Z",
+                "reviewer": "rev",
+                "summary": "redo",
+                "verdict": "redraft",
+                "draft_sha256": "",
+            }
+        ],
+    }
+    prov = Provenance.model_validate(raw)
+    assert prov.reviewer_edits[0].files == []
+
+
+def test_v2_record_round_trips_unchanged_idempotent() -> None:
+    v2 = {
+        "unit_id": "u",
+        "schema_version": SCHEMA_VERSION,
+        "generations": [
+            {
+                "model": "m",
+                "model_version": "v",
+                "effort": "medium",
+                "tooling_version": "0.0.0",
+                "sdk": "sdk",
+                "model_origin": "ta",
+                "files": [{"path": "docs/a.md", "sha256": "ab12"}],
+                "run_id": "r",
+                "at": "2026-01-01T00:00:00Z",
+                "action": "draft",
+            }
+        ],
+    }
+    prov = Provenance.model_validate(v2)
+    dump = prov.model_dump(mode="json")
+    again = Provenance.model_validate(dump)
+    assert again.model_dump(mode="json") == dump
+    assert again.schema_version == SCHEMA_VERSION
+
+
+def test_migrator_does_not_mutate_input_dict() -> None:
+    raw = {
+        "unit_id": "u",
+        "schema_version": 1,
+        "generations": [_legacy_generation()],
+    }
+    snapshot = copy.deepcopy(raw)
+    Provenance.model_validate(raw)
+    assert raw == snapshot
+
+
+def test_generation_files_invariant_requires_one_entry() -> None:
+    with pytest.raises(ValidationError):
+        Generation.model_validate(
+            {
+                "model": "m",
+                "model_version": "v",
+                "effort": None,
+                "tooling_version": "0.0.0",
+                "sdk": "",
+                "run_id": "r",
+                "at": "2026-01-01T00:00:00Z",
+                "action": "draft",
+            }
+        )
+
+
+def test_migration_bare_generation_without_digest_raises() -> None:
+    raw = {
+        "unit_id": "u",
+        "schema_version": 1,
+        "generations": [
+            {
+                "model": "m",
+                "model_version": "v",
+                "effort": "medium",
+                "tooling_version": "0.0.0",
+                "sdk": "",
+                "run_id": "r",
+                "at": "2026-01-01T00:00:00Z",
+                "action": "draft",
+            }
+        ],
+    }
+    with pytest.raises(ValidationError):
+        Provenance.model_validate(raw)
+
+
+def test_reviewer_edit_files_digest_shape() -> None:
+    edit = ReviewerEdit.model_validate(
+        {
+            "at": "2026-01-01T00:01:00Z",
+            "reviewer": "rev",
+            "summary": "ok",
+            "verdict": "accept",
+            "files": [{"path": "docs/a.md", "sha256": "ab12"}],
+        }
+    )
+    assert [(f.path, f.sha256) for f in edit.files] == [("docs/a.md", "ab12")]
