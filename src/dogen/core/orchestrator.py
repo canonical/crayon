@@ -237,11 +237,13 @@ def _body_note(note: str, *, limit: int = 400) -> str:
 def _takeover_body(takeovers: list[Takeover]) -> str:
     """Render superseded owners as one trailer-safe body line (D-05).
 
-    Each :class:`~dogen.core.models.Takeover` becomes ``docs/<page> extends unit
-    <owner> (sealed <sha12>)``; the joined text passes through :func:`_body_note`
-    so a crafted unit id or page cannot inject a newline and forge a trailer
-    block (T-07-01). Returns ``""`` for no takeovers, so a transition with no
-    supersede is byte-identical to prior behavior.
+    The joined text carries the documented D-05 ``extends:`` label so a
+    skill-driven grep of the commit finds the supersede (WR-04 — README and both
+    SKILL.md now agree on the labeled shape): ``extends: docs/<page> extends unit
+    <owner> (sealed <sha12>)``. It passes through :func:`_body_note` so a crafted
+    unit id or page cannot inject a newline and forge a trailer block (T-07-01).
+    Returns ``""`` for no takeovers, so a transition with no supersede is
+    byte-identical to prior behavior.
 
     Parameters
     ----------
@@ -259,7 +261,7 @@ def _takeover_body(takeovers: list[Takeover]) -> str:
         f"docs/{t.page} extends unit {t.owner_id} (sealed {t.sealed_sha12})"
         for t in takeovers
     ]
-    return _body_note(" · ".join(parts))
+    return _body_note("extends: " + " · ".join(parts))
 
 
 def _transition_message(  # noqa: PLR0913

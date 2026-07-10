@@ -140,7 +140,7 @@ A few terms recur across the skills and the provenance record:
   (`target_claimed`).
 - **supersede** — a seal attests the text accepted at that moment; a later unit may
   supersede it; digests + git trailers order the seals. Declaring or editing onto a
-  page a sealed unit owns records the supersede as a `note:` line and a
+  page a sealed unit owns records the supersede as an `extends:` body line and a
   `Dogen-Extends: <owner-id>` commit trailer.
 
 ---
