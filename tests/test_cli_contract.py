@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from dogen.adapters.planning_fs import FilesystemPlanningStore
+from dogen.adapters.planning_fs import FilesystemPlanningStore, TargetClaimedError
 from dogen.cli.main import app
 from dogen.core.models import (
     Intent,
@@ -134,6 +134,46 @@ def test_missing_unit_draft_exits_bad_input(repo):
     result = runner.invoke(app, ["draft", "ghost", "--provider", "mock", "--json"])
     assert result.exit_code == 2, result.output
     assert _payload(result)["reason"] in {"unit_exists", "not_drafted"}
+
+
+def _plant_inflight_neighbour(store, root, unit_id, *, targets):
+    """Plant a neighbour unit.md + an in-flight provenance directly on disk.
+
+    Bypasses the declare guard so a second unit can hold a page an existing unit
+    also targets — the reverse-hole precondition the draft re-check catches.
+    """
+    primary, *extras = targets
+    md_path = store._unit_md_path(unit_id, root=root)
+    md_path.parent.mkdir(parents=True, exist_ok=True)
+    md_path.write_text(
+        store._render_unit_md(
+            unit_id,
+            intent=Intent.reference,
+            audience="devs",
+            sphinx_target=primary,
+            extra_targets=extras or None,
+        ),
+        encoding="utf-8",
+    )
+    # An empty provenance is readable and not sealed ⇒ in-flight (holds its lease).
+    store.write_provenance(Provenance(unit_id=unit_id), root=root)
+
+
+def test_draft_target_claimed_reason(repo):
+    # OWN-03: drafting a unit whose page is claimed by an in-flight neighbour is a
+    # clean domain refusal — exit 1, reason="target_claimed" (the re-check maps
+    # TargetClaimedError to a stable reason, NOT an uncaught Python traceback).
+    store = _declare_unit(repo)  # unit "u" -> docs/u.md
+    _seed_steering(store, repo)  # signed off, ready to draft
+    _plant_inflight_neighbour(store, repo, "b", targets=["u.md"])
+
+    result = runner.invoke(app, ["draft", "u", "--provider", "mock", "--json"])
+    assert result.exit_code == 1, result.output
+    assert _payload(result)["reason"] == "target_claimed"
+    # A clean refusal: TargetClaimedError was mapped, never surfaced as a traceback.
+    assert not isinstance(result.exception, TargetClaimedError)
+    # No draft was written under the refusal.
+    assert not (repo / "docs" / "u.md").exists()
 
 
 def test_unit_new_clobber_exits_domain_refusal_unit_exists(repo):
