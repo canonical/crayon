@@ -127,6 +127,22 @@ in **one local commit** for you to review and merge. dogen never pushes.
 > `dogen status`, `dogen unit show`. The skills are the recommended path; the CLI is the
 > always-available fallback. Run `dogen --help` for the full verb set.
 
+### Vocabulary
+
+A few terms recur across the skills and the provenance record:
+
+- **sealed** — a unit whose latest verdict-bearing review is an **accept**. Sealing is
+  *derived* from the review history, never stored as a flag; a later `fix`/`redraft`
+  verdict reopens the unit (see dogen-review).
+- **lease** — a unit owns (claims) its target pages only *while it is in flight*.
+  Accepting the unit **releases** the lease, so another unit may then claim the page;
+  an in-flight unit's pages stay claimed and a competing declare/edit is refused
+  (`target_claimed`).
+- **supersede** — a seal attests the text accepted at that moment; a later unit may
+  supersede it; digests + git trailers order the seals. Declaring or editing onto a
+  page a sealed unit owns records the supersede as a `note:` line and a
+  `Dogen-Extends: <owner-id>` commit trailer.
+
 ---
 
 ## Develop dogen itself
