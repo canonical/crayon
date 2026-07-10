@@ -21,7 +21,12 @@ import subprocess
 import pytest
 
 from dogen.adapters.git_repo import GitRepoSeam
-from dogen.adapters.planning_fs import FilesystemPlanningStore, TargetClaimedError
+from dogen.adapters.planning_fs import (
+    FilesystemPlanningStore,
+    ProvenanceInvalidError,
+    SchemaUnsupportedError,
+    TargetClaimedError,
+)
 from dogen.app import compose
 from dogen.core.models import (
     FileDigest,
@@ -647,3 +652,187 @@ async def test_draft_no_conflict_passes(repo):
     path = await _draft(store, repo, clock, unit="B")  # must not raise
 
     assert path == repo / "docs" / "p.md"
+
+
+# --------------------------------------------------------------------------- #
+# Wave 4 — poisoned-sidecar tolerance hardening (CR-01/CR-02/WR-01/WR-02/WR-03)
+# --------------------------------------------------------------------------- #
+#
+# The phase's own goal: a poisoned/corrupt sidecar (provenance.yaml OR unit.md)
+# must never abort an unrelated declare/edit/draft/resolve. The single seeded
+# fixture (`schema_version: 999`, otherwise valid mapping) is the one shape the
+# original tolerance caught; these cover the shapes that escaped it and crashed
+# the whole repo-wide lease scan.
+
+
+def _plant_bad_provenance(store, root, unit_id, text):
+    """Write raw ``text`` as a neighbour's provenance.yaml (bypasses the model)."""
+    md_path = store._unit_md_path(unit_id, root=root)
+    md_path.parent.mkdir(parents=True, exist_ok=True)
+    (md_path.parent / "provenance.yaml").write_text(text, encoding="utf-8")
+
+
+def test_read_provenance_refuses_non_mapping(repo):
+    # CR-01: a top-level list/scalar provenance.yaml refuses cleanly as
+    # ProvenanceInvalidError (not an uncaught AttributeError on `.get`).
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    _plant_bad_provenance(store, repo, "B", "- a\n- b\n")
+
+    with pytest.raises(ProvenanceInvalidError):
+        store.read_provenance("B", root=repo)
+
+
+def test_read_provenance_refuses_broken_yaml(repo):
+    # CR-01: syntactically-invalid YAML refuses as ProvenanceInvalidError, not an
+    # uncaught yaml.YAMLError.
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    _plant_bad_provenance(store, repo, "B", "unit_id: [unterminated\n")
+
+    with pytest.raises(ProvenanceInvalidError):
+        store.read_provenance("B", root=repo)
+
+
+def test_read_provenance_refuses_stringified_future_schema(repo):
+    # WR-03: a stringified (non-int) schema_version newer than SCHEMA_VERSION is
+    # refused via the D-08 gate — never best-effort read + silently downgraded by
+    # `_migrate`. Without the coercion it slips past `isinstance(found, int)`.
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    _plant_bad_provenance(store, repo, "B", 'schema_version: "999"\nunit_id: B\n')
+
+    with pytest.raises(SchemaUnsupportedError):
+        store.read_provenance("B", root=repo)
+
+
+def test_scan_tolerates_nonmapping_neighbour(repo, capsys):
+    # CR-01/WR-01: a non-mapping provenance.yaml on an overlapping neighbour is
+    # skipped (warned), and the unrelated declare still succeeds.
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    _plant_bad_provenance(store, repo, "B", "- a\n- b\n")
+
+    _declare(store, repo, unit="C", sphinx_target="p.md")  # must not raise
+
+    assert store.load_unit("C", root=repo).sphinx_target == "p.md"
+    assert "B" in capsys.readouterr().err
+
+
+def test_scan_tolerates_broken_yaml_neighbour(repo, capsys):
+    # CR-01/WR-01: a syntactically-broken provenance.yaml on an overlapping
+    # neighbour is skipped (warned); resolve_owners does not crash.
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "A", targets=["p.md"])
+    _plant_accept(store, repo, "A", "2026-01-01T00:00:01Z")  # sealed
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    _plant_bad_provenance(store, repo, "B", "unit_id: [unterminated\n")
+    request = compose.build_list_request(root=repo, store=store)
+
+    resolved = resolve_owners(request, "p.md")  # must not raise
+
+    assert {o.unit_id for o in resolved.owners} == {"A", "B"}
+    assert "B" in capsys.readouterr().err
+
+
+def test_latest_accept_at_tolerates_non_iso():
+    # CR-02: a non-ISO accept `at` yields None (excluded from ordering) rather
+    # than raising ValueError out of the pure, zero-I/O derivation.
+    prov = Provenance(
+        unit_id="A",
+        reviewer_edits=[_edit("garbage", verdict=ReviewVerdict.accept)],
+    )
+    assert _latest_accept_at(prov) is None
+
+
+def test_latest_accept_at_normalizes_naive_to_utc():
+    # WR-02: a valid but tz-naive accept `at` is normalized to aware UTC so it
+    # never mixes naive/aware in a comparison (which would raise TypeError).
+    naive = Provenance(
+        unit_id="A",
+        reviewer_edits=[_edit("2026-01-01T00:00:01", verdict=ReviewVerdict.accept)],
+    )
+    aware = Provenance(
+        unit_id="B",
+        reviewer_edits=[_edit("2026-01-01T00:00:02Z", verdict=ReviewVerdict.accept)],
+    )
+    at_naive = _latest_accept_at(naive)
+    at_aware = _latest_accept_at(aware)
+
+    assert at_naive is not None and at_naive.tzinfo is not None
+    assert at_aware is not None and at_aware.tzinfo is not None
+    assert at_naive < at_aware  # aware-vs-aware compare, no TypeError
+
+
+def test_resolve_owners_survives_mixed_naive_aware(repo):
+    # WR-02: two sealed owners of one page, one naive `at` and one aware — the
+    # newest-accept ordering compares aware-vs-aware and does not raise TypeError.
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "A", targets=["p.md"])
+    _plant_accept(store, repo, "A", "2026-01-01T00:00:01")  # naive (no Z/offset)
+    _plant_unit(store, repo, "B", targets=["p.md"])
+    _plant_accept(store, repo, "B", "2026-01-01T00:00:02Z")  # aware
+    request = compose.build_list_request(root=repo, store=store)
+
+    resolved = resolve_owners(request, "p.md")  # must not raise TypeError
+
+    assert resolved.winner_id == "B"  # newer accept wins across the naive/aware mix
+
+
+def test_plan_takeovers_tolerates_non_iso_seal(repo):
+    # CR-02: a sealed neighbour whose accept `at` is non-ISO is excluded from
+    # takeover planning (accept_at is None) rather than crashing plan_takeovers.
+    store = FilesystemPlanningStore()
+    _plant_sealed(store, repo, "A", targets=["p.md"], at="garbage")
+
+    takeovers = store.plan_takeovers("B", ["p.md"], root=repo)  # must not raise
+
+    assert takeovers == []  # un-parseable seal time ⇒ excluded, never a crash
+
+
+def test_scan_tolerates_malformed_neighbour_unit_md(repo, capsys):
+    # WR-01: a neighbour whose unit.md cannot be parsed (no front-matter fence,
+    # a ValueError from split_front_matter) is skipped from the declare scan —
+    # the unrelated declare still succeeds instead of aborting.
+    store = FilesystemPlanningStore()
+    md_path = store._unit_md_path("B", root=repo)
+    md_path.parent.mkdir(parents=True, exist_ok=True)
+    md_path.write_text("no front matter here\n", encoding="utf-8")
+
+    _declare(store, repo, unit="C", sphinx_target="p.md")  # must not raise
+
+    assert store.load_unit("C", root=repo).sphinx_target == "p.md"
+    assert "B" in capsys.readouterr().err
+
+
+def test_resolve_owners_tolerates_malformed_neighbour_unit_md(repo, capsys):
+    # WR-01: the same malformed unit.md is skipped from resolve_owners — a
+    # covering, well-formed owner still resolves and the scan never aborts.
+    store = FilesystemPlanningStore()
+    _plant_unit(store, repo, "A", targets=["p.md"])  # in-flight, well-formed
+    bad = store._unit_md_path("B", root=repo)
+    bad.parent.mkdir(parents=True, exist_ok=True)
+    bad.write_text("no front matter here\n", encoding="utf-8")
+    request = compose.build_list_request(root=repo, store=store)
+
+    resolved = resolve_owners(request, "p.md")  # must not raise
+
+    assert {o.unit_id for o in resolved.owners} == {"A"}
+    assert resolved.winner_id == "A"
+    assert "B" in capsys.readouterr().err
+
+
+@pytest.mark.asyncio
+async def test_takeover_body_uses_extends_label(repo):
+    # WR-04: the takeover body line carries the documented D-05 `extends:` label
+    # so a skill-driven grep of the commit body finds the supersede. The bare
+    # (label-less) line the code emitted before did not match the docs.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    seam = GitRepoSeam()
+    await _seal(store, repo, clock, unit="A", sphinx_target="p.md", repo=seam)
+
+    _declare(store, repo, unit="B", sphinx_target="p.md", repo=seam)
+
+    message = _head_message(repo)
+    assert "extends: docs/p.md extends unit A (sealed " in message
