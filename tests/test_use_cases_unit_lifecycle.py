@@ -56,7 +56,11 @@ def _scaffold(
 
 
 def _seed_drafted(store: FilesystemPlanningStore, root: Path, unit_id: str) -> None:
-    """Seed a steered + drafted unit (provenance + drafted progress)."""
+    """Seed a steered + drafted unit (provenance with one generation).
+
+    PROV-04: the drafted lifecycle state is derived from the provenance record
+    (a landed generation), not from a stored ``progress.yaml``.
+    """
     store.write_provenance(
         Provenance(
             unit_id=unit_id,
@@ -66,15 +70,18 @@ def _seed_drafted(store: FilesystemPlanningStore, root: Path, unit_id: str) -> N
                 intent=Intent.reference,
                 audience="devs",
             ),
-        ),
-        root=root,
-    )
-    store.write_progress(
-        Progress(
-            unit_id=unit_id,
-            state=ProgressState.drafted,
-            history=[
-                ProgressEntry(at="2026-01-01T00:00:01Z", state=ProgressState.drafted)
+            generations=[
+                Generation(
+                    model="m",
+                    model_version="v",
+                    effort=Effort.medium,
+                    tooling_version="0.0.0",
+                    sdk="",
+                    files=[FileDigest(path=f"docs/{unit_id}.md", sha256="ab12")],
+                    run_id="r",
+                    at="2026-01-01T00:00:01Z",
+                    action="draft",
+                )
             ],
         ),
         root=root,
