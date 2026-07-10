@@ -699,13 +699,40 @@ class FilesystemPlanningStore:
             carrying the validation-error location so a corrupt sidecar refuses
             cleanly rather than surfacing as ``unit_not_found``.
         """
-        raw = self._read_yaml(unit_id, "provenance.yaml", root=root)
+        # CR-01: normalize EVERY unreadable-record shape to a tolerated
+        # ValueError subclass so the WR-01 scan loaders (which skip
+        # SchemaUnsupportedError/ProvenanceInvalidError) cover them. A
+        # syntactically-broken sidecar raises yaml.YAMLError (NOT a ValueError),
+        # and a valid-but-non-mapping top level (a list/scalar) has no ``.get``
+        # — both previously escaped every tolerant handler and wedged the scan.
+        try:
+            raw = self._read_yaml(unit_id, "provenance.yaml", root=root)
+        except yaml.YAMLError as exc:
+            raise ProvenanceInvalidError(
+                unit_id, detail=f"not valid YAML: {exc}"
+            ) from exc
+        if not isinstance(raw, dict):
+            raise ProvenanceInvalidError(
+                unit_id,
+                detail=f"provenance.yaml is not a mapping (got {type(raw).__name__})",
+            )
         # D-08: gate on the declared version BEFORE Provenance(**raw). The gate
         # must live here (not in a model_validator) so a future version yields
         # the distinct schema_unsupported reason rather than collapsing into a
         # ValidationError -> provenance_invalid.
         found = raw.get("schema_version", 1)
-        if isinstance(found, int) and found > SCHEMA_VERSION:
+        # WR-03: coerce the declared version before the comparison. A stringified
+        # or float version (``"999"``, ``2.0``) is otherwise not an ``int``, so
+        # the D-08 gate was skipped and a future record read best-effort and
+        # silently downgraded by ``_migrate``. Refuse a non-coercible version
+        # rather than fall through.
+        try:
+            found = int(found)
+        except (TypeError, ValueError) as exc:
+            raise ProvenanceInvalidError(
+                unit_id, detail=f"non-numeric schema_version {found!r}"
+            ) from exc
+        if found > SCHEMA_VERSION:
             raise SchemaUnsupportedError(found, SCHEMA_VERSION)
         try:
             return Provenance(**raw)
