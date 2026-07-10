@@ -31,8 +31,10 @@ deterministic.
 """
 
 import hashlib
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime
 from importlib import metadata as _metadata
 from pathlib import Path, PurePosixPath
 
@@ -55,7 +57,9 @@ from dogen.core.models import (
     SteeringOrigin,
     Unit,
     UnitSummary,
+    _latest_accept_at,
     derive_progress,
+    is_sealed,
 )
 from dogen.core.ports import DraftingProvider, Identity, PlanningStore, RepoSeam
 
@@ -1633,6 +1637,56 @@ def _load_or_init_provenance(
         return Provenance(unit_id=unit_id)
 
 
+def _scan_load_provenance(
+    store: PlanningStore, unit_id: str, *, root: Path
+) -> Provenance | None:
+    """Load a neighbour's provenance for a lease scan, tolerating corruption (WR-01).
+
+    A repo-wide lease scan reads *every* neighbour's ``provenance.yaml`` — a
+    wider read surface than the single-subject callers. ``read_provenance``
+    raises ``SchemaUnsupportedError`` / ``ProvenanceInvalidError`` (both
+    subclass :class:`ValueError`) on a schema-newer or malformed sidecar; a
+    single such neighbour must never abort an unrelated resolve. This scan-local
+    loader returns ``None`` for any unreadable record so the caller can treat it
+    conservatively — a neighbour that cannot be proven sealed keeps its lease
+    (it is *not* released) and does not crash the scan.
+
+    A missing sidecar (``FileNotFoundError``) is the ordinary
+    declared-but-not-drafted case and is skipped silently; the ``ValueError``
+    refusals are corruption and emit a one-line ``stderr`` warning naming the
+    skipped unit. This stays scan-local on purpose — the shared
+    :func:`_load_or_init_provenance` is *not* broadened, so non-scan callers
+    still surface their own typed reason mapping (the ``dogen.core`` seam
+    forbids importing the adapter's exception types, so the shared ``ValueError``
+    base is matched here).
+
+    Parameters
+    ----------
+    store : PlanningStore
+        The injected planning-directory store.
+    unit_id : str
+        The neighbour whose provenance is loaded.
+    root : Path
+        The repo root the store reads beneath.
+
+    Returns
+    -------
+    Provenance or None
+        The loaded record, or ``None`` when it is absent or unreadable.
+    """
+    try:
+        return store.read_provenance(unit_id, root=root)
+    except FileNotFoundError:
+        return None
+    except ValueError as exc:  # SchemaUnsupportedError / ProvenanceInvalidError
+        print(
+            f"warning: skipping unit {unit_id!r} from lease resolution "
+            f"(unreadable provenance): {exc}",
+            file=sys.stderr,
+        )
+        return None
+
+
 @dataclass(frozen=True)
 class ListRequest:
     """The injected collaborators for listing declared units (unit ls).
@@ -1840,12 +1894,141 @@ def unit_statuses(request: ListRequest) -> list[UnitStatus]:
     return rows
 
 
+@dataclass(frozen=True)
+class OwnerRef:
+    """One unit that covers a resolved docs page, with its derived lease state.
+
+    Parameters
+    ----------
+    unit_id : str
+        The covering unit's id.
+    sealed : bool
+        Whether the unit has sealed (released its lease) — :func:`is_sealed`
+        over the loaded provenance (``False`` when the record is absent or
+        unreadable: it cannot be proven sealed, so it keeps its lease).
+    accept_at : datetime or None
+        The unit's most recent ``accept`` timestamp (:func:`_latest_accept_at`),
+        the D-04 ordering key; ``None`` when the unit is in-flight.
+    """
+
+    unit_id: str
+    sealed: bool
+    accept_at: datetime | None
+
+
+@dataclass(frozen=True)
+class ResolvedOwners:
+    """The multi-owner resolution of a drafted page (D-04/D-06).
+
+    Parameters
+    ----------
+    winner_id : str or None
+        The resolved owner: the in-flight owner (else the newest-accept sealed
+        owner), or ``None`` when no declared unit targets the page.
+    owners : list of OwnerRef
+        Every covering owner with its derived lease state, id-sorted.
+    """
+
+    winner_id: str | None
+    owners: list[OwnerRef]
+
+
+def resolve_owners(request: ListRequest, draft_path: str) -> ResolvedOwners:
+    """Resolve every unit that owns a drafted docs page, and the winner (D-04).
+
+    Ownership is a **lease**: derived purely from each unit's ``unit.md`` target
+    set (primary + extras, v1.2 — so extras resolve identically to primaries,
+    OWN-06) crossed with its derived sealed state, so no stored index can
+    desync. Every unit whose ``unit.targets`` cover the normalized page is a
+    covering owner; its lease state comes from :func:`is_sealed` /
+    :func:`_latest_accept_at` over its provenance (loaded WR-01-tolerantly via
+    :func:`_scan_load_provenance` — an absent/unreadable record is treated as
+    in-flight, holding its lease).
+
+    The winner is the **in-flight** owner (there is at most one legitimately;
+    ordered by unit id for determinism), else the **sealed** owner with the
+    newest ``accept`` timestamp, ties broken by the smaller unit id (D-04). The
+    ordering normalizes mixed ``Z`` / ``+00:00`` timestamp forms via
+    :func:`_latest_accept_at` — never a raw string compare.
+
+    Parameters
+    ----------
+    request : ListRequest
+        The bundled collaborators for the read.
+    draft_path : str
+        The draft path to resolve, with or without the leading ``docs/``.
+
+    Returns
+    -------
+    ResolvedOwners
+        The winner id (or ``None``) and every covering owner's lease state.
+    """
+    normalized = PurePosixPath(draft_path).as_posix().removeprefix("docs/")
+    owners: list[OwnerRef] = []
+    for unit_id in request.store.list_unit_ids(root=request.root):
+        unit = request.store.load_unit(unit_id, root=request.root)
+        if not any(
+            PurePosixPath(target).as_posix() == normalized for target in unit.targets
+        ):
+            continue
+        prov = _scan_load_provenance(request.store, unit_id, root=request.root)
+        if prov is None:
+            # Absent/unreadable ⇒ cannot be proven sealed ⇒ holds its lease.
+            owners.append(OwnerRef(unit_id=unit_id, sealed=False, accept_at=None))
+        else:
+            owners.append(
+                OwnerRef(
+                    unit_id=unit_id,
+                    sealed=is_sealed(prov),
+                    accept_at=_latest_accept_at(prov),
+                )
+            )
+    return ResolvedOwners(winner_id=_pick_winner(owners), owners=owners)
+
+
+def _pick_winner(owners: list[OwnerRef]) -> str | None:
+    """Choose the lease winner: in-flight first, else newest-accept (D-04).
+
+    Prefers the in-flight owner (smallest unit id for determinism); otherwise
+    the sealed owner with the newest ``accept_at``, ties broken by the smaller
+    unit id. Returns ``None`` when there are no owners.
+
+    Parameters
+    ----------
+    owners : list of OwnerRef
+        Every covering owner with its derived lease state.
+
+    Returns
+    -------
+    str or None
+        The winning unit id, or ``None`` when ``owners`` is empty.
+    """
+    in_flight = sorted(o.unit_id for o in owners if not o.sealed)
+    if in_flight:
+        return in_flight[0]
+    best: OwnerRef | None = None
+    for owner in owners:
+        if best is None:
+            best = owner
+            continue
+        newer = owner.accept_at is not None and (
+            best.accept_at is None or owner.accept_at > best.accept_at
+        )
+        tie = owner.accept_at == best.accept_at and owner.unit_id < best.unit_id
+        if newer or tie:
+            best = owner
+    return best.unit_id if best is not None else None
+
+
 def find_unit_by_draft(request: ListRequest, draft_path: str) -> str | None:
     """Resolve which unit owns a drafted docs page (``unit show --by-draft``).
 
-    The reverse lookup that keeps draft files clean of embedded markers (the
-    Q5 decision): ownership is derivable from ``unit.md``'s target set
-    (primary + extras, v1.2), so no stored index can desync.
+    The winner-only wrapper over :func:`resolve_owners`: the reverse lookup that
+    keeps draft files clean of embedded markers (the Q5 decision), preferring
+    the in-flight owner then the newest-accept sealed owner (D-04). Ownership is
+    derivable from ``unit.md``'s target set (primary + extras, v1.2), so no
+    stored index can desync. The full multi-owner set is available via
+    :func:`resolve_owners` for the ``owners[]`` surfaces.
 
     Parameters
     ----------
@@ -1859,15 +2042,7 @@ def find_unit_by_draft(request: ListRequest, draft_path: str) -> str | None:
     str or None
         The owning unit id, or ``None`` when no declared unit targets it.
     """
-    normalized = PurePosixPath(draft_path).as_posix()
-    normalized = normalized.removeprefix("docs/")
-    for unit_id in request.store.list_unit_ids(root=request.root):
-        unit = request.store.load_unit(unit_id, root=request.root)
-        if any(
-            PurePosixPath(target).as_posix() == normalized for target in unit.targets
-        ):
-            return unit_id
-    return None
+    return resolve_owners(request, draft_path).winner_id
 
 
 @dataclass(frozen=True)
