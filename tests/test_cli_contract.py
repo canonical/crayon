@@ -427,6 +427,49 @@ def test_model_set_self_origin_persists_self(repo):
     assert config.model_origin == "self"
 
 
+# --------------------------------------------------------------------------- #
+# `dogen signoff` flag hygiene — SK-06/D-03: `--force` hard-removed, `--re-sign`
+# is the sole overwrite alias; `--force` on OTHER verbs is untouched.
+# --------------------------------------------------------------------------- #
+
+
+def test_signoff_force_alias_is_now_a_usage_error(repo):
+    # SK-06/D-03: `--force` was hard-removed from `signoff` (no grace window); it
+    # is now an unknown option — a Typer usage error, exit 2.
+    runner.invoke(
+        app, ["unit", "new", "u", "--intent", "reference", "--audience", "devs"]
+    )
+    assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
+    result = runner.invoke(app, ["signoff", "u", "--force"])
+    assert result.exit_code == 2, result.output
+
+
+def test_signoff_re_sign_alias_still_overwrites(repo):
+    # SK-06: `--re-sign` survives as the sole re-sign alias — a bare re-signoff is
+    # refused (the HITL gate stays provable), but `--re-sign` overwrites the act.
+    runner.invoke(
+        app, ["unit", "new", "u", "--intent", "reference", "--audience", "devs"]
+    )
+    assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
+    assert (
+        runner.invoke(app, ["unit", "edit", "u", "--title", "Amended"]).exit_code == 0
+    )
+    # A bare re-signoff of an already-signed unit refuses (domain refusal, exit 1)...
+    assert runner.invoke(app, ["signoff", "u"]).exit_code == 1
+    # ...but `--re-sign` overwrites the existing act with the fresh plan hash.
+    assert runner.invoke(app, ["signoff", "u", "--re-sign"]).exit_code == 0
+
+
+def test_signoff_force_removal_leaves_other_verbs_force_intact(repo):
+    # D-03 scope guard: `--force` on OTHER verbs (here `unit rm`) is a different
+    # real flag and is unaffected by the signoff alias removal.
+    runner.invoke(
+        app, ["unit", "new", "u", "--intent", "reference", "--audience", "devs"]
+    )
+    result = runner.invoke(app, ["unit", "rm", "u", "--force", "--json"])
+    assert result.exit_code == 0, result.output
+
+
 def test_cli_module_imports_no_sdk():
     # The CLI classifies backend errors by type-name; it must never import the
     # Copilot SDK/adapter (the mock/host-harness path stays SDK-free). Parse the
