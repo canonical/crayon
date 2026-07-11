@@ -15,8 +15,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from dogen.app import compose
 from dogen.adapters.planning_fs import FilesystemPlanningStore
+from dogen.app import compose
 from dogen.cli.main import app
 
 runner = CliRunner()
