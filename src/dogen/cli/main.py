@@ -1509,10 +1509,9 @@ def unit_mv(
 @app.command("signoff")
 def signoff(
     unit_id: Annotated[str, typer.Argument(help="Unit to sign off.")],
-    force: Annotated[
+    re_sign: Annotated[
         bool,
         typer.Option(
-            "--force",
             "--re-sign",
             help="Overwrite an existing signoff act (re-sign).",
         ),
@@ -1531,7 +1530,7 @@ def signoff(
     ----------
     unit_id : str
         The unit to sign off.
-    force : bool
+    re_sign : bool
         Overwrite an existing signoff act (re-sign) when set.
     no_commit : bool
         Skip the transition commit for this invocation.
@@ -1545,7 +1544,7 @@ def signoff(
         unit_id,
         root=root,
         store=store,
-        force=force,
+        force=re_sign,
         repo=seam,
     )
     try:
