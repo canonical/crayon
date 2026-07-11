@@ -249,7 +249,21 @@ def _write_staging_file(  # noqa: PLR0913
         or lands under ``.planning/`` (the guard stack).
     """
     FilesystemPlanningStore._reject_unsafe_unit_id(unit_id)
-    target = (root / _STAGING_SUBDIR / unit_id / relpath).resolve()
+    # WR-01: bind the write under .dogen/staging/<id>/ and refuse a symlinked
+    # staging component, so a symlink at .dogen/staging/<id> (or an intermediate
+    # relpath dir) cannot redirect the atomic write to an arbitrary in-repo path
+    # (same T-09-SD root cause as CR-01). Reuse the hardened CR-01 helper to bind
+    # + de-symlink the unit dir, then assert the full target (relpath may span
+    # subdirs) stays contained under it — the bare _assert_within_root /
+    # _assert_not_under_planning stack permitted such an in-root redirect.
+    staging_unit_root = FilesystemPlanningStore._resolve_bounded_child(
+        root / _STAGING_SUBDIR, unit_id
+    )
+    target = (staging_unit_root / relpath).resolve()
+    if target != staging_unit_root and staging_unit_root not in target.parents:
+        raise ValueError(
+            f"staging path escapes {_STAGING_SUBDIR}/{unit_id}/: {relpath!r}"
+        )
     FilesystemPlanningStore._assert_within_root(target, root=root)
     FilesystemPlanningStore._assert_not_under_planning(target, root=root)
     if target.is_file() and target.stat().st_size > 0 and not force:
