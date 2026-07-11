@@ -477,7 +477,7 @@ def _resolve_passenger_input(  # noqa: PLR0913
     if draft_dir is None:
         return None, None, str(draft_file) if draft_file is not None else ""
     try:
-        text, pages = compose.read_draft_dir(
+        text, pages, note = compose.read_draft_dir(
             draft_dir, primary=unit.sphinx_target, extras=list(unit.extra_targets)
         )
     except compose.HandoffIncompleteError as exc:
@@ -498,6 +498,11 @@ def _resolve_passenger_input(  # noqa: PLR0913
             json_output=json_output,
             provider=provider_name,
         ) from exc
+    if note is not None:
+        # STAGE-01/D-01: surface the whole-set basename fallback once. The line
+        # sits on its own row (like the `staging:` narration), leaving any
+        # trailing JSON draft object intact for --json consumers.
+        typer.echo(f"note: {note}")
     return text, pages, str(draft_dir)
 
 
