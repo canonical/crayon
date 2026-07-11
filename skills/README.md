@@ -179,8 +179,8 @@ per-skill taxonomy. Single source of truth, zero skill↔core drift.
 | `bad_target` | `unit new`/`unit edit` refused — the target carries no supported page extension (`.md`/`.rst`; the extension IS the unit's format, v1.2). |
 | `target_claimed` | `unit new`/`unit edit` refused — the docs target already belongs to another unit's page set (v1.2). |
 | `bad_report` | `dogen draft --report` refused — the context report failed validation (unreadable YAML, or a commit stamp that is neither hex nor empty; explanations belong in an origin's `note`). |
-| `handoff_incomplete` | `dogen draft --draft-dir` refused — a declared target has no staged file (v1.2). |
-| `undeclared_target` | `dogen draft --draft-dir` refused — a staged file matches no declared target (v1.2). |
+| `handoff_incomplete` | `dogen draft --draft-dir` refused — a declared target has no staged file (v1.2). The error enumerates each `expected: handoff/<relpath>`; **move** the page into place (a flat handoff with unique basenames is now accepted and mapped by basename) — never delete a staged draft to fix layout. |
+| `undeclared_target` | `dogen draft --draft-dir` refused — a staged file matches no declared target (v1.2). Move the stray file to its `handoff/<relpath>` or amend the plan (`--also-target`); do not delete staged drafts. |
 | `multi_target_unsupported` | `dogen draft` refused — a driver provider was asked to draft a multi-file unit; route through the host-harness passenger (v1.2). |
 
 **Success-object fields worth surfacing:** `stale_plan: true` on a `draft` result
