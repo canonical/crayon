@@ -189,6 +189,9 @@ per-skill taxonomy. Single source of truth, zero skill↔core drift.
 | `handoff_incomplete` | `dogen draft --draft-dir` refused — a declared target has no staged file (v1.2). The error enumerates each `expected: handoff/<relpath>`; **move** the page into place (a flat handoff with unique basenames is now accepted and mapped by basename) — never delete a staged draft to fix layout. |
 | `undeclared_target` | `dogen draft --draft-dir` refused — a staged file matches no declared target (v1.2). Move the stray file to its `handoff/<relpath>` or amend the plan (`--also-target`); do not delete staged drafts. |
 | `multi_target_unsupported` | `dogen draft` refused — a driver provider was asked to draft a multi-file unit; route through the host-harness passenger (v1.2). |
+| `model_already_set` | `dogen draft --amend-model` refused — the latest generation already records a vouched model; amend fills only an empty slot and never overwrites (MODEL-02 / D-04). |
+| `schema_unsupported` | `dogen unit show` refused — a provenance record declares a `schema_version` newer than this tool supports (D-08); the message names found vs supported. |
+| `provenance_invalid` | `dogen unit show` refused — a present provenance sidecar failed to parse/validate (D-09), distinct from `unit_not_found`. |
 
 **Success-object fields worth surfacing:** `stale_plan: true` on a `draft` result
 means `unit.md` changed after its signoff — surface it and suggest re-approving
