@@ -37,6 +37,15 @@ _DIMENSIONS = ("source-fidelity", "completeness", "structure-fit", "clarity")
 # The two selectable entry modes.
 _MODES = ("record", "review")
 
+# SK-02: dimension 0 "objective check" is the new FIRST rubric dimension. Its
+# failure is must-fix by definition (the severity floor), pinned to the EXISTING
+# [must-fix] tag — never a fourth priority. A multi-file unit's cross-page
+# consistency check must quote the diverging lines (D-02).
+_OBJECTIVE_CHECK = "objective check"
+_SEVERITY_FLOOR = "must-fix by definition"
+_CROSS_PAGE_HEADING = "Cross-page consistency"
+_CROSS_PAGE_QUOTE_PHRASE = "quote the diverging lines"
+
 # The CLI machine surface: failure reason codes + progress states. None of these
 # may ever be repurposed as a bracketed finding tag (D-03 collision guard).
 _RUN_STATUS_TOKENS = (
@@ -100,6 +109,50 @@ def test_all_four_dimensions_present() -> None:
         assert dimension in combined, (
             f"dimension {dimension!r} missing from the review skill text"
         )
+
+
+def test_dimension_zero_objective_check_named() -> None:
+    """review-rubric.md names the dimension 0 'objective check' (SK-02).
+
+    Dimension 0 is a fifth named concept layered ahead of the four generalized
+    dimensions; it must NOT reduce or rename them (``_DIMENSIONS`` stays intact).
+    """
+    rubric = _read(_RUBRIC)
+    assert _OBJECTIVE_CHECK in rubric, (
+        "review-rubric.md must name the dimension 0 'objective check' (SK-02)"
+    )
+
+
+def test_dimension_zero_states_must_fix_severity_floor() -> None:
+    """An objective-check failure is must-fix by definition, reusing [must-fix] (SK-02).
+
+    The severity floor pins objective-check failures to the EXISTING ``[must-fix]``
+    tag — it must never invent a fourth priority (collision guard, D-03).
+    """
+    rubric = _read(_RUBRIC)
+    assert _SEVERITY_FLOOR in rubric, (
+        "review-rubric.md must state the objective-check severity floor "
+        f"({_SEVERITY_FLOOR!r})"
+    )
+    assert "[must-fix]" in rubric, (
+        "the severity floor must reuse the existing [must-fix] tag, not a new one"
+    )
+
+
+def test_cross_page_check_requires_quoting_diverging_lines() -> None:
+    """The multi-file cross-page consistency check quotes the diverging lines (D-02).
+
+    SK-02 strengthens the EXISTING structure-fit cross-page check from "label each
+    finding with its page path" to also quote the diverging lines.
+    """
+    rubric = _read(_RUBRIC)
+    assert _CROSS_PAGE_HEADING in rubric, (
+        "the structure-fit cross-page consistency check must remain present"
+    )
+    assert "quote" in rubric, "the cross-page check must require quoting"
+    assert _CROSS_PAGE_QUOTE_PHRASE in rubric, (
+        f"the cross-page check must {_CROSS_PAGE_QUOTE_PHRASE!r} (SK-02 line-quoting)"
+    )
 
 
 def test_run_status_tokens_never_bracketed_as_finding_tags() -> None:
