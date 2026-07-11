@@ -8,6 +8,7 @@ git-repo fixture rather than importing test helpers across modules (this module
 is shared by the later Phase-9 plans).
 """
 
+import contextlib
 import subprocess
 from pathlib import Path
 
@@ -45,10 +46,8 @@ def repo(tmp_path, monkeypatch):
 def _combined(result) -> str:
     """Return stdout + stderr regardless of the CliRunner capture mode."""
     text = result.output or ""
-    try:
+    with contextlib.suppress(ValueError, AttributeError):
         text += result.stderr or ""
-    except (ValueError, AttributeError):
-        pass
     return text
 
 

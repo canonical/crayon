@@ -287,6 +287,38 @@ class PlanningStore(Protocol):
         """
         ...
 
+    def remove_staging(self, unit_id: str, *, root: Path) -> bool:
+        """Remove ``.dogen/staging/<unit_id>/`` on a sealing accept (PROV-05).
+
+        The idempotent, guarded counterpart that cleans a sealed unit's
+        passenger scratch. Because the staging tree is gitignored and disposable
+        (its content already lives in ``docs/`` + the ``files[]`` digests), a
+        sealing ``accept`` removes it so no stale full-byte page duplicates
+        survive (D-03/D-04). The store validates the id and containment-checks
+        the *resolved* path with the same guard stack as :meth:`delete_unit`
+        before deleting, so a traversing ``unit_id`` raises without any
+        filesystem side effect. Absence is a silent no-op, not an error: a
+        re-accept whose scratch is already gone returns ``False`` (the "a sealed
+        unit => no staging scratch" invariant is self-healing, D-03). The
+        decision to skip cleanup (``--keep-staging``) stays with the caller;
+        ``core/`` never learns it.
+
+        Parameters
+        ----------
+        unit_id : str
+            The unit whose staging scratch to remove; a single safe path
+            segment.
+        root : Path
+            The repo root the store deletes beneath.
+
+        Returns
+        -------
+        bool
+            ``True`` when a staging directory was removed, ``False`` when none
+            existed.
+        """
+        ...
+
     def rename_unit(self, old_id: str, new_id: str, *, root: Path) -> None:
         """Rename a unit's id everywhere, rollback-safe.
 
