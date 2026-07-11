@@ -549,3 +549,95 @@ def test_report_hint_markless_yaml_error_does_not_crash(tmp_path, monkeypatch):
     msg = str(excinfo.value)
     assert "::" in msg
     assert "line" not in msg  # markless -> no " at line ..." suffix
+
+
+# --- Plan 09-03 Task 2: report template skeleton (STAGE-04, D-05/D-06) ---------
+
+
+def _declare_with_sources(repo: Path) -> None:
+    """Declare + sign off unit ``u`` with two declared sources + one target."""
+    (repo / "src").mkdir(exist_ok=True)
+    (repo / "src" / "a.py").write_text("a\n", encoding="utf-8")
+    (repo / "src" / "b.py").write_text("b\n", encoding="utf-8")
+    result = runner.invoke(
+        app,
+        [
+            "unit",
+            "new",
+            "u",
+            "--intent",
+            "reference",
+            "--audience",
+            "d",
+            "--source",
+            "src/a.py",
+            "--source",
+            "src/b.py",
+            "--target",
+            "guide/a.md",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
+
+
+def test_report_template_prints_skeleton_from_sources(repo):
+    _declare_with_sources(repo)
+    result = runner.invoke(app, ["report", "template", "u"])
+    assert result.exit_code == 0, result.output
+    parsed = yaml.safe_load(result.output)
+    # One origin per declared source, empty tools_used/gaps (D-06).
+    assert [o["path"] for o in parsed["context_origins"]] == ["src/a.py", "src/b.py"]
+    assert parsed["tools_used"] == []
+    assert parsed["gaps"] == []
+    # Nothing is written by default (print-by-default, D-05).
+    assert not (repo / ".dogen" / "staging" / "u" / "report.yaml").exists()
+
+
+def test_report_template_roundtrips_through_read_context_report(repo, tmp_path):
+    _declare_with_sources(repo)
+    result = runner.invoke(app, ["report", "template", "u"])
+    assert result.exit_code == 0, result.output
+    out = tmp_path / "roundtrip.yaml"
+    out.write_text(result.output, encoding="utf-8")
+    report = compose.read_context_report(out)
+    assert [o.path for o in report.context_origins] == ["src/a.py", "src/b.py"]
+    assert report.schema_version >= 2
+
+
+def test_report_template_write_lands_report_yaml(repo):
+    _declare_with_sources(repo)
+    result = runner.invoke(app, ["report", "template", "u", "--write"])
+    assert result.exit_code == 0, result.output
+    written = repo / ".dogen" / "staging" / "u" / "report.yaml"
+    assert written.is_file()
+    parsed = yaml.safe_load(written.read_text(encoding="utf-8"))
+    assert [o["path"] for o in parsed["context_origins"]] == ["src/a.py", "src/b.py"]
+
+
+def test_report_template_write_refuses_clobber_without_force(repo):
+    _declare_with_sources(repo)
+    written = repo / ".dogen" / "staging" / "u" / "report.yaml"
+    written.parent.mkdir(parents=True, exist_ok=True)
+    written.write_text("in: progress\n", encoding="utf-8")
+    result = runner.invoke(app, ["report", "template", "u", "--write"])
+    assert result.exit_code == 2, result.output
+    assert "refusing to overwrite" in _combined(result).lower()
+    # The in-progress report is untouched.
+    assert written.read_text(encoding="utf-8") == "in: progress\n"
+
+
+def test_report_template_write_force_overwrites(repo):
+    _declare_with_sources(repo)
+    written = repo / ".dogen" / "staging" / "u" / "report.yaml"
+    written.parent.mkdir(parents=True, exist_ok=True)
+    written.write_text("in: progress\n", encoding="utf-8")
+    result = runner.invoke(app, ["report", "template", "u", "--write", "--force"])
+    assert result.exit_code == 0, result.output
+    parsed = yaml.safe_load(written.read_text(encoding="utf-8"))
+    assert [o["path"] for o in parsed["context_origins"]] == ["src/a.py", "src/b.py"]
+
+
+def test_report_template_missing_unit_refuses(repo):
+    result = runner.invoke(app, ["report", "template", "nope"])
+    assert result.exit_code == 2, result.output

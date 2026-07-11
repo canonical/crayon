@@ -45,9 +45,11 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+import yaml
 
 from dogen.adapters.git_identity import GitIdentityError
 from dogen.adapters.planning_fs import (
+    FilesystemPlanningStore,
     ProvenanceInvalidError,
     SchemaUnsupportedError,
     TargetClaimedError,
@@ -58,6 +60,7 @@ from dogen.adapters.planning_fs import (
 from dogen.app import compose
 from dogen.cli.skills import skills_app
 from dogen.core.models import (
+    SCHEMA_VERSION,
     CommitMode,
     Intent,
     Provenance,
@@ -110,6 +113,7 @@ class _ModelOrigin(StrEnum):
 
     ta = "ta"
     self = "self"
+
 
 # The stable, machine-readable D-10 ``reason`` vocabulary emitted in ``--json``.
 # Skills branch on these codes; humans/CI read the coarse exit code + message.
@@ -175,11 +179,94 @@ unit_app = typer.Typer(help="Create and manage documentation units.")
 provider_app = typer.Typer(help="Show or set the explicit drafting provider.")
 model_app = typer.Typer(help="Show or set the persisted drafting model.")
 context_app = typer.Typer(help="Manage the B1/B2 context-artifact landing zone.")
+staging_app = typer.Typer(
+    help="Inspect and scaffold a unit's handoff staging tree (STAGE-03)."
+)
+report_app = typer.Typer(help="Scaffold a unit's --report context skeleton (STAGE-04).")
 app.add_typer(unit_app, name="unit")
 app.add_typer(provider_app, name="provider")
 app.add_typer(model_app, name="model")
 app.add_typer(context_app, name="context")
 app.add_typer(skills_app, name="skills")
+app.add_typer(staging_app, name="staging")
+app.add_typer(report_app, name="report")
+
+#: The gitignored passenger-handoff scratch root (mirrors ``planning_fs``'s
+#: ``_STAGING_SUBDIR``): ``report template --write`` / ``staging plan --scaffold``
+#: write only beneath ``.dogen/staging/<id>/``.
+_STAGING_SUBDIR = ".dogen/staging"
+
+
+def _write_staging_file(  # noqa: PLR0913
+    *,
+    root: Path,
+    unit_id: str,
+    relpath: str,
+    text: str,
+    force: bool,
+    json_output: bool,
+) -> Path:
+    """Atomically write ``text`` under ``.dogen/staging/<id>/<relpath>`` (D-05).
+
+    The scaffold/write path for ``report template --write`` and ``staging plan
+    --scaffold``. It reuses the store's proven containment guard stack
+    (``_reject_unsafe_unit_id`` + ``_assert_within_root`` +
+    ``_assert_not_under_planning``) on the *resolved* target before touching the
+    disk (so a traversing ``unit_id`` or ``relpath`` refuses without a
+    side-effect), then writes through :meth:`FilesystemPlanningStore._atomic_write_text`
+    (WR-03, temp-then-rename). It refuses to overwrite a **non-empty** existing
+    file unless ``force`` — the helpers create only missing placeholders and
+    never clobber an in-progress handoff/report (Pitfall 6, the round-3 trap in
+    a new guise).
+
+    Parameters
+    ----------
+    root : Path
+        The repo root the write is contained beneath.
+    unit_id : str
+        The unit whose staging scratch is written; a single safe path segment.
+    relpath : str
+        The staging-relative path (e.g. ``report.yaml`` or
+        ``handoff/<page-relpath>``).
+    text : str
+        The full file content to write.
+    force : bool
+        Overwrite a non-empty existing file when set.
+    json_output : bool
+        Whether the caller is in ``--json`` mode (shapes the refusal).
+
+    Returns
+    -------
+    Path
+        The resolved path written.
+
+    Raises
+    ------
+    typer.Exit
+        Exit ``2`` when the target is a non-empty file and ``force`` is unset.
+    ValueError
+        If ``unit_id`` is unsafe or the resolved target escapes the repo root
+        or lands under ``.planning/`` (the guard stack).
+    """
+    FilesystemPlanningStore._reject_unsafe_unit_id(unit_id)
+    target = (root / _STAGING_SUBDIR / unit_id / relpath).resolve()
+    FilesystemPlanningStore._assert_within_root(target, root=root)
+    FilesystemPlanningStore._assert_not_under_planning(target, root=root)
+    if target.is_file() and target.stat().st_size > 0 and not force:
+        raise _fail(
+            unit_id,
+            message=(
+                f"refusing to overwrite non-empty {_STAGING_SUBDIR}/{unit_id}/"
+                f"{relpath}; pass --force to replace it"
+            ),
+            reason=None,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    FilesystemPlanningStore._atomic_write_text(target, text)
+    return target
+
 
 _NoCommit = Annotated[
     bool,
@@ -1679,8 +1766,7 @@ def _amend_model_branch(  # noqa: PLR0913
         )
     else:
         typer.echo(
-            f"Amended {unit_id}: recorded model {amend_model} "
-            f"(origin {origin.value})"
+            f"Amended {unit_id}: recorded model {amend_model} (origin {origin.value})"
         )
 
 
@@ -2512,6 +2598,90 @@ def context_add(
         typer.echo(json.dumps({"context": name, "path": str(written), "commit": sha}))
     else:
         typer.echo(f"Landed {written}")
+
+
+@report_app.command("template")
+def report_template(
+    unit_id: Annotated[
+        str,
+        typer.Argument(help="Unit whose declared sources seed the report skeleton."),
+    ],
+    write: Annotated[
+        bool,
+        typer.Option(
+            "--write",
+            help="Write .dogen/staging/<id>/report.yaml instead of printing.",
+        ),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            help="With --write, overwrite a non-empty existing report.yaml.",
+        ),
+    ] = False,
+    json_output: _JsonOutput = False,
+) -> None:
+    """Emit a valid, unit-aware ``ContextReport`` YAML skeleton (STAGE-04, D-06).
+
+    Reads the unit like every other verb and pre-fills one ``context_origins``
+    entry per declared source (``path`` xor ``ref``) with an empty commit stamp
+    and note, plus empty ``tools_used``/``gaps`` and an empty ``gaps_note`` — the
+    agent edits *values*, not structure, ending the round-3 hand-build of both
+    the handoff and its report. Prints to stdout by default (safe, pipeable);
+    ``--write`` lands ``.dogen/staging/<id>/report.yaml`` atomically and refuses
+    to clobber a non-empty existing report without ``--force`` (D-05). The dumped
+    skeleton round-trips back through :func:`~dogen.app.compose.read_context_report`.
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose declared sources seed the skeleton.
+    write : bool
+        Write ``report.yaml`` under the unit's staging dir instead of printing.
+    force : bool
+        With ``--write``, overwrite a non-empty existing report.
+    json_output : bool
+        Emit the structured JSON object instead of a plain line.
+    """
+    store = compose.default_store()
+    root = Path.cwd()
+    try:
+        unit = store.load_unit(unit_id, root=root)
+    except (FileNotFoundError, ValueError) as exc:
+        raise _fail(
+            unit_id,
+            message=f"Cannot read unit {unit_id!r}: {exc}",
+            reason=None,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        ) from exc
+    skeleton: dict[str, object] = {
+        "schema_version": SCHEMA_VERSION,
+        "context_origins": [
+            {"path": src.path or src.ref, "commit": "", "note": ""}
+            for src in unit.sources
+        ],
+        "tools_used": [],
+        "gaps": [],
+        "gaps_note": "",
+    }
+    text = yaml.safe_dump(skeleton, sort_keys=False)
+    if not write:
+        typer.echo(text, nl=False)
+        return
+    written = _write_staging_file(
+        root=root,
+        unit_id=unit_id,
+        relpath="report.yaml",
+        text=text,
+        force=force,
+        json_output=json_output,
+    )
+    if json_output:
+        typer.echo(json.dumps({"unit": unit_id, "report": str(written)}))
+    else:
+        typer.echo(f"Wrote {written}")
 
 
 if __name__ == "__main__":
