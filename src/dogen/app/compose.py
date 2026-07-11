@@ -19,6 +19,7 @@ a pointer to ``dogen provider``, and the offline Copilot probe survives only as
 a diagnostic surfaced by ``dogen provider show``.
 """
 
+import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
@@ -661,9 +662,7 @@ def read_draft_dir(
         staged_unique = all(len(v) == 1 for v in stg_by_base.values())
         key_sets_align = set(exp_by_base) == set(stg_by_base)
         if declared_unique and staged_unique and key_sets_align:
-            remap = {
-                exp_by_base[b][0]: staged[stg_by_base[b][0]] for b in exp_by_base
-            }
+            remap = {exp_by_base[b][0]: staged[stg_by_base[b][0]] for b in exp_by_base}
             text = remap[primary].read_text(encoding="utf-8")
             pages = {t: remap[t].read_text(encoding="utf-8") for t in extras}
             return text, pages, _HANDOFF_MAPPED_BY_BASENAME
@@ -683,9 +682,21 @@ def read_draft_dir(
 def read_context_report(report_file: Path) -> ContextReport:
     """Read and validate a passenger context report (``--report``, v1).
 
-    Compose-root file IO by design (the D-03 precedent): the YAML is parsed
+    Compose-root file IO by design (the D-03 precedent): the report is parsed
     and validated here, and only the typed :class:`ContextReport` crosses into
     ``core/``.
+
+    The parse is lenient about *format* only (STAGE-04, D-08): the documented
+    primary format is YAML (``report.yaml``), tried first with the safe loader;
+    if that raises, a **silent** ``json.loads`` fallback accepts a report an
+    operator authored as JSON (which stays valid under this reader without
+    diverging the convention). Leniency never touches *validation* — a parsed
+    report still runs the full :class:`ContextReport` validator (hex-or-empty
+    commit stamps, the typed load boundary). When neither parser accepts the
+    bytes, only the **YAML** parser's position is surfaced (YAML is the format
+    the operator was targeting) — the JSON error is never echoed — together with
+    a hint to quote any scalar containing ``::`` (the exact round-3 trap: an
+    unquoted ``::`` plain scalar reads as a mapping value and rejects).
 
     Parameters
     ----------
@@ -700,14 +711,33 @@ def read_context_report(report_file: Path) -> ContextReport:
     Raises
     ------
     ValueError
-        If the YAML cannot be parsed or the report fails validation (v1.2:
-        origin commit stamps must be hex or empty) — the CLI maps this to
-        ``reason=bad_report``.
+        If the bytes parse as neither YAML nor JSON (the message names the YAML
+        parser's 1-based line/column when known, plus the ``::``-quoting hint),
+        or the report fails validation (v1.2: origin commit stamps must be hex
+        or empty) — the CLI maps this to ``reason=bad_report``.
     """
+    text = Path(report_file).read_text(encoding="utf-8")
     try:
-        data = yaml.safe_load(Path(report_file).read_text(encoding="utf-8")) or {}
+        data = yaml.safe_load(text) or {}
     except yaml.YAMLError as exc:
-        raise ValueError(f"not valid YAML: {exc}") from exc
+        try:
+            # Silent JSON fallback (D-08, Pitfall 5): a JSON report is accepted,
+            # but its parse error is never surfaced — only the YAML mark is.
+            data = json.loads(text)
+        except (json.JSONDecodeError, ValueError):
+            # ``problem_mark`` is 0-indexed and may be None (Pitfall 2); guard.
+            mark = getattr(exc, "problem_mark", None)
+            where = (
+                f" at line {mark.line + 1}, column {mark.column + 1}"
+                if mark is not None
+                else ""
+            )
+            problem = getattr(exc, "problem", None) or str(exc)
+            raise ValueError(
+                f"could not parse report as YAML or JSON: {problem}{where}. "
+                "Hint: quote any scalar containing '::' "
+                '(e.g. "a::b"), or YAML reads it as a mapping value.'
+            ) from exc
     return ContextReport(**data)
 
 

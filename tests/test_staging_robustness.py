@@ -127,9 +127,12 @@ def test_review_note_file_stdin_records_quote_heavy_note(repo):
         input=tricky,
     )
     assert result.exit_code == 0, result.output
-    summary = FilesystemPlanningStore().read_provenance(
-        "u", root=repo
-    ).reviewer_edits[-1].summary
+    summary = (
+        FilesystemPlanningStore()
+        .read_provenance("u", root=repo)
+        .reviewer_edits[-1]
+        .summary
+    )
     # Quotes, the `::` trap, and the newline all round-trip through stdin.
     assert '"ship it"' in summary
     assert "::" in summary
@@ -145,9 +148,12 @@ def test_review_note_file_path_reads_from_file(repo):
         ["review", "u", "--verdict", "accept", "--note-file", str(note_path)],
     )
     assert result.exit_code == 0, result.output
-    summary = FilesystemPlanningStore().read_provenance(
-        "u", root=repo
-    ).reviewer_edits[-1].summary
+    summary = (
+        FilesystemPlanningStore()
+        .read_provenance("u", root=repo)
+        .reviewer_edits[-1]
+        .summary
+    )
     assert "from a file::yes" in summary
 
 
@@ -427,17 +433,15 @@ def test_flat_handoff_draft_prints_mapped_by_basename(repo):
     assert "mapped by basename" in result.output
     # The pages land at their declared docs-relative targets.
     assert "primary" in (repo / "docs" / "guide" / "a.md").read_text(encoding="utf-8")
-    assert "extra two" in (
-        repo / "docs" / "reference" / "c.rst"
-    ).read_text(encoding="utf-8")
+    assert "extra two" in (repo / "docs" / "reference" / "c.rst").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_flat_handoff_leaves_staged_files_on_disk(repo):
     # STAGE-01 signature: the fallback accepts WITHOUT deleting any staged draft.
     _declare_span(repo)
-    base = _stage_flat(
-        repo, {"a.md": "# A\n", "b.md": "# B\n", "c.rst": "C\n=\n"}
-    )
+    base = _stage_flat(repo, {"a.md": "# A\n", "b.md": "# B\n", "c.rst": "C\n=\n"})
     result = runner.invoke(
         app, ["draft", "u", "--provider", "host-harness", "--draft-dir", str(base)]
     )
