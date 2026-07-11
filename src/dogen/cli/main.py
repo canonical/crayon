@@ -2030,6 +2030,13 @@ def review(  # noqa: PLR0913
             "`unit edit --body-file`).",
         ),
     ] = None,
+    keep_staging: Annotated[
+        bool,
+        typer.Option(
+            help="Keep .dogen/staging/<id>/ after a sealing accept instead of "
+            "removing it (PROV-05 opt-out).",
+        ),
+    ] = False,
     no_commit: _NoCommit = False,
     json_output: _JsonOutput = False,
 ) -> None:
@@ -2055,6 +2062,9 @@ def review(  # noqa: PLR0913
     note_file : str or None
         Read the note from a file; ``-`` reads stdin. Exactly one of
         ``note``/``note_file`` is required (STAGE-05).
+    keep_staging : bool
+        Keep ``.dogen/staging/<id>/`` after a sealing accept instead of removing
+        it (PROV-05 opt-out).
     no_commit : bool
         Skip the transition commit for this invocation.
     json_output : bool
@@ -2120,6 +2130,18 @@ def review(  # noqa: PLR0913
             err=True,
         )
     sha = _report_git(seam, no_commit=no_commit)
+    # PROV-05: a sealing accept removes the unit's gitignored staging scratch
+    # unless the operator opts out. This is a plain, guarded, idempotent
+    # filesystem op run CLI-side AFTER the transition commit lands (D-04b) — the
+    # flag and narration never enter ReviewRequest/core (D-04b). `accept` is the
+    # only sealing verdict; AlreadyAcceptedError raises earlier and never reaches
+    # here (its scratch was already cleaned by the prior accept).
+    if verdict is ReviewVerdict.accept:
+        if keep_staging:
+            typer.echo("staging: kept (--keep-staging)")
+        elif store.remove_staging(unit_id, root=root):
+            typer.echo(f"staging: removed .dogen/staging/{unit_id}/")
+        # remove_staging()==False (already gone) -> silent no-op (D-03).
     if json_output:
         _emit_json(
             unit=unit_id,
