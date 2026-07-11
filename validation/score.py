@@ -340,7 +340,9 @@ def audit_unit(unit_id: str, root: Path = ROOT) -> None:
         gen_files = (gens[-1].get("files") or []) if gens else []
         acc_pairs = [(f.get("path"), f.get("sha256")) for f in acc_files]
         gen_pairs = [(f.get("path"), f.get("sha256")) for f in gen_files]
-        _flag(bool(acc_pairs) and acc_pairs == gen_pairs, "seal",
+        # Order-insensitive (WR-06): the same page set emitted in a different order
+        # by the upstream provenance writer must not FLAG a sealed generation.
+        _flag(bool(acc_pairs) and sorted(acc_pairs) == sorted(gen_pairs), "seal",
               f"accept seals every page digest ({len(acc_files)} page(s), v2)")
     else:
         _flag(False, "seal", "no accept verdict recorded yet")
