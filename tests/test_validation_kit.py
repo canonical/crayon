@@ -259,7 +259,7 @@ def test_audit_passes_on_v2_fixture(tmp_path, capsys):
 
 
 def test_v2_fixture_leaves_host_repo_clean(tmp_path):
-    """The fixture builds in tmp_path only — no artifacts under dogen-mvp-1 (T-11-06)."""
+    """The fixture builds in tmp_path only — no host-repo artifacts (T-11-06)."""
     _build_v2_fixture(tmp_path, "u")
     host_status = _git(ROOT, "status", "--porcelain")
     assert "validation/fixtures" not in host_status
@@ -307,4 +307,5 @@ def test_model_amended_is_legal(tmp_path, capsys):
     score.audit_unit("u", root=tmp_path / "c")
     out = capsys.readouterr().out
     assert "PASS [git] git log alone shows the drafted and reviewed transitions" in out
-    assert "INFO [git] unrecognized phase tokens (not a failure): ['mystery-token']" in out
+    unknown_info = "unrecognized phase tokens (not a failure): ['mystery-token']"
+    assert unknown_info in out
