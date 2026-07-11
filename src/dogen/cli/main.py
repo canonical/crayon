@@ -2600,6 +2600,100 @@ def context_add(
         typer.echo(f"Landed {written}")
 
 
+@staging_app.command("plan")
+def staging_plan(
+    unit_id: Annotated[
+        str,
+        typer.Argument(help="Unit whose expected handoff tree to inspect."),
+    ],
+    scaffold: Annotated[
+        bool,
+        typer.Option(
+            "--scaffold",
+            help="Create only the MISSING handoff/<relpath> placeholders on disk.",
+        ),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            help="With --scaffold, overwrite an existing non-empty staged page.",
+        ),
+    ] = False,
+    json_output: _JsonOutput = False,
+) -> None:
+    """Print a unit's expected handoff tree + staged status (STAGE-03, D-07).
+
+    Answers the round-3 "what's left to stage?" confusion directly: it prints
+    one ``handoff/<relpath>`` line per declared target (``unit.targets`` =
+    ``[sphinx_target, *extra_targets]``) and marks each ✓ staged / missing by
+    checking ``.dogen/staging/<id>/handoff/<relpath>`` on disk. ``--scaffold``
+    creates only the **missing** placeholders (empty files, atomically), never
+    clobbering an existing non-empty staged page without ``--force`` (D-05,
+    Pitfall 6). It deliberately does NOT seed ``report.yaml`` — that is ``report
+    template --write``'s job (one responsibility per command).
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose expected handoff tree to inspect.
+    scaffold : bool
+        Create the missing ``handoff/<relpath>`` placeholders on disk.
+    force : bool
+        With ``--scaffold``, overwrite an existing non-empty staged page.
+    json_output : bool
+        Emit the structured JSON object instead of plain lines.
+    """
+    store = compose.default_store()
+    root = Path.cwd()
+    try:
+        unit = store.load_unit(unit_id, root=root)
+    except (FileNotFoundError, ValueError) as exc:
+        raise _fail(
+            unit_id,
+            message=f"Cannot read unit {unit_id!r}: {exc}",
+            reason=None,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        ) from exc
+    handoff_root = root / _STAGING_SUBDIR / unit_id / "handoff"
+    created: list[str] = []
+    if scaffold:
+        for target in unit.targets:
+            # Create only missing placeholders (D-05/D-07): an existing page is
+            # left untouched unless --force asks for an explicit overwrite.
+            if (handoff_root / target).is_file() and not force:
+                continue
+            _write_staging_file(
+                root=root,
+                unit_id=unit_id,
+                relpath=f"handoff/{target}",
+                text="",
+                force=force,
+                json_output=json_output,
+            )
+            created.append(target)
+    rows = [(t, (handoff_root / t).is_file()) for t in unit.targets]
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {
+                    "unit": unit_id,
+                    "handoff": [
+                        {"path": f"handoff/{t}", "staged": staged} for t, staged in rows
+                    ],
+                    "scaffolded": [f"handoff/{t}" for t in created],
+                }
+            )
+        )
+        return
+    for target, staged in rows:
+        marker = "✓" if staged else "missing"
+        typer.echo(f"handoff/{target} [{marker}]")
+    for target in created:
+        typer.echo(f"scaffolded handoff/{target}")
+
+
 @report_app.command("template")
 def report_template(
     unit_id: Annotated[

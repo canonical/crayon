@@ -152,6 +152,16 @@ reviewer's own words — it is exactly what the next drafting pass will read.
 routing act; a correction that lives only in this conversation steers nothing
 and leaves the audit trail empty.
 
+**Quote-heavy notes — prefer `--note-file -`.** When the verdict note contains
+quotes, a `::`, or spans several lines, pass it on stdin instead of fighting
+shell quoting: `--note-file -` reads the whole note from stdin (a path reads that
+file), mirroring `unit edit --body-file -`. Exactly one of `--note` / `--note-file`
+is required — giving both, or neither, is a `bad_input` refusal. Example:
+
+```bash
+printf '%s' "$REVIEWER_NOTE" | dogen review "$UNIT_ID" --verdict "$VERDICT" --note-file - --json
+```
+
 Read the `--json` result and surface it. Route off the machine token `next_id`,
 translated into the loop's **frozen referral line** (the exact strings live in
 `../README.md`'s routing table) — always the slash form, a definite imperative:
@@ -178,6 +188,17 @@ surface that plainly; there is nothing to redo.
 <edge_cases>
 **Unit never drafted (`not_drafted`):** `dogen review` refuses. Surface it and route
 the TA to dogen-write to draft first.
+
+**Routing a `fix`/`redraft` back to staging — the two scaffolding helpers.** When
+a verdict sends the unit back to dogen-write, the writer re-stages under
+`.dogen/staging/<id>/`; two read-only-by-default helpers end the round-3 manual
+`mkdir` fumble. `dogen staging plan <id>` prints the expected
+`handoff/<relpath>` tree and marks each page ✓ staged / missing (`--scaffold`
+creates only the missing placeholders — never clobbering a staged draft). `dogen
+report template <id>` prints a valid, unit-aware `report.yaml` skeleton
+pre-filled from the unit's declared sources (`--write` lands it, `--force` to
+replace a non-empty one). Point the writer at these instead of hand-building the
+handoff tree or the report — never suggest deleting a staged draft to fix layout.
 
 **Reviewer picked record but now wants findings:** offer to switch to review mode and
 run the four-dimension findings review before recording the verdict. No re-invocation

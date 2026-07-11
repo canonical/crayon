@@ -44,7 +44,9 @@ dogen-plan -> dogen-write -> dogen-review
   `.dogen/staging/<id>/handoff.<ext>` and `.dogen/staging/<id>/report.yaml`.
 - **dogen-review** — presents a provenance summary (and, in review mode, grounded
   four-dimension findings), records the structured verdict via
-  `dogen review --verdict accept|fix|redraft --note`, and stops. `accept` seals the
+  `dogen review --verdict accept|fix|redraft --note` (or `--note-file -` to read a
+  quote-heavy / multi-line note from stdin — exactly one of `--note`/`--note-file`),
+  and stops. `accept` seals the
   exact draft text; `fix`/`redraft` land the note in the unit's steering stream for
   the next pass — a `fix` is a bounded correction ("apply the recorded fix"), a
   `redraft` is a fresh pass ("re-draft"); they never share wording (M2).
@@ -131,7 +133,10 @@ symbol and the mirror together, never one alone.
   reviews.
 - **context report** — the passenger's self-report (`report.yaml` next to the
   handoff): everything read (commit-stamped), tools used, and gaps. Ingested via
-  `dogen draft --report`; the uniform provenance contract across providers.
+  `dogen draft --report`; the uniform provenance contract across providers. It
+  parses leniently (YAML, then JSON) — a broken report reports the YAML parser's
+  line/column plus a hint to quote any scalar containing `::`; `dogen report
+  template <id>` prints a valid, unit-aware skeleton (`--write` lands it).
 - **driver** — a provider that generates in-process (Copilot SDK, or `mock`);
   dogen-write invokes `dogen draft` and reports, never authoring the text itself.
 - **passenger** — the `host-harness` provider; the host agent authors the page
@@ -139,7 +144,9 @@ symbol and the mirror together, never one alone.
   `dogen draft --draft-file --report`.
 - **handoff file** — the passenger's authored page at
   `.dogen/staging/<id>/handoff.<ext>` (the target's extension), left in place for
-  inspection.
+  inspection. For a multi-page unit, `dogen staging plan <id>` prints the expected
+  `handoff/<relpath>` tree and marks each page ✓ staged / missing (`--scaffold`
+  creates only the missing placeholders — never clobbering a staged draft).
 - **HITL gate** — the provable, core-enforced rule that `dogen draft` refuses
   without a recorded signoff. The gate lives in the core; skills surface it.
 - **commit seam** — the CLI-owned rule that every lifecycle transition records one
