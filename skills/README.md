@@ -258,13 +258,16 @@ surfaced **verbatim** (D-03) — the frozen grammar covers routing only.
 
 ## Smart defaults (family-wide, v1.2)
 
-Every mechanical field a skill needs — unit id, title, target path, format,
+Every mechanical field a skill needs — title, target path, format,
 review mode, verdict — is **proposed with an evidence-grounded recommendation
 and presented as labeled choices** the TA confirms or overrides; never make
 the TA type a value the skill can derive (round 2's copilot leg is the proven
 shape; asking a question whose answer the skill has already argued for is the
 anti-pattern — propose it as the default instead). When only one option is
 defensible, state it and the reason, and proceed unless the TA objects.
+
+The **unit id** is the one exception — its authority runs the other way:
+A TA- or brief-supplied unit id is used verbatim; propose an id only when none is supplied.
 
 **Progress states** (the `progress` field): `pending → sourced → drafted →
 reviewed` (reserved terminal: `committed`).

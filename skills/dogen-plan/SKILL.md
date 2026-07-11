@@ -111,7 +111,9 @@ anything yet.
 <step_3 name="Collect the mechanical fields">
 Collect the mechanical fields directly (these are not Socratic — just ask for them):
 
-- the **unit id** (the stable identifier and per-unit directory name),
+- the **unit id** (the stable identifier and per-unit directory name). The id's
+  authority runs the other way from the other fields:
+  A TA- or brief-supplied unit id is used verbatim; propose an id only when none is supplied.
 - a human-readable **title** for the page,
 - the **source path(s)** — one or more repo paths where the drafter *starts*
   reading (repeatable). Verify each path exists with `Read`/`Glob` before
@@ -305,8 +307,10 @@ source. Ask the TA to point at the best entry-point file(s) before declaring.
   pages and existing toctree entries (grep `docs/**/index.*`) decide the
   directory, the exact basename, AND the extension (the unit's format); never
   default to the docs root when a waiting slot exists.
-- Propose every mechanical field with an evidence-grounded recommended default
-  (labeled choices); never require the TA to type a derivable value.
+- Propose every derivable mechanical field (title, target, format) with an
+  evidence-grounded recommended default (labeled choices); never require the TA
+  to type a derivable value. The **unit id** is the exception: a TA-/brief-supplied
+  id is used verbatim, proposed only when none is supplied.
 - Keep the outline reader-facing: implementation identifiers are source pointers,
   never coverage items (step 5).
 - Persist ONLY through the delegating `dogen unit new` / `dogen unit edit` /
