@@ -383,3 +383,38 @@ def test_protocol_requires_results_heading(tmp_path, capsys, monkeypatch):
     with pytest.raises(SystemExit) as exc:
         score.main()
     assert exc.value.code == 0
+
+
+# --- VAL-03: export.sh verbatim transcript writer ---------------------------
+#
+# export.sh writes a raw transcript byte-for-byte to SESSION-<harness>.md under
+# the script's OWN directory — raw, never distilled (D-07). It is copied into a
+# tmp dir so its self-resolved output dir is the tmp dir, not the real kit dir.
+
+
+def test_export_writes_verbatim(tmp_path):
+    """export.sh writes the canonical SESSION-<h>.md byte-identical to input (D-07)."""
+    script = tmp_path / "export.sh"
+    script.write_bytes((ROOT / "validation" / "export.sh").read_bytes())
+    script.chmod(0o755)
+
+    # A payload with indentation, blank lines, tabs and unicode — any
+    # transformation (reflow, strip, re-encode) would change the bytes.
+    payload = (
+        "line one\n  indented two\n\nfinal line\n"
+        "tab\tinside\nunicode: café ✓\n"
+    )
+    src = tmp_path / "raw.txt"
+    src.write_text(payload, encoding="utf-8")
+
+    # From a file argument.
+    subprocess.run(["sh", str(script), "demo", str(src)], check=True)
+    from_file = tmp_path / "SESSION-demo.md"
+    assert from_file.read_bytes() == src.read_bytes()
+
+    # From stdin (default source `-`).
+    subprocess.run(
+        ["sh", str(script), "stdin", "-"], check=True, input=src.read_bytes()
+    )
+    from_stdin = tmp_path / "SESSION-stdin.md"
+    assert from_stdin.read_bytes() == src.read_bytes()
