@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 """Mechanical validation scorer for dogen drafts (dev-time eval tooling).
 
-Two subcommands:
+Subcommands:
 
-  score.py draft <path>      — register leaks, implementation identifiers,
-                               coverage checklist, structure checks (format-
-                               aware, v1.2: .md scored as MyST, .rst as rST)
-  score.py audit <unit-id>   — traceability spine: signoff hash freshness,
-                               commit-stamped context origins, sealed accept,
-                               git-log phase reconstruction
+  score.py draft <path>              — register leaks, implementation identifiers,
+                                       coverage checklist, structure checks (format-
+                                       aware, v1.2: .md scored as MyST, .rst as rST;
+                                       .. include:: resolved one level first)
+  score.py audit <unit-id> [--root <repo>]
+                                     — traceability spine: signoff hash freshness,
+                                       commit-stamped context origins, sealed accept,
+                                       git-log phase reconstruction (v2 provenance;
+                                       --root retargets an arbitrary repo)
+  score.py protocol [dir]            — conformance GATE: SESSION-<name>.md naming
+                                       (D-05) + a per-leg RESULTS.md heading (D-06)
 
-Report-only: always exits 0; read the PASS/FLAG lines. Stdlib only.
+draft and audit are report-only — they always exit 0; read the PASS/FLAG lines.
+protocol is the ONE verb whose exit code is load-bearing: it exits NON-ZERO on any
+naming/RESULTS violation (D-04). Stdlib only (audit lazy-imports PyYAML).
 """
 
 import hashlib
@@ -56,6 +63,11 @@ KNOWN_PHASES = {"declared", "signed-off", "steered", "drafted", "reviewed",
 # rST include directive (VAL-01). Matched on the ORIGINAL draft text exactly once
 # so inserted content is never re-scanned — one level, recursion-guarded (D-11).
 INCLUDE_RE = re.compile(r"^\s*\.\. include:: (.+?)\s*$", flags=re.M)
+
+# The canonical session-log shape the `protocol` gate enforces (D-05):
+# `SESSION-<name>.md`. Case-sensitive prefix — round-3's lowercase `session-…`
+# and prefix-less `*-session-*` offenders deliberately do NOT match.
+SESSION_RE = re.compile(r"^SESSION-(.+)\.md$")
 
 # Coverage checklist: (label, any-of keyword alternatives, case-insensitive).
 COVERAGE = [
@@ -315,14 +327,78 @@ def audit_unit(unit_id: str, root: Path = ROOT) -> None:
         print(f"INFO [git] unrecognized phase tokens (not a failure): {unknown}")
 
 
+def protocol_check(dir: Path) -> bool:
+    r"""Conformance GATE for session-log naming + per-leg RESULTS headings (D-04).
+
+    Unlike the report-only `draft`/`audit` verbs, this returns the aggregate ok so
+    `main()` can map it to a NON-ZERO exit — the one verb whose exit code is
+    load-bearing. It prints PASS/FLAG lines like the others.
+
+    Two checks:
+
+    * name shape (D-05): legs are discovered with `SESSION-*.md`; any `*session*`
+      sibling that does NOT match the exact `SESSION-<name>.md` shape (lowercase
+      `session-`, `*-session-*`, UUID-suffixed — the round-3 offenders) is a
+      violation, not merely absence of a conformant file;
+    * RESULTS headings (D-06): `RESULTS.md` in the SAME dir must carry a markdown
+      heading naming each discovered leg (`re.search(r"^#{1,6}\s+<name>\b", ...)`);
+      a missing heading (or a missing RESULTS.md) FLAGs.
+    """
+    dir = Path(dir)
+    print(f"== protocol conformance: {dir}")
+    ok = True
+
+    legs = sorted(dir.glob("SESSION-*.md"))
+    leg_names = [m.group(1) for p in legs if (m := SESSION_RE.match(p.name))]
+
+    # D-05: a non-conformant session-ish sibling is itself a violation.
+    session_ish = sorted(p for p in dir.glob("*.md") if "session" in p.name.lower())
+    for p in session_ish:
+        if not SESSION_RE.match(p.name):
+            ok &= _flag(False, "name", f"non-conformant session file: {p.name}")
+
+    # D-06: per discovered leg, RESULTS.md must have a heading naming it.
+    results_path = dir / "RESULTS.md"
+    results_text = (
+        results_path.read_text(encoding="utf-8") if results_path.is_file() else ""
+    )
+    if leg_names and not results_path.is_file():
+        ok &= _flag(False, "results", "RESULTS.md present")
+    for name in leg_names:
+        found = bool(
+            re.search(rf"^#{{1,6}}\s+{re.escape(name)}\b", results_text, re.M | re.I)
+        )
+        ok &= _flag(found, "results", f"RESULTS.md has a heading for {name}")
+
+    return ok
+
+
 def main() -> None:
-    if len(sys.argv) != 3 or sys.argv[1] not in ("draft", "audit"):
+    argv = sys.argv[1:]
+    # `protocol` is the one verb that exits non-zero on a violation (D-04); it
+    # takes an OPTIONAL dir positional, defaulting to this kit's own directory.
+    if argv and argv[0] == "protocol":
+        d = Path(argv[1]) if len(argv) > 1 else Path(__file__).resolve().parent
+        sys.exit(0 if protocol_check(d) else 1)
+    # `audit <unit-id> [--root <repo>]` — report-only (exit 0); --root retargets.
+    if argv and argv[0] == "audit":
+        rest = argv[1:]
+        root = ROOT
+        if "--root" in rest:
+            i = rest.index("--root")
+            if i + 1 < len(rest):
+                root = Path(rest[i + 1]).resolve()
+                rest = rest[:i] + rest[i + 2:]
+        if len(rest) == 1:
+            audit_unit(rest[0], root=root)
+            return
         print(__doc__)
         return
-    if sys.argv[1] == "draft":
-        score_draft(Path(sys.argv[2]))
-    else:
-        audit_unit(sys.argv[2])
+    # `draft <path>` — report-only (exit 0).
+    if argv and argv[0] == "draft" and len(argv) == 2:
+        score_draft(Path(argv[1]))
+        return
+    print(__doc__)
 
 
 if __name__ == "__main__":
