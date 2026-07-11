@@ -96,6 +96,15 @@ Ask the reviewer, with `AskUserQuestion` (BLOCKING), which mode they want:
 This is the up-front branch; it replaces any dump of the source into the
 conversation. The raw page source is not presented by default in either mode —
 offer it only if the reviewer asks ("show me the source").
+
+**After a `fix` verdict (re-review default):** when a unit returns for review after
+a recorded `fix`, the default is a **scoped re-review** — verify the recorded fix
+landed and run a **regression spot-check** of just the touched sections — not a
+fresh full pass. A **full four-dimension re-run** happens only on explicit request;
+there is no auto-escalation, even on a freshly surfaced must-fix (D-05). Mirror the
+record→review escalation idiom below (no re-invocation, just branch): default to
+the scoped re-review, and widen to the full four-dimension re-run only when the TA
+asks for it.
 </step_2>
 
 <step_3 name="Present the provenance summary">
