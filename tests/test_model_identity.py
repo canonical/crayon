@@ -26,6 +26,7 @@ Coverage in this plan:
 import asyncio
 import json
 import subprocess
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -35,7 +36,7 @@ from dogen.adapters.planning_fs import FilesystemPlanningStore
 from dogen.app import compose
 from dogen.cli.main import app
 from dogen.core.models import DogenConfig, DraftResult, Intent
-from dogen.core.orchestrator import declare, draft
+from dogen.core.orchestrator import DraftOutcome, declare, draft
 from dogen.core.orchestrator import signoff as steer
 
 runner = CliRunner()
@@ -113,7 +114,9 @@ def _signoff(store, root, clock, *, unit, repo=None):
     )
 
 
-async def _draft(store, root, clock, *, unit, provider=None, model="", model_origin="", repo=None):  # noqa: PLR0913
+async def _draft(  # noqa: PLR0913
+    store, root, clock, *, unit, provider=None, model="", model_origin="", repo=None
+):
     """Drive one draft of ``unit``, recording a generation; returns the outcome.
 
     ``provider`` is a concrete :class:`DraftingProvider` (or ``None`` to let
@@ -380,7 +383,9 @@ class _EchoDriver:
         self._model = model
         self._text = text
 
-    async def draft_unit(self, *, intent, audience, signoff, sources, notes=None, page_format="myst"):  # noqa: PLR0913, ANN001, ANN201, D102
+    async def draft_unit(  # noqa: PLR0913, ANN001, ANN201, D102
+        self, *, intent, audience, signoff, sources, notes=None, page_format="myst"
+    ):
         return DraftResult(
             text=self._text,
             model=self._model,
@@ -402,9 +407,7 @@ class _EchoDriver:
 def test_default_draft_outcome_identical_draft_is_false():
     # Back-compat: existing draft callers/tests construct DraftOutcome without the
     # new field, so it must default False.
-    from dogen.core.orchestrator import DraftOutcome
-
-    outcome = DraftOutcome(path=__import__("pathlib").Path("x"), stale_plan=False)
+    outcome = DraftOutcome(path=Path("x"), stale_plan=False)
     assert outcome.identical_draft is False
 
 
