@@ -970,6 +970,7 @@ def build_draft_request(  # noqa: PLR0913
     provider: DraftingProvider | None = None,
     provider_name: str | None = None,
     model: str | None = None,
+    model_origin: str = "",
     now: Clock = utc_now,
     report: ContextReport | None = None,
     handoff_path: str = "",
@@ -991,7 +992,14 @@ def build_draft_request(  # noqa: PLR0913
         The resolved provider name to stamp into provenance; defaults to
         ``"mock"`` (matching the default provider) when omitted.
     model : str or None
-        Optional model name threaded to the default provider factory.
+        The resolved model name (``--model`` flag > ``DOGEN_MODEL`` env > repo
+        config): recorded onto the generation AND threaded to the default
+        provider factory. ``None`` / ``""`` leaves the provider default and
+        records the provider echo (Open Q1 fallback).
+    model_origin : str
+        The D-03 vouch-origin for the resolved model
+        (``""``/``ta``/``self``/``config``/``flag``), stamped onto the generation
+        (MODEL-02). Derived from resolution only, never from the provider echo.
     now : Clock
         The injected timestamp source; defaults to the real UTC clock.
     report : ContextReport or None
@@ -1016,6 +1024,8 @@ def build_draft_request(  # noqa: PLR0913
         report=report,
         handoff_path=handoff_path,
         repo=repo,
+        model=model or "",
+        model_origin=model_origin,
     )
 
 
