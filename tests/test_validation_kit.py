@@ -264,3 +264,47 @@ def test_v2_fixture_leaves_host_repo_clean(tmp_path):
     host_status = _git(ROOT, "status", "--porcelain")
     assert "validation/fixtures" not in host_status
     assert ".dogen/units/u" not in host_status
+
+
+def test_v1_sidecar_clean_flag(tmp_path, capsys):
+    """A schema_version=1 sidecar prints a clean FLAG and returns, no crash (D-12)."""
+    _build_v2_fixture(tmp_path, "u", schema_version=1)
+    # Must NOT raise a KeyError/AttributeError on the absent v2 fields.
+    score.audit_unit("u", root=tmp_path)
+    out = capsys.readouterr().out
+    assert (
+        "FLAG [schema] v1 sidecar (schema_version=1) — not auditable by this kit"
+        in out
+    )
+    # The audit bailed before touching v2-only checks (no gen/seal lines emitted).
+    assert "page digest matches on disk" not in out
+    assert "accept seals every page digest" not in out
+
+
+def test_model_amended_is_legal(tmp_path, capsys):
+    """model-amended is a legal, non-required phase token (D-14).
+
+    * with model-amended between drafted and reviewed the drafted+reviewed git
+      assertion still PASSes and model-amended is NOT surfaced as unknown;
+    * a fixture WITHOUT model-amended also passes (it is not required);
+    * a genuinely unknown token DOES surface as a non-failing INFO line — proving
+      model-amended's silence is because it is a KNOWN phase, not because the
+      machinery is inert.
+    """
+    _build_v2_fixture(tmp_path / "a", "u", extra_phases=("model-amended",))
+    score.audit_unit("u", root=tmp_path / "a")
+    out = capsys.readouterr().out
+    assert "PASS [git] git log alone shows the drafted and reviewed transitions" in out
+    assert "unrecognized phase tokens" not in out  # model-amended is known
+
+    _build_v2_fixture(tmp_path / "b", "u")  # no model-amended
+    score.audit_unit("u", root=tmp_path / "b")
+    out = capsys.readouterr().out
+    assert "PASS [git] git log alone shows the drafted and reviewed transitions" in out
+    assert "unrecognized phase tokens" not in out  # not required
+
+    _build_v2_fixture(tmp_path / "c", "u", extra_phases=("mystery-token",))
+    score.audit_unit("u", root=tmp_path / "c")
+    out = capsys.readouterr().out
+    assert "PASS [git] git log alone shows the drafted and reviewed transitions" in out
+    assert "INFO [git] unrecognized phase tokens (not a failure): ['mystery-token']" in out
