@@ -600,10 +600,10 @@ def _resolve_passenger_input(  # noqa: PLR0913
             provider=provider_name,
         ) from exc
     if note is not None:
-        # STAGE-01/D-01: surface the whole-set basename fallback once. The line
-        # sits on its own row (like the `staging:` narration), leaving any
-        # trailing JSON draft object intact for --json consumers.
-        typer.echo(f"note: {note}")
+        # STAGE-01/D-01: surface the whole-set basename fallback once. WR-02:
+        # routed to stderr (like the `staging:`/`git:` narration) so stdout
+        # carries only the JSON object in --json mode.
+        typer.echo(f"note: {note}", err=True)
     return text, pages, str(draft_dir)
 
 
@@ -2243,9 +2243,9 @@ def review(  # noqa: PLR0913
     # here (its scratch was already cleaned by the prior accept).
     if verdict is ReviewVerdict.accept:
         if keep_staging:
-            typer.echo("staging: kept (--keep-staging)")
+            typer.echo("staging: kept (--keep-staging)", err=True)
         elif store.remove_staging(unit_id, root=root):
-            typer.echo(f"staging: removed .dogen/staging/{unit_id}/")
+            typer.echo(f"staging: removed .dogen/staging/{unit_id}/", err=True)
         # remove_staging()==False (already gone) -> silent no-op (D-03).
     if json_output:
         _emit_json(
