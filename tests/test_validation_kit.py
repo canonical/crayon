@@ -433,7 +433,7 @@ SYNC_KIT_FILES = ("score.py", "rubric.md", "export.sh")
 
 
 def test_sync_is_idempotent(tmp_path):
-    """sync.sh mirrors the three kit files byte-identically and is re-runnable (D-02)."""
+    """sync.sh mirrors the three kit files byte-identically, re-runnable (D-02)."""
     sync = ROOT / "validation" / "sync.sh"
     dst = tmp_path / "mirror"
     dst.mkdir()
@@ -456,6 +456,8 @@ def test_sync_errors_loudly_on_missing_mirror(tmp_path):
     missing = tmp_path / "does-not-exist"
     env = {**os.environ, "DOGEN_SYNC_DST": str(missing)}
 
-    completed = subprocess.run(["sh", str(sync)], capture_output=True, text=True, env=env)
+    completed = subprocess.run(
+        ["sh", str(sync)], capture_output=True, text=True, env=env, check=False
+    )
     assert completed.returncode != 0
     assert "mirror not found" in completed.stderr
