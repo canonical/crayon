@@ -137,7 +137,17 @@ def expand_includes(text: str, draft_path: Path) -> tuple[str, list[str]]:
 
     def _resolve(rel: str) -> Path | None:
         if rel.startswith("/"):
-            return (root / rel.lstrip("/")) if root else None
+            if root is None:
+                return None
+            # Confine the absolute-style target under the located source root:
+            # `.resolve()` collapses any embedded `..` and a target that escapes
+            # `root` is treated as unresolvable (-> FLAG), never read (D-08).
+            candidate = (root / rel.lstrip("/")).resolve()
+            try:
+                candidate.relative_to(root.resolve())
+            except ValueError:
+                return None  # escapes the source root — treat as unresolvable
+            return candidate
         return draft_path.parent / rel
 
     def _sub(match: "re.Match[str]") -> str:

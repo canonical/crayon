@@ -91,6 +91,42 @@ def test_absolute_include_from_source_root(tmp_path):
     assert "UNIQUEKW" in expanded
 
 
+def test_absolute_include_traversal_is_confined(tmp_path):
+    """A leading-``/`` include with ``..`` escaping the source root is refused (D-08).
+
+    The resolver confines an absolute-style target under the located Sphinx source
+    root: an embedded ``../`` walk out of ``root`` collapses to a path outside it,
+    so the target is treated as unresolvable — it FLAGs and its bytes never appear
+    in the expanded text (arbitrary-file-read guard). A well-behaved
+    ``/shared/inc.rst`` under the same root still resolves.
+    """
+    (tmp_path / "conf.py").write_text("", encoding="utf-8")
+    # A sentinel file OUTSIDE the source root (sibling of tmp_path).
+    outside = tmp_path.parent / "outside-secret.txt"
+    outside.write_text("TRAVERSAL_SENTINEL\n", encoding="utf-8")
+    # A benign shared include INSIDE the source root.
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    (shared / "inc.rst").write_text("Benign shared marker OKKW.\n", encoding="utf-8")
+
+    subdir = tmp_path / "reference"
+    subdir.mkdir()
+    draft = subdir / "draft.rst"
+    draft.write_text(
+        "Title\n=====\n\n"
+        ".. include:: /" + "../" * 20 + "outside-secret.txt\n\n"
+        ".. include:: /shared/inc.rst\n",
+        encoding="utf-8",
+    )
+
+    expanded, flags = score.expand_includes(draft.read_text(encoding="utf-8"), draft)
+    # The traversal target is FLAGged, never inlined.
+    assert flags != []
+    assert "TRAVERSAL_SENTINEL" not in expanded
+    # The well-behaved absolute include still resolves.
+    assert "OKKW" in expanded
+
+
 def test_include_one_level_only(tmp_path):
     """A directive inside an included file is NOT further expanded (D-11)."""
     (tmp_path / "outer.rst").write_text(
