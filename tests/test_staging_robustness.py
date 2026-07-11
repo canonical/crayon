@@ -13,6 +13,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 from typer.testing import CliRunner
 
 from dogen.adapters.planning_fs import FilesystemPlanningStore
@@ -444,3 +445,103 @@ def test_flat_handoff_leaves_staged_files_on_disk(repo):
     assert (base / "a.md").exists()
     assert (base / "b.md").exists()
     assert (base / "c.rst").exists()
+
+
+# --- Plan 09-03 Task 1: read_context_report lenient YAML->JSON + hint (STAGE-04) -
+
+
+def _valid_report_yaml() -> str:
+    """A valid ``report.yaml`` body with one commit-stampable origin."""
+    return (
+        "schema_version: 2\n"
+        "context_origins:\n"
+        "- path: src/a.py\n"
+        "  commit: ''\n"
+        "  note: ''\n"
+        "tools_used: []\n"
+        "gaps: []\n"
+        "gaps_note: ''\n"
+    )
+
+
+def test_report_lenient_parses_valid_yaml(tmp_path):
+    # Tier 1 (unchanged): a valid YAML report parses into a ContextReport.
+    report = tmp_path / "report.yaml"
+    report.write_text(_valid_report_yaml(), encoding="utf-8")
+    parsed = compose.read_context_report(report)
+    assert parsed.schema_version == 2
+    assert parsed.context_origins[0].path == "src/a.py"
+
+
+def test_report_lenient_parses_quoted_double_colon_scalar(tmp_path):
+    # A report that QUOTES the '::' scalar is valid YAML and parses — the
+    # round-3 trap was an unquoted '::'; quoting is exactly what the hint asks.
+    report = tmp_path / "report.yaml"
+    report.write_text(
+        "schema_version: 2\n"
+        "context_origins:\n"
+        '- path: "a::b"\n'
+        "  commit: ''\n"
+        "  note: ''\n",
+        encoding="utf-8",
+    )
+    parsed = compose.read_context_report(report)
+    assert parsed.context_origins[0].path == "a::b"
+
+
+def test_report_lenient_json_fallback_parses(tmp_path):
+    # Valid JSON that is NOT valid YAML (a tab between flow entries) parses via
+    # the silent json.loads fallback inside the except-YAMLError arm (D-08).
+    report = tmp_path / "report.json"
+    report.write_text(
+        '{"schema_version": 2,\t"context_origins": [], "tools_used": [],'
+        ' "gaps": [], "gaps_note": ""}',
+        encoding="utf-8",
+    )
+    # sanity: the payload really is YAML-invalid so the JSON arm is exercised.
+    with pytest.raises(yaml.YAMLError):
+        yaml.safe_load(report.read_text(encoding="utf-8"))
+    parsed = compose.read_context_report(report)
+    assert parsed.schema_version == 2
+
+
+def test_report_lenient_still_runs_full_validation(tmp_path):
+    # Leniency is FORMAT-only: a parsed report still runs the ContextReport
+    # validator, so a non-hex commit stamp is refused (typed load boundary).
+    report = tmp_path / "report.yaml"
+    report.write_text(
+        "context_origins:\n- path: src/a.py\n  commit: nothex!\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="hex SHA or"):
+        compose.read_context_report(report)
+
+
+def test_report_hint_on_unparseable_reports_line_col_and_double_colon(tmp_path):
+    # Neither valid YAML nor valid JSON: raise ValueError naming the YAML
+    # parser's 1-based line/column and the '::'-quoting hint (D-08).
+    report = tmp_path / "report.yaml"
+    report.write_text("context_origins:\n- path: a:: b\n", encoding="utf-8")
+    with pytest.raises(ValueError) as excinfo:
+        compose.read_context_report(report)
+    msg = str(excinfo.value)
+    assert "line 2" in msg  # 0-indexed mark.line 1 -> displayed 2
+    assert "column 11" in msg  # 0-indexed mark.column 10 -> displayed 11
+    assert "::" in msg
+
+
+def test_report_hint_markless_yaml_error_does_not_crash(tmp_path, monkeypatch):
+    # Pitfall 2: a YAMLError carrying no problem_mark must degrade gracefully
+    # (no AttributeError) and still surface the '::' hint, with no location.
+    report = tmp_path / "report.yaml"
+    report.write_text("context_origins: []\n", encoding="utf-8")
+
+    def _boom(_text):
+        raise yaml.YAMLError("markless boom")
+
+    monkeypatch.setattr(compose.yaml, "safe_load", _boom)
+    with pytest.raises(ValueError) as excinfo:
+        compose.read_context_report(report)
+    msg = str(excinfo.value)
+    assert "::" in msg
+    assert "line" not in msg  # markless -> no " at line ..." suffix
