@@ -366,6 +366,36 @@ source. Ask the TA to point at the best entry-point file(s) before declaring.
 </must_not>
 </constraints>
 
+<output_specification>
+The recorded artifact is the CLI-persisted unit — the editable `unit.md` and the
+recorded signoff act under `.dogen/units/<id>/`, written by the store and committed
+by the seam (this skill writes no file). After the batched declaration ceremony
+(step 6) lands its three transition commits, report inline — ONE summary block
+quoting all three `git: committed <sha7>` lines from the `--json` output, never
+narrated per-verb:
+
+```
+## dogen-plan: <unit-id>
+
+- Declared: <title> → docs/<target> [+ each --also-target for a multi-file unit]
+- Sources: <declared source path(s)>
+- Direction: reference
+- git: committed <sha7> — <declaration>
+- git: committed <sha7> — <outline amendment>
+- git: committed <sha7> — <signoff>
+- Progress: <progress state> (signed off)
+
+Next: /dogen-write — draft the unit.
+```
+
+The `git: committed <sha7>` lines are quoted verbatim from the CLI (never
+fabricated), and `Next: /dogen-write — draft the unit.` is the frozen referral for
+`next_id = draft` (first draft, freshly signed off) from `../README.md`'s routing
+table — reused verbatim, never re-worded. On a mid-batch failure (D-04) the block
+degrades to exactly the `git: committed` lines that landed plus the single
+`dogen signoff <id>` resume command — no rollback.
+</output_specification>
+
 <success_criteria>
 - [ ] Prior art was consulted first (`dogen context ls` artifacts + existing docs
       conventions) and informed the proposed unit shape and sources.
