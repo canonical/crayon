@@ -10,6 +10,32 @@ taxonomy, the SEO/IA/toctree checks, the deterministic Sphinx anchor pre-pass, t
 `F-NN` ids and `file:line` pointers, and the report *file*). dogen reviews a single
 unit, runs no build, and presents findings in-conversation only — never to a file.
 
+## Dimension 0 — the objective check (assessed first)
+
+Before the four dimensions, ask the one question the unit exists to answer: **does
+this draft satisfy the unit's reader problem and every `## Outline / acceptance`
+item?** This is the objective check — it measures the draft against the job it was
+declared to do, not against its own internal polish.
+
+An objective-check failure is **must-fix by definition** — the severity floor. If
+the draft does not solve the reader problem it was declared for, or leaves an
+outline/acceptance item unmet (and unrecorded as a `gap`), that finding is pinned
+to the existing `[must-fix]` priority and may **never** be downgraded to
+`[should-fix]` or `[nit]`, however small the surface edit looks. (This is the
+round-3 finding-G floor: the exact inconsistency a unit existed to remove, still
+present in the draft, is a `[must-fix]` objective-check failure — never a `[nit]`.)
+The floor reuses the existing `[must-fix]` tag; it introduces no fourth priority
+and no bracketed run-status token, so the collision guard (D-03) below still holds.
+
+For a **multi-target unit**, the objective check includes the `structure-fit`
+**Cross-page consistency (multi-file units only)** check below — which quotes the
+diverging lines — so a cross-page inconsistency the unit exists to remove cannot
+pass as satisfied. The two stay coherent: the cross-page rule lives once, in
+structure-fit, and dimension 0 references it (no duplicated or contradictory
+cross-page rule).
+
+Dimension 0 is a `review`-mode gate only; the `record` fast path is unchanged.
+
 ## The four review dimensions
 
 Default to assessing all four. Any dimension may be marked **not assessed** with a
@@ -106,7 +132,10 @@ Two mandatory checks inside this dimension:
   pages is one change: terminology stays consistent across the set, links
   between the set's pages resolve both ways, and a change applied to one page's
   wording lands on every page the outline says it covers — label each finding
-  with its page path.
+  with its page path and **quote the diverging lines** from every page they
+  diverge on (show the offending text verbatim on each page, not just a summary),
+  so the inconsistency dimension 0's objective check flags is pinned to concrete
+  text rather than described in the abstract.
 
 ### clarity
 
