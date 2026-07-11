@@ -111,3 +111,67 @@ def test_remove_staging_refuses_symlink_escaping_root(repo):
         store.remove_staging("u", root=repo)
     # The resolved-path containment guard refuses before any deletion.
     assert (outside / "keep.txt").exists()
+
+
+# --- Task 2: review --note-file stdin parity + exactly-one guard (STAGE-05) ---
+
+
+def test_review_note_file_stdin_records_quote_heavy_note(repo):
+    _seal_a_unit(repo)
+    tricky = 'He said "ship it" now::later then\nsecond line'
+    result = runner.invoke(
+        app,
+        ["review", "u", "--verdict", "accept", "--note-file", "-"],
+        input=tricky,
+    )
+    assert result.exit_code == 0, result.output
+    summary = FilesystemPlanningStore().read_provenance(
+        "u", root=repo
+    ).reviewer_edits[-1].summary
+    # Quotes, the `::` trap, and the newline all round-trip through stdin.
+    assert '"ship it"' in summary
+    assert "::" in summary
+    assert "second line" in summary
+
+
+def test_review_note_file_path_reads_from_file(repo):
+    _seal_a_unit(repo)
+    note_path = repo / "note.txt"
+    note_path.write_text("from a file::yes\n", encoding="utf-8")
+    result = runner.invoke(
+        app,
+        ["review", "u", "--verdict", "accept", "--note-file", str(note_path)],
+    )
+    assert result.exit_code == 0, result.output
+    summary = FilesystemPlanningStore().read_provenance(
+        "u", root=repo
+    ).reviewer_edits[-1].summary
+    assert "from a file::yes" in summary
+
+
+def test_review_both_note_and_note_file_refuses_exit_2(repo):
+    _seal_a_unit(repo)
+    result = runner.invoke(
+        app,
+        ["review", "u", "--verdict", "accept", "--note", "x", "--note-file", "-"],
+        input="y",
+    )
+    assert result.exit_code == 2, result.output
+    assert "exactly one of --note" in _combined(result).lower()
+
+
+def test_review_neither_note_nor_note_file_refuses_exit_2(repo):
+    _seal_a_unit(repo)
+    result = runner.invoke(app, ["review", "u", "--verdict", "accept"])
+    assert result.exit_code == 2, result.output
+    assert "exactly one of --note" in _combined(result).lower()
+
+
+def test_review_note_file_missing_path_refuses_exit_2(repo):
+    _seal_a_unit(repo)
+    result = runner.invoke(
+        app,
+        ["review", "u", "--verdict", "accept", "--note-file", "nope.txt"],
+    )
+    assert result.exit_code == 2, result.output
+    assert "no such note file" in _combined(result).lower()
