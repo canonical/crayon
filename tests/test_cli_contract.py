@@ -177,6 +177,51 @@ def test_draft_target_claimed_reason(repo):
     assert not (repo / "docs" / "u.md").exists()
 
 
+def test_draft_json_carries_identical_draft_false_on_first_draft(repo):
+    # MODEL-03: the draft --json contract now includes an identical_draft boolean;
+    # the first draft of a unit is never identical (no prior generation).
+    store = _declare_unit(repo)
+    _seed_steering(store, repo)
+
+    result = runner.invoke(app, ["draft", "u", "--provider", "mock", "--json"])
+    assert result.exit_code == 0, result.output
+    assert _payload(result)["identical_draft"] is False
+
+
+def test_byte_identical_redraft_reports_identical_and_hints_amend(repo):
+    # D-02/MODEL-03: a byte-identical redraft (same mock inputs) is a true no-op —
+    # --json identical_draft True, the plain output hints --amend-model, and the
+    # unsteered-redraft warning is suppressed (never fires on the no-op path).
+    store = _declare_unit(repo)
+    _seed_steering(store, repo)
+    first = runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    assert first.exit_code == 0, first.output
+
+    second = runner.invoke(app, ["draft", "u", "--provider", "mock", "--json"])
+    assert second.exit_code == 0, second.output
+    assert _payload(second)["identical_draft"] is True
+
+    plain = runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    assert plain.exit_code == 0, plain.output
+    assert "--amend-model" in plain.output
+    assert "no recorded steering" not in plain.output
+
+
+def test_dogen_model_env_records_model_gpt_env_with_flag_origin(repo, monkeypatch):
+    # MODEL-01/02: DOGEN_MODEL resolves at mid precedence and stamps the generation
+    # with model "gpt-env" and the D-03 operator-tier origin "flag" (env folds into
+    # flag), via the CLI resolver path.
+    store = _declare_unit(repo)
+    _seed_steering(store, repo)
+    monkeypatch.setenv("DOGEN_MODEL", "gpt-env")
+
+    result = runner.invoke(app, ["draft", "u", "--provider", "mock", "--json"])
+    assert result.exit_code == 0, result.output
+    generation = store.read_provenance("u", root=repo).generations[-1]
+    assert generation.model == "gpt-env"
+    assert generation.model_origin == "flag"
+
+
 def test_unit_new_clobber_exits_domain_refusal_unit_exists(repo):
     # A clobber without --force is a domain refusal — exit 1, reason="unit_exists"
     # (the unit already exists).

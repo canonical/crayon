@@ -1590,6 +1590,17 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
         else:
             typer.echo(f"Resolved provider for {unit_id}: {provider_name}")
         return
+    # MODEL-01/02: resolve the model the SAME way the provider resolves — flag >
+    # DOGEN_MODEL env > repo config, honest-empty when all absent — and derive the
+    # D-03 vouch-origin. The RESOLVED value is what gets recorded onto the
+    # generation; the raw --model still flows to make_provider (below) as the
+    # provider request. The show-source label and the vouch-origin diverge on env
+    # (label 'env' vs origin 'flag'), so origin uses model_generation_origin.
+    env_model = os.environ.get(_MODEL_ENV)
+    resolved_model = compose.resolve_model_name(model, env_model, config.model or None)
+    model_origin = compose.model_generation_origin(
+        model, env_model, config.model or None, config.model_origin or None
+    )
     draft_text, pages, handoff_path = _resolve_passenger_input(
         unit_id,
         store=store,
@@ -1624,6 +1635,22 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
                     json_output=json_output,
                     provider=provider_name,
                 ) from exc
+        # V5 / T-08-01: a resolved model name (possibly from a hand-edited config
+        # or the DOGEN_MODEL env) must not reach the Dogen-Model: trailer or a
+        # YAML scalar unvalidated — refuse newline/control-char names as bad input
+        # before the record is built.
+        if resolved_model:
+            try:
+                compose.validate_model_name(resolved_model)
+            except ValueError as exc:
+                raise _fail(
+                    unit_id,
+                    message=f"Refusing to draft: invalid model name: {exc}",
+                    reason=None,
+                    code=_EXIT_BAD_INPUT,
+                    json_output=json_output,
+                    provider=provider_name,
+                ) from exc
         seam = _seam(store, root, no_commit=no_commit)
         request = compose.build_draft_request(
             unit_id,
@@ -1631,7 +1658,8 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
             store=store,
             provider=provider_obj,
             provider_name=provider_name,
-            model=model,
+            model=resolved_model,
+            model_origin=model_origin,
             report=context_report,
             handoff_path=handoff_path,
             repo=seam,
@@ -1698,7 +1726,20 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
             "changes are substantive.",
             err=True,
         )
-    if outcome.unsteered_redraft:
+    if outcome.identical_draft:
+        # D-02 / MODEL-03: a byte-identical redraft is a true no-op (no new
+        # generation, no commit). Do NOT warn about an unsteered redraft — the
+        # right way to attach a model to the existing draft is an amend, not a
+        # re-run. (unsteered_redraft is already False on the identical path, but
+        # the note replaces that warning explicitly.)
+        typer.echo(
+            f"Note: redraft of {unit_id!r} was byte-identical to the last "
+            "generation — no new generation or commit was recorded. To stamp a "
+            f"model onto the existing draft, run `dogen draft {unit_id} "
+            "--amend-model <name>`.",
+            err=True,
+        )
+    elif outcome.unsteered_redraft:
         typer.echo(
             f"Warning: re-drafted {unit_id!r} with no recorded steering or "
             "review verdict since the last generation — record corrections "
@@ -1724,6 +1765,7 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
             stale_plan=outcome.stale_plan,
             unsteered_redraft=outcome.unsteered_redraft,
             model_unrecorded=outcome.model_unrecorded,
+            identical_draft=outcome.identical_draft,
             commit=sha,
         )
     else:
