@@ -28,9 +28,9 @@ contract, glossary, and status vocabulary.
 </objective>
 
 <quick_start>
-1. Confirm the target unit id. The unit must already be declared and signed off by
-   dogen-plan; if `dogen draft` refuses with `signoff_required`, route the TA back
-   to dogen-plan.
+1. Confirm the target unit id and check its current state: the unit must already be
+   declared and signed off by dogen-plan; if `dogen draft` refuses with
+   `signoff_required`, route the TA back to dogen-plan.
 2. Read the unit's full state: `dogen unit show "$UNIT" --json --latest` — the plan
    (intent, audience, title, sources, target + any `extra_targets`, and
    `format` — the markup you author in), the seeded steering note, every
