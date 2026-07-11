@@ -321,6 +321,39 @@ def test_audit_passes_on_v2_fixture(tmp_path, capsys):
     assert "drafted and reviewed transitions" in out
 
 
+def test_accept_seal_is_order_insensitive(tmp_path, capsys):
+    """A sealed generation passes even if accept lists its pages in a different order (WR-06).
+
+    Two pages are sealed; ``reviewer_edits[-1].files[]`` lists them in the reverse
+    order of ``generations[-1].files[]``. The seal must still PASS (semantically
+    identical set), not FLAG on ordered list inequality.
+    """
+    _build_v2_fixture(tmp_path, "u")
+    unit_dir = tmp_path / ".dogen" / "units" / "u"
+
+    # Add a second page and recompute both page digests.
+    page_a = tmp_path / "docs" / "u.md"  # already written by the fixture
+    page_b = tmp_path / "docs" / "u2.md"
+    page_b.write_text("# Second page\n\nmore body\n", encoding="utf-8")
+    files_gen = [
+        {"path": "docs/u.md", "sha256": score._sha256(page_a.read_text(encoding="utf-8"))},
+        {"path": "docs/u2.md", "sha256": score._sha256(page_b.read_text(encoding="utf-8"))},
+    ]
+    files_acc = list(reversed(files_gen))  # same set, different order
+
+    prov = yaml.safe_load((unit_dir / "provenance.yaml").read_text(encoding="utf-8"))
+    prov["generations"][-1]["files"] = files_gen
+    prov["reviewer_edits"] = [{"verdict": "accept", "files": files_acc}]
+    (unit_dir / "provenance.yaml").write_text(
+        yaml.safe_dump(prov, sort_keys=False), encoding="utf-8"
+    )
+
+    score.audit_unit("u", root=tmp_path)
+    out = capsys.readouterr().out
+    assert "PASS [seal] accept seals every page digest" in out
+    assert "FLAG [seal]" not in out
+
+
 def test_v2_fixture_leaves_host_repo_clean(tmp_path):
     """The fixture builds in tmp_path only — no host-repo artifacts (T-11-06)."""
     _build_v2_fixture(tmp_path, "u")
