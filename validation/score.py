@@ -48,6 +48,10 @@ IMPL_IDENTIFIERS = [
 ]
 IMPL_PATH_RE = re.compile(r"\binternal/[a-z]")
 
+# rST include directive (VAL-01). Matched on the ORIGINAL draft text exactly once
+# so inserted content is never re-scanned — one level, recursion-guarded (D-11).
+INCLUDE_RE = re.compile(r"^\s*\.\. include:: (.+?)\s*$", flags=re.M)
+
 # Coverage checklist: (label, any-of keyword alternatives, case-insensitive).
 COVERAGE = [
     ("file locations", [".workshop/", ".workshop.yaml"]),
@@ -98,8 +102,55 @@ def _git(*args: str) -> str:
     return done.stdout.strip()
 
 
+def _find_source_root(start: Path) -> Path | None:
+    """Nearest ancestor (inclusive) holding a conf.py — the Sphinx source root (D-08)."""
+    for parent in [start, *start.parents]:
+        if (parent / "conf.py").is_file():
+            return parent
+    return None
+
+
+def expand_includes(text: str, draft_path: Path) -> tuple[str, list[str]]:
+    """One-level, recursion-guarded rST include expansion (D-08/D-11).
+
+    Dir-relative targets resolve under the draft's own directory; a leading-``/``
+    target resolves under the located Sphinx source root (nearest conf.py) and is
+    treated as unresolvable when no source root is found — never read from the
+    filesystem root (D-08 security control). Substitution runs over the ORIGINAL
+    text exactly once via a single ``INCLUDE_RE.sub`` call, so a directive sitting
+    inside an included file is left verbatim and NOT further expanded (D-11).
+    Unresolvable targets are collected in ``flags`` and their directive line is
+    left in place; the caller emits the FLAG line (D-09).
+    """
+    flags: list[str] = []
+    root = _find_source_root(draft_path.parent)
+
+    def _resolve(rel: str) -> Path | None:
+        if rel.startswith("/"):
+            return (root / rel.lstrip("/")) if root else None
+        return draft_path.parent / rel
+
+    def _sub(match: "re.Match[str]") -> str:
+        rel = match.group(1).strip()
+        target = _resolve(rel)
+        if target is not None and target.is_file():
+            return target.read_text(encoding="utf-8")  # inserted, never re-scanned
+        flags.append(rel)
+        return match.group(0)  # leave directive; FLAG emitted by caller
+
+    expanded = INCLUDE_RE.sub(_sub, text)  # ORIGINAL text, one pass = one level
+    return expanded, flags
+
+
 def score_draft(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
+    # Resolve rST includes once, before any scan, so all four scans run on the
+    # expanded page (D-10). Gate to rST-bearing content — MyST-native {include}/
+    # literalinclude stay out of scope this cycle (D-11).
+    if path.suffix == ".rst" or "{eval-rst}" in text:
+        text, unresolved = expand_includes(text, path)
+        for missing_include in unresolved:
+            _flag(False, "cov", f"unresolved include: {missing_include}")
     lower = text.lower()
     print(f"== draft scorecard: {path}")
 
@@ -122,6 +173,10 @@ def score_draft(path: Path) -> None:
           + (f"; missing: {', '.join(missing)}" if missing else ""))
 
     if path.suffix == ".rst":
+        # Strict D-10: structure scans the expanded page too. Title-less include
+        # fragments (a lone subheading, no page title) are a known tolerated edge;
+        # if a spurious [struct] FLAG surfaces on a real re-score, narrow this call
+        # to the pre-expansion text and record the deviation here.
         _score_rst_structure(text)
     else:
         _score_myst_structure(text)
