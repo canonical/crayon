@@ -46,6 +46,13 @@ IMPL_IDENTIFIERS = [
 ]
 IMPL_PATH_RE = re.compile(r"\binternal/[a-z]")
 
+# Legal lifecycle phase tokens the git-log reconstruction may see (D-14). The
+# audit requires only `drafted` and `reviewed`; `model-amended` and the rest are
+# legal-but-not-required, and any token OUTSIDE this set surfaces as a non-failing
+# INFO line (never a FLAG).
+KNOWN_PHASES = {"declared", "signed-off", "steered", "drafted", "reviewed",
+                "model-amended"}
+
 # rST include directive (VAL-01). Matched on the ORIGINAL draft text exactly once
 # so inserted content is never re-scanned — one level, recursion-guarded (D-11).
 INCLUDE_RE = re.compile(r"^\s*\.\. include:: (.+?)\s*$", flags=re.M)
@@ -241,6 +248,14 @@ def audit_unit(unit_id: str, root: Path = ROOT) -> None:
     # safe_load only (never yaml.load) — the sidecar is untrusted on-disk YAML.
     prov = yaml.safe_load((unit_dir / "provenance.yaml").read_text(encoding="utf-8"))
 
+    # v2-only guard (D-12): a v1 sidecar bails cleanly with a FLAG rather than
+    # crashing on the deleted v2 fields (files[]/signoff.commit/source_commit).
+    if prov.get("schema_version") != 2:
+        _flag(False, "schema",
+              f"v1 sidecar (schema_version={prov.get('schema_version')}) — "
+              "not auditable by this kit")
+        return
+
     signoff = prov.get("signoff")
     if _flag(bool(signoff), "sign", "signoff act recorded"):
         plan_hash = signoff.get("plan_hash", "")
@@ -293,6 +308,11 @@ def audit_unit(unit_id: str, root: Path = ROOT) -> None:
     print(f"INFO [git] phase sequence: {' -> '.join(phases) or '(none)'}")
     _flag("drafted" in phases and "reviewed" in phases, "git",
           "git log alone shows the drafted and reviewed transitions")
+    # model-amended (and the rest of KNOWN_PHASES) is legal and never required;
+    # any token outside the known set surfaces as INFO, never a failure (D-14).
+    unknown = [p for p in phases if p not in KNOWN_PHASES]
+    if unknown:
+        print(f"INFO [git] unrecognized phase tokens (not a failure): {unknown}")
 
 
 def main() -> None:
