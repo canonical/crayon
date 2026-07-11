@@ -40,6 +40,15 @@ pass):
   in-process; `passenger` means the host authored and dogen recorded).
 - **model** / **model_version** — the model identity. For a passenger run this is
   host-asserted (or empty/unknown when the harness hid it) — say so.
+- **model_origin** — **who vouched for the model** (the D-03 vocab), read
+  alongside model/provider/mode: `ta` a human vouched (a TA-run
+  `dogen model set --origin ta`, or a `--amend-model` correction); `self` the
+  drafting agent self-asserted it (the frictionless once-per-repo default);
+  `config` a persisted model carrying no recorded origin (e.g. hand-edited);
+  `flag` an operator override (`--model` flag or `DOGEN_MODEL` env at invocation);
+  empty (`""`) when no model was recorded at all (`model_unrecorded`). It tells the
+  reviewer not just *which* model but *on whose authority* it was recorded — a
+  `self`-only model on a deep-internals draft is a weaker signal than a `ta` vouch.
 - **context_origins** — what the writer **actually read**, each entry stamped with
   the commit it was read at (hex, or honestly empty with the explanation in the
   entry's `note` — v1.2). For a passenger run these come from the writer's own
@@ -91,7 +100,7 @@ present it as missing or empty.
 
 Fold these into the `### Provenance` block presented in both modes, ahead of the
 verdict. Keep it to: the signoff line (with plan freshness), the
-provider/mode/model line, the declared-vs-read comparison (with commit stamps), the
+provider/mode/model/origin line, the declared-vs-read comparison (with commit stamps), the
 writer's gaps, the steering-stream count (latest quoted), and the progress state.
 Priority tags belong to the review-mode findings (step 4), never here: the
 run-status reason codes and progress states stay surfaced verbatim (D-03: use the

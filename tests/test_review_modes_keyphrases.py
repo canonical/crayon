@@ -19,6 +19,14 @@ from dogen.core.authoring import RUBRIC_HEURISTIC
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _SKILL = _REPO_ROOT / "skills" / "dogen-review" / "SKILL.md"
 _RUBRIC = _REPO_ROOT / "skills" / "dogen-review" / "references" / "review-rubric.md"
+_PROVENANCE = (
+    _REPO_ROOT / "skills" / "dogen-review" / "references" / "provenance-summary.md"
+)
+
+# The model-provenance surface (MODEL-04): dogen-review must surface model_origin
+# in its provenance summary, and the field map must explain the D-03 vouch vocab.
+_ORIGIN_KEY = "model_origin"
+_ORIGIN_VOCAB = ("`ta`", "`self`", "`config`", "`flag`")
 
 # The review-findings priority axis — the ONLY finding-tag vocabulary.
 _PRIORITIES = ("must-fix", "should-fix", "nit")
@@ -141,3 +149,26 @@ def test_rubric_names_the_canonical_code_rubric_source() -> None:
     """review-rubric.md names the canonical dogen.core.authoring source symbol."""
     rubric = _read(_RUBRIC)
     assert "dogen.core.authoring.REFERENCE_CODE_RUBRIC" in rubric
+
+
+def test_provenance_summary_surfaces_model_origin() -> None:
+    """dogen-review surfaces model_origin + the D-03 vouch vocab (MODEL-04).
+
+    Pins the model-provenance surface so the rewrite cannot silently drop it:
+    ``model_origin`` must appear both in the SKILL.md ``### Provenance`` output
+    block and in the ``provenance-summary.md`` field map, and the field map must
+    explain the D-03 origin vocabulary (``ta``/``self``/``config``/``flag``) so
+    the reviewer reads on whose authority the model was recorded.
+    """
+    skill = _read(_SKILL)
+    provenance = _read(_PROVENANCE)
+    assert _ORIGIN_KEY in skill, (
+        f"{_ORIGIN_KEY} missing from the dogen-review SKILL.md provenance block"
+    )
+    assert _ORIGIN_KEY in provenance, (
+        f"{_ORIGIN_KEY} missing from the provenance-summary.md field map"
+    )
+    for value in _ORIGIN_VOCAB:
+        assert value in provenance, (
+            f"D-03 origin vocab {value} missing from provenance-summary.md"
+        )

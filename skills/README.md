@@ -190,8 +190,9 @@ means `unit.md` changed after its signoff — surface it and suggest re-approvin
 `draft` result means a re-draft ran with no recorded steering or review verdict
 since the last generation — get the correction recorded so the audit trail shows
 what steered the pass. `model_unrecorded: true` on a `draft` result means the
-generation recorded an empty model — the passenger's harness hid it and no
-`--model` was passed; get it recorded (see the model-ask rule in dogen-write).
+generation recorded an empty model — no model in the repo config and neither the
+self-assert nor the TA fallback named one; get it recorded (see the model
+self-assert rule in dogen-write, then `dogen draft … --amend-model`).
 `unapplied_steering: true` on a `review` accept means a correction was recorded
 after the last draft and never drafted against — it was sealed over; only accept
 over it deliberately. `commit` on any state-changing verb is the transition
@@ -276,6 +277,28 @@ no `auto` and no silent capability fallback; `dogen provider show` explains the
 effective resolution and whether the Copilot driver would be viable (diagnostic
 only). Skills never probe the environment — `dogen draft --resolve-only --json` is
 the single branch signal.
+
+## Model selection (persisted + self-asserted, v1.1)
+
+The drafting model is a **persisted repo fact**, not a per-session ask. `dogen
+model show|set <name> [--origin ta|self]` mirrors `provider show|set`, and draft
+resolution is explicit: `--model` flag > `DOGEN_MODEL` env > repo config (`dogen
+model set`) — `model_unrecorded` fires only when all three are absent.
+
+dogen-write **self-asserts first** (D-01): with no model in config it silently
+runs `dogen model set <name> --origin self` **once per repo** and narrates one
+correctable line ("recording model X (self-asserted) — correct me if wrong"); an
+existing config model is used silently (no re-assert, no re-ask); the TA is asked
+only as a fallback when the agent cannot name itself; honest-empty is the last
+resort. A TA correction re-runs `dogen model set <name> --origin ta` (a human
+vouched, so the origin flips to `ta`). A model forgotten on an already-recorded
+generation is patched with `dogen draft <id> --amend-model <name>` — a
+metadata-only `model-amended` commit, never a new generation.
+
+The `model_origin` — `ta` / `self` / `config` / `flag` / empty (D-03: who
+vouched) — rides onto the generation and surfaces in dogen-review's provenance
+summary alongside provider/mode/model, so a reviewer sees on whose authority the
+model was recorded.
 
 ## Installation
 
