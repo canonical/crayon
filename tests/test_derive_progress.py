@@ -1,4 +1,4 @@
-"""Behaviour tests for ``derive_progress`` — the record-only lifecycle rule (PROV-04, D-05).
+"""Tests for ``derive_progress`` — the record-only lifecycle rule (PROV-04, D-05).
 
 ``derive_progress(provenance) -> ProgressState`` computes a unit's lifecycle state
 from the provenance record alone. The count-based rule (D-05):
@@ -141,4 +141,4 @@ def test_stale_progress_ignored(tmp_path) -> None:
 
     # Derivation reads only the record; the divergent on-disk file cannot change it.
     assert derive_progress(prov) is ProgressState.reviewed
-    assert stale_progress.read_text().find("pending") != -1  # the disk file is truly stale
+    assert "pending" in stale_progress.read_text()  # the disk file is truly stale

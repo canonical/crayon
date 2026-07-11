@@ -176,16 +176,14 @@ def test_draft_and_audit_stay_report_only_on_missing_path(tmp_path, capsys):
     assert "FLAG [io]" in out
 
     # And through main(): the draft/audit verbs never exit non-zero.
-    import sys as _sys
-
-    prev = _sys.argv
+    prev = sys.argv
     try:
-        _sys.argv = ["score.py", "draft", str(missing_draft)]
+        sys.argv = ["score.py", "draft", str(missing_draft)]
         score.main()  # returns normally (no SystemExit)
-        _sys.argv = ["score.py", "audit", "does-not-exist", "--root", str(tmp_path)]
+        sys.argv = ["score.py", "audit", "does-not-exist", "--root", str(tmp_path)]
         score.main()  # returns normally (no SystemExit)
     finally:
-        _sys.argv = prev
+        sys.argv = prev
 
 
 # --- VAL-02: the audit reads provenance schema v2 only -----------------------
@@ -289,8 +287,7 @@ def _build_v2_fixture(
             "-q",
             "--allow-empty",
             "-m",
-            f"dogen({unit_id}): {phase}\n\n"
-            f"Dogen-Unit: {unit_id}\nDogen-Phase: {phase}",
+            f"dogen({unit_id}): {phase}\n\nDogen-Unit: {unit_id}\nDogen-Phase: {phase}",
         )
     _git(
         root,
@@ -322,7 +319,7 @@ def test_audit_passes_on_v2_fixture(tmp_path, capsys):
 
 
 def test_accept_seal_is_order_insensitive(tmp_path, capsys):
-    """A sealed generation passes even if accept lists its pages in a different order (WR-06).
+    """Sealed generation passes even when accept lists pages in another order (WR-06).
 
     Two pages are sealed; ``reviewer_edits[-1].files[]`` lists them in the reverse
     order of ``generations[-1].files[]``. The seal must still PASS (semantically
@@ -335,9 +332,11 @@ def test_accept_seal_is_order_insensitive(tmp_path, capsys):
     page_a = tmp_path / "docs" / "u.md"  # already written by the fixture
     page_b = tmp_path / "docs" / "u2.md"
     page_b.write_text("# Second page\n\nmore body\n", encoding="utf-8")
+    sha_a = score._sha256(page_a.read_text(encoding="utf-8"))
+    sha_b = score._sha256(page_b.read_text(encoding="utf-8"))
     files_gen = [
-        {"path": "docs/u.md", "sha256": score._sha256(page_a.read_text(encoding="utf-8"))},
-        {"path": "docs/u2.md", "sha256": score._sha256(page_b.read_text(encoding="utf-8"))},
+        {"path": "docs/u.md", "sha256": sha_a},
+        {"path": "docs/u2.md", "sha256": sha_b},
     ]
     files_acc = list(reversed(files_gen))  # same set, different order
 
@@ -369,8 +368,7 @@ def test_v1_sidecar_clean_flag(tmp_path, capsys):
     score.audit_unit("u", root=tmp_path)
     out = capsys.readouterr().out
     assert (
-        "FLAG [schema] v1 sidecar (schema_version=1) — not auditable by this kit"
-        in out
+        "FLAG [schema] v1 sidecar (schema_version=1) — not auditable by this kit" in out
     )
     # The audit bailed before touching v2-only checks (no gen/seal lines emitted).
     assert "page digest matches on disk" not in out
@@ -417,7 +415,8 @@ def test_main_audit_root_parsing(tmp_path, capsys, monkeypatch):
     """
     _build_v2_fixture(tmp_path, "u")
 
-    monkeypatch.setattr(sys, "argv", ["score.py", "audit", "u", "--root", str(tmp_path)])
+    argv = ["score.py", "audit", "u", "--root", str(tmp_path)]
+    monkeypatch.setattr(sys, "argv", argv)
     score.main()  # returns normally (report-only)
     out = capsys.readouterr().out
     assert "== traceability audit: u" in out
@@ -480,9 +479,7 @@ def test_protocol_session_ish_scan_is_bounded(tmp_path, capsys):
     (tmp_path / "obsession-notes.md").write_text("unrelated file\n", encoding="utf-8")
     (tmp_path / "copilot-session-abcd.md").write_text("copilot\n", encoding="utf-8")
     (tmp_path / "session-ses_0d1b.md").write_text("opencode\n", encoding="utf-8")
-    (tmp_path / "RESULTS.md").write_text(
-        "# r\n\n## claude\n\nok\n", encoding="utf-8"
-    )
+    (tmp_path / "RESULTS.md").write_text("# r\n\n## claude\n\nok\n", encoding="utf-8")
 
     assert score.protocol_check(tmp_path) is False
     out = capsys.readouterr().out
@@ -545,10 +542,7 @@ def test_export_writes_verbatim(tmp_path):
 
     # A payload with indentation, blank lines, tabs and unicode — any
     # transformation (reflow, strip, re-encode) would change the bytes.
-    payload = (
-        "line one\n  indented two\n\nfinal line\n"
-        "tab\tinside\nunicode: café ✓\n"
-    )
+    payload = "line one\n  indented two\n\nfinal line\ntab\tinside\nunicode: café ✓\n"
     src = tmp_path / "raw.txt"
     src.write_text(payload, encoding="utf-8")
 
