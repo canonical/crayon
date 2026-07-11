@@ -1385,12 +1385,20 @@ class DraftOutcome:
         draft whose harness hid its model and was not given ``--model`` (M4,
         R4). A provenance-honesty signal, never a block: the skill should ask
         the TA for the model; honest-empty stays legal when they can't say.
+    identical_draft : bool
+        ``True`` when this redraft produced byte-identical ``files[]`` digests
+        to the previous generation and was therefore a **true no-op** (D-02 /
+        MODEL-03): no generation row was appended, no page was rewritten, and no
+        commit was recorded. The CLI reports it and hints ``--amend-model``
+        instead of firing ``unsteered_redraft`` — the model-stamp path is an
+        amend, never a duplicate generation.
     """
 
     path: Path
     stale_plan: bool
     unsteered_redraft: bool = False
     model_unrecorded: bool = False
+    identical_draft: bool = False
 
 
 async def draft(request: DraftRequest) -> DraftOutcome:
@@ -1549,6 +1557,32 @@ async def _run_draft(
                 "draft pages do not match the unit's target set"
                 + (f"; missing: {', '.join(missing)}" if missing else "")
                 + (f"; undeclared: {', '.join(surplus)}" if surplus else "")
+            )
+        # D-02 / MODEL-03: identical-redraft short-circuit. Build the candidate
+        # digest list exactly as _record_generation does, then compare it against
+        # the previous generation's files with the shared order-agnostic
+        # comparator. On a byte-identical redraft this is a TRUE no-op — return
+        # BEFORE _record_generation / write_provenance / write_draft / write_page
+        # / _commit_transition (WR-03 audit-before-observable ordering: the check
+        # must precede the record, never follow it, or the no-op still grows
+        # generations[]). unsteered_redraft is suppressed: the model-stamp path is
+        # `dogen draft <id> --amend-model`, not a duplicate generation.
+        candidate_files = [
+            _page_digest(unit.sphinx_target, sha=_sha256(result.text)),
+            *(
+                _page_digest(t, sha=_sha256(result.pages[t]))
+                for t in unit.extra_targets
+            ),
+        ]
+        if provenance.generations and same_file_digests(
+            provenance.generations[-1].files, candidate_files
+        ):
+            return DraftOutcome(
+                path=request.root / "docs" / unit.sphinx_target,
+                stale_plan=stale_plan,
+                unsteered_redraft=False,
+                model_unrecorded=False,
+                identical_draft=True,
             )
         # WR-03: make the audit record durable BEFORE the draft is observable.
         # Provenance (the generations[] row) and progress are written first; the
