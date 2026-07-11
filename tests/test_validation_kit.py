@@ -509,6 +509,26 @@ def test_export_writes_verbatim(tmp_path):
     assert from_stdin.read_bytes() == src.read_bytes()
 
 
+def test_export_rejects_unsafe_harness(tmp_path):
+    """export.sh rejects a harness name with unsafe chars before writing (WR-04)."""
+    script = tmp_path / "export.sh"
+    script.write_bytes((ROOT / "validation" / "export.sh").read_bytes())
+    script.chmod(0o755)
+
+    completed = subprocess.run(
+        ["sh", str(script), "../evil", "-"],
+        capture_output=True,
+        text=True,
+        input="payload\n",
+        check=False,
+    )
+    assert completed.returncode != 0
+    assert "invalid harness name" in completed.stderr
+    # Nothing was written under the script's dir.
+    assert not (tmp_path / "SESSION-../evil.md").exists()
+    assert list(tmp_path.glob("SESSION-*.md")) == []
+
+
 # --- VAL-04: sync.sh idempotent one-directional kit mirror ------------------
 #
 # sync.sh copies EXACTLY score.py/rubric.md/export.sh from validation/ into the
