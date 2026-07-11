@@ -526,14 +526,95 @@ class UndeclaredTargetError(ValueError):
     """
 
 
+# Every handoff refusal ends with this sentence so the agent never repeats the
+# round-3 trap (flat-staged pages -> handoff_incomplete -> ``rm -rf`` of its own
+# fresh drafts). The layout is fixed by *moving* files, never by deleting them.
+_HANDOFF_NEVER_DELETE = "move the staged files into place; do not delete them"
+
+# Emitted once (D-01) when the whole-set basename fallback maps a flat handoff.
+_HANDOFF_MAPPED_BY_BASENAME = "handoff staged flat; mapped by basename"
+
+
+def _by_basename(paths: list[str]) -> dict[str, list[str]]:
+    """Group docs-relative paths by their basename (``{basename: [relpath]}``)."""
+    grouped: dict[str, list[str]] = {}
+    for rel in paths:
+        grouped.setdefault(PurePosixPath(rel).name, []).append(rel)
+    return grouped
+
+
+def _handoff_incomplete_message(
+    missing: list[str],
+    *,
+    exp_by_base: dict[str, list[str]],
+    stg_by_base: dict[str, list[str]],
+) -> str:
+    """Build the enumerated, ambiguity-aware ``handoff_incomplete`` message (D-02b).
+
+    Enumerates the exact expected path per missing target and, when the
+    basename fallback was declined for a collision, names the colliding
+    basename(s) on whichever side collided and points at the exact relpaths.
+    Always ends with :data:`_HANDOFF_NEVER_DELETE`.
+    """
+    parts: list[str] = []
+    if missing:
+        parts.append(
+            "the handoff is missing a staged file for declared target(s): "
+            + "; ".join(f"expected: handoff/{t}" for t in missing)
+        )
+    # Declared-side collisions: two targets share a basename (D-02).
+    for base, targets in sorted(exp_by_base.items()):
+        if len(targets) > 1:
+            parts.append(
+                f"{base} is ambiguous across {', '.join(sorted(targets))} — "
+                "stage each page at its exact handoff/<relpath>"
+            )
+    # Staged-side collisions: two staged files share a basename (Pitfall 1).
+    for base, rels in sorted(stg_by_base.items()):
+        if len(rels) > 1:
+            parts.append(
+                f"two staged files share basename {base} "
+                f"({', '.join(sorted(rels))}) — "
+                "stage each page at its exact handoff/<relpath>"
+            )
+    parts.append(_HANDOFF_NEVER_DELETE)
+    return "; ".join(parts)
+
+
+def _undeclared_target_message(surplus: list[str]) -> str:
+    """Build the enumerated ``undeclared_target`` message (D-02b).
+
+    Names each surplus staged file and its move destination, ending with
+    :data:`_HANDOFF_NEVER_DELETE`.
+    """
+    return (
+        "the handoff stages file(s) outside the unit's target set: "
+        + "; ".join(
+            f"{rel} is not a declared target — move it into place or "
+            "--also-target it first"
+            for rel in surplus
+        )
+        + "; "
+        + _HANDOFF_NEVER_DELETE
+    )
+
+
 def read_draft_dir(
     draft_dir: Path, *, primary: str, extras: list[str]
-) -> tuple[str, dict[str, str]]:
+) -> tuple[str, dict[str, str], str | None]:
     """Read a multi-page handoff directory at the compose root (v1.2, D-03).
 
-    Files under ``draft_dir`` map 1:1 by relative path onto the unit's target
-    set (``[primary, *extras]``): every declared page must be staged and no
-    staged file may fall outside the set.
+    Maps the staged files onto the unit's target set (``[primary, *extras]``)
+    with a two-tier, whole-set strategy (STAGE-01, D-01):
+
+    1. **Exact relpath** — every declared page staged at ``handoff/<relpath>``.
+    2. **Basename fallback** — only when exact mapping leaves a declared target
+       unmatched, the *whole* handoff is retried by basename. It applies only
+       when every declared basename is unique AND every staged basename is
+       unique AND the two basename key-sets are equal (uniqueness on BOTH sides,
+       Pitfall 1). On success it emits the ``handoff staged flat; mapped by
+       basename`` note. Any collision or mismatch declines the fallback and
+       falls through to the enumerated refusal (D-02) — never a per-file mix.
 
     Parameters
     ----------
@@ -546,15 +627,17 @@ def read_draft_dir(
 
     Returns
     -------
-    tuple of (str, dict of str to str)
-        The primary page's text and the extras keyed by target path.
+    tuple of (str, dict of str to str, str or None)
+        The primary page's text, the extras keyed by target path, and an
+        optional note (the ``mapped by basename`` notice, else ``None``).
 
     Raises
     ------
     ValueError
         If ``draft_dir`` is not a directory.
     HandoffIncompleteError
-        If a declared target has no staged file.
+        If a declared target has no staged file, or an ambiguous flat handoff
+        declines the basename fallback (D-02).
     UndeclaredTargetError
         If a staged file matches no declared target.
     """
@@ -569,18 +652,32 @@ def read_draft_dir(
     expected = [primary, *extras]
     missing = [t for t in expected if t not in staged]
     if missing:
+        # Tier 2 (D-01): retry the WHOLE handoff by basename. Accept only a
+        # bijective, unambiguous mapping — uniqueness on both sides plus equal
+        # key-sets; anything else declines to the enumerated refusal (D-02).
+        exp_by_base = _by_basename(expected)
+        stg_by_base = _by_basename(list(staged))
+        declared_unique = all(len(v) == 1 for v in exp_by_base.values())
+        staged_unique = all(len(v) == 1 for v in stg_by_base.values())
+        key_sets_align = set(exp_by_base) == set(stg_by_base)
+        if declared_unique and staged_unique and key_sets_align:
+            remap = {
+                exp_by_base[b][0]: staged[stg_by_base[b][0]] for b in exp_by_base
+            }
+            text = remap[primary].read_text(encoding="utf-8")
+            pages = {t: remap[t].read_text(encoding="utf-8") for t in extras}
+            return text, pages, _HANDOFF_MAPPED_BY_BASENAME
         raise HandoffIncompleteError(
-            "the handoff stages no file for declared target(s): " + ", ".join(missing)
+            _handoff_incomplete_message(
+                missing, exp_by_base=exp_by_base, stg_by_base=stg_by_base
+            )
         )
     surplus = sorted(set(staged) - set(expected))
     if surplus:
-        raise UndeclaredTargetError(
-            "the handoff stages file(s) outside the unit's target set: "
-            + ", ".join(surplus)
-        )
+        raise UndeclaredTargetError(_undeclared_target_message(surplus))
     text = staged[primary].read_text(encoding="utf-8")
     pages = {t: staged[t].read_text(encoding="utf-8") for t in extras}
-    return text, pages
+    return text, pages, None
 
 
 def read_context_report(report_file: Path) -> ContextReport:
