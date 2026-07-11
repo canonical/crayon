@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
+from dogen.app import compose
 from dogen.adapters.planning_fs import FilesystemPlanningStore
 from dogen.cli.main import app
 
@@ -234,3 +235,137 @@ def test_fix_verdict_does_not_touch_staging(repo):
     # Only a sealing accept cleans; fix reopens and must keep the scratch.
     assert staging.is_dir()
     assert "staging:" not in result.output
+
+
+# --- Plan 09-02 Task 1: read_draft_dir two-tier basename fallback (STAGE-01/02)
+
+
+def _write(base: Path, rel: str, text: str = "x\n") -> None:
+    """Write ``text`` at ``base/rel``, creating parents."""
+    path = base / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def test_exact_relpath_handoff_returns_no_note(tmp_path):
+    # Tier 1 (mirrored) is unchanged: exact-relpath mapping, note is None.
+    base = tmp_path / "handoff"
+    base.mkdir()
+    _write(base, "guide/a.md", "# A\nprimary\n")
+    _write(base, "guide/b.md", "# B\nextra one\n")
+    _write(base, "reference/c.rst", "C\n=\nextra two\n")
+    text, pages, note = compose.read_draft_dir(
+        base, primary="guide/a.md", extras=["guide/b.md", "reference/c.rst"]
+    )
+    assert "primary" in text
+    assert "extra one" in pages["guide/b.md"]
+    assert "extra two" in pages["reference/c.rst"]
+    assert note is None
+
+
+def test_flat_handoff_maps_by_basename_unit(tmp_path):
+    # Tier 2 (STAGE-01, D-01): a flat handoff with unique basenames maps and
+    # emits the note; the staged files are read, never deleted.
+    base = tmp_path / "handoff"
+    base.mkdir()
+    _write(base, "a.md", "# A\nprimary\n")
+    _write(base, "b.md", "# B\nextra one\n")
+    _write(base, "c.rst", "C\n=\nextra two\n")
+    text, pages, note = compose.read_draft_dir(
+        base, primary="guide/a.md", extras=["guide/b.md", "reference/c.rst"]
+    )
+    assert "primary" in text
+    assert "extra one" in pages["guide/b.md"]
+    assert "extra two" in pages["reference/c.rst"]
+    assert note == "handoff staged flat; mapped by basename"
+    # never-delete: the fallback only reads the staged files.
+    assert (base / "a.md").exists()
+    assert (base / "b.md").exists()
+    assert (base / "c.rst").exists()
+
+
+def test_partial_mirror_flat_retry_maps_whole_set_by_basename(tmp_path):
+    # D-01: when exact mapping leaves ANY target unmatched, the WHOLE handoff
+    # is retried by basename (no per-file mixing) — a half-mirrored/half-flat
+    # handoff with unique basenames still maps and emits the note.
+    base = tmp_path / "handoff"
+    base.mkdir()
+    _write(base, "guide/a.md", "# A\nprimary\n")  # mirrored
+    _write(base, "b.md", "# B\nextra one\n")  # flat
+    _write(base, "c.rst", "C\n=\nextra two\n")  # flat
+    text, pages, note = compose.read_draft_dir(
+        base, primary="guide/a.md", extras=["guide/b.md", "reference/c.rst"]
+    )
+    assert "primary" in text
+    assert "extra one" in pages["guide/b.md"]
+    assert "extra two" in pages["reference/c.rst"]
+    assert note == "handoff staged flat; mapped by basename"
+
+
+def test_ambiguous_basename_declared_side_refuses(tmp_path):
+    # D-02: two declared targets share a basename -> fallback does NOT apply;
+    # falls through to handoff_incomplete naming the colliding basename.
+    base = tmp_path / "handoff"
+    base.mkdir()
+    _write(base, "index.rst", "x\n")
+    with pytest.raises(compose.HandoffIncompleteError) as excinfo:
+        compose.read_draft_dir(
+            base, primary="guide/index.rst", extras=["reference/index.rst"]
+        )
+    msg = str(excinfo.value)
+    assert "index.rst" in msg
+    assert "guide/index.rst" in msg and "reference/index.rst" in msg
+    assert msg.endswith("move the staged files into place; do not delete them")
+
+
+def test_ambiguous_basename_staged_side_refuses(tmp_path):
+    # D-02 / Pitfall 1: two staged files share a basename -> refuse (uniqueness
+    # required on BOTH sides), naming the colliding basename.
+    base = tmp_path / "handoff"
+    base.mkdir()
+    _write(base, "a.md")
+    _write(base, "b.md")
+    _write(base, "sub1/c.rst")
+    _write(base, "sub2/c.rst")
+    with pytest.raises(compose.HandoffIncompleteError) as excinfo:
+        compose.read_draft_dir(
+            base, primary="guide/a.md", extras=["guide/b.md", "reference/c.rst"]
+        )
+    msg = str(excinfo.value)
+    assert "c.rst" in msg
+    assert "sub1/c.rst" in msg and "sub2/c.rst" in msg
+    assert msg.endswith("move the staged files into place; do not delete them")
+
+
+def test_handoff_error_enumerates_expected_paths(tmp_path):
+    # STAGE-02, D-02b: a genuinely incomplete handoff enumerates the exact
+    # expected path per missing target and ends with the never-delete sentence.
+    base = tmp_path / "handoff"
+    base.mkdir()
+    _write(base, "guide/a.md", "# A\n")  # b + c missing
+    with pytest.raises(compose.HandoffIncompleteError) as excinfo:
+        compose.read_draft_dir(
+            base, primary="guide/a.md", extras=["guide/b.md", "reference/c.rst"]
+        )
+    msg = str(excinfo.value)
+    assert "expected: handoff/guide/b.md" in msg
+    assert "expected: handoff/reference/c.rst" in msg
+    assert msg.endswith("move the staged files into place; do not delete them")
+
+
+def test_handoff_error_undeclared_names_move_destination(tmp_path):
+    # STAGE-02, D-02b: a complete-plus-surplus handoff refuses undeclared_target,
+    # naming the stray file and ending with the never-delete sentence.
+    base = tmp_path / "handoff"
+    base.mkdir()
+    _write(base, "guide/a.md", "# A\n")
+    _write(base, "guide/b.md", "# B\n")
+    _write(base, "reference/c.rst", "C\n=\n")
+    _write(base, "rogue.md", "# R\n")
+    with pytest.raises(compose.UndeclaredTargetError) as excinfo:
+        compose.read_draft_dir(
+            base, primary="guide/a.md", extras=["guide/b.md", "reference/c.rst"]
+        )
+    msg = str(excinfo.value)
+    assert "rogue.md" in msg
+    assert msg.endswith("move the staged files into place; do not delete them")
