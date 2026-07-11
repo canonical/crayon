@@ -709,3 +709,109 @@ def test_amend_on_sealed_unit_leaves_seal_and_progress_untouched(repo):
     assert derive_progress(prov_after) == progress_before
     # The model was still stamped despite the seal (a pure metadata fill).
     assert prov_after.generations[-1].model == "gpt-4o"
+
+
+# --------------------------------------------------------------------------- #
+# Task 2 (Plan 03) — draft --amend-model CLI branch: exclusive metadata mode +
+# the model_already_set refusal (-k amend / -k already_set)
+# --------------------------------------------------------------------------- #
+
+
+def test_cli_amend_empty_slot_exits_zero_and_emits_origin_and_commit(repo):
+    # -k amend: `dogen draft <id> --amend-model X` on an empty-model generation
+    # exits 0, records one model-amended commit, and --json carries model_origin.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    seam = compose.make_repo_seam(enabled=True)
+    _declare(store, repo, unit="u", repo=seam)
+    _signoff(store, repo, clock, unit="u", repo=seam)
+    _draft_empty_model(store, repo, clock, unit="u", repo=seam)
+
+    commits_before = _commit_count(repo)
+    result = runner.invoke(app, ["draft", "u", "--amend-model", "gpt-4o", "--json"])
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["model"] == "gpt-4o"
+    assert payload["model_origin"] == "ta"  # default vouch origin (D-04)
+    assert payload["commit"]  # a model-amended commit landed
+    assert _commit_count(repo) == commits_before + 1
+    assert store.read_provenance("u", root=repo).generations[-1].model == "gpt-4o"
+
+
+def test_cli_amend_origin_self_threads_through(repo):
+    # -k amend: --origin self reaches the recorded generation (agent self-fix).
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    _declare(store, repo, unit="u")
+    _signoff(store, repo, clock, unit="u")
+    _draft_empty_model(store, repo, clock, unit="u")
+
+    result = runner.invoke(
+        app,
+        ["draft", "u", "--amend-model", "claude-x", "--origin", "self", "--json"],
+    )
+    assert result.exit_code == 0, result.output
+    assert _payload(result)["model_origin"] == "self"
+    assert store.read_provenance("u", root=repo).generations[-1].model_origin == "self"
+
+
+def test_cli_amend_set_slot_exits_domain_refusal_naming_model_and_origin(repo):
+    # -k already_set: amending a set-model generation exits 1 (domain refusal)
+    # with --json reason model_already_set; the plain message names model+origin.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    _declare(store, repo, unit="u")
+    _signoff(store, repo, clock, unit="u")
+    asyncio.run(
+        _draft(store, repo, clock, unit="u", model="gpt-set", model_origin="flag")
+    )
+
+    result = runner.invoke(app, ["draft", "u", "--amend-model", "gpt-x", "--json"])
+    assert result.exit_code == 1, result.output
+    assert _payload(result)["reason"] == "model_already_set"
+
+    plain = runner.invoke(app, ["draft", "u", "--amend-model", "gpt-x"])
+    assert plain.exit_code == 1, plain.output
+    assert "gpt-set" in plain.output  # names the current model
+    assert "flag" in plain.output  # names its origin
+    # The slot is unchanged (no silent overwrite).
+    assert store.read_provenance("u", root=repo).generations[-1].model == "gpt-set"
+
+
+@pytest.mark.parametrize(
+    "conflicting",
+    [
+        ["--draft-file", "handoff.md"],
+        ["--draft-dir", "staged"],
+        ["--report", "report.yaml"],
+        ["--model", "gpt-z"],
+    ],
+)
+def test_cli_amend_exclusive_mode_refuses_draft_inputs(repo, conflicting):
+    # -k amend / Open Q2: --amend-model combined with any draft-producing input
+    # exits 2 (bad input) and performs NO amend (the slot stays empty).
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    _declare(store, repo, unit="u")
+    _signoff(store, repo, clock, unit="u")
+    _draft_empty_model(store, repo, clock, unit="u")
+
+    result = runner.invoke(
+        app, ["draft", "u", "--amend-model", "gpt-4o", *conflicting]
+    )
+    assert result.exit_code == 2, result.output
+    assert store.read_provenance("u", root=repo).generations[-1].model == ""
+
+
+def test_cli_amend_rejects_control_char_name_as_bad_input(repo):
+    # -k amend: a newline in the amend name is refused (exit 2) before it can
+    # reach the Dogen-Model: trailer or the provenance YAML scalar (V5/T-08-01).
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    _declare(store, repo, unit="u")
+    _signoff(store, repo, clock, unit="u")
+    _draft_empty_model(store, repo, clock, unit="u")
+
+    result = runner.invoke(app, ["draft", "u", "--amend-model", "bad\nname"])
+    assert result.exit_code == 2, result.output
+    assert store.read_provenance("u", root=repo).generations[-1].model == ""

@@ -67,6 +67,7 @@ from dogen.core.models import (
 )
 from dogen.core.orchestrator import (
     AlreadyAcceptedError,
+    ModelAlreadySetError,
     NotDraftedError,
     OwnerRef,
     ResolvedOwners,
@@ -76,6 +77,7 @@ from dogen.core.orchestrator import (
 )
 from dogen.core.orchestrator import add_context_artifact as context_add_use_case
 from dogen.core.orchestrator import add_steering_note as steer_use_case
+from dogen.core.orchestrator import amend_model as amend_model_use_case
 from dogen.core.orchestrator import declare as declare_use_case
 from dogen.core.orchestrator import draft as draft_use_case
 from dogen.core.orchestrator import edit_unit as edit_use_case
@@ -141,6 +143,10 @@ _REASON_BAD_TARGET = "bad_target"
 #: Emitted by ``unit new``/``unit edit`` when a docs target already belongs
 #: to another unit's page set (v1.2).
 _REASON_TARGET_CLAIMED = "target_claimed"
+#: Emitted by ``draft --amend-model`` when the latest generation already records
+#: a non-empty model — amend fills an empty slot and never overwrites a vouched
+#: one, so the refusal names the current model + origin (MODEL-02 / D-04).
+_REASON_MODEL_ALREADY_SET = "model_already_set"
 #: Emitted by ``draft --draft-dir`` when a declared target has no staged file.
 _REASON_HANDOFF_INCOMPLETE = "handoff_incomplete"
 #: Emitted by ``draft --draft-dir`` when a staged file matches no declared
@@ -1481,6 +1487,140 @@ def steer(
         typer.echo(f"Appended steering note for {unit_id}")
 
 
+def _amend_model_branch(  # noqa: PLR0913
+    unit_id: str,
+    *,
+    store: PlanningStore,
+    root: Path,
+    amend_model: str,
+    origin: _ModelOrigin,
+    draft_file: Path | None,
+    draft_dir: Path | None,
+    report: Path | None,
+    model: str | None,
+    no_commit: bool,
+    json_output: bool,
+) -> None:
+    """Run the exclusive ``--amend-model`` metadata patch (MODEL-02 / D-04).
+
+    The ``dogen draft <id> --amend-model <name>`` branch: a metadata-only stamp
+    of ``name`` onto the latest generation's empty model slot, recording one
+    ``model-amended`` commit and never a new generation. It runs on its own CLI
+    path (the draft use-case is never invoked). Open Q2: it is an **exclusive
+    mode** — combining it with any draft-producing input
+    (``--draft-file``/``--draft-dir``/``--report``/``--model``) is arg confusion
+    (T-08-04) and refuses as bad input before any side effect. The resolved name
+    is validated (V5 / T-08-01) before it reaches the trailer/YAML.
+    :class:`ModelAlreadySetError` maps to ``model_already_set`` (a domain
+    refusal) **before** the broad ``ValueError`` clause (Pitfall 3), so a set
+    slot is reported distinctly, naming the current model + origin.
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose latest generation is amended.
+    store : PlanningStore
+        The injected planning-directory store.
+    root : Path
+        The repo root the store reads/writes beneath.
+    amend_model : str
+        The model name to stamp onto the empty slot.
+    origin : _ModelOrigin
+        The vouch origin (``ta`` default / ``self``) recorded with the model.
+    draft_file : Path or None
+        A draft-producing input; its presence triggers the exclusive-mode refusal.
+    draft_dir : Path or None
+        A draft-producing input; its presence triggers the exclusive-mode refusal.
+    report : Path or None
+        A draft-producing input; its presence triggers the exclusive-mode refusal.
+    model : str or None
+        A draft-producing input; its presence triggers the exclusive-mode refusal.
+    no_commit : bool
+        Skip the transition commit for this invocation.
+    json_output : bool
+        Emit the structured JSON object instead of a plain line.
+    """
+    # Open Q2: any draft-producing input alongside --amend-model is arg confusion
+    # (T-08-04). Refuse as bad input before any side effect — the amend branch
+    # never runs the draft use-case.
+    conflicts = [
+        name
+        for name, value in (
+            ("--draft-file", draft_file),
+            ("--draft-dir", draft_dir),
+            ("--report", report),
+            ("--model", model),
+        )
+        if value is not None
+    ]
+    if conflicts:
+        raise _fail(
+            unit_id,
+            message=(
+                "Refusing to amend: --amend-model is an exclusive mode and "
+                f"cannot be combined with {', '.join(conflicts)}."
+            ),
+            reason=None,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        )
+    # V5 / T-08-01: validate the name before it reaches a Dogen-Model: trailer or
+    # a YAML scalar (refuse newline/control-char names as bad input).
+    try:
+        compose.validate_model_name(amend_model)
+    except ValueError as exc:
+        raise _fail(
+            unit_id,
+            message=f"Refusing to amend: invalid model name: {exc}",
+            reason=None,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        ) from exc
+    seam = _seam(store, root, no_commit=no_commit)
+    try:
+        amend_model_use_case(
+            store,
+            unit_id,
+            name=amend_model,
+            origin=origin.value,
+            root=root,
+            repo=seam,
+        )
+    except ModelAlreadySetError as exc:
+        # Pitfall 3: the specific domain refusal MUST precede the broad
+        # (FileNotFoundError, ValueError) clause — ModelAlreadySetError subclasses
+        # ValueError, so ordering it first keeps the model_already_set reason from
+        # collapsing into a generic bad-input refusal.
+        raise _fail(
+            unit_id,
+            message=f"Refusing to amend: {exc}",
+            reason=_REASON_MODEL_ALREADY_SET,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
+    except (FileNotFoundError, ValueError) as exc:
+        raise _fail(
+            unit_id,
+            message=f"Cannot amend {unit_id!r}: {exc}",
+            reason=_REASON_UNIT_EXISTS,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        ) from exc
+    sha = _report_git(seam, no_commit=no_commit)
+    if json_output:
+        _emit_json(
+            unit=unit_id,
+            model=amend_model,
+            model_origin=origin.value,
+            commit=sha,
+        )
+    else:
+        typer.echo(
+            f"Amended {unit_id}: recorded model {amend_model} "
+            f"(origin {origin.value})"
+        )
+
+
 @app.command("draft")
 def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
     unit_id: Annotated[str, typer.Argument(help="Unit to draft.")],
@@ -1529,6 +1669,24 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
             help="Host-asserted model version, recorded verbatim (passenger).",
         ),
     ] = None,
+    amend_model: Annotated[
+        str | None,
+        typer.Option(
+            "--amend-model",
+            help="Metadata-only: stamp a model onto the latest generation's "
+            "EMPTY model slot and record one model-amended commit — never a new "
+            "generation (MODEL-02/D-04). Exclusive: cannot be combined with "
+            "--draft-file/--draft-dir/--report/--model.",
+        ),
+    ] = None,
+    origin: Annotated[
+        _ModelOrigin,
+        typer.Option(
+            "--origin",
+            help="Vouch origin stamped by --amend-model: ta (a human operator "
+            "correction, the default) or self (an agent self-correction).",
+        ),
+    ] = _ModelOrigin.ta,
     no_commit: _NoCommit = False,
     json_output: _JsonOutput = False,
 ) -> None:
@@ -1563,6 +1721,12 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
         The drafting model to request; ``None`` leaves the provider default.
     model_version : str or None
         The host-asserted model version, recorded verbatim (passenger only).
+    amend_model : str or None
+        The metadata-only model to stamp onto the latest generation's empty
+        model slot (MODEL-02 / D-04). An exclusive mode: when set it never runs
+        the draft use-case and refuses any draft-producing input.
+    origin : _ModelOrigin
+        The vouch origin stamped by ``--amend-model`` (``ta`` default / ``self``).
     no_commit : bool
         Skip the transition commit for this invocation.
     json_output : bool
@@ -1571,6 +1735,21 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
     store = compose.default_store()
     root = Path.cwd()
     config, _ = compose.repo_config(store, root=root)
+    if amend_model is not None:
+        _amend_model_branch(
+            unit_id,
+            store=store,
+            root=root,
+            amend_model=amend_model,
+            origin=origin,
+            draft_file=draft_file,
+            draft_dir=draft_dir,
+            report=report,
+            model=model,
+            no_commit=no_commit,
+            json_output=json_output,
+        )
+        return
     try:
         provider_name = compose.resolve_provider_name(
             provider, os.environ.get(_PROVIDER_ENV), config.provider
