@@ -175,3 +175,62 @@ def test_review_note_file_missing_path_refuses_exit_2(repo):
     )
     assert result.exit_code == 2, result.output
     assert "no such note file" in _combined(result).lower()
+
+
+# --- Task 3: accept-branch staging cleanup + --keep-staging (PROV-05) ---------
+
+
+def test_accept_cleans_staging_and_narrates(repo):
+    _seal_a_unit(repo)
+    staging = _make_staging(repo)
+    assert staging.is_dir()
+    result = runner.invoke(
+        app, ["review", "u", "--verdict", "accept", "--note", "ship it"]
+    )
+    assert result.exit_code == 0, result.output
+    assert "staging: removed .dogen/staging/u/" in result.output
+    assert not staging.exists()
+
+
+def test_keep_staging_preserves_dir_and_narrates(repo):
+    _seal_a_unit(repo)
+    staging = _make_staging(repo)
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            "u",
+            "--verdict",
+            "accept",
+            "--note",
+            "ship it",
+            "--keep-staging",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "staging: kept (--keep-staging)" in result.output
+    assert staging.is_dir()
+
+
+def test_accept_with_absent_staging_is_silent_noop(repo):
+    _seal_a_unit(repo)
+    assert not (repo / ".dogen" / "staging" / "u").exists()
+    result = runner.invoke(
+        app, ["review", "u", "--verdict", "accept", "--note", "ship it"]
+    )
+    assert result.exit_code == 0, result.output
+    # Removal returned False (nothing to clean) -> no narration line, no error.
+    assert "staging: removed" not in result.output
+    assert "staging: kept" not in result.output
+
+
+def test_fix_verdict_does_not_touch_staging(repo):
+    _seal_a_unit(repo)
+    staging = _make_staging(repo)
+    result = runner.invoke(
+        app, ["review", "u", "--verdict", "fix", "--note", "tighten the intro"]
+    )
+    assert result.exit_code == 0, result.output
+    # Only a sealing accept cleans; fix reopens and must keep the scratch.
+    assert staging.is_dir()
+    assert "staging:" not in result.output
