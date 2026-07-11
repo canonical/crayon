@@ -387,6 +387,33 @@ def test_protocol_catches_round3_names(tmp_path, capsys, monkeypatch):
     assert exc.value.code != 0
 
 
+def test_protocol_session_ish_scan_is_bounded(tmp_path, capsys):
+    """The session-ish sibling scan is word-bounded, not a raw substring (WR-01).
+
+    A filename that merely *contains* the letters "session" (``obsession-notes.md``)
+    is NOT swept into the naming gate, while the round-3 offender shapes
+    (``copilot-session-<uuid>.md`` and leading-lowercase ``session-ses_0d1b.md``)
+    still FLAG. A conformant ``SESSION-<name>.md`` remains conformant.
+    """
+    (tmp_path / "SESSION-claude.md").write_text("claude transcript\n", encoding="utf-8")
+    (tmp_path / "obsession-notes.md").write_text("unrelated file\n", encoding="utf-8")
+    (tmp_path / "copilot-session-abcd.md").write_text("copilot\n", encoding="utf-8")
+    (tmp_path / "session-ses_0d1b.md").write_text("opencode\n", encoding="utf-8")
+    (tmp_path / "RESULTS.md").write_text(
+        "# r\n\n## claude\n\nok\n", encoding="utf-8"
+    )
+
+    assert score.protocol_check(tmp_path) is False
+    out = capsys.readouterr().out
+    # Incidental substring is not flagged.
+    assert "obsession-notes.md" not in out
+    # Genuine offenders still flag.
+    assert "FLAG [name] non-conformant session file: copilot-session-abcd.md" in out
+    assert "FLAG [name] non-conformant session file: session-ses_0d1b.md" in out
+    # The conformant SESSION- file is never named as a violation.
+    assert "non-conformant session file: SESSION-claude.md" not in out
+
+
 def test_protocol_requires_results_heading(tmp_path, capsys, monkeypatch):
     """Each discovered leg needs a markdown heading in RESULTS.md (D-06).
 
