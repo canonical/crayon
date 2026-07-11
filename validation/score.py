@@ -323,8 +323,11 @@ def audit_unit(unit_id: str, root: Path = ROOT) -> None:
         # v2: files[] is the sole digest authority (PROV-01). Verify EVERY page
         # of the latest generation hashes to its recorded digest on disk (D-12).
         for f in (last.get("files") or []):
-            page = root / f.get("path", "")
-            ok = (page.is_file()
+            # A null/missing path (`path: null`, hand-edited/upstream malformation)
+            # is a digest-mismatch FLAG, not a `root / None` TypeError crash (WR-05).
+            rel = f.get("path") or ""
+            page = root / rel
+            ok = (bool(rel) and page.is_file()
                   and _sha256(page.read_text(encoding="utf-8")) == f.get("sha256"))
             _flag(ok, "gen", f"page digest matches on disk: {f.get('path')}")
 
