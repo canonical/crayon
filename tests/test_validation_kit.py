@@ -407,6 +407,29 @@ def test_model_amended_is_legal(tmp_path, capsys):
     assert unknown_info in out
 
 
+def test_main_audit_root_parsing(tmp_path, capsys, monkeypatch):
+    """main() parses `audit <unit> --root <repo>` and stays report-only (WR-07).
+
+    * a well-formed `audit u --root <tmp>` drives audit_unit against the retargeted
+      root and exits 0 (no SystemExit), printing the audit scorecard;
+    * a dangling `--root` with no following value falls through to the usage/doc
+      fallback without crashing and without exiting non-zero.
+    """
+    _build_v2_fixture(tmp_path, "u")
+
+    monkeypatch.setattr(sys, "argv", ["score.py", "audit", "u", "--root", str(tmp_path)])
+    score.main()  # returns normally (report-only)
+    out = capsys.readouterr().out
+    assert "== traceability audit: u" in out
+    assert "accept seals every page digest" in out
+
+    # Dangling --root (no value) — falls through to the doc fallback, no crash.
+    monkeypatch.setattr(sys, "argv", ["score.py", "audit", "u", "--root"])
+    score.main()  # returns normally (no SystemExit)
+    out = capsys.readouterr().out
+    assert "== traceability audit" not in out  # audit_unit was NOT invoked
+
+
 # --- VAL-03: the `protocol` conformance gate --------------------------------
 #
 # * `protocol` is the ONE verb whose exit code is load-bearing — it exits
