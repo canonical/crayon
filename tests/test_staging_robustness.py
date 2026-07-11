@@ -9,6 +9,7 @@ is shared by the later Phase-9 plans).
 """
 
 import contextlib
+import json
 import subprocess
 from pathlib import Path
 
@@ -596,6 +597,75 @@ def test_report_hint_markless_yaml_error_does_not_crash(tmp_path, monkeypatch):
     msg = str(excinfo.value)
     assert "::" in msg
     assert "line" not in msg  # markless -> no " at line ..." suffix
+
+
+def test_report_lenient_list_shaped_refuses_value_error(tmp_path):
+    # CR-02: bytes that are VALID YAML but resolve to a list are not a mapping.
+    # The old code did ContextReport(**list) -> uncaught TypeError (NOT caught
+    # by the CLI's except (OSError, ValueError)); it must now be a clean
+    # ValueError on the documented bad_report path.
+    report = tmp_path / "report.yaml"
+    report.write_text("- a\n- b\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="must be a YAML/JSON mapping"):
+        compose.read_context_report(report)
+
+
+def test_report_lenient_scalar_shaped_refuses_value_error(tmp_path):
+    # CR-02: a bare scalar likewise resolves to a non-mapping and must refuse as
+    # a ValueError rather than a TypeError.
+    report = tmp_path / "report.yaml"
+    report.write_text("just a bare string\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="must be a YAML/JSON mapping"):
+        compose.read_context_report(report)
+
+
+def test_report_lenient_json_list_shaped_refuses_value_error(tmp_path):
+    # CR-02: the JSON-fallback arm reaches the same construction, so a JSON list
+    # that is not valid YAML (tab-separated) must also refuse as a ValueError.
+    report = tmp_path / "report.json"
+    report.write_text('[\t"a",\t"b"]', encoding="utf-8")
+    # sanity: YAML-invalid so the json.loads fallback is what produces the list.
+    with pytest.raises(yaml.YAMLError):
+        yaml.safe_load(report.read_text(encoding="utf-8"))
+    with pytest.raises(ValueError, match="must be a YAML/JSON mapping"):
+        compose.read_context_report(report)
+
+
+def _json_object_line(result) -> dict:
+    """Return the first stdout/stderr line that parses as a JSON object/array."""
+    for line in _combined(result).splitlines():
+        stripped = line.strip()
+        if stripped.startswith("{") or stripped.startswith("["):
+            return json.loads(stripped)
+    raise AssertionError(f"no JSON line in output: {_combined(result)!r}")
+
+
+def test_draft_with_list_shaped_report_maps_to_bad_report_json(repo):
+    # CR-02 end-to-end: a non-mapping --report must yield a parseable JSON object
+    # with reason=bad_report (D-10 stable reason), NOT a Rich traceback. This is
+    # the exact reproduction from the review (`- a\n- b\n`).
+    _seal_a_unit(repo)  # declare -> signoff -> draft(mock); unit exists
+    draft = repo / "draft.md"
+    draft.write_text("# redraft\n\nbody\n", encoding="utf-8")
+    bad = repo / "bad.yaml"
+    bad.write_text("- a\n- b\n", encoding="utf-8")
+    result = runner.invoke(
+        app,
+        [
+            "draft",
+            "u",
+            "--provider",
+            "host-harness",
+            "--draft-file",
+            str(draft),
+            "--report",
+            str(bad),
+            "--json",
+        ],
+    )
+    assert result.exit_code != 0, result.output
+    assert "Traceback" not in _combined(result)
+    assert _json_object_line(result)["reason"] == "bad_report"
 
 
 # --- Plan 09-03 Task 2: report template skeleton (STAGE-04, D-05/D-06) ---------

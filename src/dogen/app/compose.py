@@ -738,6 +738,17 @@ def read_context_report(report_file: Path) -> ContextReport:
                 "Hint: quote any scalar containing '::' "
                 '(e.g. "a::b"), or YAML reads it as a mapping value.'
             ) from exc
+    # CR-02: valid YAML/JSON that resolves to a non-mapping (a list or scalar)
+    # would make ``ContextReport(**data)`` raise ``TypeError`` — which the CLI's
+    # ``except (OSError, ValueError)`` does NOT catch, so it escaped as an
+    # uncaught traceback and broke the D-10 ``reason=bad_report`` contract.
+    # Guarantee a mapping first so the failure stays a ValueError on the
+    # documented path (both the YAML and JSON-fallback arms reach here).
+    if not isinstance(data, dict):
+        raise ValueError(
+            "report must be a YAML/JSON mapping "
+            f"(got {type(data).__name__}); see `dogen report template`"
+        )
     return ContextReport(**data)
 
 
