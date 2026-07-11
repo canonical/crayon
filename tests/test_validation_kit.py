@@ -25,8 +25,8 @@ SCORE_PATH = ROOT / "validation" / "score.py"
 
 def _load_score():
     spec = importlib.util.spec_from_file_location("validation_score", SCORE_PATH)
-    module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
@@ -73,7 +73,9 @@ def test_absolute_include_from_source_root(tmp_path):
     (tmp_path / "conf.py").write_text("", encoding="utf-8")
     shared = tmp_path / "shared"
     shared.mkdir()
-    (shared / "inc.rst").write_text("Absolute include marker UNIQUEKW.\n", encoding="utf-8")
+    (shared / "inc.rst").write_text(
+        "Absolute include marker UNIQUEKW.\n", encoding="utf-8"
+    )
     subdir = tmp_path / "reference"
     subdir.mkdir()
     draft = subdir / "draft.rst"
