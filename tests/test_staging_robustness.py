@@ -641,3 +641,69 @@ def test_report_template_write_force_overwrites(repo):
 def test_report_template_missing_unit_refuses(repo):
     result = runner.invoke(app, ["report", "template", "nope"])
     assert result.exit_code == 2, result.output
+
+
+# --- Plan 09-03 Task 3: staging plan expected tree + scaffold (STAGE-03, D-07) -
+
+
+def _stage_page(repo: Path, relpath: str, text: str = "draft\n") -> Path:
+    """Stage a page at the exact ``.dogen/staging/u/handoff/<relpath>``."""
+    path = repo / ".dogen" / "staging" / "u" / "handoff" / relpath
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_staging_plan_prints_expected_tree_all_missing(repo):
+    _declare_span(repo)  # targets: guide/a.md, guide/b.md, reference/c.rst
+    result = runner.invoke(app, ["staging", "plan", "u"])
+    assert result.exit_code == 0, result.output
+    for target in ("guide/a.md", "guide/b.md", "reference/c.rst"):
+        assert f"handoff/{target} [missing]" in result.output
+
+
+def test_staging_plan_marks_staged_pages(repo):
+    _declare_span(repo)
+    _stage_page(repo, "guide/a.md")
+    result = runner.invoke(app, ["staging", "plan", "u"])
+    assert result.exit_code == 0, result.output
+    assert "handoff/guide/a.md [✓]" in result.output
+    assert "handoff/guide/b.md [missing]" in result.output
+    assert "handoff/reference/c.rst [missing]" in result.output
+
+
+def test_staging_plan_scaffold_creates_missing_placeholders(repo):
+    _declare_span(repo)
+    result = runner.invoke(app, ["staging", "plan", "u", "--scaffold"])
+    assert result.exit_code == 0, result.output
+    handoff = repo / ".dogen" / "staging" / "u" / "handoff"
+    for target in ("guide/a.md", "guide/b.md", "reference/c.rst"):
+        assert (handoff / target).is_file()
+    # After scaffold the tree reads back as fully staged.
+    assert "handoff/guide/a.md [✓]" in result.output
+
+
+def test_staging_plan_scaffold_does_not_clobber_existing(repo):
+    _declare_span(repo)
+    staged = _stage_page(repo, "guide/a.md", "real work\n")
+    result = runner.invoke(app, ["staging", "plan", "u", "--scaffold"])
+    assert result.exit_code == 0, result.output
+    # The pre-staged page keeps its content; the missing ones are created.
+    assert staged.read_text(encoding="utf-8") == "real work\n"
+    handoff = repo / ".dogen" / "staging" / "u" / "handoff"
+    assert (handoff / "guide/b.md").is_file()
+    assert (handoff / "reference/c.rst").is_file()
+
+
+def test_staging_plan_scaffold_does_not_seed_report_yaml(repo):
+    # Open Question 2: staging plan --scaffold is handoff-only; report.yaml is
+    # report template --write's responsibility.
+    _declare_span(repo)
+    result = runner.invoke(app, ["staging", "plan", "u", "--scaffold"])
+    assert result.exit_code == 0, result.output
+    assert not (repo / ".dogen" / "staging" / "u" / "report.yaml").exists()
+
+
+def test_staging_plan_missing_unit_refuses(repo):
+    result = runner.invoke(app, ["staging", "plan", "nope"])
+    assert result.exit_code == 2, result.output
