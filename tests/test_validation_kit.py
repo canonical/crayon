@@ -16,8 +16,11 @@ it is loaded by path here — mirroring nothing in the app import graph on purpo
 """
 
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SCORE_PATH = ROOT / "validation" / "score.py"
@@ -120,3 +123,144 @@ def test_round3_claude_rescores_include_aware(capsys):
     score.score_draft(draft)
     out = capsys.readouterr().out
     assert "unresolved include" not in out
+
+
+# --- VAL-02: the audit reads provenance schema v2 only -----------------------
+#
+# * ``files[]`` is the sole digest authority — audit verifies EVERY page digest
+#   of the latest generation and the latest accept seal against on-disk bytes
+#   (D-12); the deleted v1 fields (draft_path/draft_sha256) are never read;
+# * a ``schema_version: 1`` sidecar prints a clean FLAG and returns without
+#   crashing on absent v2 fields (D-12);
+# * ``audit`` targets an arbitrary repo via a threaded ``root`` param — the
+#   module ROOT global is never reassigned (D-13);
+# * ``model-amended`` is a legal, non-required phase token (D-14).
+#
+# The fixture is a self-contained v2 unit git repo built in pytest ``tmp_path``
+# (mirrors tests/test_v1_traceability.py's git init/config pattern), so its
+# trailer commits never pollute dogen-mvp-1's own history (Pitfall 4 / T-11-06).
+
+
+def _git(root: Path, *args: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, check=True
+    )
+    return completed.stdout.strip()
+
+
+def _build_v2_fixture(
+    root: Path,
+    unit_id: str = "u",
+    *,
+    schema_version: int = 2,
+    extra_phases: tuple[str, ...] = (),
+) -> None:
+    """Materialize a v2 unit git repo under ``root`` (a pytest tmp_path).
+
+    Writes ``unit.md``, a page, and a ``schema_version: 2`` provenance.yaml whose
+    ``generations[-1].files[]`` and ``reviewer_edits[-1].files[]`` digests match
+    the committed page bytes (via score._sha256, the digest authority), a signoff
+    whose plan_hash = sha256(unit.md), and a commit-stamped context_origin. Makes
+    real ``drafted`` then ``reviewed`` trailer commits (Dogen-Unit/Dogen-Phase),
+    inserting any ``extra_phases`` (e.g. ``model-amended``) between them.
+
+    Pass ``schema_version=1`` to exercise the v1-sidecar clean-bail path — the
+    provenance is then intentionally missing the v2 fields.
+    """
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    _git(root, "config", "user.name", "Ada Lovelace")
+    _git(root, "config", "user.email", "ada@example.com")
+
+    unit_dir = root / ".dogen" / "units" / unit_id
+    unit_dir.mkdir(parents=True)
+    unit_md = unit_dir / "unit.md"
+    unit_md.write_text("# unit u\n\nintent & scope\n", encoding="utf-8")
+
+    page = root / "docs" / f"{unit_id}.md"
+    page.parent.mkdir(parents=True, exist_ok=True)
+    page.write_text("# A page\n\nbody\n", encoding="utf-8")
+    page_rel = f"docs/{unit_id}.md"
+    page_sha = score._sha256(page.read_text(encoding="utf-8"))
+
+    if schema_version == 2:
+        files = [{"path": page_rel, "sha256": page_sha}]
+        prov = {
+            "schema_version": 2,
+            "signoff": {
+                "plan_hash": score._sha256(unit_md.read_text(encoding="utf-8")),
+                "commit": "0" * 40,
+            },
+            "generations": [
+                {
+                    "run_id": "run-1",
+                    "source_commit": "0" * 40,
+                    "context_origins": [{"path": "README.md", "commit": "abc1234"}],
+                    "files": files,
+                }
+            ],
+            "reviewer_edits": [{"verdict": "accept", "files": files}],
+        }
+    else:
+        # v1 sidecar: no v2 fields present — audit must bail cleanly, not crash.
+        prov = {
+            "schema_version": schema_version,
+            "signoff": {"plan_hash": "deadbeef", "draft_path": page_rel},
+        }
+    (unit_dir / "provenance.yaml").write_text(
+        yaml.safe_dump(prov, sort_keys=False), encoding="utf-8"
+    )
+
+    _git(root, "add", "-A")
+    _git(
+        root,
+        "commit",
+        "-q",
+        "-m",
+        f"dogen({unit_id}): drafted — page\n\n"
+        f"Dogen-Unit: {unit_id}\nDogen-Phase: drafted",
+    )
+    for phase in extra_phases:
+        _git(
+            root,
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            f"dogen({unit_id}): {phase}\n\n"
+            f"Dogen-Unit: {unit_id}\nDogen-Phase: {phase}",
+        )
+    _git(
+        root,
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        f"dogen({unit_id}): reviewed — accept\n\n"
+        f"Dogen-Unit: {unit_id}\nDogen-Phase: reviewed",
+    )
+
+
+def test_audit_passes_on_v2_fixture(tmp_path, capsys):
+    """audit on a self-contained v2 fixture emits only PASS lines (D-12/D-13).
+
+    Every seal/gen/digest check passes and no FLAG line is printed, proving
+    ``files[]`` is read as the sole digest authority, each page digest is verified
+    on disk, and ``audit`` targets an arbitrary ``root`` without touching the
+    module ROOT global.
+    """
+    _build_v2_fixture(tmp_path, "u")
+    score.audit_unit("u", root=tmp_path)
+    out = capsys.readouterr().out
+    assert "FLAG" not in out, out
+    # The digest, seal and git-reconstruction checks all reported PASS.
+    assert "page digest matches on disk: docs/u.md" in out
+    assert "accept seals every page digest" in out
+    assert "drafted and reviewed transitions" in out
+
+
+def test_v2_fixture_leaves_host_repo_clean(tmp_path):
+    """The fixture builds in tmp_path only — no artifacts under dogen-mvp-1 (T-11-06)."""
+    _build_v2_fixture(tmp_path, "u")
+    host_status = _git(ROOT, "status", "--porcelain")
+    assert "validation/fixtures" not in host_status
+    assert ".dogen/units/u" not in host_status
