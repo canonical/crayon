@@ -111,6 +111,20 @@ class AlreadyAcceptedError(RuntimeError):
     """
 
 
+class ModelAlreadySetError(ValueError):
+    """Raised when ``--amend-model`` targets a generation with a recorded model.
+
+    Amend is a *fill-the-blank* metadata patch (D-04): it stamps a model onto a
+    generation that recorded none (``generations[-1].model == ""``). A non-empty
+    slot is a vouched fact and is **never silently overwritten** — amend refuses
+    and its message names the current model + its origin so the operator sees
+    exactly what stands. ``ValueError`` is the base (the broad draft-verb clause
+    would still catch it), but the CLI classifies it by type-name to
+    ``model_already_set`` **before** that clause (research Pitfall 3), keeping
+    ``core/`` free of CLI concerns.
+    """
+
+
 def _sha256(text: str) -> str:
     """Return the SHA-256 hex digest of ``text`` (UTF-8).
 
@@ -1738,6 +1752,96 @@ def _record_generation(  # noqa: PLR0913
             steering_count=len(provenance.steering),
             reviewer_edit_count=len(provenance.reviewer_edits),
         )
+    )
+
+
+def amend_model(  # noqa: PLR0913
+    store: PlanningStore,
+    unit_id: str,
+    *,
+    name: str,
+    origin: str,
+    root: Path,
+    repo: RepoSeam | None = None,
+) -> str:
+    """Patch an empty ``generations[-1].model`` slot, recording one commit (D-04).
+
+    The round-3 recovery: a model was forgotten on a unit's latest generation
+    (``generations[-1].model == ""``), possibly on an already-*accepted* (sealed)
+    unit. Amend fixes the metadata **in place** — it never appends a generation
+    or a verdict and never reopens the unit, so :func:`is_sealed` (Phase 7) and
+    :func:`derive_progress` (Phase 6), both count/verdict-derived, are left
+    structurally untouched (nothing they count changes). It writes no pages and
+    runs **no** draft-time lease re-check (OWN-03 does not apply — no page is
+    written). It patches ``generations[-1].model``/``.model_origin`` and records
+    **exactly one** ``model-amended`` transition commit (staging the unit dir
+    only), whose ``Dogen-Model:`` trailer stamps the new name.
+
+    A non-empty slot is a vouched fact: amend refuses it with
+    :class:`ModelAlreadySetError` (naming the current model + origin) rather than
+    overwrite it. A unit with no recorded generation cannot be amended and raises
+    a plain :class:`ValueError` (the not-drafted refusal), distinct from the
+    already-set domain refusal.
+
+    Parameters
+    ----------
+    store : PlanningStore
+        The injected planning-directory store.
+    unit_id : str
+        The unit whose latest generation is patched.
+    name : str
+        The model name to stamp onto the empty slot (validated by the caller
+        before it reaches the trailer/YAML — V5 / T-08-01).
+    origin : str
+        The D-03 vouch-origin recorded alongside the model (``ta`` by default for
+        an explicit operator amend; ``self`` for an agent self-correction).
+    root : Path
+        The repo root the store reads/writes beneath.
+    repo : RepoSeam or None
+        The injected commit seam, or ``None`` to skip committing.
+
+    Returns
+    -------
+    str
+        The new ``model-amended`` commit hash, or ``""`` when no seam was
+        injected (``commits: off`` / ``--no-commit``).
+
+    Raises
+    ------
+    ValueError
+        If the unit has no recorded generation (never drafted).
+    ModelAlreadySetError
+        If ``generations[-1].model`` is already non-empty (never overwritten).
+    """
+    provenance = store.read_provenance(unit_id, root=root)
+    if not provenance.generations:
+        raise ValueError(
+            f"cannot amend the model for {unit_id!r}: it has not been drafted "
+            "yet — run the draft use-case first"
+        )
+    generation = provenance.generations[-1]
+    if generation.model:
+        current_origin = generation.model_origin or "unattributed"
+        raise ModelAlreadySetError(
+            f"cannot amend the model for {unit_id!r}: the latest generation "
+            f"already records model {generation.model!r} (origin "
+            f"{current_origin!r}) — amend only fills an empty model slot and "
+            "never overwrites a recorded model"
+        )
+    # Metadata-only fill: no new generation, no verdict, no page write, no lease
+    # re-check, no reopen (D-04). The seal/progress derivations count generations
+    # and verdicts, neither of which this touches.
+    generation.model = name
+    generation.model_origin = origin
+    store.write_provenance(provenance, root=root)
+    return _commit_transition(
+        repo,
+        root=root,
+        paths=[_unit_dir(root, unit_id)],
+        unit_id=unit_id,
+        phase="model-amended",
+        summary=f"amend recorded model to {name}",
+        model=name,
     )
 
 
