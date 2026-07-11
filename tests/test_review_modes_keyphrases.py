@@ -46,6 +46,14 @@ _SEVERITY_FLOOR = "must-fix by definition"
 _CROSS_PAGE_HEADING = "Cross-page consistency"
 _CROSS_PAGE_QUOTE_PHRASE = "quote the diverging lines"
 
+# SK-04: after a `fix` verdict, dogen-review step 2 DEFAULTS to a scoped re-review
+# (verify the fix landed + a regression spot-check of the touched sections); a full
+# 4-dimension re-run happens only on explicit request — no auto-escalation (D-05).
+_SCOPED_REREVIEW = "scoped re-review"
+_REGRESSION_SPOT_CHECK = "regression spot-check"
+_FULL_RERUN = "full four-dimension re-run"
+_ON_REQUEST = "on explicit request"
+
 # The CLI machine surface: failure reason codes + progress states. None of these
 # may ever be repurposed as a bracketed finding tag (D-03 collision guard).
 _RUN_STATUS_TOKENS = (
@@ -174,6 +182,32 @@ def test_run_status_tokens_never_bracketed_as_finding_tags() -> None:
             f"run-status token {bracketed} used as a finding tag in review-rubric.md "
             "(D-03 collision)"
         )
+
+
+def test_scoped_re_review_is_default_after_fix() -> None:
+    """After a `fix` verdict, dogen-review defaults to a scoped re-review (SK-04).
+
+    The default is verify-the-fix-landed + a regression spot-check of the touched
+    sections — not a full re-run.
+    """
+    skill = _read(_SKILL)
+    assert _SCOPED_REREVIEW in skill, (
+        f"dogen-review SKILL.md must default to a {_SCOPED_REREVIEW!r} after a fix"
+    )
+    assert _REGRESSION_SPOT_CHECK in skill, (
+        f"the scoped re-review must include a {_REGRESSION_SPOT_CHECK!r}"
+    )
+
+
+def test_full_re_run_only_on_explicit_request() -> None:
+    """A full 4-dimension re-run happens only on explicit request — no auto-escalation (D-05)."""
+    skill = _read(_SKILL)
+    assert _FULL_RERUN in skill, (
+        f"dogen-review SKILL.md must name a {_FULL_RERUN!r} as the widened option"
+    )
+    assert _ON_REQUEST in skill, (
+        f"the full re-run must be gated {_ON_REQUEST!r} (no auto-escalation)"
+    )
 
 
 def test_removed_raw_dump_phrasing_absent() -> None:
