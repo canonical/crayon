@@ -37,6 +37,10 @@ from dogen.core.models import (
 )
 
 _UNITS_SUBDIR = ".dogen/units"
+#: Passenger-handoff scratch root; a unit's staging lives at
+#: ``.dogen/staging/<id>/`` and is gitignored, disposable, and removed on a
+#: sealing accept (PROV-05 / D-03).
+_STAGING_SUBDIR = ".dogen/staging"
 _CONTEXT_SUBDIR = ".dogen/context"
 _CONFIG_RELPATH = ".dogen/config.yaml"
 _DOGEN_GITIGNORE_RELPATH = ".dogen/.gitignore"
@@ -537,6 +541,55 @@ class FilesystemPlanningStore:
         shutil.rmtree(unit_dir)
         for docs_target in docs_targets:
             docs_target.unlink(missing_ok=True)
+
+    def remove_staging(self, unit_id: str, *, root: Path) -> bool:
+        """Remove ``.dogen/staging/<unit_id>/`` (PROV-05); idempotent, guarded.
+
+        The passenger-handoff scratch under ``.dogen/staging/<id>/`` is
+        gitignored and fully disposable once a unit seals — its content already
+        lives in ``docs/`` and the ``files[]`` digests — so a sealing
+        ``review --verdict accept`` removes it (D-03/D-04) instead of leaving
+        stale full-byte page duplicates behind. The delete is bounded to
+        *exactly* ``(root / _STAGING_SUBDIR / unit_id)``: the same
+        ``_reject_unsafe_unit_id`` + ``_assert_within_root`` +
+        ``_assert_not_under_planning`` guard stack that gates
+        :meth:`delete_unit` runs on the *resolved* path before ``shutil.rmtree``
+        (T-INS-01 / T-09-SD), so a traversing or symlinked ``unit_id`` raises
+        without touching the filesystem. Absence is a silent no-op that returns
+        ``False`` — a re-accept whose scratch is already gone keeps the "a
+        sealed unit => no staging scratch" invariant intact (D-03). ``rmtree``
+        has no ``missing_ok``; the ``is_dir()`` check is the idempotence gate,
+        and ``ignore_errors`` is deliberately *not* passed so a real permission
+        failure surfaces rather than being masked.
+
+        Parameters
+        ----------
+        unit_id : str
+            The unit whose staging scratch to remove; a single safe path
+            segment.
+        root : Path
+            The repo root to delete beneath.
+
+        Returns
+        -------
+        bool
+            ``True`` when a staging directory was removed, ``False`` when none
+            existed (the idempotent no-op).
+
+        Raises
+        ------
+        ValueError
+            If ``unit_id`` is unsafe, or the resolved path escapes the repo root
+            or lands under ``.planning/``.
+        """
+        self._reject_unsafe_unit_id(unit_id)
+        staging_dir = (root / _STAGING_SUBDIR / unit_id).resolve()
+        self._assert_within_root(staging_dir, root=root)
+        self._assert_not_under_planning(staging_dir, root=root)
+        if not staging_dir.is_dir():
+            return False
+        shutil.rmtree(staging_dir)
+        return True
 
     def rename_unit(self, old_id: str, new_id: str, *, root: Path) -> None:
         """Rename a unit's id everywhere, rollback-safe (unit mv).
