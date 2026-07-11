@@ -69,6 +69,12 @@ INCLUDE_RE = re.compile(r"^\s*\.\. include:: (.+?)\s*$", flags=re.M)
 # and prefix-less `*-session-*` offenders deliberately do NOT match.
 SESSION_RE = re.compile(r"^SESSION-(.+)\.md$")
 
+# A "session-ish" sibling worth naming-checking: a `session` token bounded by
+# non-letters, so the round-3 offender shapes (`*-session-*`, leading `session-`,
+# and `SESSION-…` itself) are caught, but an incidental substring like
+# `obsession-notes.md`/`possession.md` is NOT (WR-01).
+SESSION_ISH_RE = re.compile(r"(^|[^a-z])session([^a-z]|$)", re.I)
+
 # Coverage checklist: (label, any-of keyword alternatives, case-insensitive).
 COVERAGE = [
     ("file locations", [".workshop/", ".workshop.yaml"]),
@@ -362,7 +368,7 @@ def protocol_check(dir: Path) -> bool:
     leg_names = [m.group(1) for p in legs if (m := SESSION_RE.match(p.name))]
 
     # D-05: a non-conformant session-ish sibling is itself a violation.
-    session_ish = sorted(p for p in dir.glob("*.md") if "session" in p.name.lower())
+    session_ish = sorted(p for p in dir.glob("*.md") if SESSION_ISH_RE.search(p.name))
     for p in session_ish:
         if not SESSION_RE.match(p.name):
             ok &= _flag(False, "name", f"non-conformant session file: {p.name}")
