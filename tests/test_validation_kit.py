@@ -20,6 +20,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -309,3 +310,72 @@ def test_model_amended_is_legal(tmp_path, capsys):
     assert "PASS [git] git log alone shows the drafted and reviewed transitions" in out
     unknown_info = "unrecognized phase tokens (not a failure): ['mystery-token']"
     assert unknown_info in out
+
+
+# --- VAL-03: the `protocol` conformance gate --------------------------------
+#
+# * `protocol` is the ONE verb whose exit code is load-bearing — it exits
+#   NON-ZERO on any naming/RESULTS violation (D-04); draft/audit stay exit 0;
+# * it enforces the `SESSION-<name>.md` shape and FLAGs non-conformant siblings
+#   like the round-3 offenders `copilot-session-<uuid>.md` / `session-ses_0d1b.md`
+#   (D-05);
+# * it discovers legs by globbing `SESSION-*.md` and, per leg <name>, requires a
+#   markdown heading naming it in RESULTS.md — missing heading = FLAG (D-06).
+
+
+def test_protocol_catches_round3_names(tmp_path, capsys, monkeypatch):
+    """protocol FLAGs the round-3 non-conformant session names and exits non-zero.
+
+    A conformant ``SESSION-claude.md`` sits beside the two round-3 offenders
+    (``copilot-session-<uuid>.md`` and lowercase ``session-ses_0d1b.md``); each
+    non-conformant sibling is a violation (D-05), so ``protocol_check`` returns
+    ``False`` and ``main()`` exits non-zero (D-04).
+    """
+    (tmp_path / "SESSION-claude.md").write_text("claude transcript\n", encoding="utf-8")
+    (tmp_path / "copilot-session-abcd.md").write_text("copilot\n", encoding="utf-8")
+    (tmp_path / "session-ses_0d1b.md").write_text("opencode\n", encoding="utf-8")
+    (tmp_path / "RESULTS.md").write_text("# results\n\n## claude\n\nok\n", encoding="utf-8")
+
+    assert score.protocol_check(tmp_path) is False
+    out = capsys.readouterr().out
+    assert "FLAG [name] non-conformant session file: copilot-session-abcd.md" in out
+    assert "FLAG [name] non-conformant session file: session-ses_0d1b.md" in out
+
+    # main() dispatches `protocol <dir>` to a NON-ZERO exit on any violation.
+    monkeypatch.setattr(sys, "argv", ["score.py", "protocol", str(tmp_path)])
+    with pytest.raises(SystemExit) as exc:
+        score.main()
+    assert exc.value.code != 0
+
+
+def test_protocol_requires_results_heading(tmp_path, capsys, monkeypatch):
+    """Each discovered leg needs a markdown heading in RESULTS.md (D-06).
+
+    A dir whose RESULTS.md names ``claude`` but not ``copilot`` fails with a FLAG
+    naming the missing copilot heading; a dir where RESULTS.md carries BOTH
+    headings and only conformant SESSION files passes and ``main()`` exits 0.
+    """
+    bad = tmp_path / "bad"
+    bad.mkdir()
+    (bad / "SESSION-claude.md").write_text("c\n", encoding="utf-8")
+    (bad / "SESSION-copilot.md").write_text("p\n", encoding="utf-8")
+    (bad / "RESULTS.md").write_text("# r\n\n## claude\n\nonly claude\n", encoding="utf-8")
+
+    assert score.protocol_check(bad) is False
+    out = capsys.readouterr().out
+    assert "FLAG [results] RESULTS.md has a heading for copilot" in out
+
+    good = tmp_path / "good"
+    good.mkdir()
+    (good / "SESSION-claude.md").write_text("c\n", encoding="utf-8")
+    (good / "SESSION-copilot.md").write_text("p\n", encoding="utf-8")
+    (good / "RESULTS.md").write_text(
+        "# r\n\n## claude\n\nok\n\n## copilot\n\nok\n", encoding="utf-8"
+    )
+
+    assert score.protocol_check(good) is True
+
+    monkeypatch.setattr(sys, "argv", ["score.py", "protocol", str(good)])
+    with pytest.raises(SystemExit) as exc:
+        score.main()
+    assert exc.value.code == 0
