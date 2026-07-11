@@ -7,6 +7,11 @@
 # else. It only overwrites; it never compares. Refresh assets and captures are
 # never synced by this script. Overwrite + re-runnable = idempotent.
 #
+# NON-ATOMIC (WR-08): the mid-loop `cp` sequence is not transactional. Under
+# `set -eu`, a failure on a later file (permissions, disk-full) aborts with the
+# earlier files already overwritten, leaving the mirror in a mixed-version state.
+# Low risk (three small local files); re-run once the cause is fixed to converge.
+#
 # HUMAN-RUN (D-01): running this is NOT part of phase execution and lands zero
 # commits in any sibling repo. From dogen-mvp-1/validation/ a human runs `sh sync.sh`.
 set -eu
