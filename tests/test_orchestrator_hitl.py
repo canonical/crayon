@@ -185,9 +185,13 @@ async def test_redraft_does_not_move_progress_backward(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_redraft_of_reviewed_resets_to_drafted(tmp_path: Path) -> None:
-    # Re-drafting a *reviewed* unit supersedes the now-stale review and derives
-    # back to ``drafted``: the fresh generation snapshots the current
-    # reviewer-edit count, so the count is no longer strictly greater (PROV-04).
+    # Re-drafting a *reviewed* unit with GENUINELY NEW content supersedes the
+    # now-stale review and derives back to ``drafted``: the fresh generation
+    # snapshots the current reviewer-edit count, so the count is no longer
+    # strictly greater (PROV-04). A byte-identical redraft would instead be a
+    # true no-op (D-02/MODEL-03) that records nothing and correctly leaves the
+    # reviewed state untouched — so this test uses a provider whose text differs
+    # from the mock's first pass to exercise the real-redraft reset.
     store = _seed_unit(tmp_path, with_steering=True)
     await draft(_request(tmp_path, store))
     # Simulate a completed review by appending a reviewer edit to the record.
@@ -200,8 +204,28 @@ async def test_redraft_of_reviewed_resets_to_drafted(tmp_path: Path) -> None:
         derive_progress(store.read_provenance("u", root=tmp_path))
         is ProgressState.reviewed
     )
-    # Re-draft the reviewed unit — it falls back to drafted.
-    await draft(_request(tmp_path, store))
+
+    class _DifferentDraft:
+        async def draft_unit(self, **_kwargs: object) -> DraftResult:
+            return DraftResult(
+                text="# a genuinely reworked page\n",
+                model="mock-model",
+                model_version="mock-1",
+                output_tokens=1,
+                run_id="",
+            )
+
+    # Re-draft the reviewed unit with new content — it records a fresh generation
+    # and falls back to drafted.
+    redraft = DraftRequest(
+        unit_id="u",
+        root=tmp_path,
+        provider=_DifferentDraft(),
+        store=store,
+        provider_name="mock",
+        now=_Clock(),
+    )
+    await draft(redraft)
     assert (
         derive_progress(store.read_provenance("u", root=tmp_path))
         is ProgressState.drafted

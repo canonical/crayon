@@ -728,9 +728,11 @@ def test_unsteered_redraft_is_flagged(repo):
         runner.invoke(app, ["draft", "u", "--provider", "mock", "--json"])
     )
     assert first["unsteered_redraft"] is False  # first pass is never a redraft
-    second = _json_line(
-        runner.invoke(app, ["draft", "u", "--provider", "mock", "--json"])
-    )
+    # A GENUINE redraft (different bytes) with nothing recorded in between is
+    # flagged unsteered. A byte-identical redraft would instead be a true no-op
+    # under D-02/MODEL-03 (identical_draft, never unsteered) — the mock repeats
+    # its bytes, so a real redraft needs new content (a passenger handoff here).
+    second = _json_line(_passenger_draft(repo, text="# a reworked page\n\nnew\n"))
     assert second["unsteered_redraft"] is True  # nothing arrived in between
     assert (
         runner.invoke(
@@ -738,9 +740,7 @@ def test_unsteered_redraft_is_flagged(repo):
         ).exit_code
         == 0
     )
-    third = _json_line(
-        runner.invoke(app, ["draft", "u", "--provider", "mock", "--json"])
-    )
+    third = _json_line(_passenger_draft(repo, text="# a further reworked page\n"))
     assert third["unsteered_redraft"] is False  # the fix verdict is steering
 
 
@@ -831,9 +831,11 @@ def test_unit_show_latest_projects_one_generation(repo):
         ["signoff", "u"],
         ["draft", "u", "--provider", "mock"],
         ["review", "u", "--verdict", "fix", "--note", "again"],
-        ["draft", "u", "--provider", "mock"],
     ):
         assert runner.invoke(app, args).exit_code == 0
+    # The applied fix produces genuinely new content — a real second generation.
+    # (A byte-identical redraft is a D-02 no-op and would record nothing.)
+    assert _passenger_draft(repo, text="# a reworked page\n").exit_code == 0
     full = _json_line(runner.invoke(app, ["unit", "show", "u", "--json"]))
     assert len(full["generations"]) == 2
     assert full["generations_count"] == 2
@@ -1549,9 +1551,12 @@ def test_accept_after_the_fix_was_drafted_is_clean(repo):
         ["signoff", "u"],
         ["draft", "u", "--provider", "mock"],
         ["review", "u", "--verdict", "fix", "--note", "fix me"],
-        ["draft", "u", "--provider", "mock"],  # the fix is applied here
     ):
         assert runner.invoke(app, args).exit_code == 0
+    # The fix is applied here as genuinely new content — a real second generation
+    # that snapshots the fix verdict (a byte-identical redraft would be a D-02
+    # no-op and leave the fix looking unapplied).
+    assert _passenger_draft(repo, text="# the fixed page\n").exit_code == 0
     result = runner.invoke(
         app, ["review", "u", "--verdict", "accept", "--note", "ship", "--json"]
     )
@@ -1559,9 +1564,9 @@ def test_accept_after_the_fix_was_drafted_is_clean(repo):
     assert _json_line(result)["unapplied_steering"] is False
 
 
-def _passenger_draft(repo, *extra):
+def _passenger_draft(repo, *extra, text="# page\n\nbody\n"):
     handoff = repo / "handoff.md"
-    handoff.write_text("# page\n\nbody\n", encoding="utf-8")
+    handoff.write_text(text, encoding="utf-8")
     report = repo / "report.yaml"
     report.write_text(
         "context_origins: []\ntools_used: [Read]\n"
