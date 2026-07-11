@@ -171,30 +171,48 @@ for `.rst` — the per-format standard is in `references/provider-branch.md`).
    all are left in place so the TA can inspect exactly what was handed off and
    what grounded it (they are gitignored via the seeded `.dogen/.gitignore`, so
    they never leak into anyone's commits).
-7. Record everything through the CLI, passing the host's model identity (D-12):
+7. **Self-assert the model first (D-01).** The model is a persisted repo fact,
+   resolved by dogen at `--model` flag > `DOGEN_MODEL` env > repo config — you no
+   longer force `--model` on every draft once the config carries it. Check what
+   the repo already holds with `dogen model show --json` (`model` / `source` /
+   `model_origin`), then settle it once per repo:
+   - **No model in the repo config** → silently self-assert it by running
+     `dogen model set "$HOST_MODEL" --origin self`, then narrate **exactly one**
+     correctable line (substitute the real name for `X`): recording model X (self-asserted) — correct me if wrong. It does **not** block and does **not** gate on a TA confirmation — the line invites a correction, it does not wait for one.
+   - **A model is already in the repo config** → use it silently. Do not
+     re-assert it and do not reflect it back — the persisted fact stands.
+   - **You genuinely cannot name your own model** → ask the TA once as a
+     **fallback** (they can read it off their harness UI) and, on their answer,
+     `dogen model set "<name>" --origin self`. If the TA can't or won't name it
+     either, record honest-empty — `model_unrecorded` fires downstream (still
+     legal; see below).
+   - **A TA correction** (the corollary of "correct me if wrong") → re-run
+     `dogen model set "<corrected>" --origin ta`: the origin flips to `ta`
+     because a human vouched for the value.
+
+8. Record everything through the CLI (the model now resolves from config by
+   flag > env > config — pass `--model` only to override it for this one draft):
 
 ```bash
 # Single-page unit:
 dogen draft "$UNIT_ID" \
   --draft-file ".dogen/staging/$UNIT_ID/handoff.$EXT" \
   --report ".dogen/staging/$UNIT_ID/report.yaml" \
-  --provider host-harness --model "$HOST_MODEL" --json
+  --provider host-harness --json
 # Multi-file unit:
 dogen draft "$UNIT_ID" \
   --draft-dir ".dogen/staging/$UNIT_ID/handoff" \
   --report ".dogen/staging/$UNIT_ID/report.yaml" \
-  --provider host-harness --model "$HOST_MODEL" --json
+  --provider host-harness --json
 ```
 
-Capturing the model is a **required step**, not a fallback: if the harness does
-not expose its model identity programmatically, **ask the TA for it once** before
-recording — they can read it off their harness UI — and pass it via `--model`.
-Only when neither you nor the TA can name it do you omit the flag, and then say
-so: the record keeps `model` honestly empty (unknown; `mode=passenger` already
-marks it host-asserted). Read the result and surface it — if it carries
-`model_unrecorded: true`, the model went unrecorded (round 3's opencode leg
-recorded `''` on all three passes by never asking): confirm you asked the TA and
-either re-record with `--model` or state plainly that the model is unknown.
+Read the result and surface it — if it carries `model_unrecorded: true`, the
+model was recorded empty (the repo config carried none and neither the self-assert
+nor the TA fallback named one; round 3's opencode leg recorded `''` on all three
+passes by never self-asserting). Self-assert it now — `dogen model set <name>
+--origin self` (or `--origin ta` for a TA-supplied name) — then `dogen draft
+"$UNIT_ID" --amend-model <name>` to stamp the already-recorded generation, or
+state plainly that the model is unknown.
 </step_3>
 
 <step_4 name="Report and route">
@@ -222,11 +240,13 @@ language; for `model_rejected` name the requested model. Offer to retry (e.g. wi
 a specific `--model`) or route as appropriate. Do not fall back to authoring in the
 driver branch.
 
-**Passenger with a hidden host model:** ask the TA for the model first (they can
-read it off their harness UI) and pass `--model`. Omit it only when the TA can't
-say either — then the empty (unknown) model plus `mode=passenger` keeps
-provenance honest (D-12), and the draft's `model_unrecorded: true` flag records
-that the gap was surfaced, not missed.
+**Passenger with a hidden host model:** self-assert the model first —
+`dogen model set <name> --origin self` (persisted once per repo, narrated with the
+one correctable line). Only when you genuinely cannot name your own model do you
+ask the TA as a fallback; if the TA can't say either, record honest-empty — the
+empty (unknown) model plus `mode=passenger` keeps provenance honest (D-01/D-12),
+and the draft's `model_unrecorded: true` flag records that the gap was surfaced,
+not missed.
 
 **`unsteered_redraft: true` in the draft output:** the re-draft ran with no
 recorded steering or verdict since the last generation — the correction lived
@@ -270,17 +290,20 @@ record it under `gaps` in the report — a gap is provenance, not content.
   `colon_fence` for `.md`, reStructuredText for `.rst` — per the per-format
   standards in `references/provider-branch.md`. Never write one markup into the
   other's extension.
-- Justify an empty `gaps` list with a one-line `gaps_note` in the report; when
-  the harness hides the model, ask the TA once for it before omitting
-  `--model`.
+- Justify an empty `gaps` list with a one-line `gaps_note` in the report;
+  self-assert the model once per repo (`dogen model set --origin self` + the one
+  correctable line), asking the TA only as a fallback before recording
+  honest-empty.
 - Reference code entities by qualified name; show a code block only when the reader
   themselves authors or invokes it — the code-in-narrative rubric in
   `references/provider-branch.md`.
 - Record every draft through the CLI (`dogen draft`), which owns the provable HITL
   gate and the commit seam; surface its reason codes in plain language per
   `../README.md`.
-- Pass the host model best-effort in the passenger branch (`--model`), leaving the
-  model honestly unknown (empty) when the harness hides it (D-12).
+- Self-assert the model first in the passenger branch (`dogen model set
+  --origin self`, persisted once per repo) so it resolves from config by
+  flag > env > config; ask the TA only as a fallback, and leave the model
+  honestly unknown (empty) only when neither can name it (D-01/D-12).
 </must>
 <must_not>
 - D-09 (v1): Never use `Write` anywhere except the passenger staging files —
@@ -316,7 +339,7 @@ inline:
 - Committed: <sha7 from the CLI's `git: committed` line>
 - Progress: <progress state>
 - Plan: <fresh | changed since signoff — re-approve if substantive>
-- Model: <recorded model | unknown — asked the TA, harness hid it>
+- Model: <recorded model (self-asserted / TA-corrected) | unknown — neither self nor TA could name it>
 
 Next: /dogen-review — review the draft.
 ```
@@ -332,8 +355,9 @@ Next: /dogen-review — review the draft.
       free navigation beyond them, authored in the unit's format (per-page for a
       multi-file unit), wrote ONLY the handoff file(s) and the context report
       under `.dogen/staging/<id>/`, and recorded via
-      `dogen draft --draft-file`/`--draft-dir` `--report` with the model asked
-      of the TA when the harness hid it (D-12).
+      `dogen draft --draft-file`/`--draft-dir` `--report` after self-asserting
+      the model once per repo (`dogen model set --origin self`), asking the TA
+      only as a fallback (D-01/D-12).
 - [ ] The context report lists every file read (hex-or-empty commit stamps,
       explanations in `note`) and honest gaps — or a `gaps_note` justifying an
       empty list; the drafted prose carries no researcher register, no

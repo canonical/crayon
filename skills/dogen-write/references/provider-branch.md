@@ -26,16 +26,25 @@ case "$PROVIDER" in
   host-harness)
     # PASSENGER: the host authors the page(s) in the unit's format (declared
     # sources as starting points, free navigation beyond them), Writes the
-    # handoff + the context report, then records everything.
+    # handoff + the context report, self-asserts the model once per repo, then
+    # records everything.
+    # Self-assert the model first (D-01) — once per repo; afterwards the model
+    # resolves from config by flag > env > config, so you do NOT force --model:
+    dogen model show --json    # {model, source, model_origin} — check what's set
+    # No model set yet -> self-assert it (origin self) + narrate the one
+    # correctable line; a TA correction re-runs with --origin ta:
+    #   dogen model set "$HOST_MODEL" --origin self
+    #   # "recording model X (self-asserted) — correct me if wrong."
+    #   dogen model set "$TA_NAME" --origin ta   # TA vouched -> origin flips
     # Single-page unit — handoff carries the target's own extension:
     EXT="${TARGET##*.}"                 # from unit show --json .unit.sphinx_target
     HANDOFF=".dogen/staging/$UNIT/handoff.$EXT"
     REPORT=".dogen/staging/$UNIT/report.yaml"
     dogen draft "$UNIT" --draft-file "$HANDOFF" --report "$REPORT" \
-      --provider host-harness --model "$HOST_MODEL" --json   # D-12
+      --provider host-harness --json   # model resolves from config (D-01/D-12)
     # Multi-file unit — stage handoff/<target-relpath> for EVERY page, then:
     # dogen draft "$UNIT" --draft-dir ".dogen/staging/$UNIT/handoff" \
-    #   --report "$REPORT" --provider host-harness --model "$HOST_MODEL" --json
+    #   --report "$REPORT" --provider host-harness --json
     ;;
 esac
 ```
@@ -71,10 +80,13 @@ The success object may additionally carry:
   verdict since the last generation; the correction lived only in conversation.
   Surface it and get the correction recorded (`dogen review --verdict fix` /
   `dogen steer --note`) so the audit trail shows what steered the pass.
-- `model_unrecorded: true` — the generation recorded an empty model (the harness
-  hid it and no `--model` was passed). Confirm you asked the TA for the model;
-  re-record with `--model`, or state plainly the model is unknown. Honest-empty
-  is legal, but it must be a surfaced choice, not a silent miss (M4, R4).
+- `model_unrecorded: true` — the generation recorded an empty model (no model in
+  the repo config and neither the self-assert nor the TA fallback named one).
+  Self-assert it first — `dogen model set <name> --origin self` (the persisted,
+  once-per-repo path), or `--origin ta` for a TA-supplied name — then
+  `dogen draft <id> --amend-model <name>` to stamp the already-recorded
+  generation; or state plainly the model is unknown. Honest-empty is legal, but
+  it must be a surfaced choice, not a silent miss (M4, R4).
 
 ## The context report (report.yaml — the v1 provenance contract)
 
