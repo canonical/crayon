@@ -55,7 +55,10 @@ _FULL_RERUN = "full four-dimension re-run"
 _ON_REQUEST = "on explicit request"
 
 # The CLI machine surface: failure reason codes + progress states. None of these
-# may ever be repurposed as a bracketed finding tag (D-03 collision guard).
+# may ever be repurposed as a bracketed finding tag (D-03 collision guard). This
+# is the FULL reason-code set the rubric's D-03 section enumerates as protected —
+# it mirrors the ``_REASON_*`` constants in :mod:`dogen.cli.main` so the guard can
+# never enforce a mere subset of the tokens the rubric declares protected.
 _RUN_STATUS_TOKENS = (
     "signoff_required",
     "backend_unavailable",
@@ -64,7 +67,15 @@ _RUN_STATUS_TOKENS = (
     "not_drafted",
     "already_accepted",
     "target_exists",
+    "bad_target",
     "bad_report",
+    "target_claimed",
+    "model_already_set",
+    "handoff_incomplete",
+    "undeclared_target",
+    "multi_target_unsupported",
+    "schema_unsupported",
+    "provenance_invalid",
     "pending",
     "sourced",
     "drafted",
