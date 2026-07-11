@@ -346,6 +346,64 @@ def _read_body_file(
     return body_path.read_text(encoding="utf-8")
 
 
+def _resolve_review_note(
+    unit_id: str,
+    note: str | None,
+    note_file: str | None,
+    *,
+    json_output: bool,
+) -> str:
+    """Resolve the verdict note from exactly one of ``--note``/``--note-file``.
+
+    Mirrors :func:`_read_body_file` (STAGE-05, D-09): ``--note-file -`` reads the
+    note from stdin so a quote-heavy or ``::``-laden verdict note need not
+    survive shell quoting, and a path reads the file. Exactly one of
+    ``--note``/``--note-file`` is required — both-given or neither-given is a
+    bad-input refusal (exit ``2``), matching ``_read_body_file``'s
+    ``reason=None`` + ``_EXIT_BAD_INPUT`` convention.
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit being reviewed (for the failure payload).
+    note : str or None
+        The inline ``--note`` value, if given.
+    note_file : str or None
+        The ``--note-file`` value; ``-`` reads stdin, else a path to read.
+    json_output : bool
+        Whether failures render as JSON.
+
+    Returns
+    -------
+    str
+        The resolved verdict note text.
+    """
+    if (note is None) == (note_file is None):
+        raise _fail(
+            unit_id,
+            message="Pass exactly one of --note or --note-file.",
+            reason=None,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        )
+    if note is not None:
+        return note
+    # The exactly-one guard above guarantees note_file is set on this branch.
+    assert note_file is not None
+    if note_file == "-":
+        return sys.stdin.read()
+    note_path = Path(note_file)
+    if not note_path.is_file():
+        raise _fail(
+            unit_id,
+            message=f"No such note file: {note_file!r}",
+            reason=None,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        )
+    return note_path.read_text(encoding="utf-8")
+
+
 def _resolve_passenger_input(  # noqa: PLR0913
     unit_id: str,
     *,
@@ -1954,7 +2012,6 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
 @app.command("review")
 def review(  # noqa: PLR0913
     unit_id: Annotated[str, typer.Argument(help="Unit to review.")],
-    note: Annotated[str, typer.Option(help="The reviewer's verdict note.")],
     verdict: Annotated[
         ReviewVerdict,
         typer.Option(
@@ -1962,6 +2019,17 @@ def review(  # noqa: PLR0913
             "append the note to the steering stream for the next pass.",
         ),
     ],
+    note: Annotated[
+        str | None, typer.Option(help="The reviewer's verdict note.")
+    ] = None,
+    note_file: Annotated[
+        str | None,
+        typer.Option(
+            help="Read the verdict note from a file; '-' reads stdin. Exactly "
+            "one of --note/--note-file is required (parity with "
+            "`unit edit --body-file`).",
+        ),
+    ] = None,
     no_commit: _NoCommit = False,
     json_output: _JsonOutput = False,
 ) -> None:
@@ -1980,10 +2048,13 @@ def review(  # noqa: PLR0913
     ----------
     unit_id : str
         The unit to review.
-    note : str
-        The reviewer's verdict note.
     verdict : ReviewVerdict
         The structured verdict (``accept`` / ``fix`` / ``redraft``).
+    note : str or None
+        The reviewer's verdict note (mutually exclusive with ``note_file``).
+    note_file : str or None
+        Read the note from a file; ``-`` reads stdin. Exactly one of
+        ``note``/``note_file`` is required (STAGE-05).
     no_commit : bool
         Skip the transition commit for this invocation.
     json_output : bool
@@ -1991,12 +2062,15 @@ def review(  # noqa: PLR0913
     """
     store = compose.default_store()
     root = Path.cwd()
+    resolved_note = _resolve_review_note(
+        unit_id, note, note_file, json_output=json_output
+    )
     seam = _seam(store, root, no_commit=no_commit)
     request = compose.build_review_request(
         unit_id,
         root=root,
         store=store,
-        note=note,
+        note=resolved_note,
         verdict=verdict,
         repo=seam,
     )
