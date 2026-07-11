@@ -160,8 +160,9 @@ Each finding carries one light priority tag:
 It must never rename, parallel, or collide with the CLI machine surface — the
 failure reason codes (signoff_required, backend_unavailable, model_rejected,
 unit_exists, not_drafted, already_accepted, target_exists, bad_target,
-bad_report, target_claimed, handoff_incomplete, undeclared_target,
-multi_target_unsupported) or the progress states
+bad_report, target_claimed, model_already_set, handoff_incomplete,
+undeclared_target, multi_target_unsupported, schema_unsupported,
+provenance_invalid) or the progress states
 (pending → sourced → drafted → reviewed). Those stay surfaced **verbatim** from
 `--json` for run-status. The two
 axes are orthogonal: a priority describes *a finding's urgency*; a reason or
