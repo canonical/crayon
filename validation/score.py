@@ -19,8 +19,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import yaml  # available via the dogen venv the runbook puts on PATH
-
 ROOT = Path(__file__).resolve().parents[1]
 
 # The stance contract's banned researcher register (mirror of
@@ -93,13 +91,6 @@ def _flag(ok: bool, tag: str, message: str) -> bool:
 
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def _git(*args: str) -> str:
-    done = subprocess.run(
-        ["git", "-C", str(ROOT), *args], capture_output=True, text=True, check=False
-    )
-    return done.stdout.strip()
 
 
 def _find_source_root(start: Path) -> Path | None:
@@ -229,10 +220,25 @@ def _score_rst_structure(text: str) -> None:
           f"no MyST fences in an rst page ({fences} found)")
 
 
-def audit_unit(unit_id: str) -> None:
-    unit_dir = ROOT / ".dogen" / "units" / unit_id
+def audit_unit(unit_id: str, root: Path = ROOT) -> None:
+    # Lazy-import yaml so `draft`/`protocol` run without PyYAML on PATH — it is a
+    # transitive-only dependency, not a declared one (RESEARCH Pitfall 5, T-11-04).
+    import yaml
+
+    # Route the git trailer grep through the resolved `root` (D-13) — never
+    # reassign the module ROOT global (RESEARCH Pitfall 3). Preserve the list-argv
+    # form (never a shell string) so a retargeted root can't inject args (T-11-05).
+    def _git_at(*args: str) -> str:
+        done = subprocess.run(
+            ["git", "-C", str(root), *args],
+            capture_output=True, text=True, check=False,
+        )
+        return done.stdout.strip()
+
+    unit_dir = root / ".dogen" / "units" / unit_id
     print(f"== traceability audit: {unit_id}")
     unit_text = (unit_dir / "unit.md").read_text(encoding="utf-8")
+    # safe_load only (never yaml.load) — the sidecar is untrusted on-disk YAML.
     prov = yaml.safe_load((unit_dir / "provenance.yaml").read_text(encoding="utf-8"))
 
     signoff = prov.get("signoff")
@@ -259,30 +265,30 @@ def audit_unit(unit_id: str) -> None:
         _flag(not unstamped, "gen",
               f"all reads commit-stamped ({len(unstamped)} unstamped)")
         _flag(bool(last.get("source_commit")), "gen", "generation has source_commit")
-        draft_rel = last.get("draft_path", "")
-        if draft_rel and (ROOT / draft_rel).is_file():
-            actual = _sha256((ROOT / draft_rel).read_text(encoding="utf-8"))
-            _flag(actual == last.get("draft_sha256"), "gen",
-                  "draft_sha256 matches the recorded draft file")
+        # v2: files[] is the sole digest authority (PROV-01). Verify EVERY page
+        # of the latest generation hashes to its recorded digest on disk (D-12).
+        for f in (last.get("files") or []):
+            page = root / f.get("path", "")
+            ok = (page.is_file()
+                  and _sha256(page.read_text(encoding="utf-8")) == f.get("sha256"))
+            _flag(ok, "gen", f"page digest matches on disk: {f.get('path')}")
 
     accepts = [e for e in prov.get("reviewer_edits", []) if e.get("verdict") == "accept"]
     if accepts:
         last_accept = accepts[-1]
-        sealed = last_accept.get("draft_sha256", "")
-        ok = bool(gens) and sealed == gens[-1].get("draft_sha256")
-        _flag(ok, "seal", "latest accept seals the latest generation's draft hash")
-        files = last_accept.get("files") or []
-        if files:
-            gen_files = (gens[-1].get("files") or []) if gens else []
-            pairs = [(f.get("path"), f.get("sha256")) for f in files]
-            gen_pairs = [(f.get("path"), f.get("sha256")) for f in gen_files]
-            _flag(pairs == gen_pairs, "seal",
-                  f"accept seals every page digest ({len(files)} page(s), v1.2)")
+        # The latest accept seal is the files[] pair list of the latest generation
+        # (v2 — no draft_sha256 fallback). Verify the accept seals every page.
+        acc_files = last_accept.get("files") or []
+        gen_files = (gens[-1].get("files") or []) if gens else []
+        acc_pairs = [(f.get("path"), f.get("sha256")) for f in acc_files]
+        gen_pairs = [(f.get("path"), f.get("sha256")) for f in gen_files]
+        _flag(bool(acc_pairs) and acc_pairs == gen_pairs, "seal",
+              f"accept seals every page digest ({len(acc_files)} page(s), v2)")
     else:
         _flag(False, "seal", "no accept verdict recorded yet")
 
-    log = _git("log", "--reverse", f"--grep=Dogen-Unit: {unit_id}",
-               "--format=%(trailers:key=Dogen-Phase,valueonly)")
+    log = _git_at("log", "--reverse", f"--grep=Dogen-Unit: {unit_id}",
+                  "--format=%(trailers:key=Dogen-Phase,valueonly)")
     phases = [line for line in log.splitlines() if line]
     print(f"INFO [git] phase sequence: {' -> '.join(phases) or '(none)'}")
     _flag("drafted" in phases and "reviewed" in phases, "git",
