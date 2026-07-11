@@ -111,13 +111,18 @@ source-fidelity's declared-vs-read check.
 
 <step_4 name="Perform the findings review">
 **Review mode only** (skip entirely in record mode). Load
-`references/review-rubric.md` now. Assess the drafted page(s) across the four
-dimensions — source-fidelity, completeness, structure-fit, clarity — and present the
-findings **grouped by dimension** in the conversation, one line per finding, each
-tagged must-fix, should-fix, or nit per the rubric's priority mapping (label each
-finding with its page path when the unit spans several; structure-fit judges each
-page against its own format's hygiene, and a multi-file unit additionally gets the
-rubric's cross-page consistency check). Ground the
+`references/review-rubric.md` now. Assess **dimension 0 — the objective check —
+first**: does the draft satisfy the unit's reader problem and every
+`## Outline / acceptance` item? An objective-check failure is **must-fix by
+definition** — the severity floor, pinned to the existing must-fix tag and never
+downgraded to should-fix or nit, however small the surface edit looks. Then assess
+the four dimensions — source-fidelity, completeness, structure-fit, clarity — and
+present the findings **grouped by dimension** in the conversation, one line per
+finding, each tagged must-fix, should-fix, or nit per the rubric's priority mapping
+(label each finding with its page path when the unit spans several and quote the
+diverging lines; structure-fit judges each page against its own format's hygiene,
+and a multi-file unit additionally gets the rubric's cross-page consistency check,
+which dimension 0's objective check relies on for multi-target units). Ground the
 findings: for source-fidelity and completeness, re-check the draft's concrete claims
 against the recorded sources and context origins themselves (open the files; the
 generation's commit stamps say which version was read) — do not judge the draft only
