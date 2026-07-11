@@ -217,3 +217,26 @@ as surprising in a raw log; documented now in `provenance-summary.md`.
   `validation/claude-3` for uniform namespacing.
 - Wall-clock was comparable across legs (~23–30 min) despite opencode's extra
   cycle — the wasted cycles were fast because the bug reproduced immediately.
+
+## 6. Round-4 include-aware re-score (Phase 11 / VAL-01)
+
+`score.py` now resolves `.. include::` one level before scanning (D-08..D-11).
+Re-scoring the frozen round-3 captures under the fix — after staging the shared
+`_interfaces/*.rst` snippets beside the **claude** draft only (the frozen `.rst`
+drafts and the opencode `docs/docs/` doubling are untouched) — the honest
+per-leg outcome:
+
+- **claude:** all 7 dir-relative includes resolve → interface attributes are now
+  genuinely counted → `coverage 29/29 (100%)`, zero `unresolved include` FLAGs.
+  The old 86% was partly a keyword-on-directive-line artifact; the include-aware
+  score reflects what Sphinx actually builds.
+- **copilot:** 0 includes (interfaces punted to `:ref:`) → nothing to resolve →
+  the interface gap stays a **real miss**, correctly.
+- **opencode:** the deliberate doubled `docs/docs/…` path means the 7 includes
+  resolve from the wrong depth even with the snippets staged at the canonical
+  single-`docs` location → they stay unresolved (7 `unresolved include` FLAGs,
+  `coverage 24/29 (82%)`) → **remains a true miss**, faithfully reproducing the
+  real Sphinx build failure. rST-faithful resolution (D-08) mirrors the build.
+
+`score.py draft` stays report-only (exit 0) throughout — unresolved-include
+FLAGs never change the exit code (D-09).

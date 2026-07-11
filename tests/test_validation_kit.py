@@ -101,3 +101,22 @@ def test_include_one_level_only(tmp_path):
     assert flags == []
     assert "Outer content." in expanded
     assert "INNERKEYWORD" not in expanded
+
+
+def test_round3_claude_rescores_include_aware(capsys):
+    """The frozen round-3 claude draft re-scores with all 7 includes resolved.
+
+    The shared ``_interfaces/*.rst`` snippets are staged beside the frozen draft
+    (Task 2), so its 7 dir-relative includes now resolve — turning the old
+    keyword-on-directive-line artifact into a genuine include-aware score
+    (Pitfall 1). Copilot (0 includes) and opencode (doubled docs/docs path)
+    deliberately stay real misses and are not staged.
+    """
+    draft = (
+        ROOT
+        / "validation/round-3/claude/docs/reference/definition-files"
+        / "workshop-definition.rst"
+    )
+    score.score_draft(draft)
+    out = capsys.readouterr().out
+    assert "unresolved include" not in out
