@@ -185,8 +185,8 @@ def test_fresh_config_has_empty_model_and_origin():
 
 
 def test_config_roundtrips_model_and_origin_from_dict():
-    config = DogenConfig(
-        **{"provider": "mock", "model": "gpt-x", "model_origin": "ta"}
+    config = DogenConfig.model_validate(
+        {"provider": "mock", "model": "gpt-x", "model_origin": "ta"}
     )
     assert config.model == "gpt-x"
     assert config.model_origin == "ta"
@@ -204,7 +204,7 @@ def test_config_set_write_then_read_preserves_model_and_origin(repo):
 
 def test_old_config_without_model_key_loads_as_empty():
     # An old config dict with NO model key loads (honest-empty) — no migration.
-    config = DogenConfig(**{"schema_version": 2, "provider": "host-harness"})
+    config = DogenConfig(schema_version=2, provider="host-harness")
     assert config.model == ""
     assert config.model_origin == ""
 
@@ -565,9 +565,7 @@ def test_passenger_echo_empty_no_resolution_is_model_unrecorded(repo):
     _signoff(store, repo, clock, unit="u")
 
     passenger = HostHarnessDraftingProvider(draft_text="# host page\n", model="")
-    outcome = asyncio.run(
-        _draft(store, repo, clock, unit="u", provider=passenger)
-    )
+    outcome = asyncio.run(_draft(store, repo, clock, unit="u", provider=passenger))
 
     generation = store.read_provenance("u", root=repo).generations[-1]
     assert generation.model == ""
@@ -796,9 +794,7 @@ def test_cli_amend_exclusive_mode_refuses_draft_inputs(repo, conflicting):
     _signoff(store, repo, clock, unit="u")
     _draft_empty_model(store, repo, clock, unit="u")
 
-    result = runner.invoke(
-        app, ["draft", "u", "--amend-model", "gpt-4o", *conflicting]
-    )
+    result = runner.invoke(app, ["draft", "u", "--amend-model", "gpt-4o", *conflicting])
     assert result.exit_code == 2, result.output
     assert store.read_provenance("u", root=repo).generations[-1].model == ""
 
