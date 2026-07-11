@@ -159,9 +159,27 @@ for `.rst` — the per-format standard is in `references/provider-branch.md`).
 5. `Write` the authored page(s). Single-page unit: the handoff file, named with
    the target's own extension — `.dogen/staging/<UNIT_ID>/handoff.<ext>`.
    Multi-file unit: a `handoff/` directory mirroring the target set —
-   `.dogen/staging/<UNIT_ID>/handoff/<target-relpath>` for EVERY page in the
-   set (the CLI refuses a missing page as `handoff_incomplete` and a stray one
-   as `undeclared_target`).
+   `.dogen/staging/<UNIT_ID>/handoff/<target-relpath>` for EVERY page. For a
+   unit whose targets are `guide/a.md`, `guide/b.md`, `reference/c.rst`, the
+   expected tree is exactly:
+
+   ```
+   .dogen/staging/<UNIT_ID>/handoff/
+   ├── guide/a.md
+   ├── guide/b.md
+   └── reference/c.rst
+   ```
+
+   The CLI refuses a missing page as `handoff_incomplete` and a stray one as
+   `undeclared_target`, and the refusal enumerates the exact `handoff/<relpath>`
+   it expects. **If a page is in the wrong place, MOVE it to its
+   `handoff/<target-relpath>` — never delete a staged draft to fix the layout.**
+   Deleting staged drafts to "clean up" is the exact round-3 data-loss trap:
+   the drafts are the work, the tree is just where they sit. A **flat** handoff
+   (every page dropped at `handoff/<basename>` with no sub-dirs) is now accepted
+   when every page's basename is unique — dogen maps it by basename and prints
+   `note: handoff staged flat; mapped by basename`. When two pages share a
+   basename it stays ambiguous: mirror the exact `handoff/<relpath>` tree above.
 6. `Write` the context report to `.dogen/staging/<UNIT_ID>/report.yaml` — every
    file read (commit-stamped via one `git rev-parse HEAD`; a stamp is a hex SHA
    or honestly empty — explanations go in an origin's `note` field), the tools

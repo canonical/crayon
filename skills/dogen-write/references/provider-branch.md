@@ -65,8 +65,8 @@ words (D-03; the shared vocabulary lives in `../README.md`):
 | `model_rejected` | "The requested model `<model>` was refused by the backend." | retry without `--model`, or pick another |
 | `unit_exists` (not found) | "No unit with that id exists." | check the id / declare via dogen-plan |
 | `bad_report` | "The context report failed validation" (unreadable YAML, or a commit stamp that is neither hex nor empty). | fix the report; prose explanations go in an origin's `note` |
-| `handoff_incomplete` | "A declared page has no staged file in the handoff directory." | stage every page of the unit's set, then re-record |
-| `undeclared_target` | "The handoff stages a file outside the unit's declared target set." | remove the stray file, or amend the plan (`--also-target`) first |
+| `handoff_incomplete` | "A declared page has no staged file in the handoff directory." | stage/move each page at its exact `handoff/<relpath>` (a flat handoff with unique basenames is now accepted), then re-record — never delete a staged draft to fix layout |
+| `undeclared_target` | "The handoff stages a file outside the unit's declared target set." | move the stray file into place or amend the plan (`--also-target`) first — do not delete staged drafts |
 | `multi_target_unsupported` | "This provider drafts a single page; the unit spans several." | run the host-harness passenger branch |
 
 The success object may additionally carry:
