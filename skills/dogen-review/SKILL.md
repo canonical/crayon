@@ -251,7 +251,7 @@ note.
 <must>
 - Offer two selectable modes up front (record vs review) via `AskUserQuestion`, and
   present a human-readable provenance summary (signoff + plan freshness,
-  provider/mode/model, declared vs actually-read sources with commit stamps,
+  provider/mode/model/origin, declared vs actually-read sources with commit stamps,
   recorded gaps, steering stream, progress state) in both modes before eliciting a
   verdict.
 - In review mode, present the four-dimension findings (source-fidelity,
@@ -306,7 +306,7 @@ then the verdict:
 
 ### Provenance
 - Signoff: <author> at <when> — plan <fresh | changed since signoff>
-- Provider / mode / model: <provider> / <mode> / <model>
+- Provider / mode / model / origin: <provider> / <mode> / <model> / <model_origin>
 - Declared sources: <unit.md sources, with commit stamps>
 - Actually read (context_origins): <records, with commit stamps>
 - Writer-declared gaps: <gaps, or (none)>
@@ -348,8 +348,8 @@ The recorded artifact is the CLI-persisted structured review (advancing
 <success_criteria>
 - [ ] The review mode (record or review) was selected up front via `AskUserQuestion`.
 - [ ] A human-readable provenance summary (signoff + plan freshness,
-      provider/mode/model, declared vs actually-read with commit stamps, gaps,
-      steering stream, progress) was presented in the selected mode.
+      provider/mode/model/origin, declared vs actually-read with commit stamps,
+      gaps, steering stream, progress) was presented in the selected mode.
 - [ ] In review mode, the four-dimension findings were presented grouped by
       dimension with must-fix/should-fix/nit tags, grounded by re-checking claims
       against the recorded sources; in record mode the findings were skipped.
