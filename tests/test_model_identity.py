@@ -35,8 +35,22 @@ from dogen.adapters.host_harness import HostHarnessDraftingProvider
 from dogen.adapters.planning_fs import FilesystemPlanningStore
 from dogen.app import compose
 from dogen.cli.main import app
-from dogen.core.models import DogenConfig, DraftResult, Intent
-from dogen.core.orchestrator import DraftOutcome, declare, draft
+from dogen.core.models import (
+    DogenConfig,
+    DraftResult,
+    Intent,
+    ReviewVerdict,
+    derive_progress,
+    is_sealed,
+)
+from dogen.core.orchestrator import (
+    DraftOutcome,
+    ModelAlreadySetError,
+    amend_model,
+    declare,
+    draft,
+    review,
+)
 from dogen.core.orchestrator import signoff as steer
 
 runner = CliRunner()
@@ -370,6 +384,51 @@ def _commit_count(root) -> int:
     return int(result.stdout.strip()) if result.returncode == 0 else 0
 
 
+def _head_message(root) -> str:
+    """Return the HEAD commit's full message (subject + body + trailers)."""
+    completed = subprocess.run(
+        ["git", "-C", str(root), "log", "-1", "--format=%B"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return completed.stdout
+
+
+def _review(store, root, clock, note, *, unit, verdict, repo=None):  # noqa: PLR0913
+    """Record a structured review verdict for ``unit`` through the core use-case."""
+    return review(
+        compose.build_review_request(
+            unit,
+            root=root,
+            store=store,
+            note=note,
+            now=clock,
+            verdict=verdict,
+            repo=repo,
+        )
+    )
+
+
+def _draft_empty_model(store, root, clock, *, unit, repo=None):
+    """Draft ``unit`` via a passenger echoing NO model (empty model slot).
+
+    The default mock echoes a non-empty ``_MOCK_MODEL``; the amend precondition
+    is an *empty* ``generations[-1].model``, so this drives a host-harness
+    passenger asserting ``model=""`` (the host hid its model — the exact
+    round-3 "forgotten model" shape the amend recovery path fixes).
+    """
+    passenger = HostHarnessDraftingProvider(draft_text="# host page\n", model="")
+    return asyncio.run(
+        _draft(store, root, clock, unit=unit, provider=passenger, repo=repo)
+    )
+
+
+def _amend(store, root, *, unit, name, origin, repo=None):  # noqa: PLR0913
+    """Patch ``unit``'s empty model slot through the ``amend_model`` use-case."""
+    return amend_model(store, unit, name=name, origin=origin, root=root, repo=repo)
+
+
 class _EchoDriver:
     """A driver :class:`DraftingProvider` double with a settable model echo.
 
@@ -531,3 +590,116 @@ def test_driver_echo_present_no_resolution_records_echo_with_empty_origin(repo):
     assert generation.model == "gpt-real"
     assert generation.model_origin == ""
     assert outcome.model_unrecorded is False
+
+
+# --------------------------------------------------------------------------- #
+# Task 1 (Plan 03) — amend_model use-case: metadata-only patch, one commit,
+# never a new generation (-k amend / -k already_set / -k seal)
+# --------------------------------------------------------------------------- #
+
+
+def test_amend_stamps_empty_slot_with_one_commit_and_no_new_generation(repo):
+    # -k amend: amend patches an empty generations[-1].model + model_origin,
+    # records exactly ONE model-amended commit (carrying Dogen-Model), and grows
+    # NO generation (kills the round-3 duplicate-generation class).
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    seam = compose.make_repo_seam(enabled=True)
+    _declare(store, repo, unit="u", repo=seam)
+    _signoff(store, repo, clock, unit="u", repo=seam)
+    _draft_empty_model(store, repo, clock, unit="u", repo=seam)
+
+    prov_before = store.read_provenance("u", root=repo)
+    assert prov_before.generations[-1].model == ""
+    gens_before = len(prov_before.generations)
+    commits_before = _commit_count(repo)
+
+    _amend(store, repo, unit="u", name="gpt-4o", origin="ta", repo=seam)
+
+    prov_after = store.read_provenance("u", root=repo)
+    assert len(prov_after.generations) == gens_before  # NO new generation
+    assert prov_after.generations[-1].model == "gpt-4o"
+    assert prov_after.generations[-1].model_origin == "ta"
+    assert _commit_count(repo) == commits_before + 1  # exactly one commit
+    message = _head_message(repo)
+    assert "Dogen-Phase: model-amended" in message
+    assert "Dogen-Model: gpt-4o" in message
+
+
+def test_amend_origin_self_stamps_self(repo):
+    # -k amend: --origin self records model_origin "self" (agent self-correction).
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    _declare(store, repo, unit="u")
+    _signoff(store, repo, clock, unit="u")
+    _draft_empty_model(store, repo, clock, unit="u")
+
+    _amend(store, repo, unit="u", name="claude-x", origin="self")
+
+    generation = store.read_provenance("u", root=repo).generations[-1]
+    assert generation.model == "claude-x"
+    assert generation.model_origin == "self"
+
+
+def test_amend_refuses_non_empty_slot_naming_current_model_and_origin(repo):
+    # -k already_set: a populated model slot is never overwritten — amend raises
+    # ModelAlreadySetError whose message NAMES the current model AND its origin.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    _declare(store, repo, unit="u")
+    _signoff(store, repo, clock, unit="u")
+    # A flag-resolved draft records a vouched model (origin "flag").
+    asyncio.run(
+        _draft(store, repo, clock, unit="u", model="gpt-set", model_origin="flag")
+    )
+
+    with pytest.raises(ModelAlreadySetError) as excinfo:
+        _amend(store, repo, unit="u", name="gpt-other", origin="ta")
+
+    message = str(excinfo.value)
+    assert "gpt-set" in message  # names the current model
+    assert "flag" in message  # names its origin
+    # The slot is unchanged (no silent overwrite).
+    assert store.read_provenance("u", root=repo).generations[-1].model == "gpt-set"
+
+
+def test_amend_not_drafted_unit_raises_value_error(repo):
+    # A unit with no generations cannot be amended — mirror the not-drafted refusal
+    # (a plain ValueError, distinct from the model_already_set domain refusal).
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    _declare(store, repo, unit="u")
+    _signoff(store, repo, clock, unit="u")  # signed off, never drafted
+
+    with pytest.raises(ValueError) as excinfo:  # noqa: PT011
+        _amend(store, repo, unit="u", name="gpt-4o", origin="ta")
+    # It is NOT the already-set refusal (an empty stream is a different failure).
+    assert not isinstance(excinfo.value, ModelAlreadySetError)
+
+
+def test_amend_on_sealed_unit_leaves_seal_and_progress_untouched(repo):
+    # -k seal: amend works on a SEALED unit (latest verdict accept) and does NOT
+    # reopen it — is_sealed and derive_progress are identical before and after.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    seam = compose.make_repo_seam(enabled=True)
+    _declare(store, repo, unit="u", repo=seam)
+    _signoff(store, repo, clock, unit="u", repo=seam)
+    _draft_empty_model(store, repo, clock, unit="u", repo=seam)
+    _review(
+        store, repo, clock, "accepted", unit="u", verdict=ReviewVerdict.accept, repo=seam
+    )
+
+    prov_before = store.read_provenance("u", root=repo)
+    assert is_sealed(prov_before) is True
+    sealed_before = is_sealed(prov_before)
+    progress_before = derive_progress(prov_before)
+
+    _amend(store, repo, unit="u", name="gpt-4o", origin="ta", repo=seam)
+
+    prov_after = store.read_provenance("u", root=repo)
+    assert is_sealed(prov_after) is True
+    assert is_sealed(prov_after) == sealed_before
+    assert derive_progress(prov_after) == progress_before
+    # The model was still stamped despite the seal (a pure metadata fill).
+    assert prov_after.generations[-1].model == "gpt-4o"
