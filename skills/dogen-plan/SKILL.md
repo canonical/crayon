@@ -21,10 +21,11 @@ and status vocabulary.
 </objective>
 
 <quick_start>
-1. Confirm the TA wants to declare a NEW unit (this skill's only job). If they want
-   to draft or review an existing unit, route them to dogen-write or dogen-review.
-   To amend an already-declared unit's plan, use `dogen unit edit` (step 6) — never
-   `--force`.
+1. Confirm the target unit and check its current state: the TA wants to declare a
+   NEW unit (this skill's only job), so verify the id is not already declared — an
+   existing id refuses with `unit_exists` (step 6). If they want to draft or review
+   an existing unit, route them to dogen-write or dogen-review. To amend an
+   already-declared unit's plan, use `dogen unit edit` (step 6) — never `--force`.
 2. Ground yourself before questioning: check `dogen context ls` for landed B1/B2
    artifacts and read what is there — `doc-gaps.md` (prioritized unit proposals)
    and `structure.md` (topology + gaps) first, then `doc-style.md` and

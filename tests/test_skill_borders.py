@@ -61,3 +61,44 @@ def test_dogen_plan_output_spec_carries_referral_and_commit() -> None:
         "dogen-plan's <output_specification> close must quote the `git: committed` "
         "relay produced by the declaration ceremony (SK-05)."
     )
+
+
+# ---- Task 2: cross-skill open/close normalization --------------------------
+
+
+def _open_region(path: Path) -> str:
+    """Return the OPEN border — everything before ``<pipeline>``.
+
+    The opening border is the ``<objective>`` + ``<quick_start>`` region where each
+    skill confirms the target unit and performs its state check before the workflow.
+    """
+    text = _text(path)
+    return text[: text.index("<pipeline>")]
+
+
+def test_all_closes_carry_frozen_referral_and_commit() -> None:
+    """All three CLOSE borders quote the git relay + the frozen referral (SK-05)."""
+    for path in _ALL_THREE:
+        spec = _output_spec(path).lower()
+        assert "next: /dogen-" in spec, (
+            f"{path.parent.name}'s <output_specification> close must carry the "
+            "frozen `Next: /dogen-<skill>` referral line (SK-05)."
+        )
+        assert "git: committed" in spec, (
+            f"{path.parent.name}'s <output_specification> close must quote the "
+            "`git: committed` relay (SK-05)."
+        )
+
+
+def test_all_opens_confirm_unit_and_state_check() -> None:
+    """All three OPEN borders confirm the target unit + a state check (SK-05)."""
+    for path in _ALL_THREE:
+        opening = _open_region(path).lower()
+        assert "confirm the target unit" in opening, (
+            f"{path.parent.name}'s open must confirm the target unit — the shared "
+            "normalized OPEN shape (SK-05)."
+        )
+        assert "check its current state" in opening, (
+            f"{path.parent.name}'s open must perform a state check (the unit's "
+            "current lifecycle state) — the shared normalized OPEN shape (SK-05)."
+        )

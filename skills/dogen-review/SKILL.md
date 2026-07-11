@@ -27,8 +27,9 @@ from its tool surface so that posture is enforced at the manifest (D-14/D-18). S
 </objective>
 
 <quick_start>
-1. Confirm the target unit id and that it has been drafted. `dogen unit show <id>
-   --json --latest` gives the state in one lean read (the latest generation only —
+1. Confirm the target unit id and check its current state: it must already have been
+   drafted. `dogen unit show <id> --json --latest` gives the state in one lean read
+   (the latest generation only —
    older passes' read-lists stay on disk); if it was never drafted, dogen review
    will refuse with `not_drafted` — route the TA back to dogen-write first.
 2. Read the unit's sidecars under `.dogen/units/<id>/` (`unit.md`,
