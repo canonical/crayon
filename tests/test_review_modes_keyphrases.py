@@ -200,7 +200,7 @@ def test_scoped_re_review_is_default_after_fix() -> None:
 
 
 def test_full_re_run_only_on_explicit_request() -> None:
-    """A full 4-dimension re-run happens only on explicit request — no auto-escalation (D-05)."""
+    """Full re-run happens only on explicit request; no auto-escalation (D-05)."""
     skill = _read(_SKILL)
     assert _FULL_RERUN in skill, (
         f"dogen-review SKILL.md must name a {_FULL_RERUN!r} as the widened option"
