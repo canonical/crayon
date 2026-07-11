@@ -528,7 +528,10 @@ class FilesystemPlanningStore:
             If the unit directory does not exist.
         """
         self._reject_unsafe_unit_id(unit_id)
-        unit_dir = (root / _UNITS_SUBDIR / unit_id).resolve()
+        # CR-01: same leaf-symlink refusal + positive subtree containment as
+        # remove_staging — a symlink at .dogen/units/<id> must not redirect the
+        # rmtree to a sibling in-repo directory.
+        unit_dir = self._resolve_bounded_child(root / _UNITS_SUBDIR, unit_id)
         if not unit_dir.is_dir():
             raise UnitNotFoundError(f"no such unit: {unit_id!r}")
         self._assert_within_root(unit_dir, root=root)
@@ -583,7 +586,12 @@ class FilesystemPlanningStore:
             or lands under ``.planning/``.
         """
         self._reject_unsafe_unit_id(unit_id)
-        staging_dir = (root / _STAGING_SUBDIR / unit_id).resolve()
+        # CR-01: bind the delete to exactly one child of .dogen/staging/ and
+        # refuse a symlinked leaf, so a symlink at .dogen/staging/<id> pointing
+        # at a sibling in-repo dir (docs/) or the repo root cannot widen the
+        # rmtree. The stale _assert_within_root/_assert_not_under_planning stack
+        # permitted that redirect (it only barred escaping the root / .planning).
+        staging_dir = self._resolve_bounded_child(root / _STAGING_SUBDIR, unit_id)
         self._assert_within_root(staging_dir, root=root)
         self._assert_not_under_planning(staging_dir, root=root)
         if not staging_dir.is_dir():
@@ -627,8 +635,12 @@ class FilesystemPlanningStore:
         """
         self._reject_unsafe_unit_id(old_id)
         self._reject_unsafe_unit_id(new_id)
-        old_dir = (root / _UNITS_SUBDIR / old_id).resolve()
-        new_dir = (root / _UNITS_SUBDIR / new_id).resolve()
+        # CR-01: bind both endpoints to a direct child of .dogen/units/ and
+        # refuse a symlinked leaf, so neither the source (rmtree'd last) nor a
+        # pre-existing symlink at the destination can redirect the operation
+        # outside the units subtree.
+        old_dir = self._resolve_bounded_child(root / _UNITS_SUBDIR, old_id)
+        new_dir = self._resolve_bounded_child(root / _UNITS_SUBDIR, new_id)
         if not old_dir.is_dir():
             raise UnitNotFoundError(f"no such unit: {old_id!r}")
         if new_dir.exists():
@@ -1509,6 +1521,58 @@ class FilesystemPlanningStore:
             raise ValueError(f"invalid unit id: {unit_id!r}")
         if "/" in unit_id or "\\" in unit_id or Path(unit_id).name != unit_id:
             raise ValueError(f"unit id must be a single path segment: {unit_id!r}")
+
+    @staticmethod
+    def _resolve_bounded_child(subtree: Path, name: str) -> Path:
+        """Resolve ``<subtree>/<name>`` bound to the subtree, refusing a symlink leaf.
+
+        Binds a destructive op (``shutil.rmtree``/``os.replace``) to *exactly*
+        one direct child of a resolved subtree root (CR-01 / T-09-SD). The stale
+        guard stack (``_assert_within_root`` + ``_assert_not_under_planning``)
+        resolved the leaf *before* checking it and only forbade escaping the
+        repo root or landing under ``.planning/`` — a symlink at the leaf that
+        redirected to a *sibling inside the root* (e.g. ``docs/`` or the repo
+        root itself) therefore passed, and ``rmtree`` followed it. This helper
+        closes that hole with two positive controls:
+
+        1. **Refuse a symlinked leaf outright** — resolved *before* following it,
+           so we never ``rmtree``/``replace`` *through* a symlink.
+        2. **Positive containment** — the resolved child must live *directly*
+           under the resolved subtree root, so it cannot resolve elsewhere.
+
+        The parent (never the final component) is what gets resolved, so a
+        legitimate, non-symlink, properly-contained child behaves exactly as the
+        old ``(subtree / name).resolve()`` did — backward-compatible for the
+        existing ``delete_unit`` / ``rename_unit`` callers and their tests.
+
+        Parameters
+        ----------
+        subtree : Path
+            The trusted subtree root the child must live directly beneath (e.g.
+            ``root / _STAGING_SUBDIR`` or ``root / _UNITS_SUBDIR``).
+        name : str
+            The single-segment child name (an already-``_reject_unsafe_unit_id``
+            -validated unit id).
+
+        Returns
+        -------
+        Path
+            The resolved child path, guaranteed a direct child of ``subtree``.
+
+        Raises
+        ------
+        ValueError
+            If the leaf is a symlink, or the resolved child does not live
+            directly under the resolved subtree root.
+        """
+        subtree_root = subtree.resolve()
+        candidate = subtree_root / name
+        if candidate.is_symlink():
+            raise ValueError(f"refusing to act through a symlinked path: {name!r}")
+        resolved = candidate.resolve()
+        if resolved.parent != subtree_root:
+            raise ValueError(f"path escapes {subtree}: {name!r}")
+        return resolved
 
     def _resolve_docs_target(self, sphinx_target: str, *, root: Path) -> Path:
         """Resolve a ``docs/``-relative target and enforce containment (CR-01).

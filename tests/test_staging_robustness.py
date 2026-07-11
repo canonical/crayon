@@ -115,6 +115,53 @@ def test_remove_staging_refuses_symlink_escaping_root(repo):
     assert (outside / "keep.txt").exists()
 
 
+def test_remove_staging_refuses_symlink_to_sibling_in_repo(repo):
+    # CR-01: the escape-*out* test above gave false confidence. The real hole is
+    # a staging leaf symlinked to a sibling dir *inside* the root (docs/), which
+    # _assert_within_root + _assert_not_under_planning both PASS — the old code
+    # then rmtree'd the symlink target (the very output an accept just sealed).
+    # Must refuse with a clean ValueError and delete NOTHING.
+    store = FilesystemPlanningStore()
+    docs = repo / "docs"
+    docs.mkdir()
+    (docs / "page.md").write_text("sealed output\n", encoding="utf-8")
+    staging_parent = repo / ".dogen" / "staging"
+    staging_parent.mkdir(parents=True, exist_ok=True)
+    (staging_parent / "u").symlink_to(Path("../../docs"), target_is_directory=True)
+    with pytest.raises(ValueError):
+        store.remove_staging("u", root=repo)
+    assert (docs / "page.md").read_text(encoding="utf-8") == "sealed output\n"
+
+
+def test_remove_staging_refuses_symlink_to_repo_root(repo):
+    # CR-01 worst case: a staging leaf symlinked to the repo root would rmtree
+    # the entire working tree (including .git). Refuse it; delete nothing.
+    store = FilesystemPlanningStore()
+    staging_parent = repo / ".dogen" / "staging"
+    staging_parent.mkdir(parents=True, exist_ok=True)
+    (staging_parent / "u").symlink_to(Path("../.."), target_is_directory=True)
+    with pytest.raises(ValueError):
+        store.remove_staging("u", root=repo)
+    assert (repo / "README.md").exists()
+    assert (repo / ".git").exists()
+
+
+def test_delete_unit_refuses_symlink_to_sibling_in_repo(repo):
+    # CR-01: delete_unit shares the identical root cause — a .dogen/units/<id>
+    # symlinked to a sibling in-repo dir (docs/) must refuse cleanly and delete
+    # nothing, not rmtree through the symlink.
+    store = FilesystemPlanningStore()
+    docs = repo / "docs"
+    docs.mkdir()
+    (docs / "page.md").write_text("real docs\n", encoding="utf-8")
+    units_parent = repo / ".dogen" / "units"
+    units_parent.mkdir(parents=True, exist_ok=True)
+    (units_parent / "u").symlink_to(Path("../../docs"), target_is_directory=True)
+    with pytest.raises(ValueError):
+        store.delete_unit("u", root=repo)
+    assert (docs / "page.md").read_text(encoding="utf-8") == "real docs\n"
+
+
 # --- Task 2: review --note-file stdin parity + exactly-one guard (STAGE-05) ---
 
 
