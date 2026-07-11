@@ -178,16 +178,19 @@ flow (they *may* edit it on their own initiative later; the plan then shows as
 stale until re-signed).
 </step_5>
 
-<step_6 name="Reflect back, then delegate persistence and signoff">
-Reflect the complete picture back to the TA (problem, audience, unit id, title,
-sources, direction=reference) and get their confirmation.
+<step_6 name="Reflect back once, then run the declaration ceremony as one batch">
+The judgment and mechanical fields were all settled with the TA on screen during
+steps 2–5, so the reflect-back drops what they have already seen. Synthesize the
+Socratic intake — the reader's problem drawn out in steps 2–3, plus any scope or
+angle nuance the TA gave — into ONE concise steering note: a sentence or two in the
+TA's own framing, capturing what the draft must do for its reader. Invent no content.
+This synthesized note is `$NOTES` below. Reflect back **only** that synthesized note
+(the one field they have not already seen verbatim) and get a single confirmation.
 
-Before the delegating call, synthesize the Socratic intake — the reader's problem
-drawn out in steps 2–3, plus any scope or angle nuance the TA gave — into ONE concise
-steering note: a sentence or two in the TA's own framing, capturing what the draft
-must do for its reader. Invent no content. This synthesized note is `$NOTES` below.
-
-Then run the delegating calls via `Bash` — the only persistence in the skill:
+After one confirmation, the ceremony runs the three delegating verbs —
+`dogen unit new` → `dogen unit edit --body-file -` → `dogen signoff` — back-to-back
+via `Bash` (the only persistence in the skill); each verb produces its own transition
+commit. Do not pause for a separate confirmation between verbs:
 
 ```bash
 dogen unit new "$UNIT_ID" \
@@ -211,8 +214,8 @@ with the repoint (add `--re-sign` to re-approve the amended plan in the same
 act instead of leaving it stale).
 
 `dogen unit new` scaffolds the editable `unit.md` (sources are commit-stamped by the
-CLI) and the seam commits the declaration. Then persist the step-5 outline the TA
-approved in chat — pipe it to the CLI on stdin; the seam commits the amendment:
+CLI) and the seam commits the declaration. Immediately persist the step-5 outline the
+TA approved in chat — pipe it to the CLI on stdin; the seam commits the amendment:
 
 ```bash
 dogen unit edit "$UNIT_ID" --body-file - --json <<'PLAN_BODY'
@@ -230,23 +233,47 @@ Field amendments use the same verb's field options (`--title`, `--audience`,
 `--add-source`, …; merge semantics — nothing unnamed changes). Never ask the TA to
 paste content into `unit.md` themselves.
 
-When the TA confirms the plan is what they want drafted, record the gate act:
+Then record the gate act — no extra confirmation is needed, the batch already has it:
 
 ```bash
 dogen signoff "$UNIT_ID" --json
 ```
 
 The signoff freezes the exact `unit.md` (a content hash) and provably precedes any
-draft — so it must come AFTER the plan is settled, not before. Later plan edits are
+draft — so it must come AFTER the outline amendment, not before. Later plan edits are
 allowed but surface as a stale plan until re-signed — a deliberate amendment folds
-the re-approval into the same act with `dogen unit edit … --re-sign`. Read the
-`--json` output and surface the result, quoting each `git: committed <sha7> — …`
-line the CLI printed (that is the transition commit landing — the transcript's
-audit anchor; the `--json` object carries the same hash as `commit`). On a
-`unit_exists` reason the unit already exists — offer `dogen unit edit` to amend
-it, or a different id; `--force` is a full re-scaffold reserved for genuinely
-starting over. On success, report that the unit is declared and signed off, and
-route the TA to dogen-write.
+the re-approval into the same act with `dogen unit edit … --re-sign`.
+
+**One summary block closes the ceremony.** When all three verbs land, read their
+`--json` output and present a SINGLE block that quotes all three
+`git: committed <sha7> — …` lines together (declaration, outline amendment, signoff —
+each `--json` object carries the same hash as its `commit`). Do not narrate the three
+commits as they happen; batch them into this one audit anchor, then close with the
+frozen referral line:
+
+```
+## dogen-plan: <unit-id>
+
+- Declared: <title> → docs/<target> [+ each --also-target for a multi-file unit]
+- git: committed <sha7> — <declaration>
+- git: committed <sha7> — <outline amendment>
+- git: committed <sha7> — <signoff>
+- Progress: <progress state> (signed off)
+
+Next: /dogen-write — draft the unit.
+```
+
+**Mid-batch failure (D-04): stop, show what landed, do not roll back.** If a verb
+fails after an earlier one already committed (e.g. `signoff` fails after `unit new` +
+`unit edit` landed), STOP the batch. Print exactly the `git: committed <sha7>` lines
+already produced, then print the single command to finish — `dogen signoff <id>` (or
+the earliest remaining verb) — so the TA resumes from the partial state. Do **not**
+roll back: the commits are real work on the append-only, commit-per-transition seam,
+and deleting a freshly-committed unit would fight the seam and can itself fail.
+
+On a `unit_exists` reason the unit already exists — offer `dogen unit edit` to amend
+it, or a different id; `--force` is a full re-scaffold reserved for genuinely starting
+over.
 </step_6>
 </workflow>
 
