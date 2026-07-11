@@ -2251,7 +2251,6 @@ def review(  # noqa: PLR0913
             unit=unit_id,
             progress=outcome.state.value,
             verdict=verdict.value,
-            next=outcome.next_action,
             next_id=outcome.next_id,
             unapplied_steering=outcome.unapplied_steering,
             commit=sha,
@@ -2286,7 +2285,6 @@ def status(json_output: _JsonOutput = False) -> None:
                         "state": r.state.value,
                         "signed_off": r.signed_off,
                         "stale_plan": r.stale_plan,
-                        "next": r.next_action,
                         "next_id": r.next_id,
                         "title": r.title,
                     }
