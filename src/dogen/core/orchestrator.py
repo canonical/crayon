@@ -1349,6 +1349,17 @@ class DraftRequest:
         (v1 cross-ref); ``""`` for driver runs.
     repo : RepoSeam or None
         The injected commit seam.
+    model : str
+        The **resolved** drafting model (``--model`` flag > ``DOGEN_MODEL`` env >
+        repo config) recorded onto the generation (MODEL-01). Distinct from the
+        raw ``--model`` fed to the provider factory: this is what gets stamped,
+        with the provider echo (``result.model``) as the driver fallback when
+        this is empty (Open Q1 resolution b). ``""`` when nothing resolved.
+    model_origin : str
+        The D-03 vouch-origin (``""``/``ta``/``self``/``config``/``flag``) for
+        the resolved model, derived from resolution only — never inferred from
+        the provider echo. ``""`` when nothing resolved (fires
+        ``model_unrecorded`` unless a driver echo supplies the model).
     """
 
     unit_id: str
@@ -1361,6 +1372,8 @@ class DraftRequest:
     report: ContextReport | None = None
     handoff_path: str = ""
     repo: RepoSeam | None = None
+    model: str = ""
+    model_origin: str = ""
 
 
 @dataclass(frozen=True)
@@ -1689,7 +1702,15 @@ def _record_generation(  # noqa: PLR0913
     effort = result.effort_used or request.effort
     provenance.generations.append(
         Generation(
-            model=result.model,
+            # Open Q1 resolution (b): record the RESOLVED model (flag>env>config)
+            # when present, else fall back to the provider echo (a driver's real
+            # runtime model). model_origin is stamped from resolution ONLY (D-03)
+            # — never inferred from result.model — so a driver echo with no
+            # resolution carries origin "" (present model, no vouch), while a
+            # passenger echo-empty with no resolution stays honest-empty
+            # (model_unrecorded).
+            model=request.model or result.model,
+            model_origin=request.model_origin,
             model_version=result.model_version,
             effort=effort,
             tooling_version=tooling_version(),
