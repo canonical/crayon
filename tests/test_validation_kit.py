@@ -334,7 +334,9 @@ def test_protocol_catches_round3_names(tmp_path, capsys, monkeypatch):
     (tmp_path / "SESSION-claude.md").write_text("claude transcript\n", encoding="utf-8")
     (tmp_path / "copilot-session-abcd.md").write_text("copilot\n", encoding="utf-8")
     (tmp_path / "session-ses_0d1b.md").write_text("opencode\n", encoding="utf-8")
-    (tmp_path / "RESULTS.md").write_text("# results\n\n## claude\n\nok\n", encoding="utf-8")
+    (tmp_path / "RESULTS.md").write_text(
+        "# results\n\n## claude\n\nok\n", encoding="utf-8"
+    )
 
     assert score.protocol_check(tmp_path) is False
     out = capsys.readouterr().out
@@ -359,7 +361,9 @@ def test_protocol_requires_results_heading(tmp_path, capsys, monkeypatch):
     bad.mkdir()
     (bad / "SESSION-claude.md").write_text("c\n", encoding="utf-8")
     (bad / "SESSION-copilot.md").write_text("p\n", encoding="utf-8")
-    (bad / "RESULTS.md").write_text("# r\n\n## claude\n\nonly claude\n", encoding="utf-8")
+    (bad / "RESULTS.md").write_text(
+        "# r\n\n## claude\n\nonly claude\n", encoding="utf-8"
+    )
 
     assert score.protocol_check(bad) is False
     out = capsys.readouterr().out
