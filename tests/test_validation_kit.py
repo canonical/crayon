@@ -16,6 +16,7 @@ it is loaded by path here — mirroring nothing in the app import graph on purpo
 """
 
 import importlib.util
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -418,3 +419,43 @@ def test_export_writes_verbatim(tmp_path):
     )
     from_stdin = tmp_path / "SESSION-stdin.md"
     assert from_stdin.read_bytes() == src.read_bytes()
+
+
+# --- VAL-04: sync.sh idempotent one-directional kit mirror ------------------
+#
+# sync.sh copies EXACTLY score.py/rubric.md/export.sh from validation/ into the
+# mirror, overwrite + one-directional + idempotent (D-02). DOGEN_SYNC_DST is a
+# test seam pointing the copy at a tmp dir instead of the real sibling repo, so
+# the test lands ZERO writes in ../DOCPR-2845 (D-01). It errors loudly if the
+# mirror dir is absent (Pitfall 6 / T-11-09).
+
+SYNC_KIT_FILES = ("score.py", "rubric.md", "export.sh")
+
+
+def test_sync_is_idempotent(tmp_path):
+    """sync.sh mirrors the three kit files byte-identically and is re-runnable (D-02)."""
+    sync = ROOT / "validation" / "sync.sh"
+    dst = tmp_path / "mirror"
+    dst.mkdir()
+    env = {**os.environ, "DOGEN_SYNC_DST": str(dst)}
+
+    # First run: the mirror gains all three kit files, byte-identical to source.
+    subprocess.run(["sh", str(sync)], check=True, env=env)
+    for f in SYNC_KIT_FILES:
+        assert (dst / f).read_bytes() == (ROOT / "validation" / f).read_bytes()
+
+    # Second run: overwrite leaves them byte-identical (idempotent).
+    subprocess.run(["sh", str(sync)], check=True, env=env)
+    for f in SYNC_KIT_FILES:
+        assert (dst / f).read_bytes() == (ROOT / "validation" / f).read_bytes()
+
+
+def test_sync_errors_loudly_on_missing_mirror(tmp_path):
+    """A nonexistent mirror dir exits non-zero with a loud message (Pitfall 6)."""
+    sync = ROOT / "validation" / "sync.sh"
+    missing = tmp_path / "does-not-exist"
+    env = {**os.environ, "DOGEN_SYNC_DST": str(missing)}
+
+    completed = subprocess.run(["sh", str(sync)], capture_output=True, text=True, env=env)
+    assert completed.returncode != 0
+    assert "mirror not found" in completed.stderr
