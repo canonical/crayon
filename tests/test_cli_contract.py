@@ -428,6 +428,47 @@ def test_model_set_self_origin_persists_self(repo):
 
 
 # --------------------------------------------------------------------------- #
+# SK-07/D-03: the human `next` key is dropped from `review --json` and
+# `status --json`; the machine `next_id` routing token stays. Plain (non --json)
+# output keeps the human `Next:` line.
+# --------------------------------------------------------------------------- #
+
+
+def test_review_json_omits_human_next_keeps_next_id(repo):
+    # SK-07: review --json carries the durable next_id routing token but no longer
+    # emits the human `next` string (that survives only in plain output).
+    runner.invoke(
+        app, ["unit", "new", "u", "--intent", "reference", "--audience", "devs"]
+    )
+    assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
+    assert runner.invoke(app, ["draft", "u", "--provider", "mock"]).exit_code == 0
+    result = runner.invoke(
+        app, ["review", "u", "--verdict", "fix", "--note", "n", "--json"]
+    )
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert "next" not in payload
+    assert "next_id" in payload
+
+
+def test_status_json_omits_human_next_keeps_next_id(repo):
+    # SK-07: status --json rows carry next_id but not the human `next` key.
+    runner.invoke(
+        app, ["unit", "new", "u", "--intent", "reference", "--audience", "devs"]
+    )
+    result = runner.invoke(app, ["status", "--json"])
+    assert result.exit_code == 0, result.output
+    board = next(
+        json.loads(line.strip())
+        for line in result.output.splitlines()
+        if line.strip().startswith("[")
+    )
+    row = board[0]
+    assert "next" not in row
+    assert "next_id" in row
+
+
+# --------------------------------------------------------------------------- #
 # `dogen signoff` flag hygiene — SK-06/D-03: `--force` hard-removed, `--re-sign`
 # is the sole overwrite alias; `--force` on OTHER verbs is untouched.
 # --------------------------------------------------------------------------- #

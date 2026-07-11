@@ -244,7 +244,9 @@ def test_post_signoff_plan_edit_surfaces_as_stale(repo):
     # status flags the stale plan and suggests the re-sign.
     board = _json_line(runner.invoke(app, ["status", "--json"]))
     assert board[0]["stale_plan"] is True
-    assert "signoff" in board[0]["next"]
+    # The routing token flips to re_sign; the human string (which names the flag)
+    # now lives in plain output only (SK-07).
+    assert board[0]["next_id"] == "re_sign"
     # drafting still runs, but the gap is surfaced, never silent.
     result = runner.invoke(app, ["draft", "u", "--provider", "mock", "--json"])
     assert result.exit_code == 0, result.output
@@ -488,13 +490,15 @@ def test_status_suggests_the_next_verb(repo):
     )
     board = _json_line(runner.invoke(app, ["status", "--json"]))
     assert board[0]["signed_off"] is False
-    assert board[0]["next"] == "dogen signoff u"
+    # The durable routing token drives the lifecycle; the human `next` string is
+    # dropped from JSON (SK-07) — assert the machine token at each step.
+    assert board[0]["next_id"] == "sign_off"
     assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
     board = _json_line(runner.invoke(app, ["status", "--json"]))
-    assert board[0]["next"] == "dogen draft u"
+    assert board[0]["next_id"] == "draft"
     assert runner.invoke(app, ["draft", "u", "--provider", "mock"]).exit_code == 0
     board = _json_line(runner.invoke(app, ["status", "--json"]))
-    assert board[0]["next"] == "dogen review u"
+    assert board[0]["next_id"] == "review"
 
 
 def test_provider_defaults_show_and_set(repo):
@@ -679,8 +683,8 @@ def test_review_emits_next_routing_hint(repo):
             app, ["review", "u", "--verdict", "fix", "--note", "wrong dir", "--json"]
         )
     )
-    # A fix verdict speaks "apply the recorded fix", never "re-draft" (M2).
-    assert fix["next"] == "dogen draft u  # apply the recorded fix"
+    # A fix verdict routes to the draft token, never redraft (M2); the human
+    # "apply the recorded fix" wording now lives in plain output only (SK-07).
     assert fix["next_id"] == "draft"
     assert runner.invoke(app, ["draft", "u", "--provider", "mock"]).exit_code == 0
     accept = _json_line(
@@ -688,7 +692,7 @@ def test_review_emits_next_routing_hint(repo):
             app, ["review", "u", "--verdict", "accept", "--note", "ok", "--json"]
         )
     )
-    assert accept["next"] == "accepted — the publishing commit/PR is yours"
+    assert accept["next_id"] == "publish"
 
 
 def test_duplicate_accept_is_refused(repo):
@@ -854,7 +858,8 @@ def test_status_routes_back_to_draft_after_fix_verdict(repo):
     ):
         assert runner.invoke(app, args).exit_code == 0
     board = _json_line(runner.invoke(app, ["status", "--json"]))
-    assert board[0]["next"] == "dogen draft u  # apply the recorded fix"
+    # next_id is the durable routing contract; the human `next` string was
+    # dropped from JSON (SK-07).
     assert board[0]["next_id"] == "draft"
 
 
@@ -896,8 +901,12 @@ def test_status_next_id_tracks_the_lifecycle(repo):
     assert runner.invoke(app, ["unit", "edit", "u", "--title", "New"]).exit_code == 0
     board = _json_line(runner.invoke(app, ["status", "--json"]))
     assert board[0]["next_id"] == "re_sign"
-    assert "--re-sign" in board[0]["next"]
-    assert "--force" not in board[0]["next"]
+    # The human flag string survives only in plain (non --json) output now (SK-07):
+    # it names --re-sign (the flag that exists on signoff) and never --force (R4).
+    plain = runner.invoke(app, ["status"])
+    assert plain.exit_code == 0, plain.output
+    assert "--re-sign" in plain.output
+    assert "--force" not in plain.output
 
 
 def test_edit_re_sign_folds_re_approval_into_one_act(repo):
@@ -1518,13 +1527,19 @@ def test_redraft_verdict_keeps_the_redraft_wording(repo):
         ["draft", "u", "--provider", "mock"],
     ):
         assert runner.invoke(app, args).exit_code == 0
+    # The human "re-draft" wording now lives in plain (non --json) output (SK-07);
+    # only a fix verdict diverges to "apply the recorded fix" (M2).
+    plain = runner.invoke(
+        app, ["review", "u", "--verdict", "redraft", "--note", "start over"]
+    )
+    assert plain.exit_code == 0, plain.output
+    assert "dogen draft u  # re-draft per the recorded steering" in plain.output
     out = _json_line(
         runner.invoke(
             app,
-            ["review", "u", "--verdict", "redraft", "--note", "start over", "--json"],
+            ["review", "u", "--verdict", "redraft", "--note", "again", "--json"],
         )
     )
-    assert out["next"] == "dogen draft u  # re-draft per the recorded steering"
     assert out["next_id"] == "draft"
 
 
