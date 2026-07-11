@@ -687,7 +687,13 @@ def test_amend_on_sealed_unit_leaves_seal_and_progress_untouched(repo):
     _signoff(store, repo, clock, unit="u", repo=seam)
     _draft_empty_model(store, repo, clock, unit="u", repo=seam)
     _review(
-        store, repo, clock, "accepted", unit="u", verdict=ReviewVerdict.accept, repo=seam
+        store,
+        repo,
+        clock,
+        "accepted",
+        unit="u",
+        verdict=ReviewVerdict.accept,
+        repo=seam,
     )
 
     prov_before = store.read_provenance("u", root=repo)
