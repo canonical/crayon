@@ -163,6 +163,31 @@ def test_round3_claude_rescores_include_aware(capsys):
     assert "unresolved include" not in out
 
 
+def test_draft_and_audit_stay_report_only_on_missing_path(tmp_path, capsys):
+    """draft/audit FLAG-and-return on a missing path, honoring exit-0 (WR-03)."""
+    missing_draft = tmp_path / "nope.rst"
+    score.score_draft(missing_draft)  # must not raise
+    out = capsys.readouterr().out
+    assert "FLAG [io]" in out
+
+    # audit on a nonexistent unit id must not raise either.
+    score.audit_unit("does-not-exist", root=tmp_path)
+    out = capsys.readouterr().out
+    assert "FLAG [io]" in out
+
+    # And through main(): the draft/audit verbs never exit non-zero.
+    import sys as _sys
+
+    prev = _sys.argv
+    try:
+        _sys.argv = ["score.py", "draft", str(missing_draft)]
+        score.main()  # returns normally (no SystemExit)
+        _sys.argv = ["score.py", "audit", "does-not-exist", "--root", str(tmp_path)]
+        score.main()  # returns normally (no SystemExit)
+    finally:
+        _sys.argv = prev
+
+
 # --- VAL-02: the audit reads provenance schema v2 only -----------------------
 #
 # * ``files[]`` is the sole digest authority — audit verifies EVERY page digest

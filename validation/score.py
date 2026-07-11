@@ -169,7 +169,13 @@ def expand_includes(text: str, draft_path: Path) -> tuple[str, list[str]]:
 
 
 def score_draft(path: Path) -> None:
-    text = path.read_text(encoding="utf-8")
+    # Report-only contract: draft always exits 0. A missing/unreadable path FLAGs
+    # and returns cleanly instead of crashing with a traceback (WR-03).
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (FileNotFoundError, OSError) as exc:
+        _flag(False, "io", f"cannot read draft {path}: {exc}")
+        return
     # Resolve rST includes once, before any scan, so all four scans run on the
     # expanded page (D-10). Gate to rST-bearing content — MyST-native {include}/
     # literalinclude stay out of scope this cycle (D-11).
@@ -272,9 +278,15 @@ def audit_unit(unit_id: str, root: Path = ROOT) -> None:
 
     unit_dir = root / ".dogen" / "units" / unit_id
     print(f"== traceability audit: {unit_id}")
-    unit_text = (unit_dir / "unit.md").read_text(encoding="utf-8")
+    # Report-only contract: audit always exits 0. A missing unit dir / sidecar
+    # FLAGs and returns cleanly instead of crashing with a traceback (WR-03).
     # safe_load only (never yaml.load) — the sidecar is untrusted on-disk YAML.
-    prov = yaml.safe_load((unit_dir / "provenance.yaml").read_text(encoding="utf-8"))
+    try:
+        unit_text = (unit_dir / "unit.md").read_text(encoding="utf-8")
+        prov = yaml.safe_load((unit_dir / "provenance.yaml").read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError) as exc:
+        _flag(False, "io", f"cannot read unit {unit_id}: {exc}")
+        return
 
     # v2-only guard (D-12): a v1 sidecar bails cleanly with a FLAG rather than
     # crashing on the deleted v2 fields (files[]/signoff.commit/source_commit).
