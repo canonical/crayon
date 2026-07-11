@@ -369,3 +369,78 @@ def test_handoff_error_undeclared_names_move_destination(tmp_path):
     msg = str(excinfo.value)
     assert "rogue.md" in msg
     assert msg.endswith("move the staged files into place; do not delete them")
+
+
+# --- Plan 09-02 Task 2: single caller unpacks the note in lockstep (STAGE-01) --
+
+
+def _declare_span(repo: Path) -> None:
+    """Declare + sign off a three-page unit ``u`` spanning distinct basenames."""
+    result = runner.invoke(
+        app,
+        [
+            "unit",
+            "new",
+            "u",
+            "--intent",
+            "reference",
+            "--audience",
+            "d",
+            "--target",
+            "guide/a.md",
+            "--also-target",
+            "guide/b.md",
+            "--also-target",
+            "reference/c.rst",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
+
+
+def _stage_flat(repo: Path, files: dict[str, str]) -> Path:
+    """Stage ``files`` (basename-keyed) under ``.dogen/staging/u/handoff``."""
+    base = repo / ".dogen" / "staging" / "u" / "handoff"
+    for rel, text in files.items():
+        path = base / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return base
+
+
+def test_flat_handoff_draft_prints_mapped_by_basename(repo):
+    _declare_span(repo)
+    base = _stage_flat(
+        repo,
+        {
+            "a.md": "# A\nprimary\n",
+            "b.md": "# B\nextra one\n",
+            "c.rst": "C\n=\nextra two\n",
+        },
+    )
+    result = runner.invoke(
+        app, ["draft", "u", "--provider", "host-harness", "--draft-dir", str(base)]
+    )
+    assert result.exit_code == 0, result.output
+    # The caller unpacks the widened 3-tuple and surfaces the note (Pitfall 3).
+    assert "mapped by basename" in result.output
+    # The pages land at their declared docs-relative targets.
+    assert "primary" in (repo / "docs" / "guide" / "a.md").read_text(encoding="utf-8")
+    assert "extra two" in (
+        repo / "docs" / "reference" / "c.rst"
+    ).read_text(encoding="utf-8")
+
+
+def test_flat_handoff_leaves_staged_files_on_disk(repo):
+    # STAGE-01 signature: the fallback accepts WITHOUT deleting any staged draft.
+    _declare_span(repo)
+    base = _stage_flat(
+        repo, {"a.md": "# A\n", "b.md": "# B\n", "c.rst": "C\n=\n"}
+    )
+    result = runner.invoke(
+        app, ["draft", "u", "--provider", "host-harness", "--draft-dir", str(base)]
+    )
+    assert result.exit_code == 0, result.output
+    assert (base / "a.md").exists()
+    assert (base / "b.md").exists()
+    assert (base / "c.rst").exists()
