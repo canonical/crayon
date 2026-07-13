@@ -44,10 +44,6 @@ jobs:
       # agentskills.io frontmatter on the real skills/ tree (exit 1 fails build).
       - name: Skill lint (frontmatter + tool surface)
         run: uv run python scripts/skill_lint.py # D-18: exit 1 fails the build
-      # Anonymization: the GSD planning tree in this org repo must never carry
-      # unscrubbed prior-art names. Single-sourced with the pre-commit hook.
-      - name: Planning lint (no unscrubbed prior-art names)
-        run: uv run python scripts/planning_lint.py # exit 1 fails the build
       # D-29: declarative seam gate. Runs alongside the AST check above as
       # belt-and-braces (RESEARCH Pitfall 4); bans copilot/logfire/opentelemetry.sdk
       # /adapters from core. Same `lint-imports` the pre-commit hook and test run.

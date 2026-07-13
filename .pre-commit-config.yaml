@@ -24,13 +24,6 @@ repos:
         entry: python scripts/skill_lint.py
         language: system
         pass_filenames: false
-      # Anonymization: .planning/ must never carry unscrubbed prior-art names.
-      # Same script CI and pytest run -- no drift.
-      - id: planning-lint
-        name: planning-lint (no unscrubbed prior-art names in .planning/)
-        entry: python scripts/planning_lint.py
-        language: system
-        pass_filenames: false
       # D-29: declarative seam gate, mirroring the CI import-linter step. Runs
       # alongside the AST seam-check above as belt-and-braces (RESEARCH Pitfall 4).
       - id: import-linter
