@@ -28,3 +28,6 @@ build/
 # dogen passenger handoff staging (D-11). MUST stay scoped to the staging path:
 # a blanket .dogen/ ignore would hide the committed .dogen/units/<id>/unit.md.
 .dogen/staging/
+
+# GSD planning artifacts — tracked on the 'gsd' branch, ignored on main
+.planning/
