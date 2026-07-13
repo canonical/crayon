@@ -32,10 +32,27 @@ outside drafting:
 
 ## Quickstart: use dogen in a docs repo
 
+### 0 — Set up your environment
+
+dogen is an agentic system still in development. It is recommended that testing
+be done in an isolated environment to limit the potential for loss or corruption
+of data. To create a new environment for testing:
+
+- Install LXD and [create a new container](https://canonical.com/lxd/docs/latest/tutorial/first_steps/#create-and-start-containers).
+- Start the container and create a working folder for your documentation generation project inside it.
+- Initialize git, i.e., `git init` and set up your identity - some skills may otherwise not run to properly.
+- Create an ssh key in the container so you can install dogen from GitHub. A **read-only**, repo-scoped
+  [deploy key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys#deploy-keys)
+  is preferable.
+- Push all necessary files and directories from your [local machine into the working folder](https://canonical.com/lxd/docs/latest/howto/instances_access_files/#push-files-from-the-local-machine-to-the-instance), e.g., docs repo, code, and artefacts from code-to-docs mapper and onboarding scraper.
+- If you plan to use Copilot, OpenRouter, or any other cloud based system, you will be prompted to authenticate your
+  session.
+- [Install uv](https://docs.astral.sh/uv/#installation).
+
 ### 1 — Install the `dogen` CLI
 
 dogen isn't on a public package index yet — install it from this repository with
-[`uv`](https://docs.astral.sh/uv/):
+`uv`:
 
 ```bash
 # Install the CLI as a uv tool (isolated, on your PATH):
