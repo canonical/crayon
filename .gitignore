@@ -31,3 +31,6 @@ build/
 
 # GSD planning artifacts — tracked on the 'gsd' branch, ignored on main
 .planning/
+
+# workshop runtime lock (the .workshop/*.yaml definitions themselves are tracked)
+.workshop.lock

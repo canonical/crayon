@@ -49,6 +49,25 @@ of data. To create a new environment for testing:
   session.
 - [Install uv](https://docs.astral.sh/uv/#installation).
 
+**Alternative: use [`workshop`](https://github.com/canonical/workshop)**, Canonical's
+"secure, fast, and composable" agent-ready dev-environment tool
+([snapcraft.io/workshop](https://snapcraft.io/workshop)). It replaces the container-creation
+and file-transfer bullets above with a definition file and a couple of commands:
+
+- Install it: `sudo snap install workshop --classic`.
+- Launch the environment this repo already declares in
+  [`.workshop/dogen-dev.yaml`](.workshop/dogen-dev.yaml) (it declares the `uv` SDK, so
+  there's no separate "install uv" step): `workshop launch dogen-dev`.
+- Get a shell inside it — `workshop shell dogen-dev` (or run one-off commands with
+  `workshop exec dogen-dev -- <command>`). The project directory is mounted automatically
+  at `/project` inside the workshop, so there's no manual file-push step either.
+- Set up your git identity inside the workshop the same way as above — `$HOME` isn't
+  shared with the host, so `git config --global user.name`/`user.email` still need setting.
+- Create an ssh deploy key inside the workshop the same way as above, so you can install
+  dogen from GitHub.
+- If you plan to use Copilot, OpenRouter, or any other cloud based system, you'll be
+  prompted to authenticate your session, same as above.
+
 ### 1 — Install the `dogen` CLI
 
 dogen isn't on a public package index yet — install it from this repository with
