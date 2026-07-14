@@ -40,7 +40,7 @@ of data. To create a new environment for testing:
 
 - Install LXD and [create a new container](https://canonical.com/lxd/docs/latest/tutorial/first_steps/#create-and-start-containers).
 - Start the container and create a working folder for your documentation generation project inside it.
-- Initialize git, i.e., `git init` and set up your identity - some skills may otherwise not run to properly.
+- Initialize git, i.e., `git init` and set up your identity - some skills may otherwise not run properly.
 - Create an ssh key in the container so you can install dogen from GitHub. A **read-only**, repo-scoped
   [deploy key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys#deploy-keys)
   is preferable.
