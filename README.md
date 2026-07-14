@@ -32,10 +32,54 @@ outside drafting:
 
 ## Quickstart: use dogen in a docs repo
 
+### 0 — Set up your environment
+
+dogen is an agentic system still in development. It is recommended that testing
+be done in an isolated environment to limit the potential for loss or corruption
+of data. To create a new environment for testing:
+
+- Install LXD and [create a new container](https://canonical.com/lxd/docs/latest/tutorial/first_steps/#create-and-start-containers).
+- Start the container and create a working folder for your documentation generation project inside it.
+- Initialize git, i.e., `git init` and set up your identity - some skills may otherwise not run properly.
+- Create an ssh key in the container so you can install dogen from GitHub. A **read-only**, repo-scoped
+  [deploy key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys#deploy-keys)
+  is preferable.
+- Push all necessary files and directories from your [local machine into the working folder](https://canonical.com/lxd/docs/latest/howto/instances_access_files/#push-files-from-the-local-machine-to-the-instance), e.g., docs repo, code, and artefacts from code-to-docs mapper and onboarding scraper.
+- If you plan to use Copilot, OpenRouter, or any other cloud based system, you will be prompted to authenticate your
+  session.
+- [Install uv](https://docs.astral.sh/uv/#installation).
+
+**Alternative: use [`workshop`](https://github.com/canonical/workshop)**, Canonical's
+"secure, fast, and composable" agent-ready dev-environment tool
+([snapcraft.io/workshop](https://snapcraft.io/workshop)). It replaces the container-creation
+and file-transfer bullets above with a definition file and a couple of commands:
+
+- Install it: `sudo snap install workshop --classic`.
+- Launch the environment this repo already declares in
+  [`.workshop/dogen-dev.yaml`](.workshop/dogen-dev.yaml) (it declares the `uv` SDK, so
+  there's no separate "install uv" step): `workshop launch dogen-dev`.
+- Get a shell inside it — `workshop shell dogen-dev` (or run one-off commands with
+  `workshop exec dogen-dev -- <command>`). The project directory is mounted automatically
+  at `/project` inside the workshop, so there's no manual file-push step either.
+- Set up your git identity inside the workshop the same way as above — `$HOME` isn't
+  shared with the host, so `git config --global user.name`/`user.email` still need setting.
+- Create an ssh deploy key inside the workshop the same way as above, so you can install
+  dogen from GitHub.
+- If you plan to use Copilot, OpenRouter, or any other cloud based system, you'll be
+  prompted to authenticate your session, same as above.
+- Optionally, add your agent harness's own CLI as an SDK too — workshops come
+  agent-ready, and the SDK Store carries sandboxed, credential-persisting builds for all
+  three harnesses dogen ships skills for:
+  [`claude-code`](https://github.com/canonical/claude-code-sdk),
+  [`copilot`](https://github.com/canonical/copilot-sdk), and
+  [`opencode`](https://github.com/canonical/opencode-sdk). Add the ones you use with
+  `workshop init <name> --sdks uv,claude-code,copilot,opencode` (check what's on offer
+  with `sdk find <query>` / `sdk info <name>` from the `workshop.sdk` snap app).
+
 ### 1 — Install the `dogen` CLI
 
 dogen isn't on a public package index yet — install it from this repository with
-[`uv`](https://docs.astral.sh/uv/):
+`uv`:
 
 ```bash
 # Install the CLI as a uv tool (isolated, on your PATH):
