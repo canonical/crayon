@@ -67,6 +67,14 @@ and file-transfer bullets above with a definition file and a couple of commands:
   dogen from GitHub.
 - If you plan to use Copilot, OpenRouter, or any other cloud based system, you'll be
   prompted to authenticate your session, same as above.
+- Optionally, add your agent harness's own CLI as an SDK too — workshops come
+  agent-ready, and the SDK Store carries sandboxed, credential-persisting builds for all
+  three harnesses dogen ships skills for:
+  [`claude-code`](https://github.com/canonical/claude-code-sdk),
+  [`copilot`](https://github.com/canonical/copilot-sdk), and
+  [`opencode`](https://github.com/canonical/opencode-sdk). Add the ones you use with
+  `workshop init <name> --sdks uv,claude-code,copilot,opencode` (check what's on offer
+  with `sdk find <query>` / `sdk info <name>` from the `workshop.sdk` snap app).
 
 ### 1 — Install the `dogen` CLI
 
