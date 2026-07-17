@@ -214,8 +214,8 @@ running. Consent is confined to dangerous steps only — never a confirm-parade.
 had to figure it out, record the step as a `deviated` verdict (exit 0) with a
 `reason`. It still **resolves** (so the walk proceeds) and the reason rides the
 `step-recorded` commit body as episode color — the walk replays from `git log`
-alone. The improvisation-vs-frustration taxonomy is in
-`references/episode-taxonomy.md`.
+alone. Load `references/episode-taxonomy.md` now for the improvisation-vs-frustration
+taxonomy and how each maps to a verdict or commit signal.
 
 Recording a `fail` **succeeds** (its status stays `unverified`); it is the draft
 macro-gate, not this record, that blocks on unresolved steps. Branch on the
