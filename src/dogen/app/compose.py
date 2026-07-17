@@ -20,11 +20,14 @@ a diagnostic surfaced by ``dogen provider show``.
 """
 
 import json
-from collections.abc import Callable
+import sys
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 import yaml
+from pydantic import ValidationError
 
 from dogen.adapters.git_identity import read_git_identity
 from dogen.adapters.git_repo import GitRepoError, GitRepoSeam
@@ -38,6 +41,9 @@ from dogen.core.models import (
     ReviewVerdict,
     SourceRef,
     SteeringOrigin,
+    Step,
+    StepMode,
+    StepVerdict,
 )
 from dogen.core.orchestrator import (
     Clock,
@@ -47,6 +53,8 @@ from dogen.core.orchestrator import (
     EditRequest,
     ListRequest,
     NoteRequest,
+    PlanStepsRequest,
+    RecordStepRequest,
     RemoveRequest,
     RenameRequest,
     ReviewRequest,
@@ -508,6 +516,183 @@ def _read_draft_file(draft_file: Path) -> str:
         The draft text the host agent produced.
     """
     return Path(draft_file).read_text(encoding="utf-8")
+
+
+class StepsFileError(ValueError):
+    """Raised when a ``--steps-file`` payload is malformed (v1.2, T-12-03).
+
+    The untrusted step plan is parsed and validated at the compose root (V5):
+    the file must be a YAML list of step mappings, each validating into a typed
+    :class:`~dogen.core.models.Step`. A malformed shape is refused HERE with a
+    stable reason — never a raw traceback, and no ``Path``/``yaml`` reaches
+    ``core/``.
+    """
+
+
+class EvidenceFileError(ValueError):
+    """Raised when an ``--evidence-file`` payload is malformed (v1.2, T-12-03).
+
+    Distinct from the record-time micro-gate: this is a *boundary* refusal for
+    an unparseable/ill-typed evidence file (bad YAML, an unknown verdict/mode
+    token, a non-integer exit code). A well-formed file whose evidence is merely
+    ill-shaped *for its verdict* (a ``pass`` with no hash) is NOT refused here —
+    it crosses into :func:`record_step` and the micro-gate raises
+    ``EvidenceRequiredError``, so the two refusal classes stay separable.
+    """
+
+
+@dataclass(frozen=True)
+class _EvidenceFileInput:
+    """The validated raw evidence fields read from an ``--evidence-file`` (v1.2).
+
+    A compose-root carrier for the fields :class:`RecordStepRequest` needs. It
+    deliberately does NOT build a :class:`~dogen.core.models.StepEvidence`: the
+    frozen Plan 02 seam takes ``exit_code: int | None`` so the micro-gate can see
+    a *missing* exit code, which a pre-built ``StepEvidence`` (required ``int``)
+    could not express. ``step_text_sha256`` and ``at`` are dogen's to bind, so
+    they are never read from the operator's file.
+    """
+
+    verdict: StepVerdict
+    mode: StepMode = StepMode.agent
+    command: str = ""
+    output_sha256: str = ""
+    output_excerpt: str = ""
+    exit_code: int | None = None
+    reason: str = ""
+    deterministic: bool = True
+
+
+def _read_maybe_stdin(path: Path) -> str:
+    """Read ``path`` at the compose root, or stdin when it is ``-`` (parity).
+
+    Mirrors the ``--draft-file``/``--note-file`` ``-`` convention: the untrusted
+    bytes are read HERE, never inside ``core/``.
+    """
+    if str(path) == "-":
+        return sys.stdin.read()
+    return Path(path).read_text(encoding="utf-8")
+
+
+def _read_steps_file(steps_file: Path) -> list[Step]:
+    """Read + validate a ``--steps-file`` into a typed step plan (v1.2, V5).
+
+    The file is a YAML list of step mappings; each entry is validated into a
+    typed :class:`~dogen.core.models.Step` HERE, so only typed values cross into
+    the :func:`plan_steps` use-case. Any evidence a caller inlines is ignored by
+    ``plan_steps`` (D-12 carry-forward is by text hash), so it is not a channel
+    for forging proof.
+
+    Parameters
+    ----------
+    steps_file : Path
+        The ``--steps-file`` path (``-`` reads stdin).
+
+    Returns
+    -------
+    list of Step
+        The validated step plan (may be empty).
+
+    Raises
+    ------
+    StepsFileError
+        If the payload is not YAML, is not a list, or any entry fails validation.
+    """
+    try:
+        data = yaml.safe_load(_read_maybe_stdin(steps_file)) or []
+    except yaml.YAMLError as exc:
+        raise StepsFileError(f"--steps-file is not valid YAML: {exc}") from exc
+    if not isinstance(data, list):
+        raise StepsFileError(
+            "--steps-file must be a YAML list of step mappings "
+            f"(got {type(data).__name__})"
+        )
+    steps: list[Step] = []
+    for index, entry in enumerate(data):
+        if not isinstance(entry, dict):
+            raise StepsFileError(
+                f"--steps-file entry {index} must be a mapping "
+                f"(got {type(entry).__name__})"
+            )
+        try:
+            steps.append(Step.model_validate(entry))
+        except ValidationError as exc:
+            raise StepsFileError(
+                f"--steps-file entry {index} is not a valid step: {exc}"
+            ) from exc
+    return steps
+
+
+def _read_evidence_file(evidence_file: Path) -> _EvidenceFileInput:
+    """Read + validate an ``--evidence-file`` into typed raw fields (v1.2, V5).
+
+    The file is a YAML mapping. The ``verdict`` (and optional ``mode``) tokens
+    are validated against their four-/two-token vocabularies and ``exit_code``
+    against ``int``/absent — a boundary refusal (:class:`EvidenceFileError`) for
+    any malformed shape. ``step_text_sha256``/``at`` are never read (dogen binds
+    them); an oversized ``output_excerpt`` is bounded by the model's excerpt cap
+    when :func:`record_step` constructs the persisted evidence (D-01).
+
+    Parameters
+    ----------
+    evidence_file : Path
+        The ``--evidence-file`` path (``-`` reads stdin).
+
+    Returns
+    -------
+    _EvidenceFileInput
+        The validated raw fields for a :class:`RecordStepRequest`.
+
+    Raises
+    ------
+    EvidenceFileError
+        If the payload is not a YAML mapping, or a field is ill-typed / carries
+        an unknown verdict or mode token.
+    """
+    try:
+        data = yaml.safe_load(_read_maybe_stdin(evidence_file)) or {}
+    except yaml.YAMLError as exc:
+        raise EvidenceFileError(f"--evidence-file is not valid YAML: {exc}") from exc
+    if not isinstance(data, dict):
+        raise EvidenceFileError(
+            "--evidence-file must be a YAML mapping "
+            f"(got {type(data).__name__})"
+        )
+    try:
+        verdict = StepVerdict(data["verdict"])
+    except KeyError as exc:
+        raise EvidenceFileError(
+            "--evidence-file must carry a 'verdict' "
+            "(pass/fail/skipped/deviated)"
+        ) from exc
+    except ValueError as exc:
+        raise EvidenceFileError(
+            f"--evidence-file 'verdict' must be one of "
+            f"{[v.value for v in StepVerdict]} (got {data['verdict']!r})"
+        ) from exc
+    try:
+        mode = StepMode(data.get("mode", StepMode.agent.value))
+    except ValueError as exc:
+        raise EvidenceFileError(
+            f"--evidence-file 'mode' must be one of {[m.value for m in StepMode]} "
+            f"(got {data.get('mode')!r})"
+        ) from exc
+    exit_code = data.get("exit_code")
+    if exit_code is not None and not isinstance(exit_code, int):
+        raise EvidenceFileError(
+            f"--evidence-file 'exit_code' must be an integer or absent "
+            f"(got {type(exit_code).__name__})"
+        )
+    return _EvidenceFileInput(
+        verdict=verdict,
+        mode=mode,
+        command=str(data.get("command", "")),
+        output_sha256=str(data.get("output_sha256", "")),
+        output_excerpt=str(data.get("output_excerpt", "")),
+        exit_code=exit_code,
+        reason=str(data.get("reason", "")),
+        deterministic=bool(data.get("deterministic", True)),
+    )
 
 
 class HandoffIncompleteError(ValueError):
@@ -1212,6 +1397,109 @@ def build_review_request(  # noqa: PLR0913
         now=now,
         note=note,
         verdict=verdict,
+        repo=repo,
+    )
+
+
+def build_plan_steps_request(  # noqa: PLR0913
+    unit_id: str,
+    *,
+    root: Path,
+    store: PlanningStore,
+    steps: Sequence[Step],
+    now: Clock = utc_now,
+    repo: RepoSeam | None = None,
+) -> PlanStepsRequest:
+    """Assemble a :class:`PlanStepsRequest` for the whole-plan-replace use-case.
+
+    The typed ``steps`` (validated by :func:`_read_steps_file` at the compose
+    root) are the only values that cross into :func:`plan_steps`; no ``Path`` or
+    ``yaml`` reaches ``core/`` (EVID-05, D-12).
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose step plan is written/replaced.
+    root : Path
+        The repo root the store reads/writes beneath.
+    store : PlanningStore
+        The injected planning-directory store.
+    steps : sequence of Step
+        The whole validated step plan.
+    now : Clock
+        The injected timestamp source; defaults to the real UTC clock.
+    repo : RepoSeam or None
+        The injected commit seam.
+
+    Returns
+    -------
+    PlanStepsRequest
+        The frozen request for :func:`dogen.core.orchestrator.plan_steps`.
+    """
+    return PlanStepsRequest(
+        unit_id=unit_id,
+        root=root,
+        store=store,
+        now=now,
+        steps=list(steps),
+        repo=repo,
+    )
+
+
+def build_record_step_request(  # noqa: PLR0913
+    unit_id: str,
+    *,
+    root: Path,
+    store: PlanningStore,
+    step_id: str,
+    evidence: _EvidenceFileInput,
+    now: Clock = utc_now,
+    repo: RepoSeam | None = None,
+) -> RecordStepRequest:
+    """Assemble a :class:`RecordStepRequest` from validated evidence fields.
+
+    The raw evidence fields (validated by :func:`_read_evidence_file`) are handed
+    to :func:`record_step`, which binds ``step_text_sha256`` and constructs the
+    persisted :class:`~dogen.core.models.StepEvidence` itself (D-02). ``exit_code``
+    is carried as ``int | None`` so the micro-gate can see a *missing* code
+    (EVID-02).
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose step is recorded.
+    root : Path
+        The repo root the store reads/writes beneath.
+    store : PlanningStore
+        The injected planning-directory store.
+    step_id : str
+        The planned step's id.
+    evidence : _EvidenceFileInput
+        The validated raw evidence fields.
+    now : Clock
+        The injected timestamp source; defaults to the real UTC clock.
+    repo : RepoSeam or None
+        The injected commit seam.
+
+    Returns
+    -------
+    RecordStepRequest
+        The frozen request for :func:`dogen.core.orchestrator.record_step`.
+    """
+    return RecordStepRequest(
+        unit_id=unit_id,
+        root=root,
+        store=store,
+        now=now,
+        step_id=step_id,
+        verdict=evidence.verdict,
+        mode=evidence.mode,
+        command=evidence.command,
+        output_sha256=evidence.output_sha256,
+        output_excerpt=evidence.output_excerpt,
+        exit_code=evidence.exit_code,
+        reason=evidence.reason,
+        deterministic=evidence.deterministic,
         repo=repo,
     )
 
