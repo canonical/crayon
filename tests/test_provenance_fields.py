@@ -200,7 +200,9 @@ def test_malformed_steps_file_refused_no_core_mutation(repo):
     bad = repo / "steps.yaml"
     bad.write_text("not: a list of steps\n", encoding="utf-8")
 
-    result = runner.invoke(app, ["record", "plan", "u", "--steps-file", str(bad), "--json"])
+    result = runner.invoke(
+        app, ["record", "plan", "u", "--steps-file", str(bad), "--json"]
+    )
     assert result.exit_code == 2, result.output
     assert _payload(result)["reason"] == "bad_steps_file"
     assert store.read_provenance("u", root=repo).steps == []

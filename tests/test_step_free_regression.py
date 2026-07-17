@@ -112,7 +112,9 @@ def _pending() -> Provenance:
 
 def _drafted() -> Provenance:
     return Provenance(
-        unit_id="u", signoff=_signoff(), generations=[_generation(reviewer_edit_count=0)]
+        unit_id="u",
+        signoff=_signoff(),
+        generations=[_generation(reviewer_edit_count=0)],
     )
 
 
