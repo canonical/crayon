@@ -310,3 +310,50 @@ def test_status_json_stepped_row_carries_steps_verified(repo):
         if line.strip().startswith("[")
     )
     assert board[0]["steps_verified"] is False
+
+
+def test_record_plan_undeclared_unit_refuses_no_side_effect(repo):
+    # WR-01: planning steps for a *safe* id that names no declared unit must
+    # refuse cleanly (unit_not_found, exit 1 — matching `unit edit`) and write
+    # no orphan provenance and no step-planned commit, mirroring signoff/steer
+    # which load_unit first. Previously `plan_steps` never verified the unit
+    # existed, so it created `.dogen/units/ghost/provenance.yaml` for a unit
+    # with no `unit.md` and recorded a git commit for it.
+    steps = repo / "steps.yaml"
+    steps.write_text("- id: s1\n  text: run the check\n", encoding="utf-8")
+
+    result = runner.invoke(
+        app, ["record", "plan", "ghost", "--steps-file", str(steps), "--json"]
+    )
+
+    assert result.exit_code == 1, result.output
+    assert _payload(result)["reason"] == "unit_not_found"
+    # No orphan sidecar and no per-unit directory for the undeclared unit.
+    assert not (repo / ".dogen" / "units" / "ghost").exists()
+    # No step-planned commit landed for a unit that does not exist.
+    log = subprocess.run(
+        ["git", "-C", str(repo), "log", "--oneline"],
+        capture_output=True,
+        text=True,
+    )
+    assert "step-planned" not in log.stdout
+
+
+def test_record_step_undeclared_unit_refuses_unit_not_found(repo):
+    # IN-03 (resolved by WR-01's shared load_unit guard): recording a step for
+    # an undeclared unit must report unit_not_found (exit 1), not the misleading
+    # unknown_step ("write the step plan first") that conflated "unit not
+    # planned" with "step not planned".
+    ev = repo / "ev.yaml"
+    ev.write_text(
+        "verdict: pass\noutput_sha256: abc\nexit_code: 0\n", encoding="utf-8"
+    )
+
+    result = runner.invoke(
+        app,
+        ["record", "step", "ghost", "s1", "--evidence-file", str(ev), "--json"],
+    )
+
+    assert result.exit_code == 1, result.output
+    assert _payload(result)["reason"] == "unit_not_found"
+    assert not (repo / ".dogen" / "units" / "ghost").exists()

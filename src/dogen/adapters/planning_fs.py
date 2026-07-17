@@ -415,14 +415,21 @@ class FilesystemPlanningStore:
 
         Raises
         ------
+        UnitNotFoundError
+            If the unit has no ``unit.md`` to load (WR-01). Raised explicitly —
+            the more specific ``FileNotFoundError`` subclass ``update_unit``
+            already raises — so callers (``plan_steps``/``record_step``) can
+            refuse an undeclared unit as a domain not-found rather than a raw
+            filesystem error.
         ValueError
             If the front-matter ``unit_id`` disagrees with the directory the
             unit was loaded from (audit-record integrity; D-36/AC5).
         """
         self._reject_unsafe_unit_id(unit_id)
-        front, _ = split_front_matter(
-            self._unit_md_path(unit_id, root=root).read_text(encoding="utf-8")
-        )
+        target = self._unit_md_path(unit_id, root=root)
+        if not target.is_file():
+            raise UnitNotFoundError(f"no such unit: {unit_id!r}")
+        front, _ = split_front_matter(target.read_text(encoding="utf-8"))
         unit = Unit(**front)
         if unit.unit_id != unit_id:
             raise ValueError(

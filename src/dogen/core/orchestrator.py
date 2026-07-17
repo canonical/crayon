@@ -1469,7 +1469,19 @@ def plan_steps(request: PlanStepsRequest) -> None:
     ----------
     request : PlanStepsRequest
         The bundled collaborators and parameters for the plan write.
+
+    Raises
+    ------
+    UnitNotFoundError
+        If ``unit_id`` names no declared unit (WR-01). Loaded before any write
+        so an undeclared id refuses cleanly with zero side effect — no orphan
+        provenance sidecar and no ``step-planned`` commit — mirroring
+        ``signoff``/``steer``.
     """
+    # WR-01: refuse an undeclared unit before any write, like signoff/steer.
+    # ``_load_or_init_provenance`` alone would synthesize a fresh record and
+    # write orphan provenance for a unit that has no ``unit.md``.
+    request.store.load_unit(request.unit_id, root=request.root)
     provenance = _load_or_init_provenance(
         request.store, request.unit_id, root=request.root
     )
@@ -1622,6 +1634,10 @@ def record_step(request: RecordStepRequest) -> StepStatus:
             "a 'deviated' verdict requires the actual command run and its "
             "mechanical capture (output hash + exit code)"
         )
+    # WR-01/IN-03: refuse an undeclared unit before any write, like signoff/
+    # steer, so a `record step <undeclared-unit>` reports unit_not_found rather
+    # than the misleading unknown_step ("write the step plan first").
+    request.store.load_unit(request.unit_id, root=request.root)
     provenance = _load_or_init_provenance(
         request.store, request.unit_id, root=request.root
     )
