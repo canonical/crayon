@@ -222,6 +222,33 @@ def test_failed_never_resolves() -> None:
     assert derive_step_status(step) is StepStatus.unverified
 
 
+def test_passed_without_output_hash_is_unverified() -> None:
+    # WR-02: the read-side derivation must fail closed. A `pass` verdict whose
+    # evidence carries an empty output_sha256 (reachable via a hand-edited or
+    # externally-produced provenance.yaml — an on-disk audit surface) has no
+    # mechanical proof and must NOT resolve, even though the write-time
+    # micro-gate blocks it on the CLI path.
+    step = _step_with_evidence(verdict=StepVerdict.passed, output_sha256="")
+    assert derive_step_status(step) is StepStatus.unverified
+
+
+def test_deviated_without_output_hash_is_unverified() -> None:
+    # WR-02: a `deviated` step with exit_code 0 but an empty capture hash lacks
+    # its mechanical proof and must fail closed rather than resolving on the
+    # verdict token alone.
+    step = _step_with_evidence(
+        verdict=StepVerdict.deviated, exit_code=0, output_sha256=""
+    )
+    assert derive_step_status(step) is StepStatus.unverified
+
+
+def test_all_steps_verified_false_when_hashless_pass_present() -> None:
+    # WR-02: a hash-less `pass` must not satisfy the macro-gate predicate.
+    hashless = _step_with_evidence(verdict=StepVerdict.passed, output_sha256="")
+    prov = Provenance(unit_id="u", steps=[hashless])
+    assert all_steps_verified(prov) is False
+
+
 def test_all_steps_verified_vacuously_true_for_no_steps() -> None:
     # EVID-06 keystone: a step-free unit is never blocked by the evidence gate.
     assert all_steps_verified(Provenance(unit_id="u")) is True

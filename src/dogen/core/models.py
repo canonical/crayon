@@ -1191,12 +1191,21 @@ def derive_step_status(step: Step) -> StepStatus:
     * ``evidence is None``                                    ⇒ ``unverified``
     * ``evidence.step_text_sha256`` ≠ hash of ``step.text``   ⇒ ``unverified``
       (staleness, D-02 — an edited step rebinds to default-FAIL until re-verified)
-    * verdict ``pass``                                        ⇒ ``resolved``
+    * verdict ``pass`` with a non-empty ``output_sha256``      ⇒ ``resolved``
     * verdict ``skipped`` with a non-empty ``reason``         ⇒ ``resolved`` (D-07)
-    * verdict ``deviated`` with ``exit_code == 0``            ⇒ ``resolved`` (D-08)
+    * verdict ``deviated`` with ``exit_code == 0`` and a
+      non-empty ``output_sha256``                             ⇒ ``resolved`` (D-08)
     * verdict ``fail`` and every other case                  ⇒ ``unverified``
       (D-07 — ``fail`` never resolves; a reasonless skip or a non-zero-exit
       deviation does not resolve)
+
+    WR-02 (read-side default-FAIL): the two proof-bearing verdicts
+    (``pass``/``deviated``) re-assert the mechanical shape here rather than
+    trusting the verdict token — a record carrying ``verdict: pass`` with an
+    empty ``output_sha256`` (reachable via a hand-edited or externally-produced
+    ``provenance.yaml``, an on-disk audit surface) derives ``unverified``. The
+    write-time micro-gate closes the CLI path; the derivation is now
+    self-sufficiently default-FAIL so it never resolves an *absent* capture.
 
     Honest framing: a hash match proves a *well-shaped* capture is bound to this
     exact step text — never that the capture was not forged.
@@ -1217,11 +1226,14 @@ def derive_step_status(step: Step) -> StepStatus:
     if evidence.step_text_sha256 != _sha256_text(step.text):
         return StepStatus.unverified
     if evidence.verdict is StepVerdict.passed:
-        return StepStatus.resolved
+        # WR-02: fail closed on an absent capture — a pass without its output
+        # hash carries no mechanical proof and must not resolve.
+        return StepStatus.resolved if evidence.output_sha256 else StepStatus.unverified
     if evidence.verdict is StepVerdict.skipped and evidence.reason:
         return StepStatus.resolved
     if evidence.verdict is StepVerdict.deviated and evidence.exit_code == 0:
-        return StepStatus.resolved
+        # WR-02: same fail-closed re-assertion for the other proof-bearing verdict.
+        return StepStatus.resolved if evidence.output_sha256 else StepStatus.unverified
     return StepStatus.unverified
 
 
