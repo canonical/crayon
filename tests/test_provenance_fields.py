@@ -7,10 +7,16 @@ again fabricate ``github-copilot-sdk==1.0.2`` / ``local`` provenance (T-03-03).
 """
 
 import importlib
+import json
+import subprocess
+from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
 
 from dogen.adapters.mock_provider import MockDraftingProvider
+from dogen.adapters.planning_fs import FilesystemPlanningStore
+from dogen.cli.main import app
 from dogen.core.models import (
     SCHEMA_VERSION,
     DraftResult,
@@ -20,6 +26,7 @@ from dogen.core.models import (
     ReviewerEdit,
     Signoff,
     SourceRef,
+    Step,
 )
 
 
@@ -109,3 +116,195 @@ def test_generation_retains_non_empty_omit_fields() -> None:
 
 def test_generation_model_origin_defaults_empty() -> None:
     assert _generation().model_origin == ""
+
+
+# --- Phase 12 Plan 03: compose-root steps/evidence readers + status surface ---
+# The `--steps-file`/`--evidence-file` payloads are validated at the compose root
+# (V5); only typed values cross into core/. `unit show`/`status` gain additive
+# step-status keys guarded on `provenance.steps` presence so step-free units stay
+# byte-identical (EVID-06).
+
+
+runner = CliRunner()
+
+
+def _payload(result) -> dict:
+    """Parse the single JSON object line from a CLI result (stderr interleaves)."""
+    for line in result.output.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("{"):
+            return json.loads(stripped)
+    raise AssertionError(f"no JSON object in output: {result.output!r}")
+
+
+@pytest.fixture
+def repo(tmp_path, monkeypatch):
+    """A tmp git repo with a configured identity, used as the working dir."""
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    subprocess.run(
+        ["git", "-C", str(tmp_path), "config", "user.name", "Ada Lovelace"], check=True
+    )
+    subprocess.run(
+        ["git", "-C", str(tmp_path), "config", "user.email", "ada@example.com"],
+        check=True,
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("DOGEN_PROVIDER", raising=False)
+    monkeypatch.delenv("DOGEN_MODEL", raising=False)
+    return tmp_path
+
+
+def _declare_signed(root: Path) -> FilesystemPlanningStore:
+    """Scaffold a signed unit ``u`` (no steps) and return the store."""
+    store = FilesystemPlanningStore()
+    store.scaffold_unit("u", root=root, intent=Intent.reference, audience="devs")
+    store.write_provenance(
+        Provenance(
+            unit_id="u",
+            signoff=Signoff(
+                author="Ada",
+                at="2026-01-01T00:00:00Z",
+                intent=Intent.reference,
+                audience="devs",
+            ),
+        ),
+        root=root,
+    )
+    return store
+
+
+def test_record_plan_seeds_steps_from_steps_file(repo):
+    # A valid --steps-file is read + validated at the compose root and replaces
+    # provenance.steps; record show reflects it.
+    store = _declare_signed(repo)
+    steps = repo / "steps.yaml"
+    steps.write_text(
+        "- id: s1\n  text: run the check\n- id: s2\n  text: build the docs\n",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["record", "plan", "u", "--steps-file", str(steps)])
+    assert result.exit_code == 0, result.output
+    prov = store.read_provenance("u", root=repo)
+    assert [s.id for s in prov.steps] == ["s1", "s2"]
+
+    show = runner.invoke(app, ["record", "show", "u", "--json"])
+    assert show.exit_code == 0, show.output
+    assert [s["id"] for s in _payload(show)["steps"]] == ["s1", "s2"]
+
+
+def test_malformed_steps_file_refused_no_core_mutation(repo):
+    # A malformed steps file is refused at the boundary with a stable reason and
+    # a non-zero exit — never a raw traceback, and nothing crosses into core/.
+    store = _declare_signed(repo)
+    bad = repo / "steps.yaml"
+    bad.write_text("not: a list of steps\n", encoding="utf-8")
+
+    result = runner.invoke(app, ["record", "plan", "u", "--steps-file", str(bad), "--json"])
+    assert result.exit_code == 2, result.output
+    assert _payload(result)["reason"] == "bad_steps_file"
+    assert store.read_provenance("u", root=repo).steps == []
+
+
+def test_malformed_evidence_file_refused_at_boundary(repo):
+    # A malformed evidence file (unparseable YAML) is refused with a stable reason
+    # at the compose boundary — distinct from the micro-gate's evidence_required.
+    store = _declare_signed(repo)
+    store.write_provenance(
+        Provenance(
+            unit_id="u",
+            signoff=Signoff(
+                author="Ada",
+                at="2026-01-01T00:00:00Z",
+                intent=Intent.reference,
+                audience="devs",
+            ),
+            steps=[Step(id="s1", text="run the check")],
+        ),
+        root=repo,
+    )
+    bad = repo / "ev.yaml"
+    bad.write_text("verdict: not-a-real-verdict\n", encoding="utf-8")
+
+    result = runner.invoke(
+        app, ["record", "step", "u", "s1", "--evidence-file", str(bad), "--json"]
+    )
+    assert result.exit_code == 2, result.output
+    assert _payload(result)["reason"] == "bad_evidence_file"
+    assert store.read_provenance("u", root=repo).steps[0].evidence is None
+
+
+def test_unit_show_json_carries_additive_steps_key_when_stepped(repo):
+    # A unit with steps gains an additive `steps` key in unit show --json, each
+    # step carrying its derived status; existing keys are untouched.
+    store = _declare_signed(repo)
+    store.write_provenance(
+        Provenance(
+            unit_id="u",
+            signoff=Signoff(
+                author="Ada",
+                at="2026-01-01T00:00:00Z",
+                intent=Intent.reference,
+                audience="devs",
+            ),
+            steps=[Step(id="s1", text="run the check")],
+        ),
+        root=repo,
+    )
+    result = runner.invoke(app, ["unit", "show", "u", "--json"])
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["steps"][0]["id"] == "s1"
+    assert payload["steps"][0]["status"] == "unverified"
+    assert payload["all_steps_verified"] is False
+
+
+def test_unit_show_step_free_json_omits_steps_keys(repo):
+    # EVID-06: a step-free unit's unit show --json is byte-identical — the additive
+    # step keys are absent entirely, not present-and-empty.
+    _declare_signed(repo)
+    result = runner.invoke(app, ["unit", "show", "u", "--json"])
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert "steps" not in payload
+    assert "all_steps_verified" not in payload
+
+
+def test_status_json_step_free_row_omits_step_keys(repo):
+    # EVID-06: a step-free unit's status --json row carries no step keys.
+    _declare_signed(repo)
+    result = runner.invoke(app, ["status", "--json"])
+    assert result.exit_code == 0, result.output
+    board = next(
+        json.loads(line.strip())
+        for line in result.output.splitlines()
+        if line.strip().startswith("[")
+    )
+    assert "steps_verified" not in board[0]
+
+
+def test_status_json_stepped_row_carries_steps_verified(repo):
+    # A unit with steps gains an additive `steps_verified` boolean in its status
+    # --json row (derived via all_steps_verified).
+    store = _declare_signed(repo)
+    store.write_provenance(
+        Provenance(
+            unit_id="u",
+            signoff=Signoff(
+                author="Ada",
+                at="2026-01-01T00:00:00Z",
+                intent=Intent.reference,
+                audience="devs",
+            ),
+            steps=[Step(id="s1", text="run the check")],
+        ),
+        root=repo,
+    )
+    result = runner.invoke(app, ["status", "--json"])
+    assert result.exit_code == 0, result.output
+    board = next(
+        json.loads(line.strip())
+        for line in result.output.splitlines()
+        if line.strip().startswith("[")
+    )
+    assert board[0]["steps_verified"] is False
