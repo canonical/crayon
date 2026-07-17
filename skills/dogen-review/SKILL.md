@@ -1,6 +1,6 @@
 ---
 name: dogen-review
-description: Surfaces a drafted documentation unit for human review through two selectable modes — record, which presents a compact provenance summary then records the reviewer's verdict, and review, which additionally runs a four-dimension findings review (source-fidelity, completeness, structure-fit, clarity) with each finding tagged must-fix, should-fix, or nit and claims re-verified against the recorded sources — then records the structured verdict through a single delegating `dogen review --verdict --note` call. An accept verdict seals the exact draft text; a fix or redraft verdict automatically lands the note in the unit's steering stream for the next pass. Runs no Sphinx build and does not dump the raw page source by default. Never edits the draft or any file. Use when a TA is ready to review a drafted unit.
+description: Surfaces a drafted documentation unit for human review through two selectable modes — record, which presents a compact provenance summary then records the reviewer's verdict, and review, which additionally runs a findings review across five dimensions (writing-approach, source-fidelity, completeness, structure-fit, clarity), opened by a deterministic read-only pre-pass, with numbered findings each tagged must-fix, should-fix, or nit and claims re-verified against the recorded sources — then records the structured verdict through a single delegating `dogen review --verdict --note` call. An accept verdict seals the exact draft text; a fix or redraft verdict automatically lands the note in the unit's steering stream for the next pass. Runs no Sphinx build and does not dump the raw page source by default. Never edits the draft or any file. Use when a TA is ready to review a drafted unit.
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 ---
 
@@ -9,12 +9,11 @@ Surface a drafted documentation unit for human review and record the reviewer's
 structured verdict — without changing anything the reviewer will publish. The
 reviewer chooses one of two modes up front: **record** (present a compact provenance
 summary, then record the verdict — the lean path) or **review** (additionally run a
-generalized four-dimension findings review, grounded by re-checking claims against
+generalized five-dimension findings review — opened by a deterministic read-only
+pre-pass — grounded by re-checking claims against
 the recorded sources, and present it before the verdict). Both modes read the unit's
 sidecars and the drafted page(s) — in the unit's format, MyST or rST; a
-multi-file unit's whole target set — and may optionally consult a top-level
-`optional-guidance/` directory (house style, framework, or syntax guides) when judging
-the draft, present the provenance summary, elicit the
+multi-file unit's whole target set — present the provenance summary, elicit the
 reviewer's judgment, and record it as the required `dogen review --verdict --note`, advancing
 progress to `reviewed`. The verdict is structured (v1): **accept** seals the exact
 draft text (its hash lands on the review record — the second provable bookend);
@@ -45,9 +44,10 @@ from its tool surface so that posture is enforced at the manifest (D-14/D-18). S
    merger owns them (D-13).
 4. Present the provenance summary (workflow step 3, both modes). Load
    `references/provenance-summary.md` now for the exact field map.
-5. In review mode only, run the findings review (workflow step 4). Load
-   `references/review-rubric.md` now for the dimensions, priority tags, grounding
-   rule, and layout.
+5. In review mode only, run the deterministic pre-pass, then the findings review
+   (workflow step 4). Load `references/review-rubric.md` now for the pre-pass
+   greps, dimensions, priority tags, grounding rule, verification discipline,
+   and layout.
 6. Elicit the reviewer's verdict and record it via
    `dogen review <id> --verdict accept|fix|redraft --note "…"` (workflow step 5).
    Then STOP — the reviewer owns any manual edits and the publishing.
@@ -93,8 +93,8 @@ Ask the reviewer, with `AskUserQuestion` (BLOCKING), which mode they want:
 
 - **record** — "I have already read it; just record my verdict." Skips the findings
   review; goes straight to the provenance summary and the verdict.
-- **review** — "Do a full review and show me findings." Runs the four-dimension
-  findings review before the verdict.
+- **review** — "Do a full review and show me findings." Runs the five-dimension
+  findings review (opened by the deterministic pre-pass) before the verdict.
 
 This is the up-front branch; it replaces any dump of the source into the
 conversation. The raw page source is not presented by default in either mode —
@@ -107,7 +107,8 @@ fresh full pass. A **full four-dimension re-run** happens only on explicit reque
 there is no auto-escalation, even on a freshly surfaced must-fix (D-05). Mirror the
 record→review escalation idiom below (no re-invocation, just branch): default to
 the scoped re-review, and widen to the full four-dimension re-run only when the TA
-asks for it.
+asks for it. The always-on writing-approach check runs in the scoped re-review
+too — over the touched sections only.
 </step_2>
 
 <step_3 name="Present the provenance summary">
@@ -123,12 +124,28 @@ source-fidelity's declared-vs-read check.
 
 <step_4 name="Perform the findings review">
 **Review mode only** (skip entirely in record mode). Load
-`references/review-rubric.md` now. Assess **dimension 0 — the objective check —
+`references/review-rubric.md` now.
+
+**Deterministic pre-pass (before any judgment).** Run the rubric's cheap
+read-only greps over the drafted page(s): the changelog-framing tells
+("previously", "now supports", "starting with", "can now"), the banned
+researcher register ("observed", "the fixtures show", "the corpus"), and
+self-reference openers ("This page describes", "This document"). Anything
+mechanically decidable belongs in this layer — the judgment dimensions never
+re-derive it. Each hit is either promoted into the findings as a normal
+prioritized finding marked `(pre-pass)`, or dismissed with a one-line reason;
+dismissed candidates are listed separately after the findings and never enter
+the findings tally. The pre-pass stays inside Read/Bash/Glob/Grep — no build,
+no writes (D-13).
+
+Then assess **dimension 0 — the objective check —
 first**: does the draft satisfy the unit's reader problem and every
 `## Outline / acceptance` item? An objective-check failure is **must-fix by
 definition** — the severity floor, pinned to the existing must-fix tag and never
 downgraded to should-fix or nit, however small the surface edit looks. Then assess
-the four dimensions — source-fidelity, completeness, structure-fit, clarity — and
+the five dimensions — **writing-approach** (always on, assessed first; it
+may never be skipped or marked not assessed), then source-fidelity, completeness,
+structure-fit, clarity — and
 present the findings **grouped by dimension** in the conversation, one line per
 finding, each tagged must-fix, should-fix, or nit per the rubric's priority mapping
 (label each finding with its page path when the unit spans several and quote the
@@ -138,14 +155,18 @@ which dimension 0's objective check relies on for multi-target units). Ground th
 findings: for source-fidelity and completeness, re-check the draft's concrete claims
 against the recorded sources and context origins themselves (open the files; the
 generation's commit stamps say which version was read) — do not judge the draft only
-on its internal coherence. For structure-fit and clarity, if the repo has a top-level
-`optional-guidance/` directory (house style guides, framework or syntax references), optionally
-consult any files relevant to this unit — a draft that contradicts a documented house
-convention is a legitimate finding. The absence of the `optional-guidance/` directory is never a
-blocker. Quote the offending draft text and give a concrete suggested action. A clean
-dimension shows `(none)`; a not-assessed one shows its reason. The findings block is
-presented in-conversation only — it is never written to a file. The priority tags are a
-review-findings axis only; keep the CLI reason codes and progress states surfaced verbatim (D-03).
+on its internal coherence. Before reporting any absence-based finding ("not
+supported", "not in source", "missing from the page"), apply the rubric's
+verification discipline: at least two search strategies, recorded in the
+finding; the absence confirmed with `Read` or an explicit `grep -c` whose count
+is echoed; the conservative classification preferred. Number the findings
+`F-1`, `F-2`, … in presentation order so the verdict note can reference them
+precisely. Every finding carries its page path and line, the verbatim offending
+draft text, and a concrete suggested action. A clean dimension shows `(none)`; a
+not-assessed one shows its
+reason. The findings block is presented in-conversation only — it is never written
+to a file. The priority tags are a review-findings axis only; keep the CLI reason
+codes and progress states surfaced verbatim (D-03).
 </step_4>
 
 <step_5 name="Elicit the verdict and record it">
@@ -166,8 +187,19 @@ The three verdicts and what recording each one does (v1):
   the next dogen-write pass **re-drafts** against it. `fix` and `redraft` record
   the note identically — the only difference is this wording and the verdict.
 
+**Recommend a verdict from the tally first (the family smart-defaults rule).**
+In review mode, derive a recommendation and present it as the labeled default:
+any `[must-fix]` → **fix** (or **redraft** when the must-fixes are pervasive
+rather than bounded); `[should-fix]` only → genuinely the TA's call, present
+both; clean → **accept**. Self-check before presenting: the recommendation must
+agree with the tally you printed — if it does not, re-derive it (dismissed
+pre-pass candidates are not in the tally). The verdict remains the reviewer's;
+the recommendation is a default, never a decision.
+
 The note should therefore be written to steer: concrete, actionable, in the
 reviewer's own words — it is exactly what the next drafting pass will read.
+Findings the reviewer wants applied are cited by number (`F-2`, `F-5`) so the
+note stays short and the transcript carries the detail.
 **Record the verdict BEFORE any re-draft happens** — the recorded verdict is the
 routing act; a correction that lives only in this conversation steers nothing
 and leaves the audit trail empty.
@@ -295,11 +327,21 @@ note.
   provider/mode/model/origin, declared vs actually-read sources with commit stamps,
   recorded gaps, steering stream, progress state) in both modes before eliciting a
   verdict.
-- In review mode, present the four-dimension findings (source-fidelity,
-  completeness, structure-fit, clarity) grouped by dimension, each tagged must-fix /
+- In review mode, run the deterministic pre-pass before any judgment dimension,
+  then present the five-dimension findings (writing-approach, source-fidelity,
+  completeness, structure-fit, clarity) grouped by dimension, numbered `F-1`,
+  `F-2`, …, each tagged must-fix /
   should-fix / nit per `references/review-rubric.md`, before the verdict — and
   ground source-fidelity/completeness findings by re-checking claims against the
   recorded sources, not just the draft text.
+- Assess writing-approach on every review pass — never skipped, never marked not
+  assessed; it needs only the draft.
+- Confirm any finding graded on the absence of a grep hit with `Read` or an
+  explicit `grep -c` whose count is echoed, before grading; record at least two
+  search strategies on every absence-based finding.
+- In review mode, recommend a verdict derived from the findings tally as the
+  labeled default (any must-fix → fix/redraft; should-fix only → the TA's call;
+  clean → accept), and self-check that it agrees with the printed tally.
 - Record the reviewer's verdict via the single delegating
   `dogen review <id> --verdict accept|fix|redraft --note "…"` call (advances
   progress to `reviewed`; fix/redraft notes land in the steering stream) —
@@ -325,6 +367,9 @@ note.
   plus a dogen-write pass, full stop.
 - Do not dump the raw page source into the conversation by default; offer it only on
   the reviewer's request.
+- Never fabricate source behaviour: when the declared sources are unreadable or
+  absent, mark source-fidelity `(not assessed — <reason>)` rather than guessing —
+  writing-approach still runs; it needs only the draft.
 - D-03: Never re-coin the CLI run-status vocabulary — the failure reason codes and
   the progress states stay surfaced verbatim from `--json` for run-status, never
   renamed into skill words. The review-findings priority axis (must-fix / should-fix
@@ -354,21 +399,27 @@ then the verdict:
 - Steering stream: <N entries; latest quoted>
 - Progress: <progress state>
 
+### writing-approach
+- F-1 [should-fix] <failure mode + observation, quoting the offending draft text>
+  → <the concrete end-state rewrite>
+
 ### source-fidelity
-- [must-fix] <observation, quoting the offending draft text> → <suggested action>
-- [nit] <observation> → <action>
+- F-2 [must-fix] <observation, quoting the offending draft text> → <suggested action>
+- F-3 [nit] (pre-pass) <observation> → <action>
 
 ### completeness
-- [should-fix] <observation> → <action>
+- F-4 [should-fix] <observation> → <action>
 
 ### structure-fit
 - (none)
 
 ### clarity
-- [nit] <observation> → <action>
+- F-5 [nit] <observation> → <action>
 
 Findings: N total — X must-fix, Y should-fix, Z nit.
 (Priority = review findings, NOT the CLI run-status codes.)
+Dismissed pre-pass candidates: <M, each with its one-line reason — or (none)>
+Recommended verdict: <accept | fix | redraft> — <one clause tying it to the tally>
 
 ### Verdict
 <accept | fix | redraft> — <the reviewer's note, recorded via `dogen review`>
@@ -391,9 +442,14 @@ The recorded artifact is the CLI-persisted structured review (advancing
 - [ ] A human-readable provenance summary (signoff + plan freshness,
       provider/mode/model/origin, declared vs actually-read with commit stamps,
       gaps, steering stream, progress) was presented in the selected mode.
-- [ ] In review mode, the four-dimension findings were presented grouped by
-      dimension with must-fix/should-fix/nit tags, grounded by re-checking claims
-      against the recorded sources; in record mode the findings were skipped.
+- [ ] In review mode, the deterministic pre-pass ran first and its dismissed
+      candidates were listed outside the tally; the five-dimension findings
+      (writing-approach always on) were presented grouped by dimension, numbered
+      `F-N` with page:line evidence and must-fix/should-fix/nit tags, grounded
+      by re-checking claims against the recorded sources; in record mode the
+      findings were skipped.
+- [ ] The recommended verdict was derived from the findings tally, agreed with
+      it, and was presented as a labeled default — the reviewer decided.
 - [ ] The raw page source was not dumped by default; it was offered only on request.
 - [ ] The reviewer's verdict was recorded via `dogen review <id> --verdict --note`
       (progress -> reviewed) BEFORE any re-draft; no `sphinx-build` was run (D-13).

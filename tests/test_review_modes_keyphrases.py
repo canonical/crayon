@@ -88,6 +88,18 @@ _REMOVED_DUMP_LITERALS = (
     "drafted MyST source inline",
 )
 
+# The skills-refine review upgrades: the always-on writing-approach dimension
+# (opened by a deterministic pre-pass), F-N finding numbering, the
+# anti-manufactured-nit counter-guardrail, and the tally-derived verdict
+# recommendation. Additive pins only — every earlier constant stays enforced.
+_REFINE_PHRASES = (
+    "writing-approach",
+    "pre-pass",
+    "end-state rewrite",
+    "Recommended verdict",
+)
+_ALWAYS_ON_PHRASE = "may never be skipped or marked not assessed"
+
 
 def _read(path: Path) -> str:
     """Return the UTF-8 text of ``path``.
@@ -227,6 +239,29 @@ def test_removed_raw_dump_phrasing_absent() -> None:
     for literal in _REMOVED_DUMP_LITERALS:
         assert literal not in skill, (
             f"removed dump phrasing {literal!r} still present in SKILL.md"
+        )
+
+
+def test_refine_upgrades_pinned() -> None:
+    """The five-dimension review upgrades persist across the combined text.
+
+    Pins writing-approach, the deterministic pre-pass, the counter-guardrail's
+    concrete end-state rewrite requirement, and the tally-derived verdict
+    recommendation, so a later rewrite cannot silently drop them.
+    """
+    combined = _read(_SKILL) + _read(_RUBRIC)
+    for phrase in _REFINE_PHRASES:
+        assert phrase in combined, (
+            f"refine keyphrase {phrase!r} missing from the review skill text"
+        )
+
+
+def test_writing_approach_is_always_on() -> None:
+    """writing-approach may never be skipped — pinned in SKILL.md AND the rubric."""
+    for path in (_SKILL, _RUBRIC):
+        assert _ALWAYS_ON_PHRASE in _read(path), (
+            f"{path.name} must state that writing-approach "
+            f"{_ALWAYS_ON_PHRASE!r} (always-on dimension)"
         )
 
 

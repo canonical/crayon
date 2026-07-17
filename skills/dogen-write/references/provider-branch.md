@@ -95,16 +95,16 @@ by the CLI against `dogen.core.models.ContextReport`):
 
 ```yaml
 context_origins:            # EVERY file you read while grounding the draft
-  - path: internal/workshop/workshop_file.go
+  - path: internal/pipeline/pipeline_file.go
     commit: <git rev-parse HEAD>     # one HEAD stamp for the whole session
-  - path: tests/main/interface-plug-binding/workshop.yaml
+  - path: tests/main/binding-modes/pipeline.yaml
     commit: <same>
   - path: vendor/example/dep.go     # out-of-repo / unpinnable read:
     commit: ""                       # stamp stays honestly empty…
-    note: external dependency, pinned by go.sum at v3.0.1   # …prose goes here
+    note: external dependency, pinned by the module lockfile at v3.0.1   # …prose goes here
 tools_used: [Read, Grep, Glob]
 gaps:                       # facts you could NOT verify at their origin
-  - "per-interface attribute semantics live in the SDK implementations, not read"
+  - "per-module attribute semantics live in the plugin implementations, not read"
 gaps_note: ""               # REQUIRED (one line) when gaps is empty — why
                             # nothing was left unverified; never a default
 ```
@@ -173,7 +173,7 @@ each page follows its own extension's standard.
 - Anchors are `(label)=` lines; cross-references `{ref}`. Field inventories are
   `{list-table}` colon-fences or pipe tables — pick ONE style per page and keep
   headings on one ladder (no mixed setext/ATX).
-- Reusing rST snippets (e.g. shared `_interfaces/*.rst` includes) from a MyST
+- Reusing rST snippets (e.g. shared `_modules/*.rst` includes) from a MyST
   page requires an `{eval-rst}` fence around the `.. include::` directives.
 
 ### reStructuredText (`.rst` targets)

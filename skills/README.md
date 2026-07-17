@@ -33,7 +33,9 @@ dogen-plan -> dogen-write -> dogen-review
 - **dogen-plan** — grounds itself in the repo's prior art (`.dogen/context/`
   artifacts — doc-style, glossary, structure, code-to-docs map, doc-gaps — and
   existing docs conventions), runs the Socratic intake, declares the
-  unit, and ends with the gate act. Maps to `dogen unit new … --notes …` (+
+  unit, and ends with the gate act. Also serves advise-only triage asks ("does
+  this need docs?") with a grounded Triage Recommendation, declaring nothing
+  until the TA says go. Maps to `dogen unit new … --notes …` (+
   `dogen unit edit` for amendments — never a clobber) then `dogen signoff`.
   Write/Edit-free.
 - **dogen-write** — drafts the page in the unit's format (MyST or rST — the
@@ -43,7 +45,9 @@ dogen-plan -> dogen-write -> dogen-review
   **sole** skill that may carry `Write`, for exactly two staging files:
   `.dogen/staging/<id>/handoff.<ext>` and `.dogen/staging/<id>/report.yaml`.
 - **dogen-review** — presents a provenance summary (and, in review mode, grounded
-  four-dimension findings), records the structured verdict via
+  five-dimension findings — writing-approach always on, opened by a
+  deterministic read-only pre-pass, numbered `F-N` with a recommended verdict
+  derived from the tally), records the structured verdict via
   `dogen review --verdict accept|fix|redraft --note` (or `--note-file -` to read a
   quote-heavy / multi-line note from stdin — exactly one of `--note`/`--note-file`),
   and stops. `accept` seals the
@@ -64,8 +68,8 @@ Routing rules:
 
 ## SKILL.md skeleton
 
-Sections appear in exactly this order (lifted from the authoritative angie/ng
-family shape, adapted to three skills):
+Sections appear in exactly this order (lifted from a proven production
+docs-skill family shape, adapted to three skills):
 
 1. **YAML frontmatter** — `name` (MUST equal the directory name),
    `description` (a single line; capability first, then a trigger sentence
@@ -81,9 +85,10 @@ family shape, adapted to three skills):
 6. `<examples>` and/or `<edge_cases>` — optional.
 7. `<constraints>` — `<must>` and `<must_not>` bullet lists. Phase-decision
    citations (D-NN) are preserved byte-identical across edits.
-8. `<output_specification>` — skills that emit a structured artifact keep the
-   skeleton here; skills with no structured artifact **omit this section**
-   (dogen-plan omits it — its artifact is the CLI-persisted unit).
+8. `<output_specification>` — every skill keeps the close-border skeleton here:
+   the `git: committed <sha7>` relay line(s) and the frozen referral (SK-05).
+   The recorded artifact may itself be CLI-persisted (dogen-plan's is the unit
+   and its signoff act), but the close block is mandatory in all three skills.
 9. `<success_criteria>` — measurable `- [ ]` checklist.
 10. `<self_healing>` — the canonical block below, byte-identical in every skill.
 
@@ -104,8 +109,9 @@ Load this file at workflow step N (Name).
 ```
 
 and the corresponding `SKILL.md` step says `Load references/<file> now.` References
-hold relocated detail (intake checklists, reason-code→branch maps, the authoring
-standard and stance contract, provenance field maps); the `SKILL.md` keeps the
+hold relocated detail (intake checklists and the Socratic technique,
+reason-code→branch maps, the authoring standard, writing standards, and stance
+contract, provenance field maps, the review rubric); the `SKILL.md` keeps the
 decision logic. Keep each reference small and self-labeled — Copilot eager-loads
 references, Claude lazy-loads them.
 
@@ -268,6 +274,9 @@ the TA type a value the skill can derive (round 2's copilot leg is the proven
 shape; asking a question whose answer the skill has already argued for is the
 anti-pattern — propose it as the default instead). When only one option is
 defensible, state it and the reason, and proceed unless the TA objects.
+dogen-review's recommended verdict is this rule applied to its findings tally:
+any must-fix → fix (redraft when the must-fixes are pervasive); should-fix
+only → genuinely the TA's call; clean → accept.
 
 The **unit id** is the one exception — its authority runs the other way:
 A TA- or brief-supplied unit id is used verbatim; propose an id only when none is supplied.
