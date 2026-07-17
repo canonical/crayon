@@ -11,22 +11,35 @@ adds the PLAN-02 on-disk assertion — the written ``provenance.yaml`` records
 """
 
 import ast
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
+from dogen.adapters.git_repo import GitRepoSeam
 from dogen.adapters.mock_provider import select_provider
 from dogen.adapters.planning_fs import FilesystemPlanningStore
 from dogen.app import compose
-from dogen.core.models import Intent, ProgressState, derive_progress
+from dogen.core.models import (
+    Intent,
+    ProgressState,
+    Step,
+    StepMode,
+    StepVerdict,
+    derive_progress,
+)
 from dogen.core.orchestrator import (
     NotDraftedError,
+    PlanStepsRequest,
+    RecordStepRequest,
     SignoffExistsError,
     SignoffRequiredError,
     declare,
     draft,
+    plan_steps,
+    record_step,
     review,
 )
 from dogen.core.orchestrator import (
@@ -292,6 +305,100 @@ async def test_provenance_records_provider_and_mode_on_disk(repo):
     )
     assert "provider: mock" in raw
     assert "mode:" in raw
+
+
+def _git(root, *args):
+    completed = subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, check=True
+    )
+    return completed.stdout.strip()
+
+
+@pytest.mark.asyncio
+async def test_step_plan_and_record_ride_the_commit_seam(repo):
+    # EVID-05/D-13/D-14/D-15: a step plan writes one `step-planned` commit and a
+    # recorded verdict writes one `step-recorded` commit carrying Dogen-Step and
+    # Dogen-Verdict trailers — the walk replays from git log alone.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    seam = GitRepoSeam()
+    _declare(store, repo)
+    _steer(store, repo, clock)
+    text = "run the acceptance check"
+    plan_steps(
+        PlanStepsRequest(
+            unit_id="u",
+            root=repo,
+            store=store,
+            now=clock,
+            steps=[Step(id="s1", text=text)],
+            repo=seam,
+        )
+    )
+    planned = _git(repo, "log", "-1", "--format=%(trailers)")
+    assert "Dogen-Phase: step-planned" in planned
+
+    record_step(
+        RecordStepRequest(
+            unit_id="u",
+            root=repo,
+            store=store,
+            now=clock,
+            step_id="s1",
+            verdict=StepVerdict.passed,
+            mode=StepMode.agent,
+            command="pytest -q",
+            output_sha256=hashlib.sha256(b"1 passed").hexdigest(),
+            output_excerpt="1 passed",
+            exit_code=0,
+            repo=seam,
+        )
+    )
+    body = _git(repo, "log", "-1", "--format=%B")
+    assert "Dogen-Phase: step-recorded" in body
+    assert "Dogen-Step: s1" in body
+    assert "Dogen-Verdict: pass" in body
+    # A pass body stays minimal — no reason line (D-16).
+    subject_and_trailers = [
+        line for line in body.splitlines() if line and not line.startswith("Dogen-")
+    ]
+    assert subject_and_trailers == ["dogen(u): step-recorded — step s1: pass"]
+
+
+@pytest.mark.asyncio
+async def test_skip_reason_lands_in_commit_body(repo):
+    # D-16: a skip/deviation reason lands in the commit body, bounded by
+    # _body_note; the Dogen-Verdict trailer carries the wire token.
+    store = FilesystemPlanningStore()
+    clock = _Clock()
+    seam = GitRepoSeam()
+    _declare(store, repo)
+    _steer(store, repo, clock)
+    plan_steps(
+        PlanStepsRequest(
+            unit_id="u",
+            root=repo,
+            store=store,
+            now=clock,
+            steps=[Step(id="s2", text="an optional step")],
+            repo=seam,
+        )
+    )
+    record_step(
+        RecordStepRequest(
+            unit_id="u",
+            root=repo,
+            store=store,
+            now=clock,
+            step_id="s2",
+            verdict=StepVerdict.skipped,
+            reason="not applicable in the CI sandbox",
+            repo=seam,
+        )
+    )
+    body = _git(repo, "log", "-1", "--format=%B")
+    assert "Dogen-Verdict: skipped" in body
+    assert "not applicable in the CI sandbox" in body
 
 
 def test_e2e_imports_no_sdk():
