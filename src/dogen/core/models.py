@@ -38,6 +38,7 @@ and ``Generation`` lifts plain-string ``context_origins`` into
 never writes, so a repo may hold mixed v1/v2 sidecars indefinitely.
 """
 
+import hashlib
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -1153,6 +1154,99 @@ def is_sealed(prov: Provenance) -> bool:
         if edit.verdict is not None:
             return edit.verdict is ReviewVerdict.accept
     return False
+
+
+def _sha256_text(text: str) -> str:
+    """Return the SHA-256 hex digest of ``text`` encoded as UTF-8 (D-02).
+
+    The single hashing discipline for the step-text staleness bind: it is
+    content-addressing (integrity / staleness detection), **never** a security
+    primitive — a match proves an evidence record is bound to this exact step
+    text, never that the capture was not forged. Pure and zero-I/O: it hashes an
+    in-memory string, never a file on disk.
+
+    Parameters
+    ----------
+    text : str
+        The step text to hash.
+
+    Returns
+    -------
+    str
+        The lowercase hex SHA-256 digest of the UTF-8 bytes of ``text``.
+    """
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def derive_step_status(step: Step) -> StepStatus:
+    """Derive one step's completion status from its evidence alone (EVID-03, D-02).
+
+    A pure, zero-I/O sibling of :func:`derive_progress`/:func:`is_sealed`: it reads
+    only the in-memory :class:`Step` — no ``Path``, no ``os.stat``, no git, and no
+    re-hashing of files on disk. A step resolves only when a hash-matching evidence
+    record proves it; otherwise it is default-FAIL (``unverified``).
+
+    The rule:
+
+    * ``evidence is None``                                    ⇒ ``unverified``
+    * ``evidence.step_text_sha256`` ≠ hash of ``step.text``   ⇒ ``unverified``
+      (staleness, D-02 — an edited step rebinds to default-FAIL until re-verified)
+    * verdict ``pass``                                        ⇒ ``resolved``
+    * verdict ``skipped`` with a non-empty ``reason``         ⇒ ``resolved`` (D-07)
+    * verdict ``deviated`` with ``exit_code == 0``            ⇒ ``resolved`` (D-08)
+    * verdict ``fail`` and every other case                  ⇒ ``unverified``
+      (D-07 — ``fail`` never resolves; a reasonless skip or a non-zero-exit
+      deviation does not resolve)
+
+    Honest framing: a hash match proves a *well-shaped* capture is bound to this
+    exact step text — never that the capture was not forged.
+
+    Parameters
+    ----------
+    step : Step
+        The in-memory step and its optional evidence.
+
+    Returns
+    -------
+    StepStatus
+        ``resolved`` when the step's evidence resolves it, else ``unverified``.
+    """
+    evidence = step.evidence
+    if evidence is None:
+        return StepStatus.unverified
+    if evidence.step_text_sha256 != _sha256_text(step.text):
+        return StepStatus.unverified
+    if evidence.verdict is StepVerdict.passed:
+        return StepStatus.resolved
+    if evidence.verdict is StepVerdict.skipped and evidence.reason:
+        return StepStatus.resolved
+    if evidence.verdict is StepVerdict.deviated and evidence.exit_code == 0:
+        return StepStatus.resolved
+    return StepStatus.unverified
+
+
+def all_steps_verified(prov: Provenance) -> bool:
+    """Derive whether every planned step resolves (EVID-03, EVID-06 keystone).
+
+    The pure boolean the Plan 02 macro-gate keys on: ``True`` iff every step in
+    ``prov.steps`` derives :attr:`StepStatus.resolved`. It is **vacuously True for
+    an empty step plan** — a step-free unit is never blocked by the evidence gate,
+    which is exactly what keeps step-free units byte-identical in behavior
+    (EVID-06). Like its siblings it is record-only: no ``Path``, no ``os.stat``,
+    no git, and it is never surfaced as a fourth :class:`ProgressState` or stored
+    as a flag/cached count.
+
+    Parameters
+    ----------
+    prov : Provenance
+        The already-validated, in-memory provenance record.
+
+    Returns
+    -------
+    bool
+        ``True`` iff every present step resolves (and vacuously for an empty list).
+    """
+    return all(derive_step_status(s) is StepStatus.resolved for s in prov.steps)
 
 
 def _latest_accept_edit(prov: Provenance) -> ReviewerEdit | None:
