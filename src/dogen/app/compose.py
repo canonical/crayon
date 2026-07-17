@@ -678,7 +678,13 @@ def _read_evidence_file(evidence_file: Path) -> _EvidenceFileInput:
             f"(got {data.get('mode')!r})"
         ) from exc
     exit_code = data.get("exit_code")
-    if exit_code is not None and not isinstance(exit_code, int):
+    # WR-03: `bool` is a subclass of `int`, so `exit_code: false` would pass a
+    # bare isinstance(exit_code, int) check and become 0 — combined with the
+    # deviated `exit_code == 0` rule (`False == 0`), a boolean could resolve a
+    # step. A real process exit code is numeric; reject booleans explicitly.
+    if exit_code is not None and (
+        isinstance(exit_code, bool) or not isinstance(exit_code, int)
+    ):
         raise EvidenceFileError(
             f"--evidence-file 'exit_code' must be an integer or absent "
             f"(got {type(exit_code).__name__})"

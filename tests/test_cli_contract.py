@@ -632,6 +632,30 @@ def test_record_step_unknown_step_exits_bad_input(repo):
     assert _payload(result)["reason"] == "unknown_step"
 
 
+def test_record_step_boolean_exit_code_refused_at_boundary(repo):
+    # WR-03: `bool` is a subclass of `int`, so `exit_code: false` used to pass
+    # the isinstance(exit_code, int) check and become 0 — combined with the
+    # deviated `exit_code == 0` rule (`False == 0`), a boolean could resolve a
+    # step. A boolean exit code is malformed input and must be refused at the
+    # compose boundary (bad_evidence_file, exit 2) with zero side effects.
+    store = _declare_unit(repo)
+    _seed_signed_with_step(store, repo)
+    ev = repo / "ev.yaml"
+    ev.write_text(
+        f"verdict: deviated\ncommand: pytest\noutput_sha256: {'d' * 64}\n"
+        "exit_code: false\nreason: diverged\n",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app, ["record", "step", "u", "s1", "--evidence-file", str(ev), "--json"]
+    )
+    assert result.exit_code == 2, result.output
+    assert _payload(result)["reason"] == "bad_evidence_file"
+    # Zero side effects: no evidence was bound to the step.
+    assert store.read_provenance("u", root=repo).steps[0].evidence is None
+
+
 def test_draft_over_unresolved_step_exits_evidence_incomplete(repo):
     # D-11 macro-gate: drafting over an unresolved planned step is a domain
     # refusal — exit 1, reason="evidence_incomplete", and no draft is written.
