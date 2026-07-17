@@ -20,6 +20,7 @@ import pytest
 from typer.testing import CliRunner
 
 from dogen.adapters.planning_fs import FilesystemPlanningStore, TargetClaimedError
+from dogen.cli import main as cli
 from dogen.cli.main import app
 from dogen.core.models import (
     Intent,
@@ -554,8 +555,6 @@ def test_record_help_lists_plan_step_show():
 def test_evidence_reason_codes_added_existing_unchanged():
     # D-11: the two evidence reasons are appended with their stable wire values;
     # an existing reason string is never renamed (append-only vocabulary).
-    from dogen.cli import main as cli
-
     assert cli._REASON_EVIDENCE_REQUIRED == "evidence_required"
     assert cli._REASON_EVIDENCE_INCOMPLETE == "evidence_incomplete"
     assert cli._REASON_SIGNOFF_REQUIRED == "signoff_required"
