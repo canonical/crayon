@@ -55,11 +55,18 @@ from dogen.core.models import (
     SourceRef,
     SteeringEntry,
     SteeringOrigin,
+    Step,
+    StepEvidence,
+    StepMode,
+    StepStatus,
+    StepVerdict,
     Takeover,
     Unit,
     UnitSummary,
     _latest_accept_at,
+    all_steps_verified,
     derive_progress,
+    derive_step_status,
     is_sealed,
 )
 from dogen.core.ports import DraftingProvider, Identity, PlanningStore, RepoSeam
@@ -122,6 +129,42 @@ class ModelAlreadySetError(ValueError):
     would still catch it), but the CLI classifies it by type-name to
     ``model_already_set`` **before** that clause (research Pitfall 3), keeping
     ``core/`` free of CLI concerns.
+    """
+
+
+class EvidenceRequiredError(RuntimeError):
+    """Raised when a step verdict is recorded without well-shaped proof (EVID-02, D-11).
+
+    The record-time **micro-gate**: a ``pass``/``fail`` verdict must carry a
+    captured-output hash and a real exit code, and a ``skipped``/``deviated``
+    verdict must carry a reason (a ``deviated`` also carries the actual command it
+    ran with its capture). When the incoming evidence is ill-shaped the use-case
+    writes nothing — no ``StepEvidence`` is attached, no ``provenance.yaml`` is
+    written, no commit is recorded, and no derived status changes — and raises;
+    the CLI maps it to a stable ``evidence_required`` reason (Plan 03).
+
+    Honest framing (carried from research + STATE): the gate proves a *well-shaped
+    mechanical capture exists* (a redirected output hash + a real exit code) — it
+    does **not** prove the capture was not forged. dogen records and gates; it
+    never executes the step (the passenger pattern) and never claims tamper
+    resistance.
+    """
+
+
+class EvidenceIncompleteError(RuntimeError):
+    """Raised when a draft/accept is attempted while steps are unresolved (D-09, D-11).
+
+    The **macro-gate**: :func:`draft` refuses while any present step is
+    unresolved, and ``review --verdict accept`` re-derives completion and refuses
+    if a step went unresolved/stale after the draft. Like its micro sibling it is
+    a zero-side-effect refusal — no page is written, no reviewer edit is appended,
+    no ``provenance.yaml`` is written — and the CLI maps it to a stable
+    ``evidence_incomplete`` reason (Plan 03).
+
+    The gate keys on ``provenance.steps`` presence, never on ``unit.intent``, so a
+    step-free unit is byte-identical in behaviour (EVID-06). It proves a
+    well-shaped capture resolves every step; it does not prove the captures were
+    not forged.
     """
 
 
@@ -289,6 +332,8 @@ def _transition_message(  # noqa: PLR0913
     model: str = "",
     draft_sha: str = "",
     extends: Sequence[str] = (),
+    step: str = "",
+    verdict: str = "",
 ) -> str:
     """Build the commit-seam message for one lifecycle transition (v1).
 
@@ -328,6 +373,14 @@ def _transition_message(  # noqa: PLR0913
         the message ends. Owners are validated single path segments. Empty by
         default, so a transition with no takeover is byte-identical to prior
         behavior.
+    step : str
+        The recorded step id, stamped as ``Dogen-Step`` when non-empty (D-15) —
+        so ``git log --grep`` replays which step this transition recorded.
+        Empty by default, keeping every non-step transition byte-identical.
+    verdict : str
+        The recorded step verdict wire value
+        (``pass``/``fail``/``skipped``/``deviated``), stamped as
+        ``Dogen-Verdict`` when non-empty (D-15). Empty by default.
 
     Returns
     -------
@@ -348,6 +401,10 @@ def _transition_message(  # noqa: PLR0913
         lines.append(f"Dogen-Draft: {draft_sha[:12]}")
     for owner in extends:
         lines.append(f"Dogen-Extends: {owner}")
+    if step:
+        lines.append(f"Dogen-Step: {step}")
+    if verdict:
+        lines.append(f"Dogen-Verdict: {verdict}")
     return "\n".join(lines)
 
 
@@ -365,6 +422,8 @@ def _commit_transition(  # noqa: PLR0913
     model: str = "",
     draft_sha: str = "",
     extends: Sequence[str] = (),
+    step: str = "",
+    verdict: str = "",
 ) -> str:
     """Record one transition commit through the seam, if one is injected.
 
@@ -398,6 +457,12 @@ def _commit_transition(  # noqa: PLR0913
     extends : sequence of str
         Superseded sealed owner ids for the repeatable ``Dogen-Extends``
         trailer (D-05); empty when the transition supersedes nothing.
+    step : str
+        The recorded step id for the ``Dogen-Step`` trailer (D-15); empty for a
+        non-step transition.
+    verdict : str
+        The recorded step verdict wire value for the ``Dogen-Verdict`` trailer
+        (D-15); empty for a non-step transition.
 
     Returns
     -------
@@ -420,6 +485,8 @@ def _commit_transition(  # noqa: PLR0913
             model=model,
             draft_sha=draft_sha,
             extends=extends,
+            step=step,
+            verdict=verdict,
         ),
     )
 
@@ -1256,6 +1323,23 @@ def review(request: ReviewRequest) -> ReviewOutcome:
     sealed_files: list[FileDigest] = []
     unapplied_steering = False
     if request.verdict is ReviewVerdict.accept:
+        # D-09 seal side: re-derive step completion and refuse an accept over a
+        # step that went unresolved/stale after the draft — no accepted draft over
+        # stale/unresolved proof. Keyed on `provenance.steps` presence so
+        # step-free units seal byte-identically (EVID-06); zero side effects (it
+        # raises before the reviewer edit is appended and before any write). The
+        # non-accept verdict paths are untouched.
+        if provenance.steps and not all_steps_verified(provenance):
+            unresolved = [
+                step.id
+                for step in provenance.steps
+                if derive_step_status(step) is StepStatus.unverified
+            ]
+            raise EvidenceIncompleteError(
+                f"cannot accept {request.unit_id!r}: unresolved step(s) "
+                f"{', '.join(repr(s) for s in unresolved)} — evidence went stale "
+                "or incomplete after the draft; re-record before sealing"
+            )
         unit = request.store.load_unit(request.unit_id, root=request.root)
         draft_sha = _sha256(request.store.read_draft(unit, root=request.root))
         sealed_files = [_page_digest(unit.sphinx_target, sha=draft_sha)]
@@ -1332,6 +1416,247 @@ def review(request: ReviewRequest) -> ReviewOutcome:
         next_id=next_id,
         unapplied_steering=unapplied_steering,
     )
+
+
+@dataclass(frozen=True)
+class PlanStepsRequest:
+    """The injected collaborators and parameters for a step-plan write (v1.2).
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose step plan is written/replaced.
+    root : Path
+        The repo root the store reads/writes beneath.
+    store : PlanningStore
+        The injected planning-directory store.
+    now : Clock
+        Injected timestamp source (unused by the plan write itself, kept for
+        symmetry with the other use-cases and future stamping).
+    steps : sequence of Step
+        The whole step plan (D-12: the plan is authored/replaced whole). Any
+        evidence carried on the incoming steps is ignored — evidence is bound
+        only via :func:`record_step`; a surviving step (unchanged text hash)
+        keeps the recorded evidence, a changed/new step derives unverified.
+    repo : RepoSeam or None
+        The injected commit seam.
+    """
+
+    unit_id: str
+    root: Path
+    store: PlanningStore
+    now: Clock
+    steps: Sequence[Step]
+    repo: RepoSeam | None = None
+
+
+def plan_steps(request: PlanStepsRequest) -> None:
+    """Write/replace a unit's machine-owned step plan (EVID-05, D-12/D-13).
+
+    The plan is authored whole (D-12): the incoming ``steps`` fully replace
+    ``provenance.steps``. Evidence is carried forward for a **surviving** step —
+    one whose text hash matches an existing evidence's ``step_text_sha256`` — so
+    a TA can edit the plan without silently discarding proof for the steps that
+    did not change; a changed or brand-new step carries no evidence and derives
+    ``unverified`` until re-recorded. There are no frozen states and no
+    ``--force`` ceremony — D-02's hash-bind makes the whole-plan replace safe.
+
+    The write rides the one-commit-per-transition seam as a single
+    ``step-planned`` transition (D-13/D-14), so ``git log`` replays the plan
+    edits alongside the rest of the unit's path.
+
+    Parameters
+    ----------
+    request : PlanStepsRequest
+        The bundled collaborators and parameters for the plan write.
+    """
+    provenance = _load_or_init_provenance(
+        request.store, request.unit_id, root=request.root
+    )
+    # D-12: carry a surviving step's evidence forward. Key existing evidence by
+    # the step-text hash it was bound to at record time; a new step whose text
+    # hashes to the same value is the "same" step and keeps its proof.
+    carried: dict[str, StepEvidence] = {
+        step.evidence.step_text_sha256: step.evidence
+        for step in provenance.steps
+        if step.evidence is not None
+    }
+    replaced: list[Step] = [
+        step.model_copy(update={"evidence": carried.get(_sha256(step.text))})
+        for step in request.steps
+    ]
+    provenance.steps = replaced
+    request.store.write_provenance(provenance, root=request.root)
+    _commit_transition(
+        request.repo,
+        root=request.root,
+        paths=[_unit_dir(request.root, request.unit_id)],
+        unit_id=request.unit_id,
+        phase="step-planned",
+        summary=f"planned {len(replaced)} step(s)",
+    )
+
+
+@dataclass(frozen=True)
+class RecordStepRequest:
+    """The injected collaborators and parameters for one recorded step (v1.2).
+
+    The evidence fields are the host-/TA-provided *mechanical capture* the
+    micro-gate proves is well-shaped (EVID-02, passenger pattern: dogen never
+    ran the step). ``record_step`` binds them to the step text and constructs the
+    persisted :class:`~dogen.core.models.StepEvidence`; the caller never sets
+    ``step_text_sha256`` (the bind is dogen's, D-02).
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose step is recorded.
+    root : Path
+        The repo root the store reads/writes beneath.
+    store : PlanningStore
+        The injected planning-directory store.
+    now : Clock
+        Injected timestamp source (ISO-8601) stamped onto the evidence.
+    step_id : str
+        The planned step's id (must already exist in ``provenance.steps``).
+    verdict : StepVerdict
+        The four-token judgment (D-05).
+    mode : StepMode
+        Who executed the step (``agent``/``ta``); default ``agent``.
+    command : str
+        The command whose run this evidence captures (required for ``deviated``).
+    output_sha256 : str
+        SHA-256 of the full captured output bytes (required for ``pass``/``fail``
+        and ``deviated``).
+    output_excerpt : str
+        A bounded verbatim excerpt of the captured output (capped by the model).
+    exit_code : int or None
+        The process exit code (required — non-``None`` — for ``pass``/``fail``
+        and ``deviated``); ``None`` for a ``skipped`` step that ran nothing.
+    reason : str
+        Required for ``skipped``/``deviated`` (D-06); ``""`` for ``pass``/``fail``.
+    deterministic : bool
+        Whether the step's output is reproducible (D-04); default ``True``.
+    repo : RepoSeam or None
+        The injected commit seam.
+    """
+
+    unit_id: str
+    root: Path
+    store: PlanningStore
+    now: Clock
+    step_id: str
+    verdict: StepVerdict
+    mode: StepMode = StepMode.agent
+    command: str = ""
+    output_sha256: str = ""
+    output_excerpt: str = ""
+    exit_code: int | None = None
+    reason: str = ""
+    deterministic: bool = True
+    repo: RepoSeam | None = None
+
+
+_MECHANICAL_VERDICTS = (StepVerdict.passed, StepVerdict.failed)
+_REASONED_VERDICTS = (StepVerdict.skipped, StepVerdict.deviated)
+
+
+def record_step(request: RecordStepRequest) -> StepStatus:
+    """Record one step's evidence under the record-time micro-gate (EVID-02, D-11).
+
+    The **micro-gate** runs BEFORE any write and refuses done-without-proof with
+    zero side effects (no ``StepEvidence`` attached, no ``provenance.yaml``
+    written, no commit): a ``pass``/``fail`` verdict must carry a captured-output
+    hash and a real exit code, a ``skipped``/``deviated`` verdict must carry a
+    reason (D-06), and a ``deviated`` verdict must additionally carry the actual
+    command it ran with its capture (D-08). On any shortfall it raises
+    :class:`EvidenceRequiredError`.
+
+    On success the evidence is bound to the step text it proves
+    (``step_text_sha256 = sha256(step.text)`` — the D-02 staleness bind), attached
+    to the matching :class:`~dogen.core.models.Step`, and persisted, and exactly
+    one ``step-recorded`` transition commit is written carrying ``Dogen-Step`` and
+    ``Dogen-Verdict`` trailers (D-13/D-15); a ``skipped``/``deviated`` reason lands
+    in the commit body, a ``pass``/``fail`` body stays minimal (D-16).
+
+    Recording a ``fail`` is legitimate and succeeds — the macro-gate, not this
+    record, is what refuses a draft over an unresolved step (D-07: ``fail`` never
+    resolves). Honest framing: a well-shaped capture proves the step *ran and was
+    captured*, never that the capture was not forged.
+
+    Parameters
+    ----------
+    request : RecordStepRequest
+        The bundled collaborators, the target step id, and the raw evidence.
+
+    Returns
+    -------
+    StepStatus
+        The step's derived status after recording (``resolved``/``unverified``).
+
+    Raises
+    ------
+    EvidenceRequiredError
+        If the incoming evidence is ill-shaped for its verdict (zero writes).
+    ValueError
+        If ``step_id`` names no planned step in ``provenance.steps``.
+    """
+    verdict = request.verdict
+    # Micro-gate — refuse BEFORE any side effect (mirror the signoff raise-site).
+    if verdict in _MECHANICAL_VERDICTS and (
+        not request.output_sha256 or request.exit_code is None
+    ):
+        raise EvidenceRequiredError(
+            f"a {verdict.value!r} verdict requires a captured-output hash and a "
+            "real exit code; recording without well-shaped proof is refused"
+        )
+    if verdict in _REASONED_VERDICTS and not request.reason:
+        raise EvidenceRequiredError(
+            f"a {verdict.value!r} verdict requires a reason; recording without "
+            "one is refused"
+        )
+    if verdict is StepVerdict.deviated and (
+        not request.command or not request.output_sha256 or request.exit_code is None
+    ):
+        raise EvidenceRequiredError(
+            "a 'deviated' verdict requires the actual command run and its "
+            "mechanical capture (output hash + exit code)"
+        )
+    provenance = _load_or_init_provenance(
+        request.store, request.unit_id, root=request.root
+    )
+    step = next((s for s in provenance.steps if s.id == request.step_id), None)
+    if step is None:
+        raise ValueError(
+            f"no planned step {request.step_id!r} for unit {request.unit_id!r}; "
+            "write the step plan first"
+        )
+    step.evidence = StepEvidence(
+        mode=request.mode,
+        command=request.command,
+        output_sha256=request.output_sha256,
+        output_excerpt=request.output_excerpt,
+        exit_code=request.exit_code if request.exit_code is not None else 0,
+        verdict=verdict,
+        reason=request.reason,
+        step_text_sha256=_sha256(step.text),
+        deterministic=request.deterministic,
+        at=request.now(),
+    )
+    request.store.write_provenance(provenance, root=request.root)
+    body = _body_note(request.reason) if verdict in _REASONED_VERDICTS else ""
+    _commit_transition(
+        request.repo,
+        root=request.root,
+        paths=[_unit_dir(request.root, request.unit_id)],
+        unit_id=request.unit_id,
+        phase="step-recorded",
+        summary=f"step {request.step_id}: {verdict.value}",
+        body=body,
+        step=request.step_id,
+        verdict=verdict.value,
+    )
+    return derive_step_status(step)
 
 
 @dataclass(frozen=True)
@@ -1544,6 +1869,23 @@ async def _run_draft(
         unsteered = (
             len(provenance.steering) <= last.steering_count
             and len(provenance.reviewer_edits) <= last.reviewer_edit_count
+        )
+    # D-09/D-10: the draft-side evidence macro-gate. The signoff gate already ran
+    # upstream in `_read_signed_provenance`, and the lease re-check is immediately
+    # below — so this placement yields the exact cascade signoff → evidence →
+    # lease. The gate keys on `provenance.steps` presence (never `unit.intent`),
+    # so a step-free unit takes no evidence path and is byte-identical (EVID-06).
+    # Zero side effects: it raises before any page or provenance write.
+    if provenance.steps and not all_steps_verified(provenance):
+        unresolved = [
+            step.id
+            for step in provenance.steps
+            if derive_step_status(step) is StepStatus.unverified
+        ]
+        raise EvidenceIncompleteError(
+            f"cannot draft {request.unit_id!r}: unresolved step(s) "
+            f"{', '.join(repr(s) for s in unresolved)} — record well-shaped "
+            "evidence (or a reasoned skip) before drafting"
         )
     # OWN-03 (D-03): draft-time lease re-check, before any page is written.
     # Ownership is a lease held only while a unit is in flight; a sealed owner

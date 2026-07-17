@@ -58,7 +58,7 @@ IMPL_PATH_RE = re.compile(r"\binternal/[a-z]")
 # legal-but-not-required, and any token OUTSIDE this set surfaces as a non-failing
 # INFO line (never a FLAG).
 KNOWN_PHASES = {"declared", "signed-off", "steered", "drafted", "reviewed",
-                "model-amended"}
+                "model-amended", "step-planned", "step-recorded"}
 
 # rST include directive (VAL-01). Matched on the ORIGINAL draft text exactly once
 # so inserted content is never re-scanned — one level, recursion-guarded (D-11).
