@@ -92,8 +92,14 @@ fix/redraft verdict or a `dogen steer --note` entry newer than the last
 generation. If the steering stream holds nothing new, STOP and route back: the
 reviewer records the verdict first (dogen-review), or the TA records a note
 (`dogen steer`). Never apply corrections carried only in conversation — the
-draft output's `unsteered_redraft: true` flag means exactly that miss. Then run
-the zero-side-effect probe:
+draft output's `unsteered_redraft: true` flag means exactly that miss.
+
+**Steering reconciliation (re-draft only):** enumerate every steering entry newer
+than the last generation and account for each one in the step 4 report —
+**applied** (name where on the page) or **declined** (say why, and get the TA's
+agreement before recording over it). Silent acceptance and silent rejection are
+both forbidden; this is the conversational mirror of the `unapplied_steering`
+flag. Then run the zero-side-effect probe:
 
 ```bash
 dogen draft "$UNIT_ID" --resolve-only --json
@@ -123,23 +129,24 @@ backend is unreachable; `model_rejected` → the requested model was refused) pe
 If the resolved provider is `host-harness`, the host authors the page(s) itself,
 **in the unit's format** (the `format` field: MyST for `.md`, reStructuredText
 for `.rst` — the per-format standard is in `references/provider-branch.md`).
+Load `references/writing-standards.md` now — its end-state writing principle,
+three-check grounding rule, and writer micro-rules govern every sentence you
+author in this branch.
 
 1. **Ground the draft.** Start from the unit's declared `sources` — read them in
    full; they are the primary grounding. Then navigate the repo freely wherever a
    fact's origin lies (implementations, fixtures, sibling docs, the repo's existing
-   documentation conventions, any `.dogen/context/` artifacts, and — if present —
-   a top-level `optional-guidance/` directory of house style, framework, or syntax guides):
-   the declared sources are starting points, not a boundary (v1). Consult
-   `optional-guidance/` when the best authoring approach is not obvious — it is where a team
-   encodes conventions a smaller model may not know; its absence is never a blocker
-   and it never overrides the unit's plan, sources, or steering. **When the plan outline names
-   an inventory** (e.g. a per-interface attribute table, one row per member), that
+   documentation conventions, and any `.dogen/context/` artifacts): the declared
+   sources are starting points, not a boundary (v1). **When the plan outline names
+   an inventory** (e.g. a per-module attribute table, one row per member), that
    inventory is a **read contract**: locate and read the authoritative source for
    *every* member before authoring — a cross-reference to a sibling page is not a
    substitute for reading and materializing the inventory here (round 3: a leg that
-   never read the seven interface files punted them to a `:ref:` and lost the
-   coverage). Never assert what you have not read. Keep a running list of every file
-   you read — it becomes the context report.
+   never read the seven per-module reference files punted them to a `:ref:` and
+   lost the coverage). Never assert what you have not read: ground every
+   behavioral claim with the three-check rule in `references/writing-standards.md`
+   (locate, confirm, corroborate) before it enters prose. Keep a running list of
+   every file you read — it becomes the context report.
 2. **Author** a Sphinx-publishable **reference** page per the format's authoring
    standard and the stance contract in `references/provider-branch.md`. Facts you
    cannot verify at their origin are left out of the prose and recorded as `gaps`
@@ -150,11 +157,16 @@ for `.rst` — the per-format standard is in `references/provider-branch.md`).
    `## Outline / acceptance` items one by one against the authored page(s) —
    per page for a multi-file unit. Every coverage item is either present or
    recorded as a `gap` with the reason — never silently dropped. What you read
-   must convert: if you read an inventory (e.g. every interface's reference
+   must convert: if you read an inventory (e.g. every module's reference
    file), the page carries the inventory; reading without converting is the
-   worst validation failure mode. Also check every relative include/link path
-   resolves **from each page's committed location** (`docs/<target>` — mind the
-   directory depth).
+   worst validation failure mode. Then run the **bidirectional staleness scan**
+   from `references/writing-standards.md`: for a change that ADDS behaviour, the
+   inverse completeness audit (every code-confirmed new behaviour lands on the
+   page); for a change that ALTERS behaviour, the obsoleted-statement scan
+   (every statement the change invalidates is rewritten or deleted — never add
+   beside text the change contradicts). Also check every relative include/link
+   path resolves **from each page's committed location** (`docs/<target>` — mind
+   the directory depth).
 4. **Stance check:** grep the authored page(s) for the banned researcher register,
    for implementation identifiers (type/function names, `internal/` paths), and
    for runtime-mechanics narration (temp files, interpreter invocations,
@@ -184,6 +196,9 @@ for `.rst` — the per-format standard is in `references/provider-branch.md`).
    when every page's basename is unique — dogen maps it by basename and prints
    `note: handoff staged flat; mapped by basename`. When two pages share a
    basename it stays ambiguous: mirror the exact `handoff/<relpath>` tree above.
+   After each `Write`, re-read the staged file's tail — stray closing tags have
+   leaked into staged files — per the after-write mechanics in
+   `references/writing-standards.md`.
 6. `Write` the context report to `.dogen/staging/<UNIT_ID>/report.yaml` — every
    file read (commit-stamped via one `git rev-parse HEAD`; a stamp is a hex SHA
    or honestly empty — explanations go in an origin's `note` field), the tools
@@ -241,7 +256,9 @@ state plainly that the model is unknown.
 Report the recorded draft (provider, resulting progress state) from the `--json`
 output, and quote the CLI's `git: committed <sha7> — …` stderr line (the same
 hash arrives as `commit` in the JSON) — the transition commit is the audit
-anchor; never assert "the seam committed it" without the hash. If the output
+anchor; never assert "the seam committed it" without the hash. On a re-draft,
+state the steering reconciliation in the same summary: N entries — applied where
+/ declined why. If the output
 carries `stale_plan: true`, tell the TA plainly: the unit's plan changed after
 its signoff — the draft ran, but they should re-approve the plan (that is
 `dogen signoff --re-sign`, or folded into a future amendment via
@@ -295,6 +312,13 @@ record it under `gaps` in the report — a gap is provenance, not content.
 - On a re-draft, require the correction to be RECORDED (a fix/redraft verdict or
   a steer note newer than the last generation) before drafting; never apply
   corrections carried only in conversation.
+- On a re-draft, account for every recorded steering and fix note — applied
+  (name where) or declined (say why, with the TA's agreement); never silently
+  accept or silently drop one.
+- Write every touched page to its end-state per
+  `references/writing-standards.md`: rewrite the sentence that owns a changed
+  behaviour, delete what the change obsoletes, and diff the rewrite against the
+  prior text to account for everything dropped.
 - Check every plan outline/acceptance item off against the authored page
   (present, or a recorded gap with a reason) and verify relative include/link
   paths resolve from `docs/<sphinx_target>` before handing off.
@@ -340,6 +364,9 @@ record it under `gaps` in the report — a gap is provenance, not content.
   transition commit.
 - Never assert a fact you have not read at its origin; never narrate your evidence
   ("observed", "the fixtures show", "every observed use") in the drafted prose.
+- Never promote "exists in code" to "is supported", and never state a
+  must/only/cannot constraint without locating the enforcing validator — the
+  corroboration rules in `references/writing-standards.md`.
 - Never reproduce implementation bodies, private internals, or verbatim
   struct/function source in the drafted page — reference them by qualified name.
 </must_not>
@@ -362,6 +389,7 @@ inline:
 - Progress: <progress state>
 - Plan: <fresh | changed since signoff — re-approve if substantive>
 - Model: <recorded model (self-asserted / TA-corrected) | unknown — neither self nor TA could name it>
+- Steering (re-draft only): <N entries accounted — applied where / declined why>
 
 Next: /dogen-review — review the draft.
 ```
@@ -386,8 +414,12 @@ Next: /dogen-review — review the draft.
       implementation identifiers, and no runtime-mechanics narration.
 - [ ] Every plan outline/acceptance item was checked off against the page
       (present or a recorded gap); reading converted into coverage.
+- [ ] Every behavioral claim passed the three-check grounding rule (locate,
+      confirm, corroborate), and the staleness scan ran in the right direction
+      (inverse completeness for additions, obsoleted-statement for alterations).
 - [ ] On a re-draft, the recorded steering stream held the correction BEFORE the
-      pass ran (no `unsteered_redraft` flag).
+      pass ran (no `unsteered_redraft` flag), and every steering entry was
+      accounted for in the report (applied where / declined why).
 - [ ] Reason codes were surfaced in plain language; `signoff_required` routed back
       to dogen-plan; `stale_plan` was surfaced when present.
 - [ ] On success the TA was routed to dogen-review; the skill ran no git

@@ -1,0 +1,8 @@
+context_origins:
+  - path: internal/pipeline/pipeline_file.py
+    commit: HEAD_STAMP
+  - path: tests/test_pipeline_file.py
+    commit: HEAD_STAMP
+tools_used: [Read, Grep]
+gaps: []
+gaps_note: "every claim checked against pipeline_file.py and its tests"

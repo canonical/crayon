@@ -4,11 +4,33 @@ Load this file at workflow step 4 (Perform the findings review).
 
 This is the review-mode rubric: a small, generalized findings framework for a
 Diátaxis **reference** unit grounded in **human-pointed sources**. It is derived
-from ng-review-docs, deliberately stripped of that rig's specifics (glossary /
-varindex, EN+RU lockstep, STYLE_GUIDE grounding, the fixed 10-dimension letter
-taxonomy, the SEO/IA/toctree checks, the deterministic Sphinx anchor pre-pass, the
-`F-NN` ids and `file:line` pointers, and the report *file*). dogen reviews a single
-unit, runs no build, and presents findings in-conversation only — never to a file.
+from a prior production documentation-review rig, deliberately stripped of that
+rig's specifics (its glossary and term-index machinery, bilingual lockstep
+checks, house style-guide grounding, the fixed ten-dimension letter taxonomy,
+the SEO/IA/toctree checks — and, above all, the report *file*). dogen reviews a
+single unit, runs no build, and presents findings in-conversation only — never
+to a file.
+
+## Deterministic pre-pass (before any judgment)
+
+Run every deterministic check first, so judgment is spent only where a machine
+cannot decide — anything mechanically decidable belongs in this layer, and the
+judgment dimensions never re-derive it. Cheap read-only greps over the drafted
+page(s), within Read/Bash/Glob/Grep only (no build — D-13, no writes):
+
+- **Changelog-framing tells:** `previously`, `now supports`, `starting with`,
+  `can now`, `new in` — candidate writing-approach findings.
+- **Researcher register:** `observed`, `the fixtures show`, `every observed
+  use`, `the corpus` — candidate source-fidelity (stance) findings.
+- **Self-reference openers:** `This page describes`, `This document`, `The
+  intended reader` — candidate clarity findings.
+
+Each hit is **promoted** into the findings as a normal prioritized finding
+marked `(pre-pass)` — the marker is unbracketed; the priority tags stay the only
+bracketed vocabulary — or **dismissed** with a one-line reason (a "previously"
+inside a legitimate migration cross-reference is not changelog framing).
+Dismissed candidates are listed separately after the findings and never enter
+the findings tally.
 
 ## Dimension 0 — the objective check (assessed first)
 
@@ -36,10 +58,54 @@ cross-page rule).
 
 Dimension 0 is a `review`-mode gate only; the `record` fast path is unchanged.
 
+## writing-approach (always on, assessed first among the dimensions)
+
+Does every touched page read as if written fresh to its correct end-state, or
+does it carry the sediment of its own history? This dimension is **always on**:
+it may never be skipped or marked not assessed (it needs only the draft), it
+runs in the scoped re-review as well as the full pass (over the touched
+sections), and it is assessed before the four generalized dimensions — scaled to
+the surface: a bounded fix gets a quick hunt over the touched text; a fresh page
+gets a line-by-line pass. Hunt adversarially — on a large or brand-new page,
+assume the defects ARE present and go looking; return `(none)` only after
+actively trying to find one and failing.
+
+Four named failure modes (shared, name for name, with dogen-write's end-state
+standard in its `references/writing-standards.md`):
+
+- **Exception-note layering** — new behaviour bolted on as an aside ("can now
+  also…") instead of rewritten into the sentence that owns it.
+- **Changelog framing** — release-note register in reference prose
+  ("previously…", "now…", "starting with…"). The page states what is; history
+  lives in release notes.
+- **Pipeline-artifact narration** — commit-log, test, or algorithm mechanics
+  restated as documentation. Tag it here when the defect is register and shape;
+  when it is a mechanism claim, it belongs to source-fidelity's
+  runtime-mechanics leak.
+- **Water** — tautology and restating the obvious ("the `timeout` option
+  configures the timeout"), prose that re-narrates an adjacent table.
+
+**Counter-guardrail (anti-manufactured-nit):** every writing-approach finding
+must (a) name which failure mode it is AND (b) give a concrete end-state rewrite
+of the offending text. A finding that can do neither is a manufactured nit —
+drop it (list it with the dismissed pre-pass candidates, with the reason).
+
+**Escalation:** when the stale text a writing-approach finding flags ALSO
+misstates current behaviour, record a `[must-fix]` co-finding under
+source-fidelity — the approach defect stays here at its own severity; the
+factual misstatement is graded there.
+
+**The deletion mirror:** end-state writing cuts both ways. A re-drafted page
+that silently *lost* working content the steering never ordered removed is a
+completeness finding, graded there — hunt for it on every re-draft.
+
 ## The four review dimensions
 
-Default to assessing all four. Any dimension may be marked **not assessed** with a
-stated reason (e.g. the declared sources were unreadable).
+Default to assessing all four (writing-approach above is always on and cannot
+be deselected). Any of the four may be marked **not assessed** with a stated
+reason — source-fidelity is `(not assessed — <reason>)`, never guessed, when
+the declared sources are unreadable or absent: fabricating source behaviour is
+the one unforgivable reviewer move.
 
 **Grounding rule (v1):** source-fidelity and completeness findings are verified
 against the sources themselves, not against the draft's internal coherence. Open
@@ -88,12 +154,12 @@ Two mandatory checks inside this dimension:
   by one: each is **materialized on this page** or covered by a recorded `gap`
   with a reason. An outline item that is neither is a `[should-fix]` minimum. A
   **cross-reference to another page is not coverage** when the outline names an
-  inventory to appear here (round 3: a leg punted the seven-interface attribute
-  inventory to a `:ref:` and self-accepted — an outline that says "per-interface
+  inventory to appear here (round 3: a leg punted the seven-module attribute
+  inventory to a `:ref:` and self-accepted — an outline that says "per-module
   attribute inventory" is a read-and-materialize contract, `[must-fix]` if the
   page ships only a link).
 - **Read-but-not-converted.** Compare the generation's `context_origins`
-  against the page: an inventory the writer READ (e.g. every per-interface
+  against the page: an inventory the writer READ (e.g. every per-module
   reference file) but did not surface is the highest-value completeness flag —
   the grounding existed and the page still omitted it.
 
@@ -142,17 +208,43 @@ Two mandatory checks inside this dimension:
 Plain-language correctness (grammar, agreement, typos, run-ons) plus the reference
 **register**: impersonal, present-tense, descriptive. Flag marketing voice,
 second-person tutorial voice, or future tense in a reference page. Light intra-page
-term consistency (one term per concept) folds in here — no varindex machinery.
+term consistency (one term per concept) folds in here — no term-index machinery.
+
+## Verification discipline (before any finding is reported)
+
+Only verified findings reach the report — never intermediate hypotheses. Every
+finding carries its `F-N` id, its page path and line, and the verbatim offending
+quote. For **absence-based** findings ("not supported", "not in source",
+"missing from the page") the bar is higher:
+
+- **At least two search strategies, recorded in the finding** — e.g. the exact
+  symbol AND a concept/synonym grep; an entrypoint trace AND a test search. One
+  failed grep is one strategy, not an absence.
+- **Confirm before grading.** A finding graded on the absence of a hit, or on a
+  claim to have enumerated all hits, is confirmed with `Read` or an explicit
+  `grep -c` whose count is echoed into the finding, before grading — a zero-hit
+  read through a pager or filter is not evidence.
+- **Prefer the conservative classification.** When the source is complex,
+  "inconclusive — needs a human look at <specific place>" beats "unsupported";
+  when the draft is vague-but-not-wrong, "imprecise" beats "incorrect". A
+  retracted accusation costs more trust than a hedged one.
+- **Cross-check before flagging as missing.** Content living on another page of
+  the set is a cross-reference question, not an absence — but an
+  outline-mandated inventory punted to a link is still a coverage failure (the
+  coverage-vs-outline rule wins).
 
 ## Priority mapping
 
-Each finding carries one light priority tag:
+Each finding carries one light priority tag — assigned by these definitions,
+never by impression:
 
 | Priority | Trigger |
 |----------|---------|
-| `[must-fix]` | A claim ungrounded in or contradicting the declared sources; a code-dump surfacing implementation source (source-fidelity); or a category violation that defeats the page as a reference. |
-| `[should-fix]` | A material completeness gap; wrong register for a reference; a structural inconsistency that impairs (but does not break) the page. |
-| `[nit]` | Wording, ordering, or optional polish. |
+| `[must-fix]` | A claim ungrounded in or contradicting the declared sources; an instruction or path that fails the reader (broken include/link, wrong syntax); an outline/acceptance item unmet and unrecorded (the dimension 0 floor); a code-dump surfacing implementation source (source-fidelity); a category violation that defeats the page as a reference; or a writing-approach finding escalated as a source-fidelity co-finding. |
+| `[should-fix]` | A material completeness gap; wrong register for a reference; a terminology contradiction; a structural inconsistency that impairs (but does not break) the page; a writing-approach failure mode with no factual misstatement. |
+| `[nit]` | Wording, ordering, or optional polish with no reader-facing consequence. |
+
+A candidate matching no row is a `[nit]` at most — or not a finding.
 
 ### Collision guard (D-03 — non-negotiable)
 
@@ -171,9 +263,12 @@ revisit, kept deliberately on a different axis.
 
 ## Findings layout (in-conversation only)
 
-Present the findings grouped by dimension. One line per finding: the priority tag
-first, the observation quoting the offending draft text, then `→` and a concrete
-suggested action. A clean dimension shows `(none)`; a skipped one shows
+Present the findings grouped by dimension. One line per finding: the `F-N` id,
+the priority tag, `(pre-pass)` when the deterministic pre-pass produced it, the
+observation quoting the offending draft text with its page and line, then `→`
+and a concrete suggested action. Number in presentation order — the ids exist so
+the verdict note can say "apply F-2 and F-5" instead of restating the findings.
+A clean dimension shows `(none)`; a skipped one shows
 `(not assessed — <reason>)`. The block is presented in the conversation and is
 **never written to a file** — only the reviewer's resulting verdict is recorded,
 via `dogen review --verdict --note` (a fix/redraft verdict's note lands in the
@@ -183,25 +278,40 @@ directly actionable).
 ```
 ## dogen-review — findings: <unit-id>
 
+### writing-approach
+- F-1 [should-fix] <failure mode: changelog framing — "<offending text>" (<page>:<line>)>
+  → <the concrete end-state rewrite>
+
 ### source-fidelity
-- [must-fix] <observation, quoting the offending draft text>
+- F-2 [must-fix] <observation, quoting the offending draft text (<page>:<line>)>
   → <suggested action: what to change, or "re-draft with steering: …">
-- [nit] <observation> → <action>
+- F-3 [nit] (pre-pass) <observation> → <action>
 
 ### completeness
-- [should-fix] <observation> → <action>
+- F-4 [should-fix] <observation> → <action>
 
 ### structure-fit
 - (none)
 
 ### clarity
-- [nit] <observation> → <action>
+- F-5 [nit] <observation> → <action>
 
 Findings: N total — X must-fix, Y should-fix, Z nit.
 (Priority = review findings, NOT the CLI run-status codes.)
+Dismissed pre-pass candidates: <M, each with its one-line reason — or (none)>
+Recommended verdict: <accept | fix | redraft> — <one clause tying it to the tally>
 
 Next: accept (the publishing commit is yours) · record fix/redraft — dogen-write applies the note
 ```
+
+The recommended verdict is the family smart-defaults rule applied to the tally:
+any `[must-fix]` → **fix** (or **redraft** when the must-fixes are pervasive
+rather than bounded); `[should-fix]` only → genuinely the reviewer's call,
+present both; clean → **accept**. Self-check before presenting: the
+recommendation must agree with the tally line above it (dismissed pre-pass
+candidates are not in the tally); if it does not, re-derive it. The verdict
+remains the reviewer's — the recommendation is a labeled default, never a
+decision.
 
 There are exactly TWO next steps: accept, or a recorded fix/redraft verdict that
 routes to dogen-write. "Make the edit yourself" is not one of them — an
