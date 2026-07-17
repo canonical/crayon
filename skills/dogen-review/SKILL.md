@@ -12,7 +12,9 @@ summary, then record the verdict — the lean path) or **review** (additionally 
 generalized four-dimension findings review, grounded by re-checking claims against
 the recorded sources, and present it before the verdict). Both modes read the unit's
 sidecars and the drafted page(s) — in the unit's format, MyST or rST; a
-multi-file unit's whole target set — present the provenance summary, elicit the
+multi-file unit's whole target set — and may optionally consult a top-level
+`optional-guidance/` directory (house style, framework, or syntax guides) when judging
+the draft, present the provenance summary, elicit the
 reviewer's judgment, and record it as the required `dogen review --verdict --note`, advancing
 progress to `reviewed`. The verdict is structured (v1): **accept** seals the exact
 draft text (its hash lands on the review record — the second provable bookend);
@@ -136,11 +138,14 @@ which dimension 0's objective check relies on for multi-target units). Ground th
 findings: for source-fidelity and completeness, re-check the draft's concrete claims
 against the recorded sources and context origins themselves (open the files; the
 generation's commit stamps say which version was read) — do not judge the draft only
-on its internal coherence. Quote the offending draft text and give a concrete
-suggested action. A clean dimension shows `(none)`; a not-assessed one shows its
-reason. The findings block is presented in-conversation only — it is never written
-to a file. The priority tags are a review-findings axis only; keep the CLI reason
-codes and progress states surfaced verbatim (D-03).
+on its internal coherence. For structure-fit and clarity, if the repo has a top-level
+`optional-guidance/` directory (house style guides, framework or syntax references), optionally
+consult any files relevant to this unit — a draft that contradicts a documented house
+convention is a legitimate finding. The absence of the `optional-guidance/` directory is never a
+blocker. Quote the offending draft text and give a concrete suggested action. A clean
+dimension shows `(none)`; a not-assessed one shows its reason. The findings block is
+presented in-conversation only — it is never written to a file. The priority tags are a
+review-findings axis only; keep the CLI reason codes and progress states surfaced verbatim (D-03).
 </step_4>
 
 <step_5 name="Elicit the verdict and record it">
