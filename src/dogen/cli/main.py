@@ -2507,6 +2507,17 @@ def record_plan(
     )
     try:
         plan_steps_use_case(request)
+    except UnitNotFoundError as exc:
+        # WR-01: an undeclared unit is a domain refusal at exit 1, matching
+        # `unit edit`'s unit_not_found — not the bad-input exit 2 the shared
+        # (FileNotFoundError, ValueError) handler used to give this case.
+        raise _fail(
+            unit_id,
+            message=f"No such unit: {unit_id!r}",
+            reason=_REASON_UNIT_NOT_FOUND,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
     except (FileNotFoundError, ValueError) as exc:
         raise _fail(
             unit_id,
@@ -2591,6 +2602,17 @@ def record_step(
             unit_id,
             message=f"Refusing to record step {step_id!r}: {exc}",
             reason=_REASON_EVIDENCE_REQUIRED,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
+    except UnitNotFoundError as exc:
+        # WR-01/IN-03: an undeclared unit is a domain refusal at exit 1, matching
+        # `unit edit`; keep it distinct from the unknown_step case below, which
+        # now correctly means "the unit is declared but this step is not planned".
+        raise _fail(
+            unit_id,
+            message=f"No such unit: {unit_id!r}",
+            reason=_REASON_UNIT_NOT_FOUND,
             code=_EXIT_DOMAIN_REFUSAL,
             json_output=json_output,
         ) from exc
