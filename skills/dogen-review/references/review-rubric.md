@@ -58,6 +58,8 @@ cross-page rule).
 
 Dimension 0 is a `review`-mode gate only; the `record` fast path is unchanged.
 
+When the unit carries a step plan, weigh the sections its walk flagged through the quality signals (the `deviated` / `skipped` / `fail` episodes surfaced in the provenance summary) more heavily — a flagged section is where improvisation or repeated failure concentrated, so it is the likeliest place a must-fix hides.
+
 ## writing-approach (always on, assessed first among the dimensions)
 
 Does every touched page read as if written fresh to its correct end-state, or
