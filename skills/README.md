@@ -41,9 +41,22 @@ dogen-plan -> dogen-write -> dogen-review
 - **dogen-write** — drafts the page in the unit's format (MyST or rST — the
   target extension decides, v1.2). Branches on `dogen draft --resolve-only`
   (driver vs passenger). The passenger starts from the declared sources, navigates
-  the repo freely, and records **everything it read** in a context report. The
-  **sole** skill that may carry `Write`, for exactly two staging files:
+  the repo freely, and records **everything it read** in a context report. It is
+  one of the **two draft-stage skills** (with dogen-record) that may carry
+  `Write`, for exactly two staging files:
   `.dogen/staging/<id>/handoff.<ext>` and `.dogen/staging/<id>/report.yaml`.
+  dogen-write is the draft-stage skill for **reference** units; dogen-record is
+  its actionable-unit counterpart.
+- **dogen-record** — the draft-stage skill for **actionable** (tutorial / how-to)
+  units: it walks the procedure step by step, recording evidence under the
+  Phase-12 `record` gate (`dogen record plan|step|show`), then authors and stages
+  the page exactly as dogen-write's passenger does
+  (`dogen draft --draft-file/--draft-dir --report`). The second draft-stage skill
+  that may carry `Write` (staging-only) — the alternative to dogen-write, not a
+  replacement. **Interim entry (Phase 13):** dogen-record needs a declared +
+  signed-off unit, the same precondition as dogen-write; until Phase 14 wires
+  dogen-plan's type routing, the TA declares an actionable unit directly via
+  `dogen unit new` then `dogen signoff` (this phase touches dogen-plan zero).
 - **dogen-review** — presents a provenance summary (and, in review mode, grounded
   five-dimension findings — writing-approach always on, opened by a
   deterministic read-only pre-pass, numbered `F-N` with a recommended verdict
@@ -59,6 +72,10 @@ dogen-plan -> dogen-write -> dogen-review
 Routing rules:
 
 - dogen-plan hands off to dogen-write once the unit is declared and signed off.
+- dogen-record is the draft-stage alternative for **actionable** units: from the
+  same declared + signed-off precondition it walks the procedure, records the
+  draft, and hands off to dogen-review. Phase 14 wires dogen-plan's type routing
+  to it; in Phase 13 the TA enters it directly (the interim entry above).
 - dogen-write hands off to dogen-review once a draft is recorded.
 - dogen-review routes fix/redraft verdicts back to dogen-write (the note is already
   in the steering stream; it never edits the draft itself — the reviewer owns the
@@ -75,8 +92,9 @@ docs-skill family shape, adapted to three skills):
    `description` (a single line; capability first, then a trigger sentence
    starting "Use when …"; **no `<`/`>` angle brackets** — they are a spec
    injection surface), and `allowed-tools` (an explicit comma list). `Write` and
-   `Edit` are **excluded** from the delegating skills (dogen-plan, dogen-review);
-   only dogen-write may list `Write`.
+   `Edit` are **excluded** from the delegating skills (dogen-plan and dogen-review
+   — all but the two draft-stage writers); only dogen-write and dogen-record may
+   list `Write`.
 2. `<objective>` — what the skill does and its non-negotiable philosophy.
 3. `<quick_start>` — numbered entry point; BLOCKING input-collection lists live here.
 4. `<pipeline>` — the shared flow line above plus this skill's consumes/produces
@@ -95,9 +113,11 @@ docs-skill family shape, adapted to three skills):
 **File-shape invariants** (enforced by `scripts/skill_lint.py`, D-18):
 
 - Frontmatter `name:` equals the directory name for every skill.
-- `dogen-plan` and `dogen-review` `allowed-tools` **exclude** `Write` and `Edit` —
-  the delegation to the CLI (and, for review, back to dogen-write) is enforced at
-  the tool surface, a provable invariant in code, not authoring discipline.
+- `dogen-plan` and `dogen-review` `allowed-tools` **exclude** `Write` and `Edit`
+  (only the two draft-stage writers, dogen-write and dogen-record, may list
+  `Write`) — the delegation to the CLI (and, for review, back to dogen-write) is
+  enforced at the tool surface, a provable invariant in code, not authoring
+  discipline.
 - `description:` is present, non-empty, and carries no angle brackets.
 
 ## references/ files
@@ -261,6 +281,14 @@ a bounded fix never reads as a from-scratch re-draft:
 | `publish` | `Next: accepted — the publishing commit is yours.` |
 | `done` | `Next: nothing pending for this unit.` |
 
+The draft-stage fork now has two entries — one per draft-stage writer. For a
+**reference** unit the draft-stage referral stays `Next: /dogen-write — draft the
+unit.`; for an **actionable** (tutorial / how-to) unit it is
+`Next: /dogen-record — walk the procedure and record the draft.` (same frozen
+grammar, the slash form and a definite imperative). Phase 14 wires dogen-plan's
+type routing to emit the matching `next_id` at signoff; in Phase 13 the TA enters
+dogen-record directly per the interim entry (`dogen unit new` → `dogen signoff`).
+
 The raw `next` string stays available for audits; quoting it is fine when the TA
 explicitly asks what the CLI said. Reason codes and progress states remain
 surfaced **verbatim** (D-03) — the frozen grammar covers routing only.
@@ -335,12 +363,13 @@ symlink the skills; the install flow is the supported path.
 
 Skills are conversational LLM prompts with no `--apply`/`--json`/`--language`
 flags, and they never build, publish, push, or run git state-changing commands
-(the CLI's commit seam owns the transition commits). The one narrow write
-carve-out in the family is dogen-write's passenger branch, which writes the
-authored page handoff and its context report under `.dogen/staging/<id>/` before
-calling `dogen draft --draft-file --report` — announced in the conversation, left
-in place for inspection. Every other persistence goes through the CLI verbs, which
-own the provable gate.
+(the CLI's commit seam owns the transition commits). The narrow write carve-out
+in the family belongs to the **two draft-stage skills** — dogen-write's passenger
+branch and dogen-record's walk — each of which writes the authored page handoff
+and its context report under `.dogen/staging/<id>/` before calling
+`dogen draft --draft-file/--draft-dir --report` — announced in the conversation,
+left in place for inspection. Every other persistence goes through the CLI verbs,
+which own the provable gate.
 
 ## Canonical self_healing block
 
