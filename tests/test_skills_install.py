@@ -8,6 +8,7 @@ import pytest
 from typer.testing import CliRunner
 
 from dogen.adapters.skills_install import (
+    _FAMILY_ENTRIES,
     HARNESS_ROOTS,
     discover_harnesses,
     install,
@@ -29,6 +30,24 @@ def target(tmp_path, monkeypatch):
     return tmp_path
 
 
+def test_canonical_family_includes_the_full_skill_quartet():
+    """The four skills are the canonical family — dogen-record included (13-04).
+
+    dogen-record was authored as the fourth writer; if the installer's family
+    omits it, `/dogen-record` is undiscoverable in a staged harness while
+    `skills status` still reads green (record sits outside the drift set). Guard
+    the membership directly so a future family edit can't silently drop it.
+    """
+    assert set(_FAMILY_ENTRIES) == {
+        "dogen-plan",
+        "dogen-write",
+        "dogen-review",
+        "dogen-record",
+        "README.md",
+        "LICENSE",
+    }
+
+
 def test_install_stages_byte_identical_copies(target):
     record = install(target, "claude", source=_CANONICAL, at="2026-07-03T00:00:00Z")
     staged = target / HARNESS_ROOTS["claude"]
@@ -36,7 +55,9 @@ def test_install_stages_byte_identical_copies(target):
         "dogen-plan/SKILL.md",
         "dogen-write/SKILL.md",
         "dogen-review/SKILL.md",
+        "dogen-record/SKILL.md",
         "dogen-write/references/provider-branch.md",
+        "dogen-record/references/episode-taxonomy.md",
         "README.md",
         "LICENSE",
     ):
