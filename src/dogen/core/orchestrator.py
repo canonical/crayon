@@ -1403,12 +1403,19 @@ def review(request: ReviewRequest) -> ReviewOutcome:
     if provenance.signoff is not None and provenance.signoff.plan_hash:
         text = request.store.read_unit_text(request.unit_id, root=request.root)
         stale = _sha256(text) != provenance.signoff.plan_hash
+    # Pitfall 1 (ROUTE-01/D-02): load the unit UNCONDITIONALLY here so `intent`
+    # reaches the single routing decision on EVERY verdict. Today the accept
+    # branch loads `unit` only for its own seal; a fix/redraft verdict on an
+    # actionable unit must still carry its intent, else it mis-tokens to `draft`
+    # (routing an actionable unit back to dogen-write — the D-02 prohibition).
+    unit = request.store.load_unit(request.unit_id, root=request.root)
     next_id, next_action = _suggest_next(
         state,
         signed_off=signed,
         stale_plan=stale,
         last_verdict=request.verdict,
         unit_id=request.unit_id,
+        intent=unit.intent,
     )
     return ReviewOutcome(
         state=state,
@@ -2417,9 +2424,33 @@ _NEXT_TEMPLATES: dict[str, str] = {
     "draft": "dogen draft {unit_id}",
     "fix": "dogen draft {unit_id}  # apply the recorded fix",
     "redraft": "dogen draft {unit_id}  # re-draft per the recorded steering",
+    # ROUTE-01 (D-01/D-06): the append-only `record` token's advisory lines for
+    # actionable (tutorial/how-to) units. These describe the interactive
+    # evidence-gated dogen-record walk — NOT a fabricated `dogen record` one-shot
+    # verb (Pitfall 3); the real routing rides the token, and the walk is a skill,
+    # so the human line stays honestly advisory within the frozen-grammar spirit.
+    "record": "run the dogen-record walk for {unit_id}  # actionable unit → record its steps",
+    "record_fix": (
+        "run the dogen-record walk for {unit_id}  # apply the recorded fix"
+    ),
+    "record_redraft": (
+        "run the dogen-record walk for {unit_id}  # re-record per the recorded steering"
+    ),
     "review": "dogen review {unit_id}",
     "publish": "accepted — the publishing commit/PR is yours",
     "done": "done",
+}
+
+#: The three draft-stage keys that route a unit back to authoring — the ONLY
+#: keys where an actionable unit diverges to the `record` token (ROUTE-01/D-01).
+#: Every other key (sign_off/re_sign/review/publish/done) is direction-agnostic.
+_DRAFT_STAGE: frozenset[str] = frozenset({"draft", "fix", "redraft"})
+
+#: draft-stage key → its `record`-variant `_NEXT_TEMPLATES` key (actionable units).
+_RECORD_KEYS: dict[str, str] = {
+    "draft": "record",
+    "fix": "record_fix",
+    "redraft": "record_redraft",
 }
 
 
@@ -2430,8 +2461,16 @@ def _suggest_next(
     stale_plan: bool,
     last_verdict: ReviewVerdict | None,
     unit_id: str,
+    intent: Intent,
 ) -> tuple[str, str]:
-    """Derive the routing token and suggestion for one unit's status row (v1).
+    """Derive the routing token and suggestion for one unit's status row (v1.2).
+
+    This is the ONE authoritative routing decision (D-01): status, review, and
+    signoff all read the token it returns — no consumer re-derives direction.
+    v1.2 makes it type-aware (ROUTE-01): at the draft-stage fork an actionable
+    (tutorial/how-to) unit routes to the append-only ``record`` token, while
+    reference and explanation stay byte-identical to v1 (D-06). The direction is
+    read from ``intent`` on every call (D-04) — nothing about the route is stored.
 
     Parameters
     ----------
@@ -2445,14 +2484,18 @@ def _suggest_next(
         The most recent structured review verdict, when one exists.
     unit_id : str
         The unit id interpolated into the suggestion.
+    intent : Intent
+        The unit's Diátaxis direction. Actionable directions (``tutorial`` /
+        ``how_to``) route to ``record`` at the draft-stage fork; ``reference`` and
+        ``explanation`` ride the v1 tokens unchanged (D-06).
 
     Returns
     -------
     tuple of (str, str)
         ``(next_id, next)`` — the machine routing token (``sign_off`` /
-        ``re_sign`` / ``draft`` / ``review`` / ``publish`` / ``done``; skills
-        translate it into loop language, never parrot the human line) and the
-        one-line human suggestion in CLI terms.
+        ``re_sign`` / ``draft`` / ``record`` / ``review`` / ``publish`` /
+        ``done``; skills translate it into loop language, never parrot the human
+        line) and the one-line human suggestion in CLI terms.
     """
     if not signed_off:
         key = "sign_off"
@@ -2471,6 +2514,13 @@ def _suggest_next(
             key = "redraft"
     else:
         key = "done"
+    # ROUTE-01 (D-01/D-02): actionable units diverge to `record` ONLY at the
+    # draft-stage fork; every other key stays direction-agnostic. Reference and
+    # explanation fall through to the unchanged v1 branch (Pitfall 4 — the
+    # reference default is never altered), keeping their output byte-identical.
+    if intent in (Intent.tutorial, Intent.how_to) and key in _DRAFT_STAGE:
+        record_key = _RECORD_KEYS[key]
+        return "record", _NEXT_TEMPLATES[record_key].format(unit_id=unit_id)
     token = "draft" if key in {"fix", "redraft"} else key
     return token, _NEXT_TEMPLATES[key].format(unit_id=unit_id)
 
@@ -2514,6 +2564,7 @@ def unit_statuses(request: ListRequest) -> list[UnitStatus]:
             stale_plan=stale,
             last_verdict=last_verdict,
             unit_id=unit_id,
+            intent=unit.intent,  # D-01: routing reads the direction on every call
         )
         rows.append(
             UnitStatus(
