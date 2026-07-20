@@ -2429,10 +2429,10 @@ _NEXT_TEMPLATES: dict[str, str] = {
     # evidence-gated dogen-record walk — NOT a fabricated `dogen record` one-shot
     # verb (Pitfall 3); the real routing rides the token, and the walk is a skill,
     # so the human line stays honestly advisory within the frozen-grammar spirit.
-    "record": "run the dogen-record walk for {unit_id}  # actionable unit → record its steps",
-    "record_fix": (
-        "run the dogen-record walk for {unit_id}  # apply the recorded fix"
+    "record": (
+        "run the dogen-record walk for {unit_id}  # actionable → record its steps"
     ),
+    "record_fix": ("run the dogen-record walk for {unit_id}  # apply the recorded fix"),
     "record_redraft": (
         "run the dogen-record walk for {unit_id}  # re-record per the recorded steering"
     ),
@@ -2454,7 +2454,7 @@ _RECORD_KEYS: dict[str, str] = {
 }
 
 
-def _suggest_next(
+def _suggest_next(  # noqa: PLR0913
     state: ProgressState,
     *,
     signed_off: bool,
@@ -2526,7 +2526,7 @@ def _suggest_next(
 
 
 def next_after_signoff(intent: Intent) -> str:
-    """The routing token a freshly-signed unit lands on (the plan-stage close fork).
+    """Return the routing token a freshly-signed unit lands on (plan-stage close fork).
 
     Routed through the single core decision (``_suggest_next``, D-01) so the CLI /
     dogen-plan close block branches on the token and never re-derives the direction
