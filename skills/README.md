@@ -45,8 +45,8 @@ dogen-plan -> dogen-write -> dogen-review
   one of the **two draft-stage skills** (with dogen-record) that may carry
   `Write`, for exactly two staging files:
   `.dogen/staging/<id>/handoff.<ext>` and `.dogen/staging/<id>/report.yaml`.
-  dogen-write is the draft-stage skill for **reference** units; dogen-record is
-  its actionable-unit counterpart.
+  dogen-write is the draft-stage skill for **reference and explanation** units;
+  dogen-record is its actionable-unit counterpart.
 - **dogen-record** — the draft-stage skill for **actionable** (tutorial / how-to)
   units: it walks the procedure step by step, recording evidence under the
   Phase-12 `record` gate (`dogen record plan|step|show`), then authors and stages
@@ -288,8 +288,9 @@ a bounded fix never reads as a from-scratch re-draft:
 | `done` | `Next: nothing pending for this unit.` |
 
 The draft-stage fork now has two entries — one per draft-stage writer. For a
-**reference** unit the draft-stage referral stays `Next: /dogen-write — draft the
-unit.`; for an **actionable** (tutorial / how-to) unit it is
+**reference** or **explanation** unit the draft-stage referral stays
+`Next: /dogen-write — draft the unit.`; for an **actionable** (tutorial / how-to)
+unit it is
 `Next: /dogen-record — walk the procedure and record the draft.` (same frozen
 grammar, the slash form and a definite imperative). A `fix` or `redraft` verdict
 splits on the same token: an actionable unit routes to

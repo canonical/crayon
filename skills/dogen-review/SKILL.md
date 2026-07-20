@@ -63,8 +63,9 @@ sidecars) and produces a recorded structured review (`dogen review --verdict
 transition). Routing rules:
 
 - A fix/redraft verdict routes back to the draft-stage writer on the core `next_id`
-  token — never re-inferred from the unit's intent (D-01). For a **reference** unit
-  (token `draft`) it routes to dogen-write with the frozen referral line
+  token — never re-inferred from the unit's intent (D-01). For a
+  **reference** or **explanation** unit (token `draft`) it routes to dogen-write
+  with the frozen referral line
   (`Next: /dogen-write — apply the recorded fix.` for a fix; `… — re-draft
   against the recorded steering.` for a redraft); for an **actionable** (tutorial /
   how-to) unit (token `record`) it routes to dogen-record
@@ -223,12 +224,13 @@ printf '%s' "$REVIEWER_NOTE" | dogen review "$UNIT_ID" --verdict "$VERDICT" --no
 Read the `--json` result and surface it. Route off the machine token `next_id`,
 translated into the loop's **frozen referral line** (the exact strings live in
 `../README.md`'s routing table) — always the slash form, a definite imperative.
-The fix/redraft arm splits on the token — a **reference** unit carries `draft`, an
-**actionable** (tutorial / how-to) unit carries `record`; branch on the token,
+The fix/redraft arm splits on the token — a **reference** or **explanation** unit
+carries `draft`, an **actionable** (tutorial / how-to) unit carries `record`; branch
+on the token,
 never re-infer the fork from the unit's intent (D-01):
 
-- token `draft` (reference), after a **fix** verdict: `Next: /dogen-write — apply the recorded fix.`
-- token `draft` (reference), after a **redraft** verdict: `Next: /dogen-write — re-draft against the recorded steering.`
+- token `draft` (reference or explanation), after a **fix** verdict: `Next: /dogen-write — apply the recorded fix.`
+- token `draft` (reference or explanation), after a **redraft** verdict: `Next: /dogen-write — re-draft against the recorded steering.`
 - token `record` (actionable), after a **fix** verdict: `Next: /dogen-record — apply the recorded fix and re-record the draft.`
 - token `record` (actionable), after a **redraft** verdict: `Next: /dogen-record — re-walk the procedure and record a fresh draft.`
 - after **accept**: `Next: accepted — the publishing commit is yours.`
