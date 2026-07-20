@@ -1,6 +1,6 @@
 ---
 name: dogen-plan
-description: Guides a Technical Author through declaring one documentation unit via one-question-at-a-time Socratic intake, grounding first in existing docs and dogen context artifacts, drawing out intent and audience before recording anything, collecting the unit id, title, and source paths directly, then persisting through delegating `dogen unit new` and `dogen signoff` calls; amendments go through `dogen unit edit`, never a clobber. Never writes documentation and never edits the unit files; all persistence delegates to the CLI, whose commit seam records every transition. Routes by declared Diataxis direction — reference to dogen-write, tutorial/how-to to dogen-record, explanation into an intent-walk mode that stops before declaring. Also serves advise-only triage asks — does this change need docs? — with a grounded Triage Recommendation, declaring nothing until the TA says go. Use when a TA is ready to declare and sign off a new documentation unit before drafting, or asks whether a change needs documentation.
+description: Guides a Technical Author through declaring one documentation unit via one-question-at-a-time Socratic intake, grounding first in existing docs and dogen context artifacts, drawing out intent and audience before recording anything, collecting the unit id, title, and source paths directly, then persisting through delegating `dogen unit new` and `dogen signoff` calls; amendments go through `dogen unit edit`, never a clobber. Never writes documentation and never edits the unit files; all persistence delegates to the CLI, whose commit seam records every transition. Routes by declared Diataxis direction — reference to dogen-write, tutorial/how-to to dogen-record, explanation through an intent walk that records intent before drafting. Also serves advise-only triage asks — does this change need docs? — with a grounded Triage Recommendation, declaring nothing until the TA says go. Use when a TA is ready to declare and sign off a new documentation unit before drafting, or asks whether a change needs documentation.
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 ---
 
@@ -55,8 +55,9 @@ and status vocabulary.
    (D-07). Then route: **reference** loads `references/reference-intake.md` and
    continues to dogen-write; **tutorial**/**how-to** load
    `references/actionable-intake.md` and route to dogen-record; **explanation**
-   dispatches into the intent-walk mode, whose Phase-14 body is an honest
-   hard-stop stub — offer to note the intent and stop before declaring (D-05).
+   loads `references/explanation-intake.md` and runs the intent walk — a
+   Socratic "5 whys" that draws out recorded intent — then declares like the
+   reference arm and routes to dogen-write (D-05).
 6. Once intent, audience, unit id, title, and at least one source are known, reflect
    the picture back for confirmation — including a synthesized steering note passed
    via `--notes` — then run the delegating call sequence (workflow step 6):
@@ -78,8 +79,10 @@ the CLI-persisted unit (`unit.md` + the recorded signoff act) under
   token `draft` → dogen-write (`Next: /dogen-write — draft the unit.`), token
   `record` → dogen-record (`Next: /dogen-record — walk the procedure and record
   the draft.`). It reads the token; it never re-derives the fork from
-  `unit.intent`. An explanation direction never reaches this handoff — its step-4
-  dispatch stops before declaring (D-05).
+  `unit.intent`. An explanation direction runs the step-4 intent walk first, then
+  declares and rides the `draft` token to dogen-write like a reference unit
+  (D-05/D-11) — the core routes explanation to `draft` byte-identically to
+  reference.
 - It never drafts, reviews, or builds, and never runs a git state-changing command
   (the CLI's seam owns the commits).
 - Persistence is delegated entirely to `dogen unit new` / `dogen unit edit` /
@@ -210,23 +213,30 @@ let the TA decide — never silently retype.
   `--intent tutorial` / `--intent how-to`, and route to dogen-record — the
   action-based draft-stage skill for actionable units (D-02). The close block's
   `record` token carries this referral (step 6); never re-derive it here.
-- **explanation** → load `references/explanation-intake.md` and dispatch into the
-  intent-walk mode. Its Phase-14 body is an honest hard-stop stub (D-05): the
-  intent walk lands in Phase 15, so this cycle the dispatch **STOPS before
-  declaring** — use `AskUserQuestion` to explain that an explanation unit needs
-  the Phase-15 intent walk before it can be drafted, offer to note the intent for
-  that cycle, and stop. Do not run `dogen unit new --intent explanation`.
+- **explanation** → load `references/explanation-intake.md` and run the **intent
+  walk** — the Socratic machinery aimed at recorded intent instead of a reference
+  outline (D-05). The walk runs **in dialogue, nothing persisted until
+  crystallization**: follow the Why down to the root intent, fire the four
+  active-challenge moves opportunistically (signal-triggered, at most one per
+  answer), bank jump-ahead intent, and **stop at crystallization** — one
+  reflect-back the TA confirms without new corrections, never a fixed-depth
+  interrogation. Then proceed like the reference arm: step-5 outline shaping →
+  step-6 declaration ceremony (including the synthesized intent note) → the
+  `draft`-token close referral to dogen-write.
 
-Only reference and actionable directions proceed to the declaration ceremony
-(step 6); an explanation direction stops here.
+All three directions proceed to the declaration ceremony (step 6): reference and
+explanation ride the `draft` token to dogen-write; tutorial/how-to ride the
+`record` token to dogen-record.
 </step_4>
 
 <step_5 name="Shape a reader-facing outline">
 Help the TA shape the unit's outline and acceptance criteria (the `unit.md` body they
 own) **in the dialogue itself**: propose the body text — an `## Intent & scope`
 section and an `## Outline / acceptance` section — in chat, and iterate until the TA
-approves it. This shaping applies to reference **and** actionable (tutorial/how-to)
-directions alike. One rule is non-negotiable: **the outline is phrased in the
+approves it. This shaping applies to reference, actionable (tutorial/how-to), **and**
+explanation directions alike — an explanation unit gets the same reader-facing
+`## Intent & scope` / `## Outline / acceptance` body, shaped from the intent
+walk. One rule is non-negotiable: **the outline is phrased in the
 reader's terms, never in implementation identifiers.** Coverage items name fields,
 syntax, constraints, and behaviours the reader cares about; code entities (type
 names, function names, file paths) appear only as *source pointers*, never as things
@@ -283,9 +293,13 @@ dogen unit new "$UNIT_ID" \
 ```
 
 `--intent "$DIRECTION"` is the direction settled and routed in step 4 —
-`reference`, `tutorial`, or `how-to` (an explanation direction never reaches this
-ceremony; its step-4 dispatch stops before declaring, D-05). `--target` is the
-placement settled in step 3 (e.g.
+`reference`, `tutorial`, `how-to`, or `explanation`. For an explanation unit the
+call is `dogen unit new --intent explanation --notes "$NOTES"` (origin `plan`,
+recommended per D-01 for the primary intent note): `$NOTES` is the synthesized
+intent from the walk and reflects **only the TA's own answers** — the root intent
+chain (surface ask → underlying why), the audience and what they must understand,
+the settled terminology, and the trade-offs the TA actually named (D-06 — invent
+nothing). `--target` is the placement settled in step 3 (e.g.
 `reference/config/pipeline-definition.rst`) — the store writes the
 draft exactly there, creating subdirectories as needed, and the extension
 decides the unit's format. `--also-target` (repeatable) declares the extra
@@ -340,8 +354,8 @@ output (D-01):
 
 Read the token; never re-derive the referral from the declared direction (Pitfall
 2 / D-01). Generalize the `Direction:` line to the declared direction. An
-explanation direction never reaches this block — its step-4 dispatch stopped
-before declaring (D-05).
+explanation unit rides the `draft` token here exactly like a reference unit —
+`Next: /dogen-write — draft the unit.` — with no new token (D-05/D-11).
 
 ```
 ## dogen-plan: <unit-id>
@@ -408,10 +422,11 @@ mechanical fields.
 
 **TA states or steers toward a Diataxis type:** route per step 4. Reference →
 reference-intake.md + dogen-write; tutorial/how-to → actionable-intake.md +
-dogen-record; explanation → the intent-walk dispatch, which this cycle stops
-before declaring and offers to note the intent (D-05). A TA-stated direction is
-honored verbatim; propose one only when absent, and surface a stated-vs-evidence
-conflict once for the TA to decide (D-07).
+dogen-record; explanation → explanation-intake.md + the intent walk, which
+draws out recorded intent, then declares and rides the `draft` token to
+dogen-write (D-05). A TA-stated direction is honored verbatim; propose one only
+when absent, and surface a stated-vs-evidence conflict once for the TA to decide
+(D-07).
 
 **Unit already exists (`unit_exists`):** surface the refusal; offer
 `dogen unit edit` to amend the existing plan, a different id, or — only for a true
@@ -478,9 +493,11 @@ source. Ask the TA to point at the best entry-point file(s) before declaring.
 - D-01: Never re-derive the draft-stage referral from `unit.intent` in prose —
   branch on the core `next_id` token from `dogen signoff --json`. Do not introduce
   a second routing decision; routing is solved once, centrally.
-- D-05: Never declare an explanation unit this cycle — the intent-walk dispatch is
-  an honest hard-stop stub that stops before declaring; no explanation unit
-  advances without the Phase-15 intent walk. Offer to note the intent and stop.
+- D-05/D-06: Never record agent-invented or agent-inferred intent as the TA's own
+  — the synthesized `--notes` reflects only the TA's actual answers. And never
+  grind the walk into a fixed-depth interrogation: a why-thread ends when an
+  answer stops surfacing new intent, and a stalled TA gets ONE grounded
+  recommendation to react to, never a third open probe (D-02).
 - Never write or edit documentation text, `unit.md`, or any file — this skill has no
   `Write`/`Edit` tool and delegates all persistence to the CLI (D-05/D-18).
 - Never ask the TA to paste content into `unit.md` or hand-edit a dogen artefact as
@@ -528,9 +545,10 @@ fabricated), and the referral is **branched on the `next_id` token** from
 freshly signed-off reference unit, reused verbatim, never re-worded, ROUTE-03/D-10);
 token `record` → `Next: /dogen-record — walk the procedure and record the draft.`
 (the frozen actionable referral from `../README.md`'s routing table). Only ONE
-referral line is emitted per run — the one the token selects. An explanation
-direction never reaches this block (its step-4 dispatch stopped before declaring,
-D-05). On a mid-batch failure (D-04) the block degrades to exactly the
+referral line is emitted per run — the one the token selects. An explanation unit
+rides the `draft` token here exactly like a reference unit (D-05/D-11), reusing
+`Next: /dogen-write — draft the unit.` verbatim. On a mid-batch failure (D-04)
+the block degrades to exactly the
 `git: committed` lines that landed plus the single `dogen signoff <id>` resume
 command — no rollback.
 </output_specification>
@@ -549,7 +567,8 @@ command — no rollback.
 - [ ] The Diataxis direction was routed (step 4): a TA-stated direction honored
       verbatim (proposed only when absent, D-07); reference → reference-intake.md +
       dogen-write; tutorial/how-to → actionable-intake.md + dogen-record; an
-      explanation direction stopped before declaring via the intent-walk stub (D-05).
+      explanation direction ran the intent walk, then declared and rode the
+      `draft` token to dogen-write (D-05).
 - [ ] The outline/acceptance framing is reader-facing; implementation identifiers
       appear only as source pointers.
 - [ ] The unit was persisted ONLY via `dogen unit new` (with the synthesized
