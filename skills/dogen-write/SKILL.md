@@ -86,6 +86,20 @@ matching the page's siblings), the seeded `steering_notes`, and every entry
 in the `steering` stream — review-verdict entries are corrections a re-draft
 MUST apply.
 
+**Explanation open-ceremony guard (D-10):** derive the declared direction from
+the `intent` field you just read.
+An explanation unit whose steering stream is empty — no seeded intent note and no
+appended steering — reached this ceremony
+with nothing to draft *from*: its rationale, context, and trade-offs live in the
+recorded intent, and there is none. STOP and route the TA back to dogen-plan's
+intent walk to record the intent first (dogen-plan declares an explanation unit
+with a synthesized intent note; an empty stream means the walk was bypassed or
+abandoned). Do not draft an explanation page from unsteered inference — a stance
+with no recorded *why* invents one, the exact failure the stance forbids. This is
+a **skill-level tripwire, not a core guarantee**: a raw `dogen draft` CLI call
+still routes explanation → `draft` and bypasses this stop (the WR-03 precedent) —
+the guard lives in this skill's judgment, honestly framed, not in the core gate.
+
 **Re-draft precondition:** when `generations_count` ≥ 1 this is a re-draft, and
 the correction that motivates it must already be RECORDED — a review
 fix/redraft verdict or a `dogen steer --note` entry newer than the last
@@ -123,6 +137,14 @@ Read the result. Map any failure reason to plain-language TA guidance
 (`signoff_required` → route to dogen-plan; `backend_unavailable` → the Copilot
 backend is unreachable; `model_rejected` → the requested model was refused) per
 `references/provider-branch.md`. In this branch the skill never uses `Write`.
+
+**Explanation is passenger-only this phase (D-09):** a driver provider
+(`copilot` / `mock`) has **no explanation stance variant** — the understanding-
+oriented stance lives in the passenger authoring path, not in a driver prompt.
+When the declared direction is explanation and the resolved provider is a driver,
+give the TA an honest note that the driver drafts without the explanation stance
+this phase (route through the host-harness passenger for the steered stance); do
+not invent a new driver prompt path for it.
 </step_2>
 
 <step_3 name="Passenger branch (host-harness)">
@@ -131,7 +153,20 @@ If the resolved provider is `host-harness`, the host authors the page(s) itself,
 for `.rst` — the per-format standard is in `references/provider-branch.md`).
 Load `references/writing-standards.md` now — its end-state writing principle,
 three-check grounding rule, and writer micro-rules govern every sentence you
-author in this branch.
+author in this branch, in every direction.
+
+**Stance selection (branch on the declared direction).** writing-standards.md is
+the register-neutral base for both directions; the *stance* on top of it depends
+on the `intent` you read in step 1:
+
+- **reference** → the stance contract in `references/provider-branch.md` governs
+  the neutral, information-oriented register (unchanged this phase).
+- **explanation** → additionally load `references/explanation-stance.md` now and
+  author understanding-oriented prose (rationale, context, trade-offs,
+  connections) from the recorded intent steering as its primary source, curated
+  never pasted. The reference stance contract does NOT apply — explanation is not
+  the neutral look-it-up register. writing-standards.md still governs; the
+  per-format markup standards in `references/provider-branch.md` still apply.
 
 1. **Ground the draft.** Start from the unit's declared `sources` — read them in
    full; they are the primary grounding. Then navigate the repo freely wherever a
