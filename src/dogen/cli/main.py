@@ -90,6 +90,7 @@ from dogen.core.orchestrator import draft as draft_use_case
 from dogen.core.orchestrator import edit_unit as edit_use_case
 from dogen.core.orchestrator import list_units as list_units_use_case
 from dogen.core.orchestrator import plan_steps as plan_steps_use_case
+from dogen.core.orchestrator import next_after_signoff
 from dogen.core.orchestrator import record_step as record_step_use_case
 from dogen.core.orchestrator import remove as remove_use_case
 from dogen.core.orchestrator import rename as rename_use_case
@@ -1630,7 +1631,13 @@ def signoff(
         )
     sha = _report_git(seam, no_commit=no_commit)
     if json_output:
-        _emit_json(unit=unit_id, commit=sha)
+        # D-01/D-04/D-08: append-only `next_id` routing token, computed through the
+        # SINGLE core decision (`next_after_signoff` → `_suggest_next`) off the
+        # unit's CURRENT intent — `draft` for reference/explanation, `record` for
+        # tutorial/how-to. No CLI-side direction fork (Pitfall 2); `unit` and
+        # `commit` are untouched (purely additive).
+        unit = store.load_unit(unit_id, root=root)
+        _emit_json(unit=unit_id, commit=sha, next_id=next_after_signoff(unit.intent))
     else:
         typer.echo(f"Recorded signoff for {unit_id}")
 
