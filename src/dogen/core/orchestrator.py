@@ -2525,6 +2525,38 @@ def _suggest_next(
     return token, _NEXT_TEMPLATES[key].format(unit_id=unit_id)
 
 
+def next_after_signoff(intent: Intent) -> str:
+    """The routing token a freshly-signed unit lands on (the plan-stage close fork).
+
+    Routed through the single core decision (``_suggest_next``, D-01) so the CLI /
+    dogen-plan close block branches on the token and never re-derives the direction
+    fork in a consumer (Pitfall 2). A just-signed, not-stale unit with no draft yet
+    is ``ProgressState.pending``, ``signed_off=True``, ``stale_plan=False``,
+    ``last_verdict=None`` — reference resolves to ``draft``, an actionable
+    (tutorial/how-to) unit to ``record`` (D-04: the direction is read live from
+    ``intent`` on every call, never a stored pin).
+
+    Parameters
+    ----------
+    intent : Intent
+        The unit's current Diátaxis direction.
+
+    Returns
+    -------
+    str
+        The ``next_id`` routing token for the post-signoff step.
+    """
+    next_id, _ = _suggest_next(
+        ProgressState.pending,
+        signed_off=True,
+        stale_plan=False,
+        last_verdict=None,
+        unit_id="",
+        intent=intent,
+    )
+    return next_id
+
+
 def unit_statuses(request: ListRequest) -> list[UnitStatus]:
     """Assemble the repo-level status board (``dogen status``, v1).
 
