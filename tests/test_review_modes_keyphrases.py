@@ -46,6 +46,28 @@ _SEVERITY_FLOOR = "must-fix by definition"
 _CROSS_PAGE_HEADING = "Cross-page consistency"
 _CROSS_PAGE_QUOTE_PHRASE = "quote the diverging lines"
 
+# 13-07 (13-VERIFICATION.md CR-02): the review-mode rubric must be
+# unit-type-aware. dogen-record produces tutorial/how-to (actionable) units and
+# this phase wires them into dogen-review, but the rubric was hard-coded to grade
+# a Diataxis *reference* — so a correctly-authored tutorial read as "drift" and
+# tripped a spurious [must-fix] category violation. The reference-only checks
+# (structure-fit drift, clarity second-person register, the priority-mapping
+# category violation, and the preamble) must be gated on the unit's declared
+# Diataxis type, and tutorial/how-to conformance criteria must apply for
+# actionable units. These anchors pin that scoping so the fix cannot silently
+# revert to grading actionable units by reference-only criteria.
+_TYPE_GATE_ANCHORS = (
+    "declared Diátaxis type",  # the rubric grades a unit against its own type
+    "whose declared type is reference",  # the reference-only gate condition
+)
+_ACTIONABLE_CONFORMANCE_ANCHORS = (
+    "single guaranteed-to-work route",  # tutorial: one guaranteed route
+    "visible success",  # tutorial: one visible success per step
+    "genuine decision point",  # how-to: forks only at a real fork
+)
+# clarity must NOT flag imperative second-person voice for an actionable unit.
+_ACTIONABLE_VOICE_ANCHOR = "imperative second-person voice is required"
+
 # SK-04: after a `fix` verdict, dogen-review step 2 DEFAULTS to a scoped re-review
 # (verify the fix landed + a regression spot-check of the touched sections); a full
 # 4-dimension re-run happens only on explicit request — no auto-escalation (D-05).
@@ -282,6 +304,45 @@ def test_rubric_names_the_canonical_code_rubric_source() -> None:
     """review-rubric.md names the canonical dogen.core.authoring source symbol."""
     rubric = _read(_RUBRIC)
     assert "dogen.core.authoring.REFERENCE_CODE_RUBRIC" in rubric
+
+
+def test_rubric_gates_reference_only_checks_on_declared_type() -> None:
+    """The rubric gates its reference-only checks on the declared type (CR-02).
+
+    dogen-record produces tutorial/how-to units that this phase routes into
+    dogen-review. The reference-drift / reference-register language must be scoped
+    to a unit "whose declared type is reference", and the rubric must state it
+    grades a unit against its own "declared Diátaxis type" — so a correctly
+    authored tutorial or how-to cannot trip a reference-only category-violation
+    [must-fix]. RED until review-rubric.md is made unit-type-aware.
+    """
+    rubric = _read(_RUBRIC)
+    for anchor in _TYPE_GATE_ANCHORS:
+        assert anchor in rubric, (
+            "review-rubric.md must gate its reference-only checks on the unit's "
+            f"declared type (missing anchor {anchor!r}) — see 13-VERIFICATION.md CR-02"
+        )
+
+
+def test_rubric_carries_actionable_conformance_criteria() -> None:
+    """The rubric grades tutorial/how-to units by their own conformance shape (CR-02).
+
+    Tutorial and how-to conformance criteria (imported from
+    ``skills/dogen-record/references/authoring-stance.md``) must be present, and
+    imperative second-person voice must NOT be flagged as a defect for an
+    actionable unit. RED until review-rubric.md carries the actionable branch.
+    """
+    rubric = _read(_RUBRIC)
+    for anchor in _ACTIONABLE_CONFORMANCE_ANCHORS:
+        assert anchor in rubric, (
+            "review-rubric.md must carry actionable-unit conformance criteria "
+            f"(missing anchor {anchor!r})"
+        )
+    assert _ACTIONABLE_VOICE_ANCHOR in rubric, (
+        "review-rubric.md must state that imperative second-person voice is "
+        "required (not a defect) for an actionable unit — the clarity register "
+        "expectation must not flag it"
+    )
 
 
 def test_provenance_summary_surfaces_model_origin() -> None:
