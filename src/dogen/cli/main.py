@@ -1633,11 +1633,19 @@ def signoff(
     if json_output:
         # D-01/D-04/D-08: append-only `next_id` routing token, computed through the
         # SINGLE core decision (`next_after_signoff` → `_suggest_next`) off the
-        # unit's CURRENT intent — `draft` for reference/explanation, `record` for
-        # tutorial/how-to. No CLI-side direction fork (Pitfall 2); `unit` and
-        # `commit` are untouched (purely additive).
+        # unit's CURRENT intent and its ACTUAL provenance (WR-02) — a fresh signoff
+        # routes to `draft`/`record`, a `--re-sign` of an already-drafted unit
+        # routes to its real next step (`review`, …) rather than a spurious
+        # re-draft. No CLI-side direction fork (Pitfall 2); `unit` and `commit` are
+        # untouched (purely additive).
         unit = store.load_unit(unit_id, root=root)
-        _emit_json(unit=unit_id, commit=sha, next_id=next_after_signoff(unit.intent))
+        provenance = _load_or_init_provenance(store, root, unit_id)
+        unit_text = store.read_unit_text(unit_id, root=root)
+        _emit_json(
+            unit=unit_id,
+            commit=sha,
+            next_id=next_after_signoff(unit, provenance, unit_text),
+        )
     else:
         typer.echo(f"Recorded signoff for {unit_id}")
 
