@@ -53,10 +53,11 @@ dogen-plan -> dogen-write -> dogen-review
   the page exactly as dogen-write's passenger does
   (`dogen draft --draft-file/--draft-dir --report`). The second draft-stage skill
   that may carry `Write` (staging-only) — the alternative to dogen-write, not a
-  replacement. **Interim entry (Phase 13):** dogen-record needs a declared +
-  signed-off unit, the same precondition as dogen-write; until Phase 14 wires
-  dogen-plan's type routing, the TA declares an actionable unit directly via
-  `dogen unit new` then `dogen signoff` (this phase touches dogen-plan zero).
+  replacement. **Entry:** dogen-record needs a declared + signed-off unit, the
+  same precondition as dogen-write; dogen-plan routes an actionable (tutorial /
+  how-to) unit into dogen-record by its declared Diátaxis direction, emitting the
+  `record` `next_id` at signoff (the Phase-14 type-routing wiring is in place —
+  no longer a direct-entry interim) (D-03).
 - **dogen-review** — presents a provenance summary (and, in review mode, grounded
   five-dimension findings — writing-approach always on, opened by a
   deterministic read-only pre-pass, numbered `F-N` with a recommended verdict
@@ -74,8 +75,9 @@ Routing rules:
 - dogen-plan hands off to dogen-write once the unit is declared and signed off.
 - dogen-record is the draft-stage alternative for **actionable** units: from the
   same declared + signed-off precondition it walks the procedure, records the
-  draft, and hands off to dogen-review. Phase 14 wires dogen-plan's type routing
-  to it; in Phase 13 the TA enters it directly (the interim entry above).
+  draft, and hands off to dogen-review. dogen-plan routes actionable units into it
+  by their declared Diátaxis direction (the Phase-14 type-routing wiring is in
+  place), emitting the matching `next_id` at signoff.
 - dogen-write hands off to dogen-review once a draft is recorded.
 - dogen-review routes fix/redraft verdicts back to dogen-write (the note is already
   in the steering stream; it never edits the draft itself — the reviewer owns the
@@ -275,9 +277,13 @@ a bounded fix never reads as a from-scratch re-draft:
 | `draft` (after a `fix` verdict) | `Next: /dogen-write — apply the recorded fix.` |
 | `draft` (after a `redraft` verdict) | `Next: /dogen-write — re-draft against the recorded steering.` |
 | `draft` (first draft, freshly signed off) | `Next: /dogen-write — draft the unit.` |
+| `record` (after a `fix` verdict) | `Next: /dogen-record — apply the recorded fix and re-record the draft.` |
+| `record` (after a `redraft` verdict) | `Next: /dogen-record — re-walk the procedure and record a fresh draft.` |
+| `record` (first draft, freshly signed off) | `Next: /dogen-record — walk the procedure and record the draft.` |
 | `review` | `Next: /dogen-review — review the draft.` |
 | `sign_off` | `Next: /dogen-plan — approve the plan (signoff) so drafting can start.` |
-| `re_sign` | `Next: the plan changed since signoff — re-approve it (I can fold that into the amendment with \`dogen unit edit … --re-sign\`), then /dogen-write.` |
+| `re_sign` (reference) | `Next: the plan changed since signoff — re-approve it (I can fold that into the amendment with \`dogen unit edit … --re-sign\`), then /dogen-write.` |
+| `re_sign` (actionable) | `Next: the plan changed since signoff — re-approve it (I can fold that into the amendment with \`dogen unit edit … --re-sign\`), then /dogen-record.` |
 | `publish` | `Next: accepted — the publishing commit is yours.` |
 | `done` | `Next: nothing pending for this unit.` |
 
@@ -285,9 +291,14 @@ The draft-stage fork now has two entries — one per draft-stage writer. For a
 **reference** unit the draft-stage referral stays `Next: /dogen-write — draft the
 unit.`; for an **actionable** (tutorial / how-to) unit it is
 `Next: /dogen-record — walk the procedure and record the draft.` (same frozen
-grammar, the slash form and a definite imperative). Phase 14 wires dogen-plan's
-type routing to emit the matching `next_id` at signoff; in Phase 13 the TA enters
-dogen-record directly per the interim entry (`dogen unit new` → `dogen signoff`).
+grammar, the slash form and a definite imperative). A `fix` or `redraft` verdict
+splits on the same token: an actionable unit routes to
+`Next: /dogen-record — apply the recorded fix and re-record the draft.` (fix) or
+`Next: /dogen-record — re-walk the procedure and record a fresh draft.` (redraft),
+mirroring the reference `/dogen-write` fix/redraft lines. dogen-plan now routes by
+the declared Diátaxis direction and emits the matching `next_id` at signoff (the
+Phase-14 type-routing wiring is in place), so an actionable unit reaches
+dogen-record through the routed token — not a direct hand-entry (D-02, D-03).
 
 The raw `next` string stays available for audits; quoting it is fine when the TA
 explicitly asks what the CLI said. Reason codes and progress states remain
