@@ -134,5 +134,3 @@ table, trust every `resolved` step's evidence, and continue at the first
 `unverified` step. The Phase-12 hash-bind means an edited step auto-reverts to
 `unverified`, so "only unverified steps re-verify" is purely derived — no new verb,
 no flag, no stored resume state.
-</content>
-</invoke>

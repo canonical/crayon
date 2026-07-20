@@ -64,5 +64,3 @@ without a new schema field or a sidecar. dogen-review surfaces the tally
 (D-16). A frustration count of three or more on a single walk is a documented
 quality signal that the step plan needs work — the Pitfall 1 metric against
 ceremony overload and thin proposals.
-</content>
-</invoke>

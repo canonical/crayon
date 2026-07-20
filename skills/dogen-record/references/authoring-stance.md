@@ -67,5 +67,3 @@ targets (`colon_fence` directives, `{ref}` cross-references), reStructuredText f
 `.rst` targets (3-space directive indentation, one heading ladder). Never write one
 markup into the other's extension. A single top-level title, a clean heading
 ladder, no skipped levels — matching the page's siblings.
-</content>
-</invoke>
