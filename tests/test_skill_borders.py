@@ -104,3 +104,46 @@ def test_all_opens_confirm_unit_and_state_check() -> None:
             f"{path.parent.name}'s open must perform a state check (the unit's "
             "current lifecycle state) — the shared normalized OPEN shape (SK-05)."
         )
+
+
+# ---- Body-cleanliness guard: no leaked authoring-wrapper tags (CR-01) -------
+
+# The four Write-tool-call XML wrappers (content-wrapper + invoke-wrapper, opener
+# and closer). None of these is skill markup — they are the shipped bytes of the
+# authoring harness's tool call, and must never appear in an auto-loaded skill file.
+_LEAKED_WRAPPER_TAGS = ("</content>", "</invoke>", "<content>", "<invoke>")
+
+
+def _all_skill_markdown_files() -> list[Path]:
+    """Every auto-loaded skill markdown: each SKILL.md + all its references/*.md.
+
+    The four SKILL.md files are the canonical ``_ALL_FOUR`` anchors; references are
+    glob-derived per skill (not hard-coded) so a newly added reference is covered
+    automatically.
+    """
+    files: list[Path] = []
+    for skill_md in _ALL_FOUR:
+        files.append(skill_md)
+        files.extend(sorted((skill_md.parent / "references").glob("*.md")))
+    return files
+
+
+def test_no_authoring_wrapper_tags_leaked() -> None:
+    """No shipped skill file may carry a leaked authoring-wrapper tag (CR-01).
+
+    ``test_skill_borders`` above uses ``.index()`` and is structurally blind to
+    trailing junk after the matched border blocks. This guard reads each file's
+    full body and negative-asserts every wrapper literal, so the leak class that
+    shipped in all four dogen-record files (``</content>`` / ``</invoke>`` after
+    the true final content) cannot re-ship undetected — in SKILL.md OR any
+    references/*.md of any of the four skills.
+    """
+    for path in _all_skill_markdown_files():
+        text = _text(path)
+        for stray in _LEAKED_WRAPPER_TAGS:
+            assert stray not in text, (
+                f"{path.parent.name}/{path.name}: leaked authoring-wrapper tag "
+                f"{stray!r} — delete the stray wrapper line(s); a SKILL.md ends at "
+                "its </self_healing> block and a reference ends at its last prose "
+                "sentence, with nothing after it (CR-01)."
+            )
