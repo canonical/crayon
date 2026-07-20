@@ -450,5 +450,3 @@ How to update:
 4. Preserve the shared skill conventions: section order, this self_healing block, and
    the <NAME> placeholder style.
 </self_healing>
-</content>
-</invoke>
