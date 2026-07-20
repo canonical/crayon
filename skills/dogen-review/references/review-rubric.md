@@ -2,10 +2,18 @@ Load this file at workflow step 4 (Perform the findings review).
 
 # Findings review rubric
 
-This is the review-mode rubric: a small, generalized findings framework for a
-Diátaxis **reference** unit grounded in **human-pointed sources**. It is derived
-from a prior production documentation-review rig, deliberately stripped of that
-rig's specifics (its glossary and term-index machinery, bilingual lockstep
+This is the review-mode rubric: a small, generalized findings framework that
+grades a unit against **its own declared Diátaxis type**. dogen-write drafts the
+**reference** direction grounded in **human-pointed sources**; dogen-record
+drafts the two **actionable** types — a **tutorial** and a **how-to** — from a
+step walk that provably ran, and this phase routes those drafts into review. The
+reference-only checks below are therefore **gated on the unit's declared type**
+(read from `dogen unit show --json`, the same field the rubric already uses for
+`format`): they apply to a unit **whose declared type is reference**, while the
+tutorial / how-to conformance criteria apply for **actionable units** — so a
+correctly-authored tutorial or how-to is never graded as reference "drift". It is
+derived from a prior production documentation-review rig, deliberately stripped of
+that rig's specifics (its glossary and term-index machinery, bilingual lockstep
 checks, house style-guide grounding, the fixed ten-dimension letter taxonomy,
 the SEO/IA/toctree checks — and, above all, the report *file*). dogen reviews a
 single unit, runs no build, and presents findings in-conversation only — never
@@ -167,10 +175,30 @@ Two mandatory checks inside this dimension:
 
 ### structure-fit
 
-Does the page behave as a Diátaxis **reference** — information-oriented,
-descriptive, one category per page, with no tutorial / how-to drift — and is its
-section ordering consistent and sensible? Plus **format hygiene, judged per the
-page's own format** (the unit's target extension — v1.2):
+Grade the page against its **declared Diátaxis type** (from `dogen unit show
+--json`), then check format hygiene.
+
+**For a unit whose declared type is reference:** does the page behave as a
+Diátaxis **reference** — information-oriented, descriptive, one category per
+page, with no tutorial / how-to drift — and is its section ordering consistent
+and sensible? This reference-drift check applies **only** to reference units; it
+must never fire on a declared tutorial or how-to (imperative, step-sequenced
+prose is the correct shape for those types, not drift).
+
+**For an actionable unit (a declared tutorial or how-to):** grade the page
+against the conformance shape for its type, imported from
+`skills/dogen-record/references/authoring-stance.md`:
+
+- **Tutorial** — a **single guaranteed-to-work route** from a known starting
+  state to one **visible success**, with per-step confirmation of what the
+  learner sees and no branching, no options menu, no "it depends" (defer
+  alternatives and the *why* to explanation/reference and link out).
+- **How-to** — stated starting preconditions, a goal-focused step sequence, and
+  forks only at a **genuine decision point** — it stays focused on the goal and
+  does not teach concepts from scratch or try to be complete.
+
+Then, for either type, check **format hygiene, judged per the page's own format**
+(the unit's target extension — v1.2):
 
 - **MyST (`.md`)**: fences closed, the heading ladder unbroken (no mixed
   setext/ATX), `colon_fence` used correctly, ONE table style per page, and any
@@ -207,10 +235,15 @@ Two mandatory checks inside this dimension:
 
 ### clarity
 
-Plain-language correctness (grammar, agreement, typos, run-ons) plus the reference
-**register**: impersonal, present-tense, descriptive. Flag marketing voice,
-second-person tutorial voice, or future tense in a reference page. Light intra-page
-term consistency (one term per concept) folds in here — no term-index machinery.
+Plain-language correctness (grammar, agreement, typos, run-ons) plus a
+**register** expectation **scoped to the declared type**. For a unit **whose
+declared type is reference**, the register is impersonal, present-tense,
+descriptive — flag marketing voice, second-person tutorial voice, or future
+tense in a reference page. For an **actionable unit (a declared tutorial or
+how-to)**, **imperative second-person voice is required**, not a defect — do
+**not** flag it, and the reference register expectation does not apply. Light
+intra-page term consistency (one term per concept) folds in here — no term-index
+machinery.
 
 ## Verification discipline (before any finding is reported)
 
@@ -242,7 +275,7 @@ never by impression:
 
 | Priority | Trigger |
 |----------|---------|
-| `[must-fix]` | A claim ungrounded in or contradicting the declared sources; an instruction or path that fails the reader (broken include/link, wrong syntax); an outline/acceptance item unmet and unrecorded (the dimension 0 floor); a code-dump surfacing implementation source (source-fidelity); a category violation that defeats the page as a reference; or a writing-approach finding escalated as a source-fidelity co-finding. |
+| `[must-fix]` | A claim ungrounded in or contradicting the declared sources; an instruction or path that fails the reader (broken include/link, wrong syntax); an outline/acceptance item unmet and unrecorded (the dimension 0 floor); a code-dump surfacing implementation source (source-fidelity); a category violation that defeats the page as its **declared Diátaxis type** (for a reference unit, tutorial/how-to drift; for an actionable unit, a failure of the tutorial/how-to conformance shape — never reference-only drift); or a writing-approach finding escalated as a source-fidelity co-finding. |
 | `[should-fix]` | A material completeness gap; wrong register for a reference; a terminology contradiction; a structural inconsistency that impairs (but does not break) the page; a writing-approach failure mode with no factual misstatement. |
 | `[nit]` | Wording, ordering, or optional polish with no reader-facing consequence. |
 
