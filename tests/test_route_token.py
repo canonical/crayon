@@ -120,7 +120,7 @@ def test_actionable_accept_still_publishes(intent: Intent) -> None:
         (ProgressState.drafted, True, False, None, "review"),
     ],
 )
-def test_actionable_non_draft_stage_tokens_unchanged(
+def test_actionable_non_draft_stage_tokens_unchanged(  # noqa: PLR0913
     intent: Intent,
     state: ProgressState,
     signed: bool,
@@ -147,9 +147,7 @@ def test_actionable_non_draft_stage_tokens_unchanged(
 # --------------------------------------------------------------------------- #
 
 
-def _seed_drafted_actionable(
-    root: Path, intent: Intent
-) -> FilesystemPlanningStore:
+def _seed_drafted_actionable(root: Path, intent: Intent) -> FilesystemPlanningStore:
     """Scaffold a signed-off, drafted actionable unit (no plan_hash → not stale)."""
     store = FilesystemPlanningStore()
     store.scaffold_unit("u", root=root, intent=intent, audience="devs")
@@ -270,9 +268,7 @@ def test_signoff_json_reference_carries_next_id_draft(repo) -> None:
 @pytest.mark.parametrize("intent", ["tutorial", "how-to"])
 def test_signoff_json_actionable_carries_next_id_record(repo, intent: str) -> None:
     # A freshly-signed tutorial/how-to unit's --json carries next_id == "record".
-    runner.invoke(
-        app, ["unit", "new", "u", "--intent", intent, "--audience", "devs"]
-    )
+    runner.invoke(app, ["unit", "new", "u", "--intent", intent, "--audience", "devs"])
     result = runner.invoke(app, ["signoff", "u", "--json"])
     assert result.exit_code == 0, result.output
     assert _payload(result)["next_id"] == "record"

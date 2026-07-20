@@ -80,6 +80,7 @@ from dogen.core.orchestrator import (
     ResolvedOwners,
     SignoffExistsError,
     SignoffRequiredError,
+    next_after_signoff,
     resolve_owners,
 )
 from dogen.core.orchestrator import add_context_artifact as context_add_use_case
@@ -90,7 +91,6 @@ from dogen.core.orchestrator import draft as draft_use_case
 from dogen.core.orchestrator import edit_unit as edit_use_case
 from dogen.core.orchestrator import list_units as list_units_use_case
 from dogen.core.orchestrator import plan_steps as plan_steps_use_case
-from dogen.core.orchestrator import next_after_signoff
 from dogen.core.orchestrator import record_step as record_step_use_case
 from dogen.core.orchestrator import remove as remove_use_case
 from dogen.core.orchestrator import rename as rename_use_case
