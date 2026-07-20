@@ -62,11 +62,17 @@ sidecars) and produces a recorded structured review (`dogen review --verdict
 --note`, advancing `progress -> reviewed`; the CLI's commit seam records the
 transition). Routing rules:
 
-- A fix/redraft verdict routes back to dogen-write with the frozen referral line
+- A fix/redraft verdict routes back to the draft-stage writer on the core `next_id`
+  token — never re-inferred from the unit's intent (D-01). For a **reference** unit
+  (token `draft`) it routes to dogen-write with the frozen referral line
   (`Next: /dogen-write — apply the recorded fix.` for a fix; `… — re-draft
-  against the recorded steering.` for a redraft). Recording the verdict IS the
-  routing act — corrections reach the draft only through that recorded verdict and
-  a dogen-write pass, never through anyone editing the draft mid-loop.
+  against the recorded steering.` for a redraft); for an **actionable** (tutorial /
+  how-to) unit (token `record`) it routes to dogen-record
+  (`Next: /dogen-record — apply the recorded fix and re-record the draft.` for a
+  fix; `Next: /dogen-record — re-walk the procedure and record a fresh draft.` for
+  a redraft) (D-02). Recording the verdict IS the routing act — corrections reach
+  the draft only through that recorded verdict and a draft-stage pass, never
+  through anyone editing the draft mid-loop.
 - The loop STOPS here: no build or publish. The human owns publishing (and any
   post-accept polish they make as the output's owner — outside the loop).
 - This skill has no `Write` or `Edit` tool.
@@ -216,13 +222,19 @@ printf '%s' "$REVIEWER_NOTE" | dogen review "$UNIT_ID" --verdict "$VERDICT" --no
 
 Read the `--json` result and surface it. Route off the machine token `next_id`,
 translated into the loop's **frozen referral line** (the exact strings live in
-`../README.md`'s routing table) — always the slash form, a definite imperative:
+`../README.md`'s routing table) — always the slash form, a definite imperative.
+The fix/redraft arm splits on the token — a **reference** unit carries `draft`, an
+**actionable** (tutorial / how-to) unit carries `record`; branch on the token,
+never re-infer the fork from the unit's intent (D-01):
 
-- after a **fix** verdict: `Next: /dogen-write — apply the recorded fix.`
-- after a **redraft** verdict: `Next: /dogen-write — re-draft against the recorded steering.`
+- token `draft` (reference), after a **fix** verdict: `Next: /dogen-write — apply the recorded fix.`
+- token `draft` (reference), after a **redraft** verdict: `Next: /dogen-write — re-draft against the recorded steering.`
+- token `record` (actionable), after a **fix** verdict: `Next: /dogen-record — apply the recorded fix and re-record the draft.`
+- token `record` (actionable), after a **redraft** verdict: `Next: /dogen-record — re-walk the procedure and record a fresh draft.`
 - after **accept**: `Next: accepted — the publishing commit is yours.`
 - on `re_sign`: the plan changed since signoff — re-approve it first (offer the
-  folded `dogen unit edit … --re-sign`), then `/dogen-write`.
+  folded `dogen unit edit … --re-sign`), then `/dogen-write` (reference) or
+  `/dogen-record` (actionable), matching the unit's routed token.
 
 **Never parrot the raw `next` line to the TA** — it speaks CLI, and the TA drives
 skills (quote it only if they ask what the CLI said). If the JSON carries
