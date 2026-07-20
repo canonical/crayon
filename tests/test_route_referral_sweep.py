@@ -37,6 +37,16 @@ RECORD_REDRAFT = "Next: /dogen-record — re-walk the procedure and record a fre
 REFERENCE_FIRST_DRAFT = "Next: /dogen-write — draft the unit."
 REFERENCE_FIX = "Next: /dogen-write — apply the recorded fix."
 
+# --- The D-12 explanation-naming pins (Phase 15, Plan 15-03) ---
+# Explanation is a first-class `/dogen-write` (`draft`-token) draft-stage direction
+# alongside reference — it reuses the frozen `draft` rows verbatim, never a new token
+# or referral string (D-11). These POSITIVE-presence markers pin the corrected family
+# contract prose; the frozen `draft`/`record` row constants above stay untouched.
+README_EXPLANATION_DRAFT_MARKER = "draft-stage skill for **reference and explanation** units"
+REVIEW_EXPLANATION_DRAFT_MARKER = (
+    "**reference** or **explanation** unit (token `draft`) it routes to dogen-write"
+)
+
 
 def test_readme_carries_the_record_first_draft_row() -> None:
     prose = _README.read_text(encoding="utf-8")
@@ -93,4 +103,23 @@ def test_dogen_review_keeps_the_frozen_reference_fix_arm() -> None:
         "skills/dogen-review/SKILL.md dropped the frozen reference fix arm "
         "`Next: /dogen-write — apply the recorded fix.` — the `draft`-token "
         "/dogen-write route must stay intact (ROUTE-03)."
+    )
+
+
+def test_readme_names_explanation_on_the_draft_route() -> None:
+    prose = _README.read_text(encoding="utf-8")
+    assert README_EXPLANATION_DRAFT_MARKER in prose, (
+        "skills/README.md's dogen-write family-contract bullet must name "
+        "explanation alongside reference as a `/dogen-write` (`draft`-token) "
+        "draft-stage direction — the family contract no longer implies reference "
+        "is the only `/dogen-write` direction (D-12)."
+    )
+
+
+def test_dogen_review_draft_arm_covers_explanation() -> None:
+    prose = _DOGEN_REVIEW.read_text(encoding="utf-8")
+    assert REVIEW_EXPLANATION_DRAFT_MARKER in prose, (
+        "skills/dogen-review/SKILL.md's fix/redraft routing prose must name "
+        "explanation on the `draft`→/dogen-write arm (an explanation unit rides "
+        "`draft`, never `record`, exactly like reference) (D-12)."
     )
