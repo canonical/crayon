@@ -310,3 +310,41 @@ def test_review_json_carries_intent(repo, intent: str) -> None:
     # The pre-existing keys are untouched (purely additive).
     assert payload["verdict"] == "fix"
     assert "next_id" in payload
+
+
+# --------------------------------------------------------------------------- #
+# 5. WR-02: `signoff --re-sign --json` derives its `next_id` from the unit's
+#    ACTUAL provenance — an already-drafted unit routes to `review`, never a
+#    spurious first-draft token.
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("intent", ["reference", "tutorial", "how-to"])
+def test_re_sign_json_on_drafted_unit_routes_to_review(repo, intent: str) -> None:
+    # WR-02: re-signing an already-drafted unit must not mis-route to a re-draft.
+    # The post-signoff token is derived from real provenance, so a drafted unit
+    # resolves to `review` regardless of direction (the draft-stage `record` fork
+    # is only reached at `pending`).
+    runner.invoke(app, ["unit", "new", "u", "--intent", intent, "--audience", "devs"])
+    assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
+    draft = runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    assert draft.exit_code == 0, draft.output
+    result = runner.invoke(app, ["signoff", "u", "--re-sign", "--json"])
+    assert result.exit_code == 0, result.output
+    assert _payload(result)["next_id"] == "review"
+
+
+@pytest.mark.parametrize(
+    ("intent", "expected"),
+    [("reference", "draft"), ("tutorial", "record"), ("how-to", "record")],
+)
+def test_fresh_signoff_json_still_routes_to_first_draft(
+    repo, intent: str, expected: str
+) -> None:
+    # WR-02 regression guard: deriving from real provenance leaves the fresh-
+    # signoff path unchanged — a just-signed unit with no draft is `pending`, so
+    # reference → `draft`, actionable → `record` (matches the pre-fix contract).
+    runner.invoke(app, ["unit", "new", "u", "--intent", intent, "--audience", "devs"])
+    result = runner.invoke(app, ["signoff", "u", "--json"])
+    assert result.exit_code == 0, result.output
+    assert _payload(result)["next_id"] == expected

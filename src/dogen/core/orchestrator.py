@@ -2525,34 +2525,57 @@ def _suggest_next(  # noqa: PLR0913
     return token, _NEXT_TEMPLATES[key].format(unit_id=unit_id)
 
 
-def next_after_signoff(intent: Intent) -> str:
-    """Return the routing token a freshly-signed unit lands on (plan-stage close fork).
+def next_after_signoff(unit: Unit, provenance: Provenance, unit_text: str) -> str:
+    """Return the routing token a just-signed unit lands on (plan-stage close fork).
 
     Routed through the single core decision (``_suggest_next``, D-01) so the CLI /
     dogen-plan close block branches on the token and never re-derives the direction
-    fork in a consumer (Pitfall 2). A just-signed, not-stale unit with no draft yet
-    is ``ProgressState.pending``, ``signed_off=True``, ``stale_plan=False``,
-    ``last_verdict=None`` — reference resolves to ``draft``, an actionable
-    (tutorial/how-to) unit to ``record`` (D-04: the direction is read live from
-    ``intent`` on every call, never a stored pin).
+    fork in a consumer (Pitfall 2). The token is derived from the unit's ACTUAL
+    provenance rather than a hard-coded first-draft assumption (WR-02): a fresh
+    signoff of an undrafted unit is ``ProgressState.pending`` and resolves to
+    ``draft`` (reference/explanation) or ``record`` (tutorial/how-to), while a
+    ``signoff --re-sign`` of an already-drafted (or drafted+reviewed) unit resolves
+    to its real next step (``review`` / ``publish`` / …) instead of mis-routing to a
+    spurious re-draft. The direction is read live from ``intent`` on every call,
+    never a stored pin (D-04).
 
     Parameters
     ----------
-    intent : Intent
-        The unit's current Diátaxis direction.
+    unit : Unit
+        The just-signed unit; its ``intent`` drives the draft-stage direction fork.
+    provenance : Provenance
+        The unit's provenance record as of the signoff (drives the derived state,
+        stale-plan, and last-verdict inputs — one source of truth, mirroring
+        :func:`unit_statuses`).
+    unit_text : str
+        The exact ``unit.md`` text, hashed against the signoff plan hash to detect
+        a plan that changed after signoff.
 
     Returns
     -------
     str
         The ``next_id`` routing token for the post-signoff step.
     """
+    state = derive_progress(provenance)
+    signed = provenance.signoff is not None
+    stale = False
+    if signed and provenance.signoff is not None and provenance.signoff.plan_hash:
+        stale = _sha256(unit_text) != provenance.signoff.plan_hash
+    last_verdict = next(
+        (
+            e.verdict
+            for e in reversed(provenance.reviewer_edits)
+            if e.verdict is not None
+        ),
+        None,
+    )
     next_id, _ = _suggest_next(
-        ProgressState.pending,
-        signed_off=True,
-        stale_plan=False,
-        last_verdict=None,
+        state,
+        signed_off=signed,
+        stale_plan=stale,
+        last_verdict=last_verdict,
         unit_id="",
-        intent=intent,
+        intent=unit.intent,
     )
     return next_id
 
