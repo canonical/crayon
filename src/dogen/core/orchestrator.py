@@ -2518,6 +2518,15 @@ def _suggest_next(  # noqa: PLR0913
     # draft-stage fork; every other key stays direction-agnostic. Reference and
     # explanation fall through to the unchanged v1 branch (Pitfall 4 — the
     # reference default is never altered), keeping their output byte-identical.
+    #
+    # WR-03 / explanation hard-stop: `Intent.explanation` is DELIBERATELY routed
+    # byte-identically to reference here (ROUTE-02/D-06), so an explanation unit
+    # resolves to `draft` and can reach dogen-write. The "explanation never drafts
+    # this cycle" prohibition (explanation-intake.md, D-02 — the intent walk that
+    # feeds it lands in Phase 15) is therefore enforced ONLY by skill prose, NOT by
+    # this core routing. A caller that bypasses the skill (e.g. `dogen signoff` on
+    # an explanation unit) is not blocked here by design; do not assume the core
+    # protects the hard-stop. Revisit when the Phase 15 intent walk lands.
     if intent in (Intent.tutorial, Intent.how_to) and key in _DRAFT_STAGE:
         record_key = _RECORD_KEYS[key]
         return "record", _NEXT_TEMPLATES[record_key].format(unit_id=unit_id)
