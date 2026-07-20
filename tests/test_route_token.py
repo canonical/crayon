@@ -283,3 +283,30 @@ def test_signoff_plain_output_is_unchanged(repo) -> None:
     assert result.exit_code == 0, result.output
     assert "Recorded signoff for u" in result.output
     assert "next_id" not in result.output
+
+
+# --------------------------------------------------------------------------- #
+# 4. WR-01: `review --json` carries `intent` for the direction-specific
+#    `re_sign` referral fork (reference → /dogen-write, actionable → /dogen-record).
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("intent", ["reference", "tutorial", "how-to"])
+def test_review_json_carries_intent(repo, intent: str) -> None:
+    # WR-01: `review --json` gains `intent` (mirroring `status --json`) so a
+    # consumer can render the direction-specific `re_sign` referral line from the
+    # review payload alone — the routed token stays direction-agnostic (D-01);
+    # `intent` is the direction signal, never a re-derivation in core.
+    runner.invoke(app, ["unit", "new", "u", "--intent", intent, "--audience", "devs"])
+    assert runner.invoke(app, ["signoff", "u"]).exit_code == 0
+    draft = runner.invoke(app, ["draft", "u", "--provider", "mock"])
+    assert draft.exit_code == 0, draft.output
+    result = runner.invoke(
+        app, ["review", "u", "--note", "tighten wording", "--verdict", "fix", "--json"]
+    )
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["intent"] == intent
+    # The pre-existing keys are untouched (purely additive).
+    assert payload["verdict"] == "fix"
+    assert "next_id" in payload
