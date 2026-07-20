@@ -2325,11 +2325,19 @@ def review(  # noqa: PLR0913, C901
             typer.echo(f"staging: removed .dogen/staging/{unit_id}/", err=True)
         # remove_staging()==False (already gone) -> silent no-op (D-03).
     if json_output:
+        # WR-01: mirror `status --json` by carrying `intent` so a consumer can
+        # render the direction-specific `re_sign` referral line (reference →
+        # /dogen-write, actionable → /dogen-record) from the review payload
+        # alone, without a second `dogen status` call. The `re_sign` routing
+        # token is deliberately direction-agnostic (D-01); `intent` is the
+        # direction signal consumers branch on — not a re-derivation in core.
+        unit = store.load_unit(unit_id, root=root)
         _emit_json(
             unit=unit_id,
             progress=outcome.state.value,
             verdict=verdict.value,
             next_id=outcome.next_id,
+            intent=unit.intent.value,
             unapplied_steering=outcome.unapplied_steering,
             commit=sha,
         )
