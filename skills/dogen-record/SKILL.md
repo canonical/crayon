@@ -198,7 +198,7 @@ dogen record step "$UNIT_ID" <step> --evidence-file - --json
 and let the TA run it —
 
 ```bash
-<cmd> 2>&1 | tee .dogen/staging/$UNIT_ID/scratch/evidence/<step>.out; echo exit:$?
+<cmd> 2>&1 | tee .dogen/staging/$UNIT_ID/scratch/evidence/<step>.out; echo "exit:${PIPESTATUS[0]}"
 ```
 
 — then ingest the resulting file **unmodified** into the evidence record. If the TA
