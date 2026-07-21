@@ -1,13 +1,14 @@
 ---
 name: dogen-write
-description: Drafts a review-ready, Sphinx-publishable reference page (MyST or rST — the unit's target extension decides) for a declared and signed-off documentation unit by first running the zero-side-effect `dogen draft --resolve-only` provider probe, then branching — a driver provider (copilot or mock) generates in-process via `dogen draft`, while the host-harness passenger authors the page itself, starting from the unit's declared sources and navigating the repo freely, stages it under `.dogen/staging/` together with a context report of everything it read, and records both via `dogen draft --draft-file --report` (or `--draft-dir` for a multi-file unit). The sole skill that may write files, and only the staging files. Use when a TA is ready to draft a signed-off unit.
+description: Drafts a review-ready, Sphinx-publishable reference or explanation page (MyST or rST — the unit's target extension decides) for a declared and signed-off documentation unit by first running the zero-side-effect `dogen draft --resolve-only` provider probe, then branching — a driver provider (copilot or mock) generates in-process via `dogen draft`, while the host-harness passenger authors the page itself, starting from the unit's declared sources and navigating the repo freely, stages it under `.dogen/staging/` together with a context report of everything it read, and records both via `dogen draft --draft-file --report` (or `--draft-dir` for a multi-file unit). The sole skill that may write files, and only the staging files. Use when a TA is ready to draft a signed-off unit.
 allowed-tools: Read, Bash, Glob, Grep, Write
 ---
 
 <objective>
-Draft a review-ready, Sphinx-publishable **reference** page for a unit that has
-already been declared and signed off, by delegating to the CLI drafting seam and
-branching on the resolved provider. **The unit's format is decided by its target
+Draft a review-ready, Sphinx-publishable **reference or explanation** page for a
+unit that has already been declared and signed off, by delegating to the CLI
+drafting seam and branching on the resolved provider. **The unit's format is
+decided by its target
 extension** (`format` in `unit show --json`: `.md` → MyST, `.rst` →
 reStructuredText) — author in that markup, matching the page's siblings; the
 old MyST-only mandate is retired (v1.2). Run the zero-side-effect `dogen draft
