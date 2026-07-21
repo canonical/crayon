@@ -105,3 +105,44 @@ writer's gaps, the steering-stream count (latest quoted), and the progress state
 Priority tags belong to the review-mode findings (step 4), never here: the
 run-status reason codes and progress states stay surfaced verbatim (D-03: use the
 CLI's status vocabulary only for run-status).
+
+For a unit that carries a **step plan**, a **quality-signals block** follows (see
+below) in both modes; a step-free unit shows nothing extra here.
+
+## Quality signals (units with steps only)
+
+This block surfaces the walk's REC-09 quality signals — **derived**, never a new
+stored field and never a new review dimension. It appears in **both record and
+review modes**, but **only for a unit that carries a step plan**
+(`provenance.steps` non-empty). A step-free reference / explanation unit shows
+**no** quality-signals block at all — its provenance presentation stays
+byte-identical to before this block existed.
+
+Two derived sources, both already on disk:
+
+- **Counts from `dogen record show <id> --json`.** Tally the per-step `verdict`
+  wire values (the D-05 vocabulary, surfaced verbatim): how many steps recorded
+  `deviated`, how many `skipped`, and how many `fail`. `deviated` and `skipped`
+  each carry a reason (D-06); a `fail` is a step that never resolved. These map
+  onto the walk's episode taxonomy — a **deviation** is improvisation (the
+  planned step didn't say how, so the agent or TA had to figure it out), and a
+  repeated `fail` on one step is frustration (D-15). Surface the three counts
+  plainly, e.g. "N deviated, M skipped, K failed (of T steps)".
+- **Episode notes from `git log`.** Each `record step` writes one
+  `step-recorded` commit whose `Dogen-Step` / `Dogen-Verdict` trailers name the
+  step and its verdict, and whose body carries the `_body_note` reason for a
+  `skipped` / `deviated` step (the Phase-12 bounded-body precedent). Read them
+  (`git log --grep='Dogen-Step'`, scoped to the unit's step-recorded commits) and
+  quote the reason bodies — they are the free-text episode color the counts alone
+  cannot carry.
+
+**Honest-empty, the same stance as the rest of this file:** a unit whose steps
+all recorded `pass` has **zero** deviations / skips / fails — surface that as an
+honest "no flagged episodes (all N steps passed clean)", never omit the block.
+Zero is a signal, not an absence to hide.
+
+Do not invent a stored step flag and do not add a review dimension for this: the
+signals are purely derived from `record show` counts plus the git-log reason
+bodies. The review rubric carries one line (review mode) telling the reviewer to
+**weigh** the sections these signals flag — the weighing happens in the findings
+review, never as a re-grade here.

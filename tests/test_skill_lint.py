@@ -52,16 +52,32 @@ def test_wellformed_write_free_skill_has_no_violations(tmp_path: Path) -> None:
     assert skill_lint.check_skill(skill_dir) == []
 
 
+def test_writer_record_may_carry_write(tmp_path: Path) -> None:
+    """A writer in the WRITERS allowlist (dogen-record) may carry Write (D-02)."""
+    skill_dir = _make_skill(
+        tmp_path,
+        "dogen-record",
+        "name: dogen-record\ndescription: Record a walk-through draft.\n"
+        "allowed-tools: Read, Bash, Write",
+    )
+    assert skill_lint.check_skill(skill_dir) == []
+
+
 VIOLATION_CASES = [
     (
-        "write_in_write_free",
+        "write_in_non_writer",
         "dogen-plan",
         "name: dogen-plan\ndescription: Plan a unit.\nallowed-tools: Read, Bash, Write",
     ),
     (
-        "edit_in_write_free",
+        "edit_in_non_writer",
         "dogen-review",
         "name: dogen-review\ndescription: Review a draft.\nallowed-tools: Read, Edit",
+    ),
+    (
+        "arbitrary_non_writer_fail_closed",
+        "dogen-explain",
+        "name: dogen-explain\ndescription: Explain a unit.\nallowed-tools: Read, Write",
     ),
     (
         "name_mismatch",
@@ -103,7 +119,7 @@ def test_violation_is_detected(
 def test_write_detected_under_both_delimiters(
     tmp_path: Path, allowed_tools: str
 ) -> None:
-    """A Write in a write-free skill is caught under comma OR whitespace delimiters."""
+    """A Write in a non-writer skill is caught under comma OR whitespace delimiters."""
     skill_dir = _make_skill(
         tmp_path,
         "dogen-plan",

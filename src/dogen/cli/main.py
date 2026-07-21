@@ -66,16 +66,21 @@ from dogen.core.models import (
     Provenance,
     ReviewVerdict,
     Unit,
+    all_steps_verified,
     derive_progress,
+    derive_step_status,
 )
 from dogen.core.orchestrator import (
     AlreadyAcceptedError,
+    EvidenceIncompleteError,
+    EvidenceRequiredError,
     ModelAlreadySetError,
     NotDraftedError,
     OwnerRef,
     ResolvedOwners,
     SignoffExistsError,
     SignoffRequiredError,
+    next_after_signoff,
     resolve_owners,
 )
 from dogen.core.orchestrator import add_context_artifact as context_add_use_case
@@ -85,6 +90,8 @@ from dogen.core.orchestrator import declare as declare_use_case
 from dogen.core.orchestrator import draft as draft_use_case
 from dogen.core.orchestrator import edit_unit as edit_use_case
 from dogen.core.orchestrator import list_units as list_units_use_case
+from dogen.core.orchestrator import plan_steps as plan_steps_use_case
+from dogen.core.orchestrator import record_step as record_step_use_case
 from dogen.core.orchestrator import remove as remove_use_case
 from dogen.core.orchestrator import rename as rename_use_case
 from dogen.core.orchestrator import review as review_use_case
@@ -168,6 +175,21 @@ _REASON_SCHEMA_UNSUPPORTED = "schema_unsupported"
 #: parse/validate (D-09) — a corrupt-but-present sidecar refuses with the
 #: validation-error location instead of masquerading as ``unit_not_found``.
 _REASON_PROVENANCE_INVALID = "provenance_invalid"
+#: Emitted by ``record step`` (micro-gate) and any draft/review it fronts when
+#: a done-without-proof evidence record is refused before any write (v1.2, D-11).
+_REASON_EVIDENCE_REQUIRED = "evidence_required"
+#: Emitted by ``draft``/``review`` (macro-gate) when a unit is drafted or
+#: accepted over an unresolved/stale planned step (v1.2, D-11).
+_REASON_EVIDENCE_INCOMPLETE = "evidence_incomplete"
+#: Emitted by ``record plan`` when a ``--steps-file`` payload is malformed at the
+#: compose boundary (bad YAML, not a list, or an invalid step) (v1.2, V5).
+_REASON_BAD_STEPS_FILE = "bad_steps_file"
+#: Emitted by ``record step`` when an ``--evidence-file`` payload is malformed at
+#: the compose boundary (bad YAML, unknown verdict/mode, non-int exit) (v1.2, V5).
+_REASON_BAD_EVIDENCE_FILE = "bad_evidence_file"
+#: Emitted by ``record step`` when the named step does not exist in the unit's
+#: recorded plan (bad input — the plan is written first) (v1.2).
+_REASON_UNKNOWN_STEP = "unknown_step"
 
 # mvp-1's coarse exit codes (carried, D-10).
 _EXIT_OK = 0
@@ -183,6 +205,14 @@ staging_app = typer.Typer(
     help="Inspect and scaffold a unit's handoff staging tree (STAGE-03)."
 )
 report_app = typer.Typer(help="Scaffold a unit's --report context skeleton (STAGE-04).")
+record_app = typer.Typer(
+    help=(
+        "Record a unit's machine-owned step plan and per-step evidence. Evidence "
+        "proves a well-shaped mechanical capture exists (an exit code + the "
+        "SHA-256 of the captured output); it never asserts the capture was not "
+        "forged, and dogen never runs the step itself."
+    )
+)
 app.add_typer(unit_app, name="unit")
 app.add_typer(provider_app, name="provider")
 app.add_typer(model_app, name="model")
@@ -190,6 +220,7 @@ app.add_typer(context_app, name="context")
 app.add_typer(skills_app, name="skills")
 app.add_typer(staging_app, name="staging")
 app.add_typer(report_app, name="report")
+app.add_typer(record_app, name="record")
 
 #: The gitignored passenger-handoff scratch root (mirrors ``planning_fs``'s
 #: ``_STAGING_SUBDIR``): ``report template --write`` / ``staging plan --scaffold``
@@ -1221,6 +1252,12 @@ def unit_show(  # noqa: C901
             "generations_count": len(generations),
             "reviewer_edits": prov_dump["reviewer_edits"],
         }
+        # EVID-01/EVID-06: additive step-status keys, present ONLY when the unit
+        # carries a step plan. A step-free unit's payload is byte-identical to
+        # pre-phase — the keys are absent, never present-and-empty.
+        if provenance.steps:
+            payload["steps"] = _step_status_rows(provenance)
+            payload["all_steps_verified"] = all_steps_verified(provenance)
         # D-06: when a --by-draft page is covered by more than one unit, add an
         # owners[] array alongside the resolved winner. A single-owner page omits
         # it entirely, so the pre-existing shape is unchanged.
@@ -1367,6 +1404,17 @@ def _render_unit_detail(unit: Unit, state: str, provenance: Provenance) -> list[
     for edit in provenance.reviewer_edits:
         verdict = edit.verdict.value if edit.verdict is not None else "note"
         lines.append(f"  - [{verdict}] {edit.summary}")
+    # EVID-01/EVID-06: additive step-status lines, present ONLY when the unit
+    # carries a step plan — a step-free unit's plain report is byte-identical to
+    # pre-phase.
+    if provenance.steps:
+        verified = "yes" if all_steps_verified(provenance) else "no"
+        lines.append(
+            f"steps:     {len(provenance.steps)} step(s) (all verified: {verified})"
+        )
+        for step in provenance.steps:
+            status = derive_step_status(step).value
+            lines.append(f"  - [{status}] {step.id}: {step.text}")
     return lines
 
 
@@ -1583,7 +1631,21 @@ def signoff(
         )
     sha = _report_git(seam, no_commit=no_commit)
     if json_output:
-        _emit_json(unit=unit_id, commit=sha)
+        # D-01/D-04/D-08: append-only `next_id` routing token, computed through the
+        # SINGLE core decision (`next_after_signoff` → `_suggest_next`) off the
+        # unit's CURRENT intent and its ACTUAL provenance (WR-02) — a fresh signoff
+        # routes to `draft`/`record`, a `--re-sign` of an already-drafted unit
+        # routes to its real next step (`review`, …) rather than a spurious
+        # re-draft. No CLI-side direction fork (Pitfall 2); `unit` and `commit` are
+        # untouched (purely additive).
+        unit = store.load_unit(unit_id, root=root)
+        provenance = _load_or_init_provenance(store, root, unit_id)
+        unit_text = store.read_unit_text(unit_id, root=root)
+        _emit_json(
+            unit=unit_id,
+            commit=sha,
+            next_id=next_after_signoff(unit, provenance, unit_text),
+        )
     else:
         typer.echo(f"Recorded signoff for {unit_id}")
 
@@ -2015,6 +2077,19 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
             json_output=json_output,
             provider=provider_name,
         ) from exc
+    except EvidenceIncompleteError as exc:
+        # D-11 macro-gate: an unresolved/stale planned step blocks the draft. It
+        # is a RuntimeError subclass, so it must be caught BEFORE the generic
+        # `except RuntimeError` backend classifier below (mirrors the signoff
+        # handler above). Zero side effects: the core raised before any write.
+        raise _fail(
+            unit_id,
+            message=f"Refusing to draft: {exc}",
+            reason=_REASON_EVIDENCE_INCOMPLETE,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+            provider=provider_name,
+        ) from exc
     except TargetClaimedError as exc:
         # OWN-03: the draft-time lease re-check refused an in-flight overlap.
         # Placed BEFORE the (FileNotFoundError, ValueError) clause because
@@ -2114,7 +2189,7 @@ def draft(  # noqa: PLR0913, C901, PLR0912, PLR0915
 
 
 @app.command("review")
-def review(  # noqa: PLR0913
+def review(  # noqa: PLR0913, C901
     unit_id: Annotated[str, typer.Argument(help="Unit to review.")],
     verdict: Annotated[
         ReviewVerdict,
@@ -2190,6 +2265,17 @@ def review(  # noqa: PLR0913
     )
     try:
         outcome = review_use_case(request)
+    except EvidenceIncompleteError as exc:
+        # D-09/D-11 seal-side macro-gate: an accept over an unresolved/post-draft-
+        # stale step is refused before any reviewer edit is appended. Caught first
+        # because it is a RuntimeError subclass the later clauses would not map.
+        raise _fail(
+            unit_id,
+            message=f"Refusing to accept: {exc}",
+            reason=_REASON_EVIDENCE_INCOMPLETE,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
     except NotDraftedError as exc:
         raise _fail(
             unit_id,
@@ -2247,11 +2333,19 @@ def review(  # noqa: PLR0913
             typer.echo(f"staging: removed .dogen/staging/{unit_id}/", err=True)
         # remove_staging()==False (already gone) -> silent no-op (D-03).
     if json_output:
+        # WR-01: mirror `status --json` by carrying `intent` so a consumer can
+        # render the direction-specific `re_sign` referral line (reference →
+        # /dogen-write, actionable → /dogen-record) from the review payload
+        # alone, without a second `dogen status` call. The `re_sign` routing
+        # token is deliberately direction-agnostic (D-01); `intent` is the
+        # direction signal consumers branch on — not a re-derivation in core.
+        unit = store.load_unit(unit_id, root=root)
         _emit_json(
             unit=unit_id,
             progress=outcome.state.value,
             verdict=verdict.value,
             next_id=outcome.next_id,
+            intent=unit.intent.value,
             unapplied_steering=outcome.unapplied_steering,
             commit=sha,
         )
@@ -2272,9 +2366,27 @@ def status(json_output: _JsonOutput = False) -> None:
         Emit a single-line JSON array instead of the plain table.
     """
     store = compose.default_store()
-    rows = unit_statuses_use_case(
-        compose.build_list_request(root=Path.cwd(), store=store)
-    )
+    root = Path.cwd()
+    rows = unit_statuses_use_case(compose.build_list_request(root=root, store=store))
+    # EVID-01 additive step surface: load each unit's provenance once to derive
+    # its step status. Keyed on `provenance.steps` presence so a step-free unit's
+    # row stays byte-identical to pre-phase — no key in --json, no STEPS column in
+    # the plain board (EVID-06).
+    step_cells: dict[str, str] = {}
+    step_keys: dict[str, dict[str, object]] = {}
+    for r in rows:
+        prov = _load_or_init_provenance(store, root, r.unit_id)
+        if not prov.steps:
+            continue
+        resolved = sum(
+            1 for s in prov.steps if derive_step_status(s).value == "resolved"
+        )
+        verified = all_steps_verified(prov)
+        step_cells[r.unit_id] = f"{resolved}/{len(prov.steps)}"
+        step_keys[r.unit_id] = {
+            "steps_verified": verified,
+            "steps_total": len(prov.steps),
+        }
     if json_output:
         typer.echo(
             json.dumps(
@@ -2287,6 +2399,7 @@ def status(json_output: _JsonOutput = False) -> None:
                         "stale_plan": r.stale_plan,
                         "next_id": r.next_id,
                         "title": r.title,
+                        **step_keys.get(r.unit_id, {}),
                     }
                     for r in rows
                 ]
@@ -2296,22 +2409,328 @@ def status(json_output: _JsonOutput = False) -> None:
     if not rows:
         typer.echo("No units. Declare one with `dogen unit new`.")
         return
-    headers = ("ID", "STATE", "SIGNOFF", "NEXT")
-    table = [
-        (
-            r.unit_id,
-            r.state.value,
-            ("stale" if r.stale_plan else "yes") if r.signed_off else "no",
-            r.next_action,
-        )
-        for r in rows
-    ]
+    # The STEPS column appears only when at least one unit carries a step plan, so
+    # a fully step-free board renders byte-identically to pre-phase (EVID-06).
+    show_steps = bool(step_cells)
+    headers: tuple[str, ...] = ("ID", "STATE", "SIGNOFF", "NEXT")
+    if show_steps:
+        headers = ("ID", "STATE", "SIGNOFF", "STEPS", "NEXT")
+    table: list[tuple[str, ...]] = []
+    for r in rows:
+        signoff = ("stale" if r.stale_plan else "yes") if r.signed_off else "no"
+        if show_steps:
+            table.append(
+                (
+                    r.unit_id,
+                    r.state.value,
+                    signoff,
+                    step_cells.get(r.unit_id, "-"),
+                    r.next_action,
+                )
+            )
+        else:
+            table.append((r.unit_id, r.state.value, signoff, r.next_action))
     widths = [
         max(len(headers[i]), *(len(row[i]) for row in table))
         for i in range(len(headers))
     ]
     for cols in [headers, *table]:
         typer.echo("  ".join(col.ljust(widths[i]) for i, col in enumerate(cols)))
+
+
+# --------------------------------------------------------------------------- #
+# `dogen record` — the evidence machine seam (v1.2, EVID-01/D-11)
+#
+# The three verbs make Plan 02's use-cases operable: `record plan` seeds/replaces
+# the machine-owned step plan, `record step` records one step's mechanical
+# capture under the record-time micro-gate, and `record show` surfaces the
+# recorded plan + each step's derived status. The CLI stays thin — it reads and
+# validates untrusted `--steps-file`/`--evidence-file` input at the compose root
+# and calls the core use-cases; it never re-implements a gate or reads a file
+# inside `core/`.
+# --------------------------------------------------------------------------- #
+
+
+def _step_status_rows(provenance: Provenance) -> list[dict[str, object]]:
+    """Project a unit's recorded steps into per-step status rows (read-only).
+
+    Parameters
+    ----------
+    provenance : Provenance
+        The unit's provenance record.
+
+    Returns
+    -------
+    list of dict
+        One ``{id, text, status, verdict}`` mapping per planned step; ``status``
+        is derived via :func:`derive_step_status` and ``verdict`` is the recorded
+        wire value (``None`` until the step is recorded).
+    """
+    rows: list[dict[str, object]] = []
+    for step in provenance.steps:
+        evidence = step.evidence
+        rows.append(
+            {
+                "id": step.id,
+                "text": step.text,
+                "status": derive_step_status(step).value,
+                "verdict": evidence.verdict.value if evidence is not None else None,
+            }
+        )
+    return rows
+
+
+@record_app.command("plan")
+def record_plan(
+    unit_id: Annotated[str, typer.Argument(help="Unit whose step plan is written.")],
+    steps_file: Annotated[
+        str,
+        typer.Option(
+            "--steps-file",
+            help="A YAML list of step mappings ({id, text, ...}); '-' reads stdin. "
+            "The plan is authored whole and replaces the recorded steps (D-12).",
+        ),
+    ],
+    no_commit: _NoCommit = False,
+    json_output: _JsonOutput = False,
+) -> None:
+    """Write/replace a unit's machine-owned step plan (EVID-01/EVID-05, D-12).
+
+    The ``--steps-file`` payload is read and validated into typed steps at the
+    compose root — a malformed file is refused with ``reason=bad_steps_file``
+    before anything crosses into ``core/``. Surviving steps (unchanged text hash)
+    keep their recorded evidence; changed/new steps derive ``unverified``.
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose step plan is written.
+    steps_file : str
+        The ``--steps-file`` path (``-`` reads stdin).
+    no_commit : bool
+        Skip the transition commit for this invocation.
+    json_output : bool
+        Emit the structured JSON object instead of a plain line.
+    """
+    store = compose.default_store()
+    root = Path.cwd()
+    try:
+        steps = compose._read_steps_file(Path(steps_file))
+    except compose.StepsFileError as exc:
+        raise _fail(
+            unit_id,
+            message=f"Cannot read step plan: {exc}",
+            reason=_REASON_BAD_STEPS_FILE,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        ) from exc
+    seam = _seam(store, root, no_commit=no_commit)
+    request = compose.build_plan_steps_request(
+        unit_id, root=root, store=store, steps=steps, repo=seam
+    )
+    try:
+        plan_steps_use_case(request)
+    except UnitNotFoundError as exc:
+        # WR-01: an undeclared unit is a domain refusal at exit 1, matching
+        # `unit edit`'s unit_not_found — not the bad-input exit 2 the shared
+        # (FileNotFoundError, ValueError) handler used to give this case.
+        raise _fail(
+            unit_id,
+            message=f"No such unit: {unit_id!r}",
+            reason=_REASON_UNIT_NOT_FOUND,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
+    except (FileNotFoundError, ValueError) as exc:
+        raise _fail(
+            unit_id,
+            message=f"Cannot plan steps for {unit_id!r}: {exc}",
+            reason=_REASON_UNIT_NOT_FOUND,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        ) from exc
+    sha = _report_git(seam, no_commit=no_commit)
+    if json_output:
+        _emit_json(unit=unit_id, reason=None, steps_planned=len(steps), commit=sha)
+    else:
+        typer.echo(f"Planned {len(steps)} step(s) for {unit_id}")
+
+
+@record_app.command("step")
+def record_step(
+    unit_id: Annotated[str, typer.Argument(help="Unit whose step is recorded.")],
+    step_id: Annotated[str, typer.Argument(help="The planned step's id.")],
+    evidence_file: Annotated[
+        str,
+        typer.Option(
+            "--evidence-file",
+            help="A YAML mapping of the step's mechanical capture "
+            "({verdict, command, output_sha256, exit_code, ...}); '-' reads "
+            "stdin. A well-shaped capture proves the step ran and was captured — "
+            "never that the capture was not forged.",
+        ),
+    ],
+    no_commit: _NoCommit = False,
+    json_output: _JsonOutput = False,
+) -> None:
+    """Record one step's evidence under the record-time micro-gate (EVID-02, D-11).
+
+    The ``--evidence-file`` payload is validated at the compose root — a malformed
+    file is refused with ``reason=bad_evidence_file``. A well-formed but
+    done-without-proof capture (a ``pass``/``fail`` with no hash or exit code, a
+    reasonless ``skipped``) is refused by the core micro-gate with
+    ``reason=evidence_required`` and zero side effects. Recording a ``fail``
+    succeeds — it is the macro-gate, not this record, that refuses a draft over an
+    unresolved step.
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose step is recorded.
+    step_id : str
+        The planned step's id (it must already exist in the recorded plan).
+    evidence_file : str
+        The ``--evidence-file`` path (``-`` reads stdin).
+    no_commit : bool
+        Skip the transition commit for this invocation.
+    json_output : bool
+        Emit the structured JSON object instead of a plain line.
+    """
+    store = compose.default_store()
+    root = Path.cwd()
+    try:
+        evidence = compose._read_evidence_file(Path(evidence_file))
+    except compose.EvidenceFileError as exc:
+        raise _fail(
+            unit_id,
+            message=f"Cannot read evidence: {exc}",
+            reason=_REASON_BAD_EVIDENCE_FILE,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        ) from exc
+    seam = _seam(store, root, no_commit=no_commit)
+    request = compose.build_record_step_request(
+        unit_id,
+        root=root,
+        store=store,
+        step_id=step_id,
+        evidence=evidence,
+        repo=seam,
+    )
+    try:
+        status = record_step_use_case(request)
+    except EvidenceRequiredError as exc:
+        # D-11 micro-gate: ill-shaped-for-verdict proof, refused with zero writes.
+        raise _fail(
+            unit_id,
+            message=f"Refusing to record step {step_id!r}: {exc}",
+            reason=_REASON_EVIDENCE_REQUIRED,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
+    except UnitNotFoundError as exc:
+        # WR-01/IN-03: an undeclared unit is a domain refusal at exit 1, matching
+        # `unit edit`; keep it distinct from the unknown_step case below, which
+        # now correctly means "the unit is declared but this step is not planned".
+        raise _fail(
+            unit_id,
+            message=f"No such unit: {unit_id!r}",
+            reason=_REASON_UNIT_NOT_FOUND,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
+    except (FileNotFoundError, ValueError) as exc:
+        # An unknown step_id (the plan is written first) is bad input — the
+        # compose root already validated the evidence shape, so this is never a
+        # raw traceback.
+        raise _fail(
+            unit_id,
+            message=f"Cannot record step {step_id!r} for {unit_id!r}: {exc}",
+            reason=_REASON_UNKNOWN_STEP,
+            code=_EXIT_BAD_INPUT,
+            json_output=json_output,
+        ) from exc
+    sha = _report_git(seam, no_commit=no_commit)
+    if json_output:
+        _emit_json(
+            unit=unit_id,
+            reason=None,
+            step=step_id,
+            verdict=evidence.verdict.value,
+            status=status.value,
+            commit=sha,
+        )
+    else:
+        typer.echo(
+            f"Recorded step {step_id} ({evidence.verdict.value}): {status.value}"
+        )
+
+
+@record_app.command("show")
+def record_show(
+    unit_id: Annotated[str, typer.Argument(help="Unit whose step plan is shown.")],
+    json_output: _JsonOutput = False,
+) -> None:
+    """Show a unit's recorded step plan + each step's derived status (EVID-01).
+
+    A read-only projection: each step's ``status`` is derived via
+    :func:`derive_step_status` and never stored. A step-free unit prints an empty
+    plan (``all_steps_verified`` is vacuously ``True``).
+
+    Parameters
+    ----------
+    unit_id : str
+        The unit whose step plan is shown.
+    json_output : bool
+        Emit the structured JSON object instead of the plain report.
+    """
+    store = compose.default_store()
+    root = Path.cwd()
+    try:
+        _unit, _state, provenance = _gather_unit_detail(store, root, unit_id)
+    except SchemaUnsupportedError as exc:
+        raise _fail(
+            unit_id,
+            message=f"Cannot read unit {unit_id!r}: {exc}",
+            reason=_REASON_SCHEMA_UNSUPPORTED,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
+    except ProvenanceInvalidError as exc:
+        raise _fail(
+            unit_id,
+            message=f"Cannot read unit {unit_id!r}: {exc}",
+            reason=_REASON_PROVENANCE_INVALID,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
+    except (FileNotFoundError, ValueError) as exc:
+        raise _fail(
+            unit_id,
+            message=f"Cannot read unit {unit_id!r}: {exc}",
+            reason=_REASON_UNIT_NOT_FOUND,
+            code=_EXIT_DOMAIN_REFUSAL,
+            json_output=json_output,
+        ) from exc
+    steps = _step_status_rows(provenance)
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {
+                    "unit": unit_id,
+                    "steps": steps,
+                    "all_steps_verified": all_steps_verified(provenance),
+                }
+            )
+        )
+        return
+    if not steps:
+        typer.echo(f"steps:     0 step(s) for {unit_id}")
+        return
+    typer.echo(f"steps:     {len(steps)} step(s) for {unit_id}")
+    for row in steps:
+        verdict = row["verdict"] or "-"
+        typer.echo(f"  - [{row['status']}] {row['id']}: {row['text']} ({verdict})")
 
 
 @provider_app.command("show")
