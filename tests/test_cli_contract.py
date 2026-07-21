@@ -603,8 +603,7 @@ def test_record_step_stdin_evidence_parity(repo):
     store = _declare_unit(repo)
     _seed_signed_with_step(store, repo)
     payload_text = (
-        "verdict: pass\ncommand: pytest\n"
-        f"output_sha256: {'b' * 64}\nexit_code: 0\n"
+        f"verdict: pass\ncommand: pytest\noutput_sha256: {'b' * 64}\nexit_code: 0\n"
     )
     result = runner.invoke(
         app,
