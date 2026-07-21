@@ -150,6 +150,11 @@ what the skills look for by default:
 | `code-to-docs-map.md` | Map from code areas to the concepts that document them (grep-first; can be large) |
 | `doc-gaps.md`         | Known documentation gaps |
 
+To include organization-wide guidance in the agent's context, create a directory called `optional-guidance`
+at the root of your project and add the relevant files. Expected files include style guides,
+syntax guides, framework guides (Diataxis), and similar guidance. Any context added here is
+considered optional and is mainly intended to augment the 'knowledge' of less-capable models.
+
 ### 4 — Draft a documentation unit
 
 Drive the three skills in order from your agent. They call the deterministic dogen verbs and

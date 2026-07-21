@@ -32,7 +32,11 @@ and status vocabulary.
    `glossary.md`; `code-to-docs-map.md` can be very large, so grep it for the
    relevant code area rather than reading it whole. Skim the target repo's
    existing docs for conventions and the nearest neighbouring pages; read
-   whatever change or feature the TA points at.
+   whatever change or feature the TA points at. If the repo has a top-level
+   `optional-guidance/` directory, optionally skim any files there relevant to this unit
+   (house style guides, framework or syntax references) for conventions a model
+   may not know — it is an aid, never a prerequisite, and its absence is not a
+   blocker.
 3. Open the Socratic intake with the Why: "Looking at what you want to document,
    what problem does this page solve for its reader?" Ask exactly one question per
    turn.
@@ -90,6 +94,11 @@ in the prior art with the read-only tools:
 - Skim the repo's existing documentation for conventions and the nearest
   neighbouring pages to the proposed unit.
 - Read any change, feature description, or source files the TA points at.
+- **Optional guidance.** If the repo has a top-level `optional-guidance/` directory,
+  skim any files there relevant to this unit — company style guides, framework
+  guides, or syntax references a team has dropped in to raise output quality
+  Consult it when the best approach is not obvious; treat it as advisory, and never
+  block on its absence.
 
 Do not start the dialogue until you have looked at what they want to document. If
 they actually want to draft or review, stop and route them to dogen-write or
