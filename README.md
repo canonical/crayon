@@ -32,54 +32,64 @@ outside drafting:
 
 ## Quickstart: use dogen in a docs repo
 
+### Prerequisites & assumptions
+
+This walkthrough runs everything inside a disposable **Workshop** environment and names what it
+needs, so your host stays clean and a fresh box works on the first try. It assumes:
+
+- **[Workshop](https://github.com/canonical/workshop) on your host** — Canonical's "secure, fast,
+  and composable" ([snapcraft.io/workshop](https://snapcraft.io/workshop)), LXD-backed
+  dev-environment tool. dogen drives an autonomous agent that reads and writes files and runs
+  commands on your behalf, so isolate it from anything you can't afford to lose; a Workshop is
+  exactly that throwaway boundary. Install it once: `sudo snap install workshop --classic`.
+- **The runtime and harness come from SDKs, not your host.** Workshop layers `uv` (which provides
+  Python 3.12+) and your agent harness into the container for you, so there's no system Python,
+  Node.js, or `PATH` setup to do by hand.
+- **git with an identity** — set *inside* the workshop (its `$HOME` isn't shared with the host);
+  dogen records every step as a local commit.
+- **A docs repository to draft in** — a Git repo with a Sphinx/Diátaxis docs tree (or where you
+  intend to start one), plus any code or artefacts you want documented. Your project mounts into
+  the workshop automatically at `/project`.
+- **Outbound network access**, and **optional provider credentials** — the latter only if you
+  switch from the default host-harness passenger to the Copilot *driver* (see step 1).
+
 ### 0 — Set up your environment
 
-dogen is an agentic system still in development. It is recommended that testing
-be done in an isolated environment to limit the potential for loss or corruption
-of data. To create a new environment for testing:
+dogen is an agentic system still in development, so run your testing in an **isolated environment**
+to limit any potential for loss or corruption of data.
+[Workshop](https://github.com/canonical/workshop) gives you a disposable, LXD-backed container and
+layers in everything dogen needs as **SDKs** — no base-package, Node.js, `uv`, or `PATH` setup to
+do by hand:
 
-- Install LXD and [create a new container](https://canonical.com/lxd/docs/latest/tutorial/first_steps/#create-and-start-containers).
-- Start the container and create a working folder for your documentation generation project inside it.
-- Initialize git, i.e., `git init` and set up your identity - some skills may otherwise not run properly.
-- Create an ssh key in the container so you can install dogen from GitHub. A **read-only**, repo-scoped
-  [deploy key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys#deploy-keys)
-  is preferable.
-- Push all necessary files and directories from your [local machine into the working folder](https://canonical.com/lxd/docs/latest/howto/instances_access_files/#push-files-from-the-local-machine-to-the-instance), e.g., docs repo, code, and artefacts from code-to-docs mapper and onboarding scraper.
-- If you plan to use Copilot, OpenRouter, or any other cloud based system, you will be prompted to authenticate your
-  session.
-- [Install uv](https://docs.astral.sh/uv/#installation).
-
-**Alternative: use [`workshop`](https://github.com/canonical/workshop)**, Canonical's
-"secure, fast, and composable" agent-ready dev-environment tool
-([snapcraft.io/workshop](https://snapcraft.io/workshop)). It replaces the container-creation
-and file-transfer bullets above with a definition file and a couple of commands:
-
-- Install it: `sudo snap install workshop --classic`.
-- Launch the environment this repo already declares in
-  [`.workshop/dogen-dev.yaml`](.workshop/dogen-dev.yaml) (it declares the `uv` SDK, so
-  there's no separate "install uv" step): `workshop launch dogen-dev`.
-- Get a shell inside it — `workshop shell dogen-dev` (or run one-off commands with
-  `workshop exec dogen-dev -- <command>`). The project directory is mounted automatically
-  at `/project` inside the workshop, so there's no manual file-push step either.
-- Set up your git identity inside the workshop the same way as above — `$HOME` isn't
-  shared with the host, so `git config --global user.name`/`user.email` still need setting.
-- Create an ssh deploy key inside the workshop the same way as above, so you can install
-  dogen from GitHub.
-- If you plan to use Copilot, OpenRouter, or any other cloud based system, you'll be
-  prompted to authenticate your session, same as above.
-- Optionally, add your agent harness's own CLI as an SDK too — workshops come
-  agent-ready, and the SDK Store carries sandboxed, credential-persisting builds for all
-  three harnesses dogen ships skills for:
-  [`claude-code`](https://github.com/canonical/claude-code-sdk),
-  [`copilot`](https://github.com/canonical/copilot-sdk), and
-  [`opencode`](https://github.com/canonical/opencode-sdk). Add the ones you use with
-  `workshop init <name> --sdks uv,claude-code,copilot,opencode` (check what's on offer
-  with `sdk find <query>` / `sdk info <name>` from the `workshop.sdk` snap app).
+1. **Install Workshop** on your host: `sudo snap install workshop --classic`.
+2. **Define a workshop in your docs repo.** `workshop init dogen-dev --sdks uv,copilot --base
+   ubuntu@24.04` scaffolds [`.workshop/dogen-dev.yaml`](.workshop/dogen-dev.yaml), layering the
+   `uv` and **GitHub Copilot CLI** SDKs. (This repo already ships that file with both SDKs, so you
+   can skip straight to the launch below.) Prefer Claude Code or opencode? Their SDKs are in the
+   Store too — swap the `copilot` entry, and check what's on offer with `sdk find <name>` /
+   `sdk info <name>` (or `workshop.sdk …` if `sdk` isn't on your `PATH`).
+3. **Launch it:** `workshop launch dogen-dev`. This builds the container, runs the SDK setup, and
+   mounts your project at `/project` inside the workshop.
+4. **Get a shell inside it:** `workshop shell dogen-dev` (or run one-off commands with
+   `workshop exec dogen-dev -- <command>`). **Every step from here on runs inside the workshop.**
+5. **Set your git identity** — `git config --global user.name "…"` and
+   `git config --global user.email "…"`. The workshop's `$HOME` isn't shared with the host, and
+   dogen commits every transition, so this needs setting inside.
+6. **Authenticate your harness** — launch `copilot` and run `/login` (credentials persist in the
+   workshop). With the default `host-harness` provider your harness is the passenger that authors
+   drafts, so this single login is the only credential you need. Using Claude Code or opencode
+   instead? Authenticate it the same way and pass `--harness claude` / `--harness opencode` when
+   you install the skills below.
+7. **Installing dogen from a private repo?** Add a **read-only, repo-scoped**
+   [deploy key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys#deploy-keys)
+   inside the workshop, and accept GitHub's host key once with `ssh -T git@github.com`, so
+   installing the dogen CLI (next) doesn't stall.
 
 ### 1 — Install the `dogen` CLI
 
-dogen isn't on a public package index yet — install it from this repository with
-`uv`:
+Run this and the remaining steps **inside the workshop** (`workshop shell dogen-dev`). dogen isn't
+on a public package index yet — install it from this repository with `uv` (already provided by the
+workshop's `uv` SDK):
 
 ```bash
 # Install the CLI as a uv tool (isolated, on your PATH):
@@ -90,6 +100,9 @@ uv tool install git+ssh://git@github.com/canonical/dogen-mvp-1
 
 dogen --help          # verify the install
 ```
+
+If a fresh shell reports `dogen: command not found`, put uv's tool directory on your `PATH` with
+`uv tool update-shell` (or add `~/.local/bin`) and reopen the shell.
 
 **Provider setup (optional).** By default dogen uses the zero-setup **host-harness passenger**
 provider — your own agent authors the draft and dogen records it. To use the **GitHub Copilot
@@ -106,10 +119,10 @@ there is no silent fallback.
 
 ### 2 — Install the skills into your agent
 
-Run from the **root of the docs repo** you want to draft in:
+Run from the **root of the docs repo** you want to draft in (inside the workshop, that's `/project`):
 
 ```bash
-dogen skills install --harness claude     # repeatable: --harness copilot --harness opencode
+dogen skills install --harness copilot    # repeatable: --harness claude --harness opencode
 #                                         # …or omit --harness to auto-detect present harnesses
 dogen skills status                       # show each install's drift vs the canonical family
 dogen skills update                       # re-stage after upgrading dogen
@@ -126,6 +139,35 @@ Each harness has its own discovery root:
 The install is recorded in `.dogen/skills-install.yaml`. Your agent now sees the
 `dogen-plan`, `dogen-write`, and `dogen-review` skills. `skills/` is the single source of
 truth — re-run `dogen skills update` rather than hand-editing an installed copy.
+
+### Confirm your setup works (smoke check)
+
+Still inside the workshop, prove the plumbing end-to-end before pointing dogen at real docs. The
+credential-free `mock` provider drafts deterministically in-process, so nothing here needs a
+harness login or a provider token, and nothing touches your docs repo:
+
+```bash
+dogen --help                 # the CLI is installed and on your PATH
+dogen provider show          # resolves to host-harness (from default)
+
+# Drive one throwaway unit through the full gate in a scratch repo:
+mkdir /tmp/dogen-smoke && cd /tmp/dogen-smoke && git init -q
+printf '# Widget API\n\nThe widget API exposes create and delete.\n' > source.md
+git add -A && git commit -q -m "seed source"
+
+dogen unit new smoke --intent reference --title "Smoke" --source source.md --target smoke.rst
+dogen steer smoke --note "Audience: developers evaluating dogen; keep it terse."
+dogen signoff smoke
+dogen draft smoke --provider mock          # writes docs/smoke.rst
+dogen review smoke --verdict accept --note "smoke"
+dogen status                               # smoke -> reviewed, signoff yes
+```
+
+If every command exits cleanly and `dogen status` shows `smoke` at `reviewed`, your environment is
+wired up — the same `unit new → signoff → draft → review` gate runs for real in steps 3–4. As a
+last check, from your **docs-repo root** open your harness (`copilot`) and confirm it lists the
+`dogen-plan`, `dogen-write`, and `dogen-review` skills you installed above. Clean up the scratch
+repo when done: `rm -rf /tmp/dogen-smoke`.
 
 ### 3 — Add context files (recommended)
 
