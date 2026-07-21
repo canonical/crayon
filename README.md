@@ -157,13 +157,23 @@ considered optional and is mainly intended to augment the 'knowledge' of less-ca
 
 ### 4 — Draft a documentation unit
 
-Drive the three skills in order from your agent. They call the deterministic dogen verbs and
-enforce the human-in-the-loop gate at each step:
+Drive the skills in order from your agent. They call the deterministic dogen verbs and
+enforce the human-in-the-loop gate at each step. `dogen-plan` opens and `dogen-review` closes
+**every** direction; only the middle drafting step branches by the unit's declared Diátaxis
+direction:
 
 1. **`dogen-plan`** — declare a unit and its sources, shape the outline, record your **intent
-   and audience** steering, and **sign the plan off**.
-2. **`dogen-write`** — draft the page(s) from the signed-off plan, grounded in the declared
-   sources and steered by what you recorded.
+   and audience** steering, and **sign the plan off**. This is also where the direction is
+   declared, which routes the drafting step below.
+2. **Draft — by direction:**
+   - **reference** → **`dogen-write`** — draft the page(s) from the signed-off plan, grounded
+     in the declared sources and steered by what you recorded.
+   - **tutorial / how-to** → **`dogen-record`** — drafted by *doing*: an interactive,
+     evidence-gated step walk that captures verbatim proof as each step runs (redirected output
+     bytes, a real exit code, a SHA-256) and authors the page from what actually ran, not from
+     static sources.
+   - **explanation** → **`dogen-plan`**'s intent walk (the 5-whys, understanding-first mode) to
+     draw out and record the *why*, then **`dogen-write`** drafting with an explanation stance.
 3. **`dogen-review`** — review the draft alongside its provenance and record a verdict
    (**accept** / **fix** / **redraft**).
 
