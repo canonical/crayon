@@ -42,7 +42,9 @@ REFERENCE_FIX = "Next: /dogen-write — apply the recorded fix."
 # alongside reference — it reuses the frozen `draft` rows verbatim, never a new token
 # or referral string (D-11). These POSITIVE-presence markers pin the corrected family
 # contract prose; the frozen `draft`/`record` row constants above stay untouched.
-README_EXPLANATION_DRAFT_MARKER = "draft-stage skill for **reference and explanation** units"
+README_EXPLANATION_DRAFT_MARKER = (
+    "draft-stage skill for **reference and explanation** units"
+)
 REVIEW_EXPLANATION_DRAFT_MARKER = (
     "**reference** or **explanation** unit (token `draft`) it routes to dogen-write"
 )

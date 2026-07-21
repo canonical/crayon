@@ -655,15 +655,13 @@ def _read_evidence_file(evidence_file: Path) -> _EvidenceFileInput:
         raise EvidenceFileError(f"--evidence-file is not valid YAML: {exc}") from exc
     if not isinstance(data, dict):
         raise EvidenceFileError(
-            "--evidence-file must be a YAML mapping "
-            f"(got {type(data).__name__})"
+            f"--evidence-file must be a YAML mapping (got {type(data).__name__})"
         )
     try:
         verdict = StepVerdict(data["verdict"])
     except KeyError as exc:
         raise EvidenceFileError(
-            "--evidence-file must carry a 'verdict' "
-            "(pass/fail/skipped/deviated)"
+            "--evidence-file must carry a 'verdict' (pass/fail/skipped/deviated)"
         ) from exc
     except ValueError as exc:
         raise EvidenceFileError(

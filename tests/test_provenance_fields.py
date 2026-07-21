@@ -335,6 +335,7 @@ def test_record_plan_undeclared_unit_refuses_no_side_effect(repo):
         ["git", "-C", str(repo), "log", "--oneline"],
         capture_output=True,
         text=True,
+        check=False,
     )
     assert "step-planned" not in log.stdout
 
@@ -345,9 +346,7 @@ def test_record_step_undeclared_unit_refuses_unit_not_found(repo):
     # unknown_step ("write the step plan first") that conflated "unit not
     # planned" with "step not planned".
     ev = repo / "ev.yaml"
-    ev.write_text(
-        "verdict: pass\noutput_sha256: abc\nexit_code: 0\n", encoding="utf-8"
-    )
+    ev.write_text("verdict: pass\noutput_sha256: abc\nexit_code: 0\n", encoding="utf-8")
 
     result = runner.invoke(
         app,

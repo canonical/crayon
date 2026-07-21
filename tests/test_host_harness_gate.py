@@ -107,9 +107,7 @@ async def test_signed_step_free_passenger_drafts_unchanged(tmp_path: Path) -> No
         ),
         root=tmp_path,
     )
-    provider = HostHarnessDraftingProvider(
-        draft_text=_HANDOFF_BYTES.decode("utf-8")
-    )
+    provider = HostHarnessDraftingProvider(draft_text=_HANDOFF_BYTES.decode("utf-8"))
     request = DraftRequest(
         unit_id="u",
         root=tmp_path,
