@@ -172,8 +172,13 @@ on the `intent` you read in step 1:
 1. **Ground the draft.** Start from the unit's declared `sources` — read them in
    full; they are the primary grounding. Then navigate the repo freely wherever a
    fact's origin lies (implementations, fixtures, sibling docs, the repo's existing
-   documentation conventions, and any `.dogen/context/` artifacts): the declared
-   sources are starting points, not a boundary (v1). **When the plan outline names
+   documentation conventions, any `.dogen/context/` artifacts, and — if present —
+   a top-level `optional-guidance/` directory of house style, framework, or syntax
+   guides): the declared sources are starting points, not a boundary (v1). Consult
+   `optional-guidance/` when the best authoring approach is not obvious — it is where a
+   team encodes conventions a smaller model may not know; its absence is never a
+   blocker and it never overrides the unit's plan, sources, or steering. **When the
+   plan outline names
    an inventory** (e.g. a per-module attribute table, one row per member), that
    inventory is a **read contract**: locate and read the authoritative source for
    *every* member before authoring — a cross-reference to a sibling page is not a

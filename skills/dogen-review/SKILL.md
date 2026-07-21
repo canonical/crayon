@@ -13,7 +13,9 @@ generalized five-dimension findings review — opened by a deterministic read-on
 pre-pass — grounded by re-checking claims against
 the recorded sources, and present it before the verdict). Both modes read the unit's
 sidecars and the drafted page(s) — in the unit's format, MyST or rST; a
-multi-file unit's whole target set — present the provenance summary, elicit the
+multi-file unit's whole target set — and may optionally consult a top-level
+`optional-guidance/` directory (house style, framework, or syntax guides) when judging
+the draft — present the provenance summary, elicit the
 reviewer's judgment, and record it as the required `dogen review --verdict --note`, advancing
 progress to `reviewed`. The verdict is structured (v1): **accept** seals the exact
 draft text (its hash lands on the review record — the second provable bookend);
@@ -162,7 +164,12 @@ which dimension 0's objective check relies on for multi-target units). Ground th
 findings: for source-fidelity and completeness, re-check the draft's concrete claims
 against the recorded sources and context origins themselves (open the files; the
 generation's commit stamps say which version was read) — do not judge the draft only
-on its internal coherence. Before reporting any absence-based finding ("not
+on its internal coherence. For structure-fit and clarity, if the repo has a top-level
+`optional-guidance/` directory (house style guides, framework or syntax references),
+optionally consult any files relevant to this unit — a draft that contradicts a
+documented house convention is a legitimate finding. The absence of the
+`optional-guidance/` directory is never a blocker. Before reporting any absence-based
+finding ("not
 supported", "not in source", "missing from the page"), apply the rubric's
 verification discipline: at least two search strategies, recorded in the
 finding; the absence confirmed with `Read` or an explicit `grep -c` whose count
