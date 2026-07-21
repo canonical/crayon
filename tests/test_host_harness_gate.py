@@ -21,6 +21,7 @@ from dogen.core.models import (
     Intent,
     ProgressState,
     Provenance,
+    Signoff,
     derive_progress,
 )
 from dogen.core.orchestrator import DraftRequest, SignoffRequiredError, draft
@@ -78,3 +79,46 @@ async def test_unsteered_passenger_refuses_with_zero_side_effects(
 
     # T-03-02: the read-only handoff file is left byte-for-byte untouched.
     assert handoff.read_bytes() == _HANDOFF_BYTES
+
+
+class _Clock:
+    """A deterministic ISO-8601 clock."""
+
+    def __call__(self) -> str:
+        return "2026-01-01T00:00:00Z"
+
+
+@pytest.mark.asyncio
+async def test_signed_step_free_passenger_drafts_unchanged(tmp_path: Path) -> None:
+    # EVID-06: a signed step-free unit drafts through the host-harness passenger
+    # byte-identically to pre-phase — the evidence macro-gate (keyed on
+    # provenance.steps presence) is never entered, and the record stays step-free.
+    store = FilesystemPlanningStore()
+    store.scaffold_unit("u", root=tmp_path, intent=Intent.reference, audience="devs")
+    store.write_provenance(
+        Provenance(
+            unit_id="u",
+            signoff=Signoff(
+                author="Ada",
+                at="2026-01-01T00:00:00Z",
+                intent=Intent.reference,
+                audience="devs",
+            ),
+        ),
+        root=tmp_path,
+    )
+    provider = HostHarnessDraftingProvider(draft_text=_HANDOFF_BYTES.decode("utf-8"))
+    request = DraftRequest(
+        unit_id="u",
+        root=tmp_path,
+        provider=provider,
+        store=store,
+        provider_name="host-harness",
+        now=_Clock(),
+    )
+
+    outcome = await draft(request)
+    assert outcome.path.exists()
+    prov = store.read_provenance("u", root=tmp_path)
+    assert derive_progress(prov) is ProgressState.drafted
+    assert prov.steps == []  # never entered the evidence path

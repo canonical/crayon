@@ -1,13 +1,14 @@
 ---
 name: dogen-write
-description: Drafts a review-ready, Sphinx-publishable reference page (MyST or rST — the unit's target extension decides) for a declared and signed-off documentation unit by first running the zero-side-effect `dogen draft --resolve-only` provider probe, then branching — a driver provider (copilot or mock) generates in-process via `dogen draft`, while the host-harness passenger authors the page itself, starting from the unit's declared sources and navigating the repo freely, stages it under `.dogen/staging/` together with a context report of everything it read, and records both via `dogen draft --draft-file --report` (or `--draft-dir` for a multi-file unit). The sole skill that may write files, and only the staging files. Use when a TA is ready to draft a signed-off unit.
+description: Drafts a review-ready, Sphinx-publishable reference or explanation page (MyST or rST — the unit's target extension decides) for a declared and signed-off documentation unit by first running the zero-side-effect `dogen draft --resolve-only` provider probe, then branching — a driver provider (copilot or mock) generates in-process via `dogen draft`, while the host-harness passenger authors the page itself, starting from the unit's declared sources and navigating the repo freely, stages it under `.dogen/staging/` together with a context report of everything it read, and records both via `dogen draft --draft-file --report` (or `--draft-dir` for a multi-file unit). The sole skill that may write files, and only the staging files. Use when a TA is ready to draft a signed-off unit.
 allowed-tools: Read, Bash, Glob, Grep, Write
 ---
 
 <objective>
-Draft a review-ready, Sphinx-publishable **reference** page for a unit that has
-already been declared and signed off, by delegating to the CLI drafting seam and
-branching on the resolved provider. **The unit's format is decided by its target
+Draft a review-ready, Sphinx-publishable **reference or explanation** page for a
+unit that has already been declared and signed off, by delegating to the CLI
+drafting seam and branching on the resolved provider. **The unit's format is
+decided by its target
 extension** (`format` in `unit show --json`: `.md` → MyST, `.rst` →
 reStructuredText) — author in that markup, matching the page's siblings; the
 old MyST-only mandate is retired (v1.2). Run the zero-side-effect `dogen draft
@@ -86,14 +87,34 @@ matching the page's siblings), the seeded `steering_notes`, and every entry
 in the `steering` stream — review-verdict entries are corrections a re-draft
 MUST apply.
 
+**Explanation open-ceremony guard (D-10):** derive the declared direction from
+the `intent` field you just read.
+An explanation unit whose steering stream is empty — no seeded intent note and no
+appended steering — reached this ceremony
+with nothing to draft *from*: its rationale, context, and trade-offs live in the
+recorded intent, and there is none. STOP and route the TA back to dogen-plan's
+intent walk to record the intent first (dogen-plan declares an explanation unit
+with a synthesized intent note; an empty stream means the walk was bypassed or
+abandoned). Do not draft an explanation page from unsteered inference — a stance
+with no recorded *why* invents one, the exact failure the stance forbids. This is
+a **skill-level tripwire, not a core guarantee**: a raw `dogen draft` CLI call
+still routes explanation → `draft` and bypasses this stop (the WR-03 precedent) —
+the guard lives in this skill's judgment, honestly framed, not in the core gate.
+
 **Re-draft precondition:** when `generations_count` ≥ 1 this is a re-draft, and
 the correction that motivates it must already be RECORDED — a review
 fix/redraft verdict or a `dogen steer --note` entry newer than the last
 generation. If the steering stream holds nothing new, STOP and route back: the
 reviewer records the verdict first (dogen-review), or the TA records a note
 (`dogen steer`). Never apply corrections carried only in conversation — the
-draft output's `unsteered_redraft: true` flag means exactly that miss. Then run
-the zero-side-effect probe:
+draft output's `unsteered_redraft: true` flag means exactly that miss.
+
+**Steering reconciliation (re-draft only):** enumerate every steering entry newer
+than the last generation and account for each one in the step 4 report —
+**applied** (name where on the page) or **declined** (say why, and get the TA's
+agreement before recording over it). Silent acceptance and silent rejection are
+both forbidden; this is the conversational mirror of the `unapplied_steering`
+flag. Then run the zero-side-effect probe:
 
 ```bash
 dogen draft "$UNIT_ID" --resolve-only --json
@@ -117,32 +138,61 @@ Read the result. Map any failure reason to plain-language TA guidance
 (`signoff_required` → route to dogen-plan; `backend_unavailable` → the Copilot
 backend is unreachable; `model_rejected` → the requested model was refused) per
 `references/provider-branch.md`. In this branch the skill never uses `Write`.
+
+**Explanation is passenger-only this phase (EXPL-04):** a driver provider
+(`copilot` / `mock`) has **no explanation stance variant** — the understanding-
+oriented stance lives in the passenger authoring path, not in a driver prompt.
+When the declared direction is explanation and the resolved provider is a driver,
+give the TA an honest note that the driver drafts without the explanation stance
+this phase (route through the host-harness passenger for the steered stance); do
+not invent a new driver prompt path for it.
 </step_2>
 
 <step_3 name="Passenger branch (host-harness)">
 If the resolved provider is `host-harness`, the host authors the page(s) itself,
 **in the unit's format** (the `format` field: MyST for `.md`, reStructuredText
 for `.rst` — the per-format standard is in `references/provider-branch.md`).
+Load `references/writing-standards.md` now — its end-state writing principle,
+three-check grounding rule, and writer micro-rules govern every sentence you
+author in this branch, in every direction.
+
+**Stance selection (branch on the declared direction).** writing-standards.md is
+the register-neutral base for both directions; the *stance* on top of it depends
+on the `intent` you read in step 1:
+
+- **reference** → the stance contract in `references/provider-branch.md` governs
+  the neutral, information-oriented register (unchanged this phase).
+- **explanation** → additionally load `references/explanation-stance.md` now and
+  author understanding-oriented prose (rationale, context, trade-offs,
+  connections) from the recorded intent steering as its primary source, curated
+  never pasted. The reference stance contract does NOT apply — explanation is not
+  the neutral look-it-up register. writing-standards.md still governs; the
+  per-format markup standards in `references/provider-branch.md` still apply.
 
 1. **Ground the draft.** Start from the unit's declared `sources` — read them in
    full; they are the primary grounding. Then navigate the repo freely wherever a
    fact's origin lies (implementations, fixtures, sibling docs, the repo's existing
    documentation conventions, any `.dogen/context/` artifacts, and — if present —
-   a top-level `optional-guidance/` directory of house style, framework, or syntax guides):
-   the declared sources are starting points, not a boundary (v1). Consult
-   `optional-guidance/` when the best authoring approach is not obvious — it is where a team
-   encodes conventions a smaller model may not know; its absence is never a blocker
-   and it never overrides the unit's plan, sources, or steering. **When the plan outline names
-   an inventory** (e.g. a per-interface attribute table, one row per member), that
+   a top-level `optional-guidance/` directory of house style, framework, or syntax
+   guides): the declared sources are starting points, not a boundary (v1). Consult
+   `optional-guidance/` when the best authoring approach is not obvious — it is where a
+   team encodes conventions a smaller model may not know; its absence is never a
+   blocker and it never overrides the unit's plan, sources, or steering. **When the
+   plan outline names
+   an inventory** (e.g. a per-module attribute table, one row per member), that
    inventory is a **read contract**: locate and read the authoritative source for
    *every* member before authoring — a cross-reference to a sibling page is not a
    substitute for reading and materializing the inventory here (round 3: a leg that
-   never read the seven interface files punted them to a `:ref:` and lost the
-   coverage). Never assert what you have not read. Keep a running list of every file
-   you read — it becomes the context report.
-2. **Author** a Sphinx-publishable **reference** page per the format's authoring
-   standard and the stance contract in `references/provider-branch.md`. Facts you
-   cannot verify at their origin are left out of the prose and recorded as `gaps`
+   never read the seven per-module reference files punted them to a `:ref:` and
+   lost the coverage). Never assert what you have not read: ground every
+   behavioral claim with the three-check rule in `references/writing-standards.md`
+   (locate, confirm, corroborate) before it enters prose. Keep a running list of
+   every file you read — it becomes the context report.
+2. **Author** a Sphinx-publishable page in the unit's Diataxis direction — a
+   **reference** page under the stance contract in `references/provider-branch.md`,
+   or an **explanation** page under `references/explanation-stance.md` (the
+   reference stance contract does not apply) — per the format's authoring standard.
+   Facts you cannot verify at their origin are left out of the prose and recorded as `gaps`
    in the report — never hedged into the page as corpus-narration. A multi-file
    unit authors every page in its set; each page follows its own extension's
    format, and cross-page terminology and links stay consistent across the set.
@@ -150,11 +200,16 @@ for `.rst` — the per-format standard is in `references/provider-branch.md`).
    `## Outline / acceptance` items one by one against the authored page(s) —
    per page for a multi-file unit. Every coverage item is either present or
    recorded as a `gap` with the reason — never silently dropped. What you read
-   must convert: if you read an inventory (e.g. every interface's reference
+   must convert: if you read an inventory (e.g. every module's reference
    file), the page carries the inventory; reading without converting is the
-   worst validation failure mode. Also check every relative include/link path
-   resolves **from each page's committed location** (`docs/<target>` — mind the
-   directory depth).
+   worst validation failure mode. Then run the **bidirectional staleness scan**
+   from `references/writing-standards.md`: for a change that ADDS behaviour, the
+   inverse completeness audit (every code-confirmed new behaviour lands on the
+   page); for a change that ALTERS behaviour, the obsoleted-statement scan
+   (every statement the change invalidates is rewritten or deleted — never add
+   beside text the change contradicts). Also check every relative include/link
+   path resolves **from each page's committed location** (`docs/<target>` — mind
+   the directory depth).
 4. **Stance check:** grep the authored page(s) for the banned researcher register,
    for implementation identifiers (type/function names, `internal/` paths), and
    for runtime-mechanics narration (temp files, interpreter invocations,
@@ -184,6 +239,9 @@ for `.rst` — the per-format standard is in `references/provider-branch.md`).
    when every page's basename is unique — dogen maps it by basename and prints
    `note: handoff staged flat; mapped by basename`. When two pages share a
    basename it stays ambiguous: mirror the exact `handoff/<relpath>` tree above.
+   After each `Write`, re-read the staged file's tail — stray closing tags have
+   leaked into staged files — per the after-write mechanics in
+   `references/writing-standards.md`.
 6. `Write` the context report to `.dogen/staging/<UNIT_ID>/report.yaml` — every
    file read (commit-stamped via one `git rev-parse HEAD`; a stamp is a hex SHA
    or honestly empty — explanations go in an origin's `note` field), the tools
@@ -241,7 +299,9 @@ state plainly that the model is unknown.
 Report the recorded draft (provider, resulting progress state) from the `--json`
 output, and quote the CLI's `git: committed <sha7> — …` stderr line (the same
 hash arrives as `commit` in the JSON) — the transition commit is the audit
-anchor; never assert "the seam committed it" without the hash. If the output
+anchor; never assert "the seam committed it" without the hash. On a re-draft,
+state the steering reconciliation in the same summary: N entries — applied where
+/ declined why. If the output
 carries `stale_plan: true`, tell the TA plainly: the unit's plan changed after
 its signoff — the draft ran, but they should re-approve the plan (that is
 `dogen signoff --re-sign`, or folded into a future amendment via
@@ -295,6 +355,13 @@ record it under `gaps` in the report — a gap is provenance, not content.
 - On a re-draft, require the correction to be RECORDED (a fix/redraft verdict or
   a steer note newer than the last generation) before drafting; never apply
   corrections carried only in conversation.
+- On a re-draft, account for every recorded steering and fix note — applied
+  (name where) or declined (say why, with the TA's agreement); never silently
+  accept or silently drop one.
+- Write every touched page to its end-state per
+  `references/writing-standards.md`: rewrite the sentence that owns a changed
+  behaviour, delete what the change obsoletes, and diff the rewrite against the
+  prior text to account for everything dropped.
 - Check every plan outline/acceptance item off against the authored page
   (present, or a recorded gap with a reason) and verify relative include/link
   paths resolve from `docs/<sphinx_target>` before handing off.
@@ -340,6 +407,9 @@ record it under `gaps` in the report — a gap is provenance, not content.
   transition commit.
 - Never assert a fact you have not read at its origin; never narrate your evidence
   ("observed", "the fixtures show", "every observed use") in the drafted prose.
+- Never promote "exists in code" to "is supported", and never state a
+  must/only/cannot constraint without locating the enforcing validator — the
+  corroboration rules in `references/writing-standards.md`.
 - Never reproduce implementation bodies, private internals, or verbatim
   struct/function source in the drafted page — reference them by qualified name.
 </must_not>
@@ -362,6 +432,7 @@ inline:
 - Progress: <progress state>
 - Plan: <fresh | changed since signoff — re-approve if substantive>
 - Model: <recorded model (self-asserted / TA-corrected) | unknown — neither self nor TA could name it>
+- Steering (re-draft only): <N entries accounted — applied where / declined why>
 
 Next: /dogen-review — review the draft.
 ```
@@ -386,8 +457,12 @@ Next: /dogen-review — review the draft.
       implementation identifiers, and no runtime-mechanics narration.
 - [ ] Every plan outline/acceptance item was checked off against the page
       (present or a recorded gap); reading converted into coverage.
+- [ ] Every behavioral claim passed the three-check grounding rule (locate,
+      confirm, corroborate), and the staleness scan ran in the right direction
+      (inverse completeness for additions, obsoleted-statement for alterations).
 - [ ] On a re-draft, the recorded steering stream held the correction BEFORE the
-      pass ran (no `unsteered_redraft` flag).
+      pass ran (no `unsteered_redraft` flag), and every steering entry was
+      accounted for in the report (applied where / declined why).
 - [ ] Reason codes were surfaced in plain language; `signoff_required` routed back
       to dogen-plan; `stale_plan` was surfaced when present.
 - [ ] On success the TA was routed to dogen-review; the skill ran no git

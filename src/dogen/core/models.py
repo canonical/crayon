@@ -38,6 +38,7 @@ and ``Generation`` lifts plain-string ``context_origins`` into
 never writes, so a repo may hold mixed v1/v2 sidecars indefinitely.
 """
 
+import hashlib
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -59,6 +60,12 @@ SCHEMA_VERSION = 2
 #: Supported page extensions → format names (v1.2). The target extension IS
 #: the unit's format — a derived fact, never a stored field that could drift.
 PAGE_FORMATS: dict[str, str] = {".md": "myst", ".rst": "rst"}
+
+#: Byte cap on the inline evidence excerpt (v1.2, D-01). The verbatim-capture
+#: guarantee rides ``StepEvidence.output_sha256`` (the full captured bytes'
+#: digest); the excerpt is only a bounded, human-readable window so
+#: ``provenance.yaml`` stays loadable and no unbounded blob is ever inlined.
+EXCERPT_CAP_BYTES = 4096
 
 
 class Intent(StrEnum):
@@ -586,6 +593,227 @@ class ReviewerEdit(BaseModel):
     files: list[FileDigest] = Field(default_factory=list)
 
 
+class StepMode(StrEnum):
+    """How a recorded step was executed (v1.2, EVID-01).
+
+    ``agent`` — the host agent ran the step in-process; ``ta`` — a technical
+    author ran it out of band. dogen never executes a step itself (the passenger
+    pattern); this records *who* did.
+    """
+
+    agent = "agent"
+    ta = "ta"
+
+
+class StepVerdict(StrEnum):
+    """The four-token per-step verdict vocabulary (v1.2, EVID-04, D-05).
+
+    ``pass`` / ``fail`` / ``skipped`` / ``deviated`` are the stable *wire* values
+    — ``skipped`` and ``deviated`` are first-class, never notes or flags. The
+    member identifiers ``passed``/``failed`` differ from the wire values
+    ``pass``/``fail`` because the latter are Python reserved words; the wire
+    values are the D-05 vocabulary and the ``Dogen-Verdict`` commit-trailer
+    values Plan 02 emits. A ``pass``/``fail`` carries its proof mechanically
+    (exit code + captured output); ``skipped``/``deviated`` require a reason (D-06).
+    """
+
+    passed = "pass"
+    failed = "fail"
+    skipped = "skipped"
+    deviated = "deviated"
+
+
+class StepStatus(StrEnum):
+    """The derived per-step completion status (v1.2, EVID-03).
+
+    The result of :func:`derive_step_status`: ``resolved`` when a hash-matching
+    evidence record proves the step (per the D-07/D-08 resolution rules), else
+    ``unverified`` (no evidence, stale evidence, or a non-resolving verdict —
+    default-FAIL). It is derived on read, never stored, and is deliberately **not**
+    a fourth :class:`ProgressState` — verification surfaces here, never as a new
+    lifecycle state.
+    """
+
+    unverified = "unverified"
+    resolved = "resolved"
+
+
+class StepEvidence(BaseModel):
+    """The mechanical capture proving one step ran (``Step.evidence``, v1.2, EVID-01).
+
+    Honest framing (carried from research + STATE): this schema proves a
+    *well-shaped* capture exists — a real exit code, a bounded verbatim excerpt,
+    and the SHA-256 of the full captured bytes — it does **not** prove the capture
+    was not forged. dogen records and gates; it never executes the step and never
+    claims tamper-proofness. No free-text "result" field is accepted as proof.
+    SHA-256 here is content-addressing (integrity/dedup), not a security primitive.
+
+    Parameters
+    ----------
+    mode : StepMode
+        Who executed the step (``agent`` / ``ta``).
+    command : str
+        The command whose run this evidence captures.
+    output_sha256 : str
+        SHA-256 hex digest of the **full** captured output bytes — the
+        verbatim-capture guarantee (D-01); the excerpt is only a bounded window.
+    output_excerpt : str
+        A bounded verbatim excerpt of the captured output, truncated to
+        :data:`EXCERPT_CAP_BYTES` bytes on construction so ``provenance.yaml``
+        stays loadable (D-01). The full bytes are represented only by
+        ``output_sha256``, never an unbounded inline blob.
+    exit_code : int
+        The process exit code (``0`` == success).
+    verdict : StepVerdict
+        The four-token judgment (D-05).
+    reason : str
+        Required for ``skipped``/``deviated`` (enforced at the record-time
+        micro-gate, Plan 02); ``""`` for ``pass``/``fail`` (their proof is
+        mechanical, D-06). Omitted from serialization while empty.
+    step_text_sha256 : str
+        SHA-256 hex digest of the step text this evidence was captured against —
+        the staleness bind (D-02): once the step text is edited it no longer
+        matches, so the derivation rebinds the step to default-FAIL until it is
+        re-verified.
+    deterministic : bool
+        Whether the step's output is expected to be reproducible; ``False`` marks
+        a step whose output legitimately varies between runs (D-04) so a future
+        re-verification does not spuriously fail a hash compare.
+    at : str
+        ISO-8601 timestamp of the capture.
+    """
+
+    mode: StepMode
+    command: str
+    output_sha256: str
+    output_excerpt: str
+    exit_code: int
+    verdict: StepVerdict
+    reason: str = ""
+    step_text_sha256: str
+    deterministic: bool = True
+    at: str
+
+    @field_validator("output_excerpt", mode="after")
+    @classmethod
+    def _cap_excerpt(cls, value: str) -> str:
+        """Truncate the inline excerpt to :data:`EXCERPT_CAP_BYTES` bytes (D-01).
+
+        The cap is a byte bound over the UTF-8 encoding, so a multibyte character
+        straddling the boundary is dropped rather than split into invalid bytes.
+        The full-output guarantee is unaffected — it rides ``output_sha256``.
+
+        Parameters
+        ----------
+        value : str
+            The raw excerpt.
+
+        Returns
+        -------
+        str
+            The excerpt, truncated to at most :data:`EXCERPT_CAP_BYTES` UTF-8 bytes.
+        """
+        encoded = value.encode("utf-8")
+        if len(encoded) <= EXCERPT_CAP_BYTES:
+            return value
+        return encoded[:EXCERPT_CAP_BYTES].decode("utf-8", errors="ignore")
+
+    @model_serializer(mode="wrap")
+    def _omit_empty(self, handler: Any) -> dict[str, Any]:  # noqa: ANN401
+        """Drop ``reason`` when empty; keep every other field (surgical omit-empty).
+
+        Mirrors :meth:`Generation._omit_empty`: a blanket
+        ``exclude_none``/``exclude_defaults`` is avoided because it over-drops.
+        Only the ``pass``/``fail`` empty ``reason`` is removed so the serialized
+        mapping stays minimal (D-06).
+
+        Parameters
+        ----------
+        handler : Any
+            The default Pydantic serialization handler for this model.
+
+        Returns
+        -------
+        dict of str to Any
+            The serialized mapping with an empty ``reason`` removed.
+        """
+        data = handler(self)
+        if self.reason == "":
+            data.pop("reason", None)
+        return data
+
+
+class Step(BaseModel):
+    """One planned step in a unit's machine-owned step plan (v1.2).
+
+    Lives in ``Provenance.steps``.
+
+    Steps are provenance state — never written into the signed human ``unit.md``.
+    The plan is authored/replaced whole (D-12) and each step's completion is
+    *derived* from its evidence (:func:`derive_step_status`), never stored as a
+    flag or cached count. Identity for re-matching a step across a whole-plan
+    replace is the step-text hash (D-02), not ``id``.
+
+    Parameters
+    ----------
+    id : str
+        A stable, single-line short label — safe as a ``Dogen-Step`` commit-trailer
+        value (D-15) and a human handle that survives a whole-plan replace. It is
+        NOT the re-match key; the step-text hash is (D-02/D-12).
+    text : str
+        The step's instruction text; its SHA-256 is the evidence staleness bind.
+    assumptions : list of str
+        Preconditions the step assumes (D-03); persisted/round-tripped now,
+        populated in Phase 13. Omitted from serialization while empty.
+    invariants : list of str
+        Invariants the step must preserve (D-03); same lifecycle as ``assumptions``.
+    consumed : list of str
+        Free-text state the step consumes (D-04); feeds Phase 13 branching/resume.
+    produced : list of str
+        Free-text state the step produces (D-04).
+    deterministic : bool
+        Whether the step's output is expected to be reproducible (D-04).
+    evidence : StepEvidence or None
+        The mechanical capture proving the step ran; ``None`` until recorded
+        (default-FAIL until then). Omitted from serialization while ``None``.
+    """
+
+    id: str
+    text: str
+    assumptions: list[str] = Field(default_factory=list)
+    invariants: list[str] = Field(default_factory=list)
+    consumed: list[str] = Field(default_factory=list)
+    produced: list[str] = Field(default_factory=list)
+    deterministic: bool = True
+    evidence: StepEvidence | None = None
+
+    @model_serializer(mode="wrap")
+    def _omit_empty(self, handler: Any) -> dict[str, Any]:  # noqa: ANN401
+        """Drop the four empty list fields and a ``None`` ``evidence`` (surgical).
+
+        Mirrors :meth:`Generation._omit_empty`. Keeps step-plan mappings minimal
+        so a bare step (no assumptions/invariants/consumed/produced and no
+        recorded evidence) serializes to just ``id``/``text``/``deterministic``.
+
+        Parameters
+        ----------
+        handler : Any
+            The default Pydantic serialization handler for this model.
+
+        Returns
+        -------
+        dict of str to Any
+            The serialized mapping with the empty additive fields removed.
+        """
+        data = handler(self)
+        for name in ("assumptions", "invariants", "consumed", "produced"):
+            if not getattr(self, name):
+                data.pop(name, None)
+        if self.evidence is None:
+            data.pop("evidence", None)
+        return data
+
+
 def _lift_v0_steering(data: dict[str, Any]) -> dict[str, Any]:
     """v0→v1: lift a mapping-valued ``steering`` (the old gate act) to ``signoff``.
 
@@ -775,6 +1003,13 @@ class Provenance(BaseModel):
         One entry per draft pass.
     reviewer_edits : list of ReviewerEdit
         Post-generation human reviews; empty at scaffold time.
+    steps : list of Step
+        The unit's machine-owned step plan and its per-step evidence (v1.2,
+        additive, default ``[]``). Old records lack the key and load as ``[]``;
+        the field is omitted from serialization while empty so a step-free record
+        stays byte-identical to its pre-v1.2 shape with no ``SCHEMA_VERSION`` bump
+        (EVID-06 keystone). Completion is *derived* from this list
+        (:func:`all_steps_verified`), never stored.
     """
 
     schema_version: int = SCHEMA_VERSION
@@ -784,6 +1019,33 @@ class Provenance(BaseModel):
     steering: list[SteeringEntry] = Field(default_factory=list)
     generations: list[Generation] = Field(default_factory=list)
     reviewer_edits: list[ReviewerEdit] = Field(default_factory=list)
+    steps: list[Step] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def _omit_empty_steps(self, handler: Any) -> dict[str, Any]:  # noqa: ANN401
+        """Drop ``steps`` when empty so step-free records stay byte-identical.
+
+        The EVID-06 keystone: a v1.1 record and a v1.2 step-free record must
+        serialize identically. ``steps`` is the only additive v1.2 field on
+        :class:`Provenance`, so omitting it while empty keeps every pre-phase
+        record's on-disk bytes unchanged (no new key, no ``SCHEMA_VERSION`` bump).
+        A surgical wrap mirroring :meth:`Generation._omit_empty` — every other
+        field serializes exactly as before.
+
+        Parameters
+        ----------
+        handler : Any
+            The default Pydantic serialization handler for this model.
+
+        Returns
+        -------
+        dict of str to Any
+            The serialized mapping with an empty ``steps`` removed.
+        """
+        data = handler(self)
+        if not self.steps:
+            data.pop("steps", None)
+        return data
 
     @model_validator(mode="before")
     @classmethod
@@ -892,6 +1154,111 @@ def is_sealed(prov: Provenance) -> bool:
         if edit.verdict is not None:
             return edit.verdict is ReviewVerdict.accept
     return False
+
+
+def _sha256_text(text: str) -> str:
+    """Return the SHA-256 hex digest of ``text`` encoded as UTF-8 (D-02).
+
+    The single hashing discipline for the step-text staleness bind: it is
+    content-addressing (integrity / staleness detection), **never** a security
+    primitive — a match proves an evidence record is bound to this exact step
+    text, never that the capture was not forged. Pure and zero-I/O: it hashes an
+    in-memory string, never a file on disk.
+
+    Parameters
+    ----------
+    text : str
+        The step text to hash.
+
+    Returns
+    -------
+    str
+        The lowercase hex SHA-256 digest of the UTF-8 bytes of ``text``.
+    """
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def derive_step_status(step: Step) -> StepStatus:
+    """Derive one step's completion status from its evidence alone (EVID-03, D-02).
+
+    A pure, zero-I/O sibling of :func:`derive_progress`/:func:`is_sealed`: it reads
+    only the in-memory :class:`Step` — no ``Path``, no ``os.stat``, no git, and no
+    re-hashing of files on disk. A step resolves only when a hash-matching evidence
+    record proves it; otherwise it is default-FAIL (``unverified``).
+
+    The rule:
+
+    * ``evidence is None``                                    ⇒ ``unverified``
+    * ``evidence.step_text_sha256`` ≠ hash of ``step.text``   ⇒ ``unverified``
+      (staleness, D-02 — an edited step rebinds to default-FAIL until re-verified)
+    * verdict ``pass`` with a non-empty ``output_sha256``      ⇒ ``resolved``
+    * verdict ``skipped`` with a non-empty ``reason``         ⇒ ``resolved`` (D-07)
+    * verdict ``deviated`` with ``exit_code == 0`` and a
+      non-empty ``output_sha256``                             ⇒ ``resolved`` (D-08)
+    * verdict ``fail`` and every other case                  ⇒ ``unverified``
+      (D-07 — ``fail`` never resolves; a reasonless skip or a non-zero-exit
+      deviation does not resolve)
+
+    WR-02 (read-side default-FAIL): the two proof-bearing verdicts
+    (``pass``/``deviated``) re-assert the mechanical shape here rather than
+    trusting the verdict token — a record carrying ``verdict: pass`` with an
+    empty ``output_sha256`` (reachable via a hand-edited or externally-produced
+    ``provenance.yaml``, an on-disk audit surface) derives ``unverified``. The
+    write-time micro-gate closes the CLI path; the derivation is now
+    self-sufficiently default-FAIL so it never resolves an *absent* capture.
+
+    Honest framing: a hash match proves a *well-shaped* capture is bound to this
+    exact step text — never that the capture was not forged.
+
+    Parameters
+    ----------
+    step : Step
+        The in-memory step and its optional evidence.
+
+    Returns
+    -------
+    StepStatus
+        ``resolved`` when the step's evidence resolves it, else ``unverified``.
+    """
+    evidence = step.evidence
+    if evidence is None:
+        return StepStatus.unverified
+    if evidence.step_text_sha256 != _sha256_text(step.text):
+        return StepStatus.unverified
+    if evidence.verdict is StepVerdict.passed:
+        # WR-02: fail closed on an absent capture — a pass without its output
+        # hash carries no mechanical proof and must not resolve.
+        return StepStatus.resolved if evidence.output_sha256 else StepStatus.unverified
+    if evidence.verdict is StepVerdict.skipped and evidence.reason:
+        return StepStatus.resolved
+    if evidence.verdict is StepVerdict.deviated and evidence.exit_code == 0:
+        # WR-02: same fail-closed re-assertion for the other proof-bearing verdict.
+        return StepStatus.resolved if evidence.output_sha256 else StepStatus.unverified
+    return StepStatus.unverified
+
+
+def all_steps_verified(prov: Provenance) -> bool:
+    """Derive whether every planned step resolves (EVID-03, EVID-06 keystone).
+
+    The pure boolean the Plan 02 macro-gate keys on: ``True`` iff every step in
+    ``prov.steps`` derives :attr:`StepStatus.resolved`. It is **vacuously True for
+    an empty step plan** — a step-free unit is never blocked by the evidence gate,
+    which is exactly what keeps step-free units byte-identical in behavior
+    (EVID-06). Like its siblings it is record-only: no ``Path``, no ``os.stat``,
+    no git, and it is never surfaced as a fourth :class:`ProgressState` or stored
+    as a flag/cached count.
+
+    Parameters
+    ----------
+    prov : Provenance
+        The already-validated, in-memory provenance record.
+
+    Returns
+    -------
+    bool
+        ``True`` iff every present step resolves (and vacuously for an empty list).
+    """
+    return all(derive_step_status(s) is StepStatus.resolved for s in prov.steps)
 
 
 def _latest_accept_edit(prov: Provenance) -> ReviewerEdit | None:

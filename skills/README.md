@@ -33,17 +33,35 @@ dogen-plan -> dogen-write -> dogen-review
 - **dogen-plan** — grounds itself in the repo's prior art (`.dogen/context/`
   artifacts — doc-style, glossary, structure, code-to-docs map, doc-gaps — and
   existing docs conventions), runs the Socratic intake, declares the
-  unit, and ends with the gate act. Maps to `dogen unit new … --notes …` (+
+  unit, and ends with the gate act. Also serves advise-only triage asks ("does
+  this need docs?") with a grounded Triage Recommendation, declaring nothing
+  until the TA says go. Maps to `dogen unit new … --notes …` (+
   `dogen unit edit` for amendments — never a clobber) then `dogen signoff`.
   Write/Edit-free.
 - **dogen-write** — drafts the page in the unit's format (MyST or rST — the
   target extension decides, v1.2). Branches on `dogen draft --resolve-only`
   (driver vs passenger). The passenger starts from the declared sources, navigates
-  the repo freely, and records **everything it read** in a context report. The
-  **sole** skill that may carry `Write`, for exactly two staging files:
+  the repo freely, and records **everything it read** in a context report. It is
+  one of the **two draft-stage skills** (with dogen-record) that may carry
+  `Write`, for exactly two staging files:
   `.dogen/staging/<id>/handoff.<ext>` and `.dogen/staging/<id>/report.yaml`.
+  dogen-write is the draft-stage skill for **reference and explanation** units;
+  dogen-record is its actionable-unit counterpart.
+- **dogen-record** — the draft-stage skill for **actionable** (tutorial / how-to)
+  units: it walks the procedure step by step, recording evidence under the
+  Phase-12 `record` gate (`dogen record plan|step|show`), then authors and stages
+  the page exactly as dogen-write's passenger does
+  (`dogen draft --draft-file/--draft-dir --report`). The second draft-stage skill
+  that may carry `Write` (staging-only) — the alternative to dogen-write, not a
+  replacement. **Entry:** dogen-record needs a declared + signed-off unit, the
+  same precondition as dogen-write; dogen-plan routes an actionable (tutorial /
+  how-to) unit into dogen-record by its declared Diátaxis direction, emitting the
+  `record` `next_id` at signoff (the Phase-14 type-routing wiring is in place —
+  no longer a direct-entry interim) (D-03).
 - **dogen-review** — presents a provenance summary (and, in review mode, grounded
-  four-dimension findings), records the structured verdict via
+  five-dimension findings — writing-approach always on, opened by a
+  deterministic read-only pre-pass, numbered `F-N` with a recommended verdict
+  derived from the tally), records the structured verdict via
   `dogen review --verdict accept|fix|redraft --note` (or `--note-file -` to read a
   quote-heavy / multi-line note from stdin — exactly one of `--note`/`--note-file`),
   and stops. `accept` seals the
@@ -55,6 +73,11 @@ dogen-plan -> dogen-write -> dogen-review
 Routing rules:
 
 - dogen-plan hands off to dogen-write once the unit is declared and signed off.
+- dogen-record is the draft-stage alternative for **actionable** units: from the
+  same declared + signed-off precondition it walks the procedure, records the
+  draft, and hands off to dogen-review. dogen-plan routes actionable units into it
+  by their declared Diátaxis direction (the Phase-14 type-routing wiring is in
+  place), emitting the matching `next_id` at signoff.
 - dogen-write hands off to dogen-review once a draft is recorded.
 - dogen-review routes fix/redraft verdicts back to dogen-write (the note is already
   in the steering stream; it never edits the draft itself — the reviewer owns the
@@ -64,15 +87,16 @@ Routing rules:
 
 ## SKILL.md skeleton
 
-Sections appear in exactly this order (lifted from the authoritative angie/ng
-family shape, adapted to three skills):
+Sections appear in exactly this order (lifted from a proven production
+docs-skill family shape, adapted to three skills):
 
 1. **YAML frontmatter** — `name` (MUST equal the directory name),
    `description` (a single line; capability first, then a trigger sentence
    starting "Use when …"; **no `<`/`>` angle brackets** — they are a spec
    injection surface), and `allowed-tools` (an explicit comma list). `Write` and
-   `Edit` are **excluded** from the delegating skills (dogen-plan, dogen-review);
-   only dogen-write may list `Write`.
+   `Edit` are **excluded** from the delegating skills (dogen-plan and dogen-review
+   — all but the two draft-stage writers); only dogen-write and dogen-record may
+   list `Write`.
 2. `<objective>` — what the skill does and its non-negotiable philosophy.
 3. `<quick_start>` — numbered entry point; BLOCKING input-collection lists live here.
 4. `<pipeline>` — the shared flow line above plus this skill's consumes/produces
@@ -81,18 +105,21 @@ family shape, adapted to three skills):
 6. `<examples>` and/or `<edge_cases>` — optional.
 7. `<constraints>` — `<must>` and `<must_not>` bullet lists. Phase-decision
    citations (D-NN) are preserved byte-identical across edits.
-8. `<output_specification>` — skills that emit a structured artifact keep the
-   skeleton here; skills with no structured artifact **omit this section**
-   (dogen-plan omits it — its artifact is the CLI-persisted unit).
+8. `<output_specification>` — every skill keeps the close-border skeleton here:
+   the `git: committed <sha7>` relay line(s) and the frozen referral (SK-05).
+   The recorded artifact may itself be CLI-persisted (dogen-plan's is the unit
+   and its signoff act), but the close block is mandatory in all three skills.
 9. `<success_criteria>` — measurable `- [ ]` checklist.
 10. `<self_healing>` — the canonical block below, byte-identical in every skill.
 
 **File-shape invariants** (enforced by `scripts/skill_lint.py`, D-18):
 
 - Frontmatter `name:` equals the directory name for every skill.
-- `dogen-plan` and `dogen-review` `allowed-tools` **exclude** `Write` and `Edit` —
-  the delegation to the CLI (and, for review, back to dogen-write) is enforced at
-  the tool surface, a provable invariant in code, not authoring discipline.
+- `dogen-plan` and `dogen-review` `allowed-tools` **exclude** `Write` and `Edit`
+  (only the two draft-stage writers, dogen-write and dogen-record, may list
+  `Write`) — the delegation to the CLI (and, for review, back to dogen-write) is
+  enforced at the tool surface, a provable invariant in code, not authoring
+  discipline.
 - `description:` is present, non-empty, and carries no angle brackets.
 
 ## references/ files
@@ -104,8 +131,9 @@ Load this file at workflow step N (Name).
 ```
 
 and the corresponding `SKILL.md` step says `Load references/<file> now.` References
-hold relocated detail (intake checklists, reason-code→branch maps, the authoring
-standard and stance contract, provenance field maps); the `SKILL.md` keeps the
+hold relocated detail (intake checklists and the Socratic technique,
+reason-code→branch maps, the authoring standard, writing standards, and stance
+contract, provenance field maps, the review rubric); the `SKILL.md` keeps the
 decision logic. Keep each reference small and self-labeled — Copilot eager-loads
 references, Claude lazy-loads them.
 
@@ -249,11 +277,29 @@ a bounded fix never reads as a from-scratch re-draft:
 | `draft` (after a `fix` verdict) | `Next: /dogen-write — apply the recorded fix.` |
 | `draft` (after a `redraft` verdict) | `Next: /dogen-write — re-draft against the recorded steering.` |
 | `draft` (first draft, freshly signed off) | `Next: /dogen-write — draft the unit.` |
+| `record` (after a `fix` verdict) | `Next: /dogen-record — apply the recorded fix and re-record the draft.` |
+| `record` (after a `redraft` verdict) | `Next: /dogen-record — re-walk the procedure and record a fresh draft.` |
+| `record` (first draft, freshly signed off) | `Next: /dogen-record — walk the procedure and record the draft.` |
 | `review` | `Next: /dogen-review — review the draft.` |
 | `sign_off` | `Next: /dogen-plan — approve the plan (signoff) so drafting can start.` |
-| `re_sign` | `Next: the plan changed since signoff — re-approve it (I can fold that into the amendment with \`dogen unit edit … --re-sign\`), then /dogen-write.` |
+| `re_sign` (reference) | `Next: the plan changed since signoff — re-approve it (I can fold that into the amendment with \`dogen unit edit … --re-sign\`), then /dogen-write.` |
+| `re_sign` (actionable) | `Next: the plan changed since signoff — re-approve it (I can fold that into the amendment with \`dogen unit edit … --re-sign\`), then /dogen-record.` |
 | `publish` | `Next: accepted — the publishing commit is yours.` |
 | `done` | `Next: nothing pending for this unit.` |
+
+The draft-stage fork now has two entries — one per draft-stage writer. For a
+**reference** or **explanation** unit the draft-stage referral stays
+`Next: /dogen-write — draft the unit.`; for an **actionable** (tutorial / how-to)
+unit it is
+`Next: /dogen-record — walk the procedure and record the draft.` (same frozen
+grammar, the slash form and a definite imperative). A `fix` or `redraft` verdict
+splits on the same token: an actionable unit routes to
+`Next: /dogen-record — apply the recorded fix and re-record the draft.` (fix) or
+`Next: /dogen-record — re-walk the procedure and record a fresh draft.` (redraft),
+mirroring the reference `/dogen-write` fix/redraft lines. dogen-plan now routes by
+the declared Diátaxis direction and emits the matching `next_id` at signoff (the
+Phase-14 type-routing wiring is in place), so an actionable unit reaches
+dogen-record through the routed token — not a direct hand-entry (D-02, D-03).
 
 The raw `next` string stays available for audits; quoting it is fine when the TA
 explicitly asks what the CLI said. Reason codes and progress states remain
@@ -268,6 +314,9 @@ the TA type a value the skill can derive (round 2's copilot leg is the proven
 shape; asking a question whose answer the skill has already argued for is the
 anti-pattern — propose it as the default instead). When only one option is
 defensible, state it and the reason, and proceed unless the TA objects.
+dogen-review's recommended verdict is this rule applied to its findings tally:
+any must-fix → fix (redraft when the must-fixes are pervasive); should-fix
+only → genuinely the TA's call; clean → accept.
 
 The **unit id** is the one exception — its authority runs the other way:
 A TA- or brief-supplied unit id is used verbatim; propose an id only when none is supplied.
@@ -326,12 +375,13 @@ symlink the skills; the install flow is the supported path.
 
 Skills are conversational LLM prompts with no `--apply`/`--json`/`--language`
 flags, and they never build, publish, push, or run git state-changing commands
-(the CLI's commit seam owns the transition commits). The one narrow write
-carve-out in the family is dogen-write's passenger branch, which writes the
-authored page handoff and its context report under `.dogen/staging/<id>/` before
-calling `dogen draft --draft-file --report` — announced in the conversation, left
-in place for inspection. Every other persistence goes through the CLI verbs, which
-own the provable gate.
+(the CLI's commit seam owns the transition commits). The narrow write carve-out
+in the family belongs to the **two draft-stage skills** — dogen-write's passenger
+branch and dogen-record's walk — each of which writes the authored page handoff
+and its context report under `.dogen/staging/<id>/` before calling
+`dogen draft --draft-file/--draft-dir --report` — announced in the conversation,
+left in place for inspection. Every other persistence goes through the CLI verbs,
+which own the provable gate.
 
 ## Canonical self_healing block
 

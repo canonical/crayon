@@ -9,11 +9,13 @@ pytest, the pre-commit hook, and CI (the real-tree hook wiring lands in Plan
 04-04, after Plan 04-03 authors the skills).
 
 Per skill it asserts: frontmatter ``name`` equals the directory name and matches
-the agentskills.io slug rules; ``description`` is present and non-empty; and,
-for the write-free set :data:`WRITE_FREE`, that ``Write``/``Edit`` are absent
-from ``allowed-tools``. The tool list is tokenized delimiter-agnostically (commas
-AND whitespace) so a comma-authored list is not read as one opaque token on a
-space-delimiter harness (Pitfall 1).
+the agentskills.io slug rules; ``description`` is present and non-empty; and a
+**fail-closed** write-isolation invariant — any skill whose directory name is NOT
+in the :data:`WRITERS` allowlist must have ``Write``/``Edit`` absent from
+``allowed-tools`` (so a future skill is write-free by default and must be
+deliberately allowlisted, D-02). The tool list is tokenized delimiter-agnostically
+(commas AND whitespace) so a comma-authored list is not read as one opaque token
+on a space-delimiter harness (Pitfall 1).
 """
 
 import re
@@ -23,7 +25,7 @@ from pathlib import Path
 from dogen.adapters.planning_fs import split_front_matter
 
 SKILLS_ROOT = Path(__file__).resolve().parents[1] / "skills"
-WRITE_FREE = {"dogen-plan", "dogen-review"}
+WRITERS = {"dogen-write", "dogen-record"}
 _WRITE_TOOLS = {"Write", "Edit"}
 _NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _DELIM_RE = re.compile(r"[,\s]+")
@@ -86,7 +88,7 @@ def check_skill(skill_dir: Path) -> list[str]:
     elif len(description) > _MAX_DESC:
         errs.append(f"{skill_dir.name}: description exceeds {_MAX_DESC} chars")
 
-    if skill_dir.name in WRITE_FREE and (_tools(frontmatter) & _WRITE_TOOLS):
+    if skill_dir.name not in WRITERS and (_tools(frontmatter) & _WRITE_TOOLS):
         errs.append(f"{skill_dir.name}: Write/Edit must be absent (write-free skill)")
     return errs
 

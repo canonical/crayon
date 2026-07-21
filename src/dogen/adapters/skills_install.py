@@ -36,7 +36,14 @@ HARNESS_ROOTS: dict[str, str] = {
 MANIFEST_RELPATH = ".dogen/skills-install.yaml"
 
 #: The canonical entries staged into a harness root (skill dirs + family docs).
-_FAMILY_ENTRIES = ("dogen-plan", "dogen-write", "dogen-review", "README.md", "LICENSE")
+_FAMILY_ENTRIES = (
+    "dogen-plan",
+    "dogen-write",
+    "dogen-review",
+    "dogen-record",
+    "README.md",
+    "LICENSE",
+)
 
 
 class SkillsInstallError(RuntimeError):

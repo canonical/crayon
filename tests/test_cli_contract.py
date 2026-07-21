@@ -20,12 +20,14 @@ import pytest
 from typer.testing import CliRunner
 
 from dogen.adapters.planning_fs import FilesystemPlanningStore, TargetClaimedError
+from dogen.cli import main as cli
 from dogen.cli.main import app
 from dogen.core.models import (
     Intent,
     ProgressState,
     Provenance,
     Signoff,
+    Step,
 )
 
 runner = CliRunner()
@@ -509,6 +511,174 @@ def test_signoff_force_removal_leaves_other_verbs_force_intact(repo):
     )
     result = runner.invoke(app, ["unit", "rm", "u", "--force", "--json"])
     assert result.exit_code == 0, result.output
+
+
+# --------------------------------------------------------------------------- #
+# Phase 12 Plan 03 (EVID-01/D-11): the `record` group + the two stable evidence
+# reason codes on the machine seam. `record plan`/`record step`/`record show`
+# make Plan 02's use-cases operable; the micro-gate surfaces `evidence_required`
+# and the macro-gate `evidence_incomplete`, both at exit code 1 (domain refusal).
+# --------------------------------------------------------------------------- #
+
+
+def _seed_signed_with_step(
+    store: FilesystemPlanningStore,
+    root: Path,
+    *,
+    step_id: str = "s1",
+    text: str = "run the check",
+) -> None:
+    """Seed a signed unit ``u`` with one planned (evidence-free) step on disk."""
+    store.write_provenance(
+        Provenance(
+            unit_id="u",
+            signoff=Signoff(
+                author="Ada",
+                at="2026-01-01T00:00:00Z",
+                intent=Intent.reference,
+                audience="devs",
+            ),
+            steps=[Step(id=step_id, text=text)],
+        ),
+        root=root,
+    )
+
+
+def test_record_help_lists_plan_step_show():
+    # EVID-01: the record group exposes exactly the three machine-seam verbs.
+    result = runner.invoke(app, ["record", "--help"])
+    assert result.exit_code == 0, result.output
+    for verb in ("plan", "step", "show"):
+        assert verb in result.output
+
+
+def test_evidence_reason_codes_added_existing_unchanged():
+    # D-11: the two evidence reasons are appended with their stable wire values;
+    # an existing reason string is never renamed (append-only vocabulary).
+    assert cli._REASON_EVIDENCE_REQUIRED == "evidence_required"
+    assert cli._REASON_EVIDENCE_INCOMPLETE == "evidence_incomplete"
+    assert cli._REASON_SIGNOFF_REQUIRED == "signoff_required"
+
+
+def test_record_step_done_without_proof_exits_evidence_required(repo):
+    # D-11 micro-gate: a `pass` verdict with no captured-output hash / exit code
+    # is refused — exit 1, reason="evidence_required" (skills branch on the code).
+    store = _declare_unit(repo)
+    _seed_signed_with_step(store, repo)
+    ev = repo / "ev.yaml"
+    ev.write_text("verdict: pass\ncommand: pytest\n", encoding="utf-8")
+
+    result = runner.invoke(
+        app, ["record", "step", "u", "s1", "--evidence-file", str(ev), "--json"]
+    )
+    assert result.exit_code == 1, result.output
+    assert _payload(result)["reason"] == "evidence_required"
+    # Zero side effects: the step kept no evidence.
+    assert store.read_provenance("u", root=repo).steps[0].evidence is None
+
+
+def test_record_step_wellshaped_pass_records_and_resolves(repo):
+    # A well-shaped pass records the evidence and reports the derived status.
+    store = _declare_unit(repo)
+    _seed_signed_with_step(store, repo)
+    ev = repo / "ev.yaml"
+    ev.write_text(
+        "verdict: pass\ncommand: pytest\n"
+        f"output_sha256: {'a' * 64}\nexit_code: 0\noutput_excerpt: '1 passed'\n",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app, ["record", "step", "u", "s1", "--evidence-file", str(ev), "--json"]
+    )
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["reason"] is None
+    assert payload["status"] == "resolved"
+    assert store.read_provenance("u", root=repo).steps[0].evidence is not None
+
+
+def test_record_step_stdin_evidence_parity(repo):
+    # '-' reads the evidence payload from stdin (compose-root stdin parity).
+    store = _declare_unit(repo)
+    _seed_signed_with_step(store, repo)
+    payload_text = (
+        f"verdict: pass\ncommand: pytest\noutput_sha256: {'b' * 64}\nexit_code: 0\n"
+    )
+    result = runner.invoke(
+        app,
+        ["record", "step", "u", "s1", "--evidence-file", "-", "--json"],
+        input=payload_text,
+    )
+    assert result.exit_code == 0, result.output
+    assert store.read_provenance("u", root=repo).steps[0].evidence is not None
+
+
+def test_record_step_unknown_step_exits_bad_input(repo):
+    # An unknown step_id is bad input (the compose root validates well-shapedness;
+    # the core raises ValueError) — exit 2, never an uncaught traceback.
+    store = _declare_unit(repo)
+    _seed_signed_with_step(store, repo)
+    ev = repo / "ev.yaml"
+    ev.write_text(
+        f"verdict: pass\ncommand: pytest\noutput_sha256: {'c' * 64}\nexit_code: 0\n",
+        encoding="utf-8",
+    )
+    result = runner.invoke(
+        app, ["record", "step", "u", "ghost", "--evidence-file", str(ev), "--json"]
+    )
+    assert result.exit_code == 2, result.output
+    assert _payload(result)["reason"] == "unknown_step"
+
+
+def test_record_step_boolean_exit_code_refused_at_boundary(repo):
+    # WR-03: `bool` is a subclass of `int`, so `exit_code: false` used to pass
+    # the isinstance(exit_code, int) check and become 0 — combined with the
+    # deviated `exit_code == 0` rule (`False == 0`), a boolean could resolve a
+    # step. A boolean exit code is malformed input and must be refused at the
+    # compose boundary (bad_evidence_file, exit 2) with zero side effects.
+    store = _declare_unit(repo)
+    _seed_signed_with_step(store, repo)
+    ev = repo / "ev.yaml"
+    ev.write_text(
+        f"verdict: deviated\ncommand: pytest\noutput_sha256: {'d' * 64}\n"
+        "exit_code: false\nreason: diverged\n",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app, ["record", "step", "u", "s1", "--evidence-file", str(ev), "--json"]
+    )
+    assert result.exit_code == 2, result.output
+    assert _payload(result)["reason"] == "bad_evidence_file"
+    # Zero side effects: no evidence was bound to the step.
+    assert store.read_provenance("u", root=repo).steps[0].evidence is None
+
+
+def test_draft_over_unresolved_step_exits_evidence_incomplete(repo):
+    # D-11 macro-gate: drafting over an unresolved planned step is a domain
+    # refusal — exit 1, reason="evidence_incomplete", and no draft is written.
+    store = _declare_unit(repo)
+    _seed_signed_with_step(store, repo)  # planned, no evidence -> unresolved
+
+    result = runner.invoke(app, ["draft", "u", "--provider", "mock", "--json"])
+    assert result.exit_code == 1, result.output
+    assert _payload(result)["reason"] == "evidence_incomplete"
+    assert not (repo / "docs" / "u.md").exists()
+
+
+def test_record_show_reflects_recorded_plan_and_status(repo):
+    # `record show` prints the recorded plan + per-step derived status (--json).
+    store = _declare_unit(repo)
+    _seed_signed_with_step(store, repo)
+
+    result = runner.invoke(app, ["record", "show", "u", "--json"])
+    assert result.exit_code == 0, result.output
+    payload = _payload(result)
+    assert payload["unit"] == "u"
+    assert payload["all_steps_verified"] is False
+    assert payload["steps"][0]["id"] == "s1"
+    assert payload["steps"][0]["status"] == "unverified"
 
 
 def test_cli_module_imports_no_sdk():

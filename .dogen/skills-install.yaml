@@ -1,0 +1,11 @@
+installs:
+- harness: claude
+  path: .claude/skills
+  sha256: 30e52748f0e7f515805f18694a788985ed79cf6ad49a5f59008f27f6360582b0
+  at: '2026-07-21T10:52:56.857745+00:00'
+  dogen_version: 0.0.0
+- harness: copilot
+  path: .github/skills
+  sha256: 30e52748f0e7f515805f18694a788985ed79cf6ad49a5f59008f27f6360582b0
+  at: '2026-07-21T10:52:56.857745+00:00'
+  dogen_version: 0.0.0

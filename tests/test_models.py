@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from dogen.core.models import (
+    EXCERPT_CAP_BYTES,
     SCHEMA_VERSION,
     Effort,
     FileDigest,
@@ -17,6 +18,11 @@ from dogen.core.models import (
     ReviewerEdit,
     Signoff,
     SourceRef,
+    Step,
+    StepEvidence,
+    StepMode,
+    StepStatus,
+    StepVerdict,
     Unit,
 )
 
@@ -361,3 +367,136 @@ def test_reviewer_edit_files_digest_shape() -> None:
         }
     )
     assert [(f.path, f.sha256) for f in edit.files] == [("docs/a.md", "ab12")]
+
+
+# --- Phase 12: additive evidence schema (Step / StepEvidence / Provenance.steps) ---
+
+
+def _step_evidence(**overrides: object) -> StepEvidence:
+    """Construct a minimal valid :class:`StepEvidence`."""
+    fields: dict = {
+        "mode": StepMode.agent,
+        "command": "uv run pytest -q",
+        "output_sha256": "abc123",
+        "output_excerpt": "1 passed",
+        "exit_code": 0,
+        "verdict": StepVerdict.passed,
+        "step_text_sha256": "def456",
+        "at": "2026-07-17T00:00:00Z",
+    }
+    fields.update(overrides)
+    return StepEvidence(**fields)
+
+
+def test_step_verdict_is_exactly_the_four_token_wire_vocabulary() -> None:
+    # D-05: pass / fail / skipped / deviated are the stable wire values.
+    assert {m.value for m in StepVerdict} == {"pass", "fail", "skipped", "deviated"}
+    # Member identifiers differ from wire values for the reserved words.
+    assert StepVerdict.passed.value == "pass"
+    assert StepVerdict.failed.value == "fail"
+    assert StepVerdict.skipped.value == "skipped"
+    assert StepVerdict.deviated.value == "deviated"
+
+
+def test_step_mode_is_exactly_agent_and_ta() -> None:
+    # EVID-01 execution mode: agent vs ta.
+    assert {m.value for m in StepMode} == {"agent", "ta"}
+
+
+def test_step_status_is_exactly_unverified_and_resolved() -> None:
+    assert {m.value for m in StepStatus} == {"unverified", "resolved"}
+
+
+def test_step_evidence_round_trips_losslessly() -> None:
+    ev = _step_evidence(reason="skipped: not applicable", verdict=StepVerdict.skipped)
+    dump = ev.model_dump()
+    again = StepEvidence.model_validate(dump)
+    assert again.model_dump() == dump
+    assert again.verdict is StepVerdict.skipped
+    assert again.reason == "skipped: not applicable"
+    assert again.mode is StepMode.agent
+    assert again.exit_code == 0
+
+
+def test_step_evidence_omits_empty_reason_on_dump() -> None:
+    # Surgical omit-empty: a pass/fail carries proof mechanically, reason "" drops.
+    ev = _step_evidence()
+    dump = ev.model_dump()
+    assert "reason" not in dump
+    # A verdict round-trips its wire value through model_validate.
+    reloaded = StepEvidence.model_validate(ev.model_dump(mode="json"))
+    assert reloaded.verdict is StepVerdict.passed
+
+
+def test_step_evidence_verdict_wire_value_round_trips() -> None:
+    ev = _step_evidence(verdict=StepVerdict.deviated)
+    dump = ev.model_dump(mode="json")
+    assert dump["verdict"] == "deviated"
+    assert StepEvidence.model_validate(dump).verdict is StepVerdict.deviated
+
+
+def test_step_evidence_excerpt_capped_at_excerpt_cap_bytes() -> None:
+    # D-01: the excerpt is bounded; the full-output guarantee rides output_sha256.
+    big = "x" * (EXCERPT_CAP_BYTES + 5000)
+    ev = _step_evidence(output_excerpt=big, output_sha256="full-bytes-hash")
+    assert len(ev.output_excerpt.encode("utf-8")) <= EXCERPT_CAP_BYTES
+    assert ev.output_sha256 == "full-bytes-hash"
+
+
+def test_step_omits_empty_list_fields_and_none_evidence() -> None:
+    step = Step(id="s1", text="run the tests")
+    dump = step.model_dump()
+    for key in ("assumptions", "invariants", "consumed", "produced", "evidence"):
+        assert key not in dump
+    assert Step.model_validate(dump).text == "run the tests"
+
+
+def test_step_round_trips_with_lists_and_evidence() -> None:
+    step = Step(
+        id="s1",
+        text="run the tests",
+        assumptions=["repo is clean"],
+        invariants=["no network"],
+        consumed=["src/"],
+        produced=["report.xml"],
+        evidence=_step_evidence(),
+    )
+    dump = step.model_dump()
+    again = Step.model_validate(dump)
+    assert again.model_dump() == dump
+    assert again.assumptions == ["repo is clean"]
+    assert again.invariants == ["no network"]
+    assert again.consumed == ["src/"]
+    assert again.produced == ["report.xml"]
+    assert again.evidence is not None
+    assert again.evidence.verdict is StepVerdict.passed
+
+
+def test_provenance_steps_default_empty_and_no_version_bump() -> None:
+    prov = Provenance(unit_id="cli-usage")
+    assert prov.steps == []
+    assert prov.schema_version == SCHEMA_VERSION == 2
+    # EVID-06 keystone: a step-free record is byte-identical (no steps key emitted).
+    dump = prov.model_dump(mode="json")
+    assert "steps" not in dump
+    assert dump["schema_version"] == 2
+
+
+def test_provenance_legacy_mapping_without_steps_yields_empty_no_migration() -> None:
+    # The _migrate already-current no-op path is preserved: schema_version 2 skips
+    # the v1->v2 lift, and a missing steps key defaults to [].
+    raw = {"schema_version": SCHEMA_VERSION, "unit_id": "cli-usage"}
+    prov = Provenance.model_validate(raw)
+    assert prov.steps == []
+    assert prov.schema_version == 2
+
+
+def test_provenance_with_steps_round_trips() -> None:
+    step = Step(id="s1", text="run", evidence=_step_evidence())
+    prov = Provenance(unit_id="u", steps=[step])
+    dump = prov.model_dump(mode="json")
+    assert "steps" in dump
+    again = Provenance.model_validate(dump)
+    assert len(again.steps) == 1
+    assert again.steps[0].text == "run"
+    assert again.steps[0].evidence is not None

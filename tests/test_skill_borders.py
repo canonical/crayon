@@ -1,4 +1,4 @@
-"""RED-first: SK-05 border normalization across the three dogen skills.
+"""RED-first: SK-05 border normalization across the four dogen skills.
 
 Round-3 finding H was border drift: dogen-plan carried no ``<output_specification>``
 at all, and the open/close shapes each leg improvised diverged (bare vs backticked
@@ -11,8 +11,9 @@ to ONE shared border shape:
   relay line(s) and the frozen ``Next: /dogen-<skill> — <imperative>.`` referral.
 
 dogen-write's ``<objective>`` open and ``<output_specification>`` close are the
-canonical shape the other two are normalized TO. This guard pins the shared shape
-so it cannot silently re-drift (round 3 proved re-wording drifts).
+canonical shape the other three are normalized TO. This guard pins the shared shape
+so it cannot silently re-drift (round 3 proved re-wording drifts); dogen-record
+(the fourth family skill) is guarded here alongside plan/write/review.
 """
 
 from pathlib import Path
@@ -22,7 +23,8 @@ _SKILLS = _REPO_ROOT / "skills"
 _PLAN = _SKILLS / "dogen-plan" / "SKILL.md"
 _WRITE = _SKILLS / "dogen-write" / "SKILL.md"
 _REVIEW = _SKILLS / "dogen-review" / "SKILL.md"
-_ALL_THREE = (_PLAN, _WRITE, _REVIEW)
+_RECORD = _SKILLS / "dogen-record" / "SKILL.md"
+_ALL_FOUR = (_PLAN, _WRITE, _REVIEW, _RECORD)
 
 
 def _text(path: Path) -> str:
@@ -77,8 +79,8 @@ def _open_region(path: Path) -> str:
 
 
 def test_all_closes_carry_frozen_referral_and_commit() -> None:
-    """All three CLOSE borders quote the git relay + the frozen referral (SK-05)."""
-    for path in _ALL_THREE:
+    """All four CLOSE borders quote the git relay + the frozen referral (SK-05)."""
+    for path in _ALL_FOUR:
         spec = _output_spec(path).lower()
         assert "next: /dogen-" in spec, (
             f"{path.parent.name}'s <output_specification> close must carry the "
@@ -91,8 +93,8 @@ def test_all_closes_carry_frozen_referral_and_commit() -> None:
 
 
 def test_all_opens_confirm_unit_and_state_check() -> None:
-    """All three OPEN borders confirm the target unit + a state check (SK-05)."""
-    for path in _ALL_THREE:
+    """All four OPEN borders confirm the target unit + a state check (SK-05)."""
+    for path in _ALL_FOUR:
         opening = _open_region(path).lower()
         assert "confirm the target unit" in opening, (
             f"{path.parent.name}'s open must confirm the target unit — the shared "
@@ -102,3 +104,46 @@ def test_all_opens_confirm_unit_and_state_check() -> None:
             f"{path.parent.name}'s open must perform a state check (the unit's "
             "current lifecycle state) — the shared normalized OPEN shape (SK-05)."
         )
+
+
+# ---- Body-cleanliness guard: no leaked authoring-wrapper tags (CR-01) -------
+
+# The four Write-tool-call XML wrappers (content-wrapper + invoke-wrapper, opener
+# and closer). None of these is skill markup — they are the shipped bytes of the
+# authoring harness's tool call, and must never appear in an auto-loaded skill file.
+_LEAKED_WRAPPER_TAGS = ("</content>", "</invoke>", "<content>", "<invoke>")
+
+
+def _all_skill_markdown_files() -> list[Path]:
+    """Every auto-loaded skill markdown: each SKILL.md + all its references/*.md.
+
+    The four SKILL.md files are the canonical ``_ALL_FOUR`` anchors; references are
+    glob-derived per skill (not hard-coded) so a newly added reference is covered
+    automatically.
+    """
+    files: list[Path] = []
+    for skill_md in _ALL_FOUR:
+        files.append(skill_md)
+        files.extend(sorted((skill_md.parent / "references").glob("*.md")))
+    return files
+
+
+def test_no_authoring_wrapper_tags_leaked() -> None:
+    """No shipped skill file may carry a leaked authoring-wrapper tag (CR-01).
+
+    ``test_skill_borders`` above uses ``.index()`` and is structurally blind to
+    trailing junk after the matched border blocks. This guard reads each file's
+    full body and negative-asserts every wrapper literal, so the leak class that
+    shipped in all four dogen-record files (``</content>`` / ``</invoke>`` after
+    the true final content) cannot re-ship undetected — in SKILL.md OR any
+    references/*.md of any of the four skills.
+    """
+    for path in _all_skill_markdown_files():
+        text = _text(path)
+        for stray in _LEAKED_WRAPPER_TAGS:
+            assert stray not in text, (
+                f"{path.parent.name}/{path.name}: leaked authoring-wrapper tag "
+                f"{stray!r} — delete the stray wrapper line(s); a SKILL.md ends at "
+                "its </self_healing> block and a reference ends at its last prose "
+                "sentence, with nothing after it (CR-01)."
+            )
