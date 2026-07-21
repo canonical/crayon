@@ -182,9 +182,11 @@ on the `intent` you read in step 1:
    behavioral claim with the three-check rule in `references/writing-standards.md`
    (locate, confirm, corroborate) before it enters prose. Keep a running list of
    every file you read — it becomes the context report.
-2. **Author** a Sphinx-publishable **reference** page per the format's authoring
-   standard and the stance contract in `references/provider-branch.md`. Facts you
-   cannot verify at their origin are left out of the prose and recorded as `gaps`
+2. **Author** a Sphinx-publishable page in the unit's Diataxis direction — a
+   **reference** page under the stance contract in `references/provider-branch.md`,
+   or an **explanation** page under `references/explanation-stance.md` (the
+   reference stance contract does not apply) — per the format's authoring standard.
+   Facts you cannot verify at their origin are left out of the prose and recorded as `gaps`
    in the report — never hedged into the page as corpus-narration. A multi-file
    unit authors every page in its set; each page follows its own extension's
    format, and cross-page terminology and links stay consistent across the set.
