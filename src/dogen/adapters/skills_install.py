@@ -53,8 +53,9 @@ class SkillsInstallError(RuntimeError):
 def canonical_skills_dir(explicit: Path | None = None) -> Path:
     """Locate the canonical ``skills/`` directory.
 
-    Resolution order: an explicit ``--from`` path; else the directory shipped
-    alongside the installed ``dogen`` package (a repo checkout's ``skills/``).
+    Resolution order: an explicit ``--from`` path; else the copy bundled into
+    the installed wheel at ``dogen/skills``; else a source checkout's top-level
+    ``skills/`` (editable installs and in-repo runs).
 
     Parameters
     ----------
@@ -72,7 +73,11 @@ def canonical_skills_dir(explicit: Path | None = None) -> Path:
         If no candidate contains the skill family.
     """
     candidates = [explicit] if explicit is not None else []
-    # src/dogen/adapters/skills_install.py -> repo root -> skills/
+    # Installed wheel: skills/ is force-included at dogen/skills (see pyproject
+    # [tool.hatch.build.targets.wheel.force-include]).
+    # .../dogen/adapters/skills_install.py -> dogen/ -> skills/
+    candidates.append(Path(__file__).resolve().parents[1] / "skills")
+    # Source checkout: src/dogen/adapters/skills_install.py -> repo root -> skills/
     candidates.append(Path(__file__).resolve().parents[3] / "skills")
     for candidate in candidates:
         if candidate is not None and (candidate / "dogen-plan" / "SKILL.md").is_file():

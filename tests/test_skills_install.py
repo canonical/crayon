@@ -7,9 +7,11 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
+import dogen.adapters.skills_install as skills_install_mod
 from dogen.adapters.skills_install import (
     _FAMILY_ENTRIES,
     HARNESS_ROOTS,
+    canonical_skills_dir,
     discover_harnesses,
     install,
     status,
@@ -46,6 +48,27 @@ def test_canonical_family_includes_the_full_skill_quartet():
         "README.md",
         "LICENSE",
     }
+
+
+def test_canonical_dir_resolves_bundled_wheel_copy(tmp_path, monkeypatch):
+    """An isolated wheel install finds skills/ bundled at dogen/skills.
+
+    A `uv tool install`ed dogen has no adjacent source checkout, so the resolver
+    must fall back to the copy force-included into the wheel at ``dogen/skills``
+    — otherwise `dogen skills install` fails with ``cannot locate the canonical
+    skills/ directory``. Simulate the installed layout via the module's
+    ``__file__`` and assert the bundled copy is found without ``--from``.
+    """
+    pkg = tmp_path / "site-packages" / "dogen"
+    (pkg / "adapters").mkdir(parents=True)
+    module_file = pkg / "adapters" / "skills_install.py"
+    module_file.touch()
+    bundled = pkg / "skills"
+    (bundled / "dogen-plan").mkdir(parents=True)
+    (bundled / "dogen-plan" / "SKILL.md").write_text("---\n")
+    monkeypatch.setattr(skills_install_mod, "__file__", str(module_file))
+
+    assert canonical_skills_dir() == bundled.resolve()
 
 
 def test_install_stages_byte_identical_copies(target):
