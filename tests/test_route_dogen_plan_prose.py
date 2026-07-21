@@ -162,6 +162,23 @@ def test_explanation_intake_carries_walk_body() -> None:
     )
 
 
+# --- Phase 15 (EXPL-03): the SK-03 explanation batch call pin --------------
+# Step 6's explanation branch delegates to `dogen unit new` with the
+# `--intent explanation --notes` batch form (EXPL-03). No prior test pins this
+# call; a future edit dropping the explanation batch path from step 6 would go
+# undetected without this marker.
+EXPLANATION_NOTES_BATCH_MARKER = "dogen unit new --intent explanation --notes"
+
+
+def test_skill_documents_explanation_notes_batch() -> None:
+    prose = _DOGEN_PLAN.read_text(encoding="utf-8")
+    assert EXPLANATION_NOTES_BATCH_MARKER in prose, (
+        "skills/dogen-plan/SKILL.md is missing the explanation batch call "
+        f"{EXPLANATION_NOTES_BATCH_MARKER!r} (EXPL-03). Step 6's explanation "
+        "branch must delegate to `dogen unit new --intent explanation --notes`."
+    )
+
+
 def test_explanation_intake_retires_stub_phrases() -> None:
     # D-12 sweep: the Phase-14 hard-stop language is gone from the walk body.
     body = _EXPLANATION_INTAKE.read_text(encoding="utf-8")
