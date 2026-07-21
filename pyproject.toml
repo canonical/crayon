@@ -26,6 +26,14 @@ dependencies = [
 [project.scripts]
 dogen = "dogen.cli.main:app"
 
+# Bundle the canonical skill family into the wheel so `dogen skills install`
+# works from an isolated `uv tool install` (no adjacent source checkout). The
+# resolver (dogen.adapters.skills_install.canonical_skills_dir) prefers this
+# packaged copy at dogen/skills, then falls back to a repo checkout's top-level
+# skills/ for editable and in-repo runs.
+[tool.hatch.build.targets.wheel.force-include]
+"skills" = "dogen/skills"
+
 [dependency-groups]
 dev = [
     "ruff",
