@@ -139,7 +139,7 @@ Read the result. Map any failure reason to plain-language TA guidance
 backend is unreachable; `model_rejected` → the requested model was refused) per
 `references/provider-branch.md`. In this branch the skill never uses `Write`.
 
-**Explanation is passenger-only this phase (D-09):** a driver provider
+**Explanation is passenger-only this phase (EXPL-04):** a driver provider
 (`copilot` / `mock`) has **no explanation stance variant** — the understanding-
 oriented stance lives in the passenger authoring path, not in a driver prompt.
 When the declared direction is explanation and the resolved provider is a driver,
