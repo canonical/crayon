@@ -81,7 +81,7 @@ YAML
 let the TA run it, then ingest the tee'd file **unmodified**:
 
 ```bash
-foo login 2>&1 | tee .dogen/staging/$UNIT/scratch/evidence/login.out; echo exit:$?
+foo login 2>&1 | tee .dogen/staging/$UNIT/scratch/evidence/login.out; echo "exit:${PIPESTATUS[0]}"
 ```
 
 If the TA pastes chat output instead, write the paste to the evidence file verbatim
