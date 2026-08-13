@@ -322,6 +322,18 @@ def audit_unit(unit_id: str, root: Path = ROOT) -> None:
         _flag(bool(last.get("source_commit")), "gen", "generation has source_commit")
         # v2: files[] is the sole digest authority (PROV-01). Verify EVERY page
         # of the latest generation hashes to its recorded digest on disk (D-12).
+        #
+        # Exception — supersession by an extending unit: a later unit may
+        # legitimately take over a sealed page of this unit (dogen-plan claim onto
+        # an already-accepted page). The CLI allows it and records a
+        # `Dogen-Extends: <this-unit>` trailer plus an `extends: <page> …` body
+        # line on the extending unit's commits. For such a page the on-disk digest
+        # is EXPECTED to differ from this (now-historical) seal — reporting it as a
+        # stale-digest FLAG is a false negative. Detect it and report INFO instead
+        # (validation finding 2026-07-14, F1).
+        extends_bodies = _git_at(
+            "log", f"--grep=Dogen-Extends: {unit_id}", "--format=%b"
+        )
         for f in (last.get("files") or []):
             # A null/missing path (`path: null`, hand-edited/upstream malformation)
             # is a digest-mismatch FLAG, not a `root / None` TypeError crash (WR-05).
@@ -329,7 +341,14 @@ def audit_unit(unit_id: str, root: Path = ROOT) -> None:
             page = root / rel
             ok = (bool(rel) and page.is_file()
                   and _sha256(page.read_text(encoding="utf-8")) == f.get("sha256"))
-            _flag(ok, "gen", f"page digest matches on disk: {f.get('path')}")
+            if not ok and rel and rel in extends_bodies:
+                # Page superseded by a later extending unit — historical seal, not
+                # a defect; the current owner's own audit seals the live digest.
+                print("INFO [gen] page superseded by a later extending unit "
+                      f"(Dogen-Extends: {unit_id}); seal is historical, not "
+                      f"stale: {rel}")
+            else:
+                _flag(ok, "gen", f"page digest matches on disk: {f.get('path')}")
 
     accepts = [e for e in prov.get("reviewer_edits", []) if e.get("verdict") == "accept"]
     if accepts:
