@@ -584,7 +584,7 @@ def test_export_rejects_unsafe_harness(tmp_path):
 # sync.sh copies EXACTLY score.py/rubric.md/export.sh from validation/ into the
 # mirror, overwrite + one-directional + idempotent (D-02). DOGEN_SYNC_DST is a
 # test seam pointing the copy at a tmp dir instead of the real sibling repo, so
-# the test lands ZERO writes in ../DOCPR-2845 (D-01). It errors loudly if the
+# the test lands ZERO writes in ../smoke-docs-1 (D-01). It errors loudly if the
 # mirror dir is absent (Pitfall 6 / T-11-09).
 
 SYNC_KIT_FILES = ("score.py", "rubric.md", "export.sh")

@@ -1,9 +1,13 @@
 # Validation rubric — scoring dogen drafts against the akcano reference bar
 
-**Dev-time evaluation material only.** The akcano docs
-(`../../workshop-akcano/docs/reference/definition-files/`) are the measuring
-stick, never an input: no drafting session, skill, or steering note may point at
-them. Score the accepted draft of each leg after the run.
+**Dev-time evaluation material only.** The akcano docs —
+`docs/reference/definition-files/` inside the `workshop-akcano` checkout that
+sits under the same parent directory as the `dogen-mvp-1` and `smoke-docs-1`
+checkouts (`~/Documents/` here; from the smoke-docs-1 primary checkout that is
+`../workshop-akcano/…`, from a validation worktree under `smoke-docs-worktrees/`
+it is `../../workshop-akcano/…`) — are the measuring stick, never an input: no
+drafting session, skill, or steering note may point at them. Score the accepted
+draft of each leg after the run.
 
 Two layers: the mechanical scorecard (`score.py` — run it first) and the human
 dimensions below. Score each human dimension 0–2 (0 = fails, 1 = partial,
