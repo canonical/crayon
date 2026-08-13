@@ -19,9 +19,9 @@ set -eu
 # Resolve this script's own dir (robust to the caller's CWD; Pitfall 6).
 src="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
-# Default mirror: dogen-mvp-1 and DOCPR-2845 are siblings under ~/Documents/.
+# Default mirror: dogen-mvp-1 and smoke-docs-1 are siblings under ~/Documents/.
 # DOGEN_SYNC_DST is a TEST SEAM only — it does not change default behaviour.
-dst="${DOGEN_SYNC_DST:-$src/../../DOCPR-2845/smoke-docs-1/validation}"
+dst="${DOGEN_SYNC_DST:-$src/../../smoke-docs-1/validation}"
 
 # Loud guard before any write (T-11-09).
 [ -d "$dst" ] || { echo "mirror not found: $dst" >&2; exit 1; }
