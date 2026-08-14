@@ -179,7 +179,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "github-copilot-sdk", specifier = "==1.0.9" },
+    { name = "github-copilot-sdk", specifier = "==1.0.11" },
     { name = "logfire", specifier = ">=4.37.0" },
     { name = "opentelemetry-api", specifier = ">=1.42.1" },
     { name = "pydantic", specifier = ">=2" },
@@ -217,7 +217,7 @@ wheels = [
 
 [[package]]
 name = "github-copilot-sdk"
-version = "1.0.9"
+version = "1.0.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -225,7 +225,7 @@ dependencies = [
     { name = "python-dateutil" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/b5/c4d11863213835b65d19633e62de347001528bb834b5c376dffe6836358a/github_copilot_sdk-1.0.9-py3-none-any.whl", hash = "sha256:4521c9a98ac340e61ce5eb46bcffe0b1f0755cf198282497403776cc65c99fcb", size = 477929, upload-time = "2026-08-06T00:44:01.66Z" },
+    { url = "https://files.pythonhosted.org/packages/67/ac/175cbb71fe637d963a885248a421040c9d500ea6390ed3b88bc68ecf51ca/github_copilot_sdk-1.0.11-py3-none-any.whl", hash = "sha256:6f664c7b843c34ab5a7455f7effb4d339eae75969d2b72f43c2e6214c9c637dc", size = 486719, upload-time = "2026-08-14T16:12:20.01Z" },
 ]
 
 [[package]]
