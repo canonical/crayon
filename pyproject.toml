@@ -13,7 +13,7 @@ license-files = ["LICENSE"]
 # (LIC-01). Intentionally no license trove classifier — PEP 639 tooling treats
 # it as a conflicting duplicate of the license expression.
 dependencies = [
-    "github-copilot-sdk==1.0.9",
+    "github-copilot-sdk==1.0.11",
     "logfire>=4.37.0",
     "opentelemetry-api>=1.42.1",
     "pydantic>=2",
