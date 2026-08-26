@@ -100,6 +100,9 @@ ledger_section_rows() {
 }
 
 # Append a row to a ledger section (creates the section if missing).
+# Rows are separated from their neighbours by exactly one blank line, and each
+# section header is preceded by one blank line (the header itself is followed
+# directly by its first row — no blank).
 # Usage: ledger_append_row <ledger_file> <section_name> <row_text>
 ledger_append_row() {
     local ledger="$1"
@@ -109,19 +112,30 @@ ledger_append_row() {
     tmp=$(mktemp)
 
     if ! ledger_has_section "$ledger" "$section"; then
-        echo "" >>"$ledger"
-        echo "## ${section}" >>"$ledger"
-        echo "${row}" >>"$ledger"
+        # New section: ensure a blank line, then header + first row.
+        printf '\n## %s\n%s\n' "$section" "$row" >>"$ledger"
         return
     fi
 
-    awk -v section="## ${section}" -v row="${row}" '
-    BEGIN { in_section=0; inserted=0 }
-    $0 == section { in_section=1; print; next }
-    in_section && /^## / && !inserted { print row; inserted=1 }
-    { print }
-    END { if (in_section && !inserted) print row }
-  ' "$ledger" >"$tmp"
+    # Existing section: find the section header's line, then its last data row
+    # (skipping blank lines), and insert a blank line + the new row right after
+    # it — so the new row becomes the section's last row, blank-separated.
+    local s_ln
+    s_ln=$(grep -n "^## ${section}\$" "$ledger" | head -1 | cut -d: -f1)
+
+    local last_ln
+    last_ln=$(awk -v s="$s_ln" '
+        NR > s {
+            if ($0 ~ /^## /) exit
+            if ($0 != "") last = NR
+        }
+        END { if (last == "") last = s; print last }
+    ' "$ledger")
+
+    awk -v ln="$last_ln" -v row="${row}" '
+        { print }
+        NR == ln { print ""; print row }
+    ' "$ledger" >"$tmp"
     mv "$tmp" "$ledger"
 }
 

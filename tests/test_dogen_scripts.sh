@@ -363,6 +363,35 @@ test_review_fix_appends_steering() {
     cleanup
 }
 
+test_ledger_blank_line_separation() {
+    setup_repo
+    setup_unit "test-unit"
+    "$REPO_SCRIPTS/dogen-signoff.sh" "test-unit" >/dev/null 2>&1
+    mkdir -p .dogen/staging
+    echo "# Draft" >.dogen/staging/draft.md
+    "$REPO_SCRIPTS/dogen-record-draft.sh" "test-unit" ".dogen/staging/draft.md" >/dev/null 2>&1
+    # Two fix verdicts populate steering and reviews with two rows each.
+    "$REPO_SCRIPTS/dogen-record-review.sh" "test-unit" --verdict fix --note "Fix A" >/dev/null 2>&1
+    "$REPO_SCRIPTS/dogen-record-review.sh" "test-unit" --verdict fix --note "Fix B" >/dev/null 2>&1
+    local ledger=".dogen/units/test-unit/ledger.md"
+    # Canonical form: no two adjacent non-blank lines are both data rows (a data
+    # row must be preceded by a blank line or a "## " section header).
+    local violations
+    violations=$(awk '
+        { line[NR] = $0 }
+        END {
+            c = 0
+            for (i = 2; i <= NR; i++) {
+                a = line[i - 1]; b = line[i]
+                if (a != "" && b != "" && a !~ /^## / && b !~ /^## /) c++
+            }
+            print c
+        }
+    ' "$ledger")
+    assert_eq "no adjacent non-blank data rows" "0" "$violations"
+    cleanup
+}
+
 test_review_fix_requires_note() {
     setup_repo
     setup_unit "test-unit"

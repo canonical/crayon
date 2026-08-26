@@ -52,7 +52,7 @@ skip the walk for an actionable unit.
    proof, and record each step via `dogen-record-step.sh` before authoring.
 3. Author the page in the unit's format (MyST for `.md`, rST for `.rst`), loading
    the direction register for the declared intent.
-4. Stage the draft under `.dogen/staging/<id>/handoff.<ext>`.
+4. Stage the draft under `.dogen/staging/<id>/draft.<ext>`.
 5. Call `dogen-record-draft.sh <id> <staged-draft> --model <model>` via `Bash`.
 6. Report the recorded draft and route the TA to dogen-review.
 </quick_start>
@@ -116,10 +116,13 @@ The TA edits the plan conversationally — add, drop, reorder, re-word — until
 satisfied. Then take **one confirmation** and persist the whole plan to the ledger.
 
 Write the step plan to the `## steps` section of `ledger.md` with `Edit`. Each
-step row has this format:
+step row has this format; separate consecutive step rows (and the section header
+from the first row) with a single blank line:
 
 ```
+## steps
 step-1 | text_hash: <sha256 of step text> | status: unverified
+
 step-2 | text_hash: <sha256 of step text> | status: unverified
 ```
 
@@ -238,7 +241,7 @@ runtime-mechanics narration. Fix every hit before staging.
 </step_3>
 
 <step_4 name="Stage the draft and context report">
-Write the authored page to `.dogen/staging/<id>/handoff.<ext>` (where `<ext>` matches
+Write the authored page to `.dogen/staging/<id>/draft.<ext>` (where `<ext>` matches
 the target extension).
 
 Write a context report to `.dogen/staging/<id>/report.md` listing:
@@ -254,7 +257,7 @@ Call the deterministic script:
 
 ```bash
 dogen-record-draft.sh "$UNIT_ID" \
-  ".dogen/staging/$UNIT_ID/handoff.$EXT" \
+  ".dogen/staging/$UNIT_ID/draft.$EXT" \
   --model "$MODEL"
 ```
 
@@ -283,7 +286,7 @@ Report the recorded draft:
 ```
 ## dogen-write: <unit-id>
 
-- Handoff: .dogen/staging/<unit-id>/handoff.<ext>
+- Draft: .dogen/staging/<unit-id>/draft.<ext>
 - Recorded draft: docs/<target>
 - Committed: <sha7 from the script's git: committed line>
 - Progress: drafted
@@ -344,7 +347,7 @@ forged. Never present the evidence as tamper-proof.
 - For an actionable unit, propose ONE annotated step plan, walk silent-until-signal,
   capture agent-runs steps mechanically, and record via `dogen-record-step.sh`.
 - Verify all steps are `resolved` before recording an actionable draft.
-- Write ONLY the staging files (handoff + report) under `.dogen/staging/<id>/`.
+- Write ONLY the staging files (draft + report) under `.dogen/staging/<id>/`.
 - Record every draft through `dogen-record-draft.sh`, which owns the gate, WR-03
   ordering, the all-steps-resolved gate, and the commit seam.
 - Author in the unit's format: MyST for `.md`, rST for `.rst`.
