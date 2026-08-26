@@ -2,7 +2,8 @@
 """Static guardrail: agentskills.io frontmatter invariants for the dogen skill family.
 
 Asserts per skill: frontmatter ``name`` equals the directory name and matches
-agentskills.io slug rules; ``description`` is present and non-empty (≤1024 chars).
+agentskills.io slug rules; ``description`` is present, non-empty (≤1024 chars), and
+contains no bare ``: `` (colon+space) that would break a real YAML parser.
 
 Exit codes: 0 = clean, 1 = violation, 2 = vacuous pass (0 skills scanned).
 """
@@ -53,6 +54,14 @@ def check_skill(skill_dir: Path) -> list[str]:
         errs.append(f"{skill_dir.name}: missing or empty description")
     elif len(description) > _MAX_DESC:
         errs.append(f"{skill_dir.name}: description exceeds {_MAX_DESC} chars")
+    # A ":" followed by whitespace inside an unquoted plain scalar breaks a real
+    # YAML parser (it is read as the start of a nested mapping, e.g. "intent:
+    # reference"). Our lenient partition() splitter misses it; flag it here.
+    if re.search(r":\s", description):
+        errs.append(
+            f"{skill_dir.name}: description contains a bare ': ' (colon+space) — "
+            "breaks YAML plain-scalar parsing; reword or quote the description"
+        )
 
     return errs
 
