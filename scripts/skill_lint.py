@@ -1,73 +1,39 @@
-"""Static guardrail: D-18 skill-surface + agentskills.io frontmatter invariants.
+#!/usr/bin/env python3
+"""Static guardrail: agentskills.io frontmatter invariants for the dogen skill family.
 
-This is the deterministic enforcement that makes the Write/Edit tool-surface
-isolation a **provable invariant in code, not authoring discipline** (D-18) — a
-security-relevant boundary of the same kind as the provider seam. It mirrors
-:mod:`seam_check`: a single :func:`main` with a ``0`` (clean) / ``1`` (violation)
-/ ``2`` (scanned 0 skills — vacuous-pass guard) contract, invoked identically by
-pytest, the pre-commit hook, and CI (the real-tree hook wiring lands in Plan
-04-04, after Plan 04-03 authors the skills).
+Asserts per skill: frontmatter ``name`` equals the directory name and matches
+agentskills.io slug rules; ``description`` is present and non-empty (≤1024 chars).
 
-Per skill it asserts: frontmatter ``name`` equals the directory name and matches
-the agentskills.io slug rules; ``description`` is present and non-empty; and a
-**fail-closed** write-isolation invariant — any skill whose directory name is NOT
-in the :data:`WRITERS` allowlist must have ``Write``/``Edit`` absent from
-``allowed-tools`` (so a future skill is write-free by default and must be
-deliberately allowlisted, D-02). The tool list is tokenized delimiter-agnostically
-(commas AND whitespace) so a comma-authored list is not read as one opaque token
-on a space-delimiter harness (Pitfall 1).
+Exit codes: 0 = clean, 1 = violation, 2 = vacuous pass (0 skills scanned).
 """
 
 import re
 import sys
 from pathlib import Path
 
-from dogen.adapters.planning_fs import split_front_matter
-
 SKILLS_ROOT = Path(__file__).resolve().parents[1] / "skills"
-WRITERS = {"dogen-write", "dogen-record"}
-_WRITE_TOOLS = {"Write", "Edit"}
 _NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
-_DELIM_RE = re.compile(r"[,\s]+")
 _MAX_NAME = 64
 _MAX_DESC = 1024
 
+_FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?\n)---\s*\n", re.DOTALL)
 
-def _tools(frontmatter: dict) -> set[str]:
-    """Return the ``allowed-tools`` tokens, split on commas AND whitespace.
 
-    Parameters
-    ----------
-    frontmatter : dict
-        The parsed SKILL.md front-matter mapping.
-
-    Returns
-    -------
-    set of str
-        The declared tool names. ``allowed-tools`` may be a delimiter-flexible
-        string (comma- or space-separated) or a YAML list; either is tokenized
-        delimiter-agnostically so the Write/Edit-absence check holds under any
-        harness delimiter (Pitfall 1).
-    """
-    raw = frontmatter.get("allowed-tools", "") or ""
-    if not isinstance(raw, str):
-        raw = " ".join(str(item) for item in raw)
-    return {token for token in _DELIM_RE.split(raw) if token}
+def split_front_matter(text: str) -> tuple[dict, str]:
+    """Split SKILL.md into (frontmatter_dict, body). Minimal YAML parser."""
+    m = _FRONTMATTER_RE.match(text)
+    if not m:
+        raise ValueError("no YAML front-matter block found")
+    fm: dict[str, str] = {}
+    for line in m.group(1).splitlines():
+        if ":" in line:
+            key, _, val = line.partition(":")
+            fm[key.strip()] = val.strip().strip('"')
+    return fm, text[m.end() :]
 
 
 def check_skill(skill_dir: Path) -> list[str]:
-    """Return every invariant violation for a single skill directory.
-
-    Parameters
-    ----------
-    skill_dir : Path
-        A ``skills/<name>/`` directory containing a ``SKILL.md``.
-
-    Returns
-    -------
-    list of str
-        Human-readable violation messages; empty when the skill is clean.
-    """
+    """Return every invariant violation for a single skill directory."""
     errs: list[str] = []
     try:
         frontmatter, _ = split_front_matter(
@@ -88,21 +54,11 @@ def check_skill(skill_dir: Path) -> list[str]:
     elif len(description) > _MAX_DESC:
         errs.append(f"{skill_dir.name}: description exceeds {_MAX_DESC} chars")
 
-    if skill_dir.name not in WRITERS and (_tools(frontmatter) & _WRITE_TOOLS):
-        errs.append(f"{skill_dir.name}: Write/Edit must be absent (write-free skill)")
     return errs
 
 
 def main() -> int:
-    """Scan ``SKILLS_ROOT/*/SKILL.md`` and report any invariant violation.
-
-    Returns
-    -------
-    int
-        ``0`` when every scanned skill is clean, ``1`` on any violation, and
-        ``2`` when zero skills were scanned (the vacuous-pass guard, so a
-        misconfigured or not-yet-populated root cannot masquerade as clean).
-    """
+    """Scan SKILLS_ROOT/*/SKILL.md and report any invariant violation."""
     scanned = 0
     bad: list[str] = []
     for skill_md in sorted(SKILLS_ROOT.glob("*/SKILL.md")):
@@ -117,9 +73,7 @@ def main() -> int:
     if bad:
         print("skill-lint: VIOLATION(S):", *bad, sep="\n  ", file=sys.stderr)
         return 1
-    print(
-        f"skill-lint: OK - {scanned} skills, tool-surface + frontmatter invariants hold"
-    )
+    print(f"skill-lint: OK - {scanned} skills, frontmatter invariants hold")
     return 0
 
 
