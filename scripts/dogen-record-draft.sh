@@ -3,7 +3,7 @@
 # Inlines the gate check (folds the old verify-gate step).
 #
 # Usage: dogen-record-draft.sh <unit-id> <draft-file> [--model <model>]
-# Exit: 0 success, 1 gate refusal, 2 bad input, 3 identical redraft (no-op)
+# Exit: 0 success, 1 gate refusal, 2 bad input, 3 identical redraft (no-op), 4 evidence incomplete
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/dogen-common.sh"
@@ -65,6 +65,22 @@ if [ "$current_hash" != "$signed_hash" ]; then
     exit 1
 fi
 # --- End gate check ---
+
+# --- Evidence gate (actionable units only) ---
+intent=$(get_unit_field "$unit_file" "intent")
+if [ "$intent" = "tutorial" ] || [ "$intent" = "how-to" ]; then
+    if ! ledger_has_section "$ledger" "steps"; then
+        echo "ERROR: evidence incomplete: no step plan recorded for actionable unit ${unit_id}" >&2
+        exit 4
+    fi
+    unresolved=$(unresolved_steps "$ledger")
+    if [ -n "$unresolved" ]; then
+        echo "ERROR: evidence incomplete: unverified step(s) for ${unit_id}:" >&2
+        echo "$unresolved" | sed 's/^/  - /' >&2
+        exit 4
+    fi
+fi
+# --- End evidence gate ---
 
 # Read target path from unit.md frontmatter.
 target=$(get_unit_field "$unit_file" "sphinx_target")
