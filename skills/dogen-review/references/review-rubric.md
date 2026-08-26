@@ -8,8 +8,9 @@ grades a unit against **its own declared Diátaxis type**. dogen-write drafts th
 drafts the two **actionable** types — a **tutorial** and a **how-to** — from a
 step walk that provably ran, and this phase routes those drafts into review. The
 reference-only checks below are therefore **gated on the unit's declared type**
-(read from `dogen unit show --json`, the same field the rubric already uses for
-`format`): they apply to a unit **whose declared type is reference**, while the
+(read from the `intent` field in `unit.md` front-matter, the same field the rubric
+already uses for `format`): they apply to a unit **whose declared type is
+reference**, while the
 tutorial / how-to conformance criteria apply for **actionable units** — so a
 correctly-authored tutorial or how-to is never graded as reference "drift". It is
 derived from a prior production documentation-review rig, deliberately stripped of
@@ -140,9 +141,8 @@ it stay out of the writer's own research process? Three failure modes:
 - **Researcher register (stance leak).** The prose must state what the product
   accepts, does, and enforces — never narrate the writer's evidence. Flag any
   "observed", "the fixtures show", "every observed use", "the corpus" phrasing:
-  the writer's stance contract (canonical:
-  `dogen.core.authoring.STANCE_CONTRACT`) routes unverifiable facts into the
-  generation's `gaps`, not into hedged prose — so hedged prose is a violation, not
+  the writer's stance contract routes unverifiable facts into the report's
+  gaps, not into hedged prose — so hedged prose is a violation, not
   honesty.
 - **Runtime-mechanics leak.** The stance contract's fourth failure mode: prose
   that narrates how the machinery executes internally — temporary files,
@@ -175,8 +175,8 @@ Two mandatory checks inside this dimension:
 
 ### structure-fit
 
-Grade the page against its **declared Diátaxis type** (from `dogen unit show
---json`), then check format hygiene.
+Grade the page against its **declared Diátaxis type** (from the `intent` field in
+`unit.md` front-matter), then check format hygiene.
 
 **For a unit whose declared type is reference:** does the page behave as a
 Diátaxis **reference** — information-oriented, descriptive, one category per
@@ -221,9 +221,9 @@ Two mandatory checks inside this dimension:
   is not there is a `[must-fix]` — this is the build-breaking class of defect
   no review may wave through. Check the placement itself too: if the docs tree
   holds a waiting toctree slot or sibling convention this page's
-  location/basename/extension diverges from, flag it (the fix is one
-  `dogen unit edit --target <path> --re-sign` call, which moves the draft and
-  re-approves the amended plan in the same act).
+  location/basename/extension diverges from, flag it (the fix is a plan
+  edit on `unit.md` + `dogen-signoff.sh --force`, then a re-draft at the
+  corrected path).
 - **Cross-page consistency (multi-file units only).** A unit spanning several
   pages is one change: terminology stays consistent across the set, links
   between the set's pages resolve both ways, and a change applied to one page's
@@ -281,20 +281,15 @@ never by impression:
 
 A candidate matching no row is a `[nit]` at most — or not a finding.
 
-### Collision guard (D-03 — non-negotiable)
+### Collision guard (non-negotiable)
 
 `[must-fix]` / `[should-fix]` / `[nit]` is a **review-findings** vocabulary **only**.
-It must never rename, parallel, or collide with the CLI machine surface — the
-failure reason codes (signoff_required, backend_unavailable, model_rejected,
-unit_exists, not_drafted, already_accepted, target_exists, bad_target,
-bad_report, target_claimed, model_already_set, handoff_incomplete,
-undeclared_target, multi_target_unsupported, schema_unsupported,
-provenance_invalid) or the progress states
-(pending → sourced → drafted → reviewed). Those stay surfaced **verbatim** from
-`--json` for run-status. The two
-axes are orthogonal: a priority describes *a finding's urgency*; a reason or
-progress word describes *the CLI operation's outcome*. This is the sanctioned D-03
-revisit, kept deliberately on a different axis.
+It must never rename, parallel, or collide with the scripts' machine surface — the
+exit codes (0 = success, 1 = gate/evidence refusal, 2 = bad input, 3 = no-op/stale)
+or the derived progress states (pending → drafted → reviewed, derived from the
+ledger). Those stay surfaced **verbatim** for run-status. The two
+axes are orthogonal: a priority describes *a finding's urgency*; an exit code or
+progress word describes *the script operation's outcome*.
 
 ## Findings layout (in-conversation only)
 
@@ -306,9 +301,9 @@ the verdict note can say "apply F-2 and F-5" instead of restating the findings.
 A clean dimension shows `(none)`; a skipped one shows
 `(not assessed — <reason>)`. The block is presented in the conversation and is
 **never written to a file** — only the reviewer's resulting verdict is recorded,
-via `dogen review --verdict --note` (a fix/redraft verdict's note lands in the
-steering stream automatically, so a finding phrased as a steering correction is
-directly actionable).
+via `dogen-record-review.sh --verdict --note` (a fix/redraft verdict's note lands
+in the steering stream automatically, so a finding phrased as a steering
+correction is directly actionable).
 
 ```
 ## dogen-review — findings: <unit-id>
@@ -332,11 +327,10 @@ directly actionable).
 - F-5 [nit] <observation> → <action>
 
 Findings: N total — X must-fix, Y should-fix, Z nit.
-(Priority = review findings, NOT the CLI run-status codes.)
 Dismissed pre-pass candidates: <M, each with its one-line reason — or (none)>
 Recommended verdict: <accept | fix | redraft> — <one clause tying it to the tally>
 
-Next: accept (the publishing commit is yours) · record fix/redraft — dogen-write applies the note
+Next: accept (the publishing commit is yours) · record fix/redraft — the draft-stage skill applies the note
 ```
 
 The recommended verdict is the family smart-defaults rule applied to the tally:
@@ -349,25 +343,23 @@ remains the reviewer's — the recommendation is a labeled default, never a
 decision.
 
 There are exactly TWO next steps: accept, or a recorded fix/redraft verdict that
-routes to dogen-write. "Make the edit yourself" is not one of them — an
+routes to the draft-stage skill. "Make the edit yourself" is not one of them — an
 unrecorded correction steers nothing and is invisible to any future audit.
-After the verdict is recorded, route off the result's `next_id` token as the
-**frozen referral line** (the exact strings live in `../../README.md`'s routing
-table): `Next: /dogen-write — apply the recorded fix.` after a fix,
-`Next: /dogen-write — re-draft against the recorded steering.` after a redraft.
-Never parrot the raw CLI `next` line to the TA.
+After the verdict is recorded, route on the unit's declared direction:
+- **fix**: `Next: /dogen-write — apply the recorded fix.` (reference/explanation)
+  or `Next: /dogen-record — apply the recorded fix and re-record.` (actionable)
+- **redraft**: `Next: /dogen-write — re-draft against the recorded steering.`
+  (reference/explanation) or
+  `Next: /dogen-record — re-walk the procedure and record a fresh draft.` (actionable)
 
-## Code-dump binding (governed mirror — keep in sync)
+## Code-dump binding (keep in sync)
 
 source-fidelity's code-dumping check applies the writer's own boundary. The
-canonical source is `dogen.core.authoring.REFERENCE_CODE_RUBRIC`; its per-block
-heuristic is carried here verbatim so the reviewer and the writer apply the
+per-block heuristic is carried here so the reviewer and the writer apply the
 **identical** rule:
 
 > Per block, ask: would the reader themselves type, author, or invoke this exact text? If so, a minimal version may be shown; if instead it is how the machinery is implemented internally, reference it by qualified name and never show it.
 
-This copy is **drift-guarded** (`tests/test_review_modes_keyphrases.py`, the
-`-k canonical` tests) against `dogen.core.authoring.RUBRIC_HEURISTIC` — the third
-governed mirror alongside the Copilot driver strings and the dogen-write passenger
-prose. It must be kept byte-for-byte in sync with the core constant; edit the core
-symbol and this copy together, never one alone.
+The stance contract and the code-in-narrative rubric are stated once, in
+dogen-write's SKILL.md (step 3) and its `references/writing-standards.md`; this
+copy is the reviewer-side mirror and must match them.

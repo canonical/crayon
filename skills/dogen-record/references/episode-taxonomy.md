@@ -1,13 +1,13 @@
-Load this file at workflow step 4 (Walk each step (silent-until-signal)).
+Load this file at workflow step 3 (Walk each step).
 
-# Episode taxonomy — improvisation and frustration (REC-09)
+# Episode taxonomy — improvisation and frustration
 
-The walk's quality signals are **derived**, not stored — they already exist in
-provenance (`record show`) and in `git log` (the `Dogen-Step`/`Dogen-Verdict`
-trailers and the `step-recorded` commit bodies). This file names the two episode
-kinds and maps each to the mechanical signal that carries it, so REC-09 replays
-from `git log` alone with zero schema touch (D-14). The taxonomy is adapted from
-the user's test-docs skill (D-15).
+The walk's quality signals are **derived**, not stored — they already exist in the
+ledger (`## steps` section: each step's `verdict`, `status`, and `reason`) and in
+`git log` (the `Dogen-Step` trailers per step-recorded commit). This file names the
+two episode kinds and maps each to the mechanical signal that carries it, so the
+walk replays from `git log` + the ledger alone with zero extra stored state. The
+taxonomy is adapted from the user's test-docs skill.
 
 ## Improvisation
 
@@ -21,20 +21,20 @@ supplied, an undocumented flag needed, a fork resolved with an obvious default.
 
 **Signal — record the step as a `deviated` verdict (exit 0) with a `reason`:**
 
-```yaml
+```
 verdict: deviated
 mode: agent
 command: "cd $WS && foo init --config ./foo.toml"   # the actual command run
 output_sha256: "…"
 exit_code: 0
 reason: "the step said 'initialize foo' but not that --config is required on a fresh dir"
+step_text_sha256: "…"
 ```
 
-`deviated` with exit 0 **still resolves** the step (`derive_step_status`, D-08), so
-the walk proceeds — AND the `reason` lands in the `step-recorded` commit body via
-the shipped `_body_note` precedent, becoming the episode's free-text color. High
-improvisation on a step is a signal about **proposal quality**: the plan under-specified
-that step.
+`deviated` with exit 0 **still resolves** the step, so the walk proceeds — AND the
+`reason` lands in the ledger step row (the `| reason: …` field), becoming the
+episode's free-text color. High improvisation on a step is a signal about
+**proposal quality**: the plan under-specified that step.
 
 ## Frustration
 
@@ -47,20 +47,19 @@ better plan would have avoided.
 - **A mode override mid-walk** — a step planned agent-runs that had to flip to
   TA-runs (or the reverse) once reality intervened.
 
-**Signal — fail-count plus re-plan commits:** each failed attempt is a recorded
-`fail` (a `step-recorded` commit, status stays `unverified`); a wrong-assumption
-correction or a mode flip is a `record plan` re-plan (a `step-planned` commit whose
-hash-changed step re-derives `unverified`). The count of these across the walk is
-the frustration measure — no stored field, all derived from the commit history.
+**Signal — fail-count plus step-plan re-edits:** each failed attempt is a recorded
+`fail` (the ledger step row's `verdict: fail`, status stays `unverified`); a
+wrong-assumption correction or a mode flip re-edits the `## steps` section (a step
+whose text changed re-derives `unverified` because its `text_hash` no longer
+matches its evidence). The count of these across the walk is the frustration
+measure — no stored field, all derived from the ledger + commit history.
 
 ## Why derived, not stored
 
-A `pass` step writes an empty commit body, so plain passes carry no color — by
-design. Routing improvisation through `deviated` (which does carry a body) and
-frustration through fail-count/re-plan keeps every signal in the mechanical record
-without a new schema field or a sidecar. dogen-review surfaces the tally
-(deviation/skip/fail counts from `record show` plus the episode notes from
-`git log`) in its provenance summary, and the rubric weighs flagged sections
-(D-16). A frustration count of three or more on a single walk is a documented
-quality signal that the step plan needs work — the Pitfall 1 metric against
-ceremony overload and thin proposals.
+A `pass` step carries no `reason` — plain passes carry no color, by design. Routing
+improvisation through `deviated` (which carries a `reason`) and frustration through
+fail-count/re-plan keeps every signal in the mechanical record without a new field
+or a sidecar. dogen-review surfaces the tally (deviation/skip/fail counts from the
+ledger plus the reason notes) in its quality-signals block, and the rubric weighs
+flagged sections. A frustration count of three or more on a single walk is a
+documented quality signal that the step plan needs work.

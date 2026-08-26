@@ -12,7 +12,7 @@ drafter reads later.
 The walk is the **same Socratic machinery the intake already runs**
 (`references/socratic-technique.md`), aimed at recorded intent instead of a
 reference outline. It runs **in dialogue — nothing is persisted until
-crystallization**. No `dogen` verb fires during the walk; if the TA abandons it
+crystallization**. No script fires during the walk; if the TA abandons it
 mid-thread, no half-declared unit exists. The whole outcome lands in one batch
 after a single confirmation (SKILL.md step 6).
 
@@ -93,4 +93,4 @@ One synthesized intent note in the TA's own framing — the root intent chain
 settled terminology, and the trade-offs the TA actually named — plus the standard
 reader-facing `unit.md` body (`## Intent & scope`, `## Outline / acceptance`).
 The walk records intent; the drafting is a separate, signed-off step. Persistence
-is the SK-03 batch in SKILL.md step 6 — this file adds no new persistence path.
+is the batch in SKILL.md step 6 — this file adds no new persistence path.

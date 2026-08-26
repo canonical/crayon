@@ -74,6 +74,8 @@ explicit "declare it" starts the Socratic intake.
 </step_1>
 
 <step_2 name="Draw out the Why and audience">
+Load `references/socratic-technique.md` now for the intake technique.
+
 Begin the Socratic intake with the reader's problem, then the audience — the two
 judgment fields. Ask exactly one question per turn, building each on the previous
 answer:
@@ -107,6 +109,10 @@ Propose every derivable field with a recommended default; the TA confirms or ove
 </step_3>
 
 <step_4 name="Confirm the Diataxis direction and route">
+Load `references/reference-intake.md` (reference), `references/actionable-intake.md`
+(tutorial/how-to), or `references/explanation-intake.md` (explanation) for the
+settled direction.
+
 Settle the unit's Diataxis direction, then route on it:
 
 - **reference** → declare `intent: reference`, route to dogen-write.

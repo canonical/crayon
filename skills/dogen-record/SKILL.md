@@ -48,6 +48,9 @@ step plan, and produces a recorded draft. On success it hands off to dogen-revie
 
 <workflow>
 <step_1 name="Open or resume">
+Load `references/walk-protocol.md` now for the evidence contract, capture
+mechanics, consent, workspace, and resume detail.
+
 Confirm the unit id. Read:
 
 - `.dogen/units/<id>/unit.md` — the plan: intent, audience, title, sources, target, format.
@@ -99,6 +102,9 @@ git add .dogen/ && git commit -q -m "dogen: step-plan ${UNIT_ID}" \
 </step_2>
 
 <step_3 name="Walk each step (silent-until-signal)">
+Load `references/episode-taxonomy.md` now for the improvisation-vs-frustration
+taxonomy.
+
 Walk the plan one step at a time with a **silent-until-signal** cadence: emit one
 status line per step. Consult the TA only at:
 - a **genuine fork** — missing information, or an informed choice with doc-visible
@@ -157,7 +163,10 @@ macro-gate (in `dogen-record-draft.sh`) that blocks on unresolved steps — but
 resolved before drafting.
 </step_3>
 
-<step_4 name="Draft handoff (mirror dogen-write's passenger flow)">
+<step_4 name="Draft handoff (mirror dogen-write's flow)">
+Load `references/authoring-stance.md` now for the tutorial-vs-how-to stance and the
+curated-excerpt rule.
+
 Once every step is `resolved` (verify by grepping the `## steps` section for
 `status: unverified` — there should be zero hits), author the page(s).
 

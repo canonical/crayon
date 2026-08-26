@@ -1,10 +1,9 @@
-Load this file at workflow step 3 (Passenger branch (host-harness)).
+Load this file at workflow step 3 (Author the page).
 
-# Writing standards (passenger authoring)
+# Writing standards (authoring)
 
-The editorial standard every passenger-authored sentence answers to. It sits
-above the per-format markup standards in `references/provider-branch.md` (which
-keeps the probe/branch mechanics, the stance contract, and the report shape) and
+The editorial standard every authored sentence answers to. It sits above the
+per-format markup standards (MyST vs rST, held in the SKILL.md step 3) and
 complements the stance contract: stance governs the register, this file governs
 what the text is and how it treats its own history.
 
@@ -61,8 +60,8 @@ Before a claim about behaviour, defaults, bounds, constraints, or availability
 enters prose, it passes three checks:
 
 1. **Locate.** Pin the claim to a `file:line` in the source you read — before
-   writing the prose, not after. Cite locations in the context report, never in
-   the published page.
+   writing the prose, not after. Cite locations in the context report
+   (`.dogen/staging/<id>/report.md`), never in the published page.
 2. **Confirm.** Read the current source at that location — not the plan prose,
    not a prior draft's wording, not the page's own existing text. The source is
    the only truth; everything else is a pointer to it.
@@ -70,7 +69,7 @@ enters prose, it passes three checks:
    feature. Never promote "exists in code" to "is supported" without a second
    in-repo signal: a test that exercises it, a public schema entry, CLI help, a
    sibling page. One mention in one file is one source, not confirmation — when
-   the second signal is missing, the claim goes into the report's `gaps`, not
+   the second signal is missing, the claim goes into the report's gaps, not
    the prose.
 
 **The inverse rule — never invent a constraint.** Before writing "must", "only",
@@ -102,7 +101,7 @@ normalizes relative paths instead of refusing them.)
 
 - **Re-read the tail after every `Write`.** Stray closing tags and fences have
   leaked into staged files at the end; a two-second tail check catches them
-  before the CLI or the reviewer does.
+  before the reviewer does.
 - **A grep for your own staged text that unexpectedly misses** usually means an
   invisible character — check for NBSP (U+00A0) with `cat -A` (it shows as
   `M-BM- `) and rewrite the line with a plain space.
