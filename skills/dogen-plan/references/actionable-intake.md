@@ -6,7 +6,7 @@ dogen drafts the two **actionable** Diataxis directions — **tutorial** and
 **how-to** — by *doing*: the draft is produced from a recorded walk of the
 procedure, not extracted from artefacts. This is the single shared intake for
 both directions (D-08); it holds the tutorial-vs-how-to distinction the intake
-confirms and the plan-stage outline framing, then routes to dogen-record.
+confirms and the plan-stage outline framing, then routes to dogen-write (evidence-walk branch).
 
 ## The two actionable directions
 
@@ -40,10 +40,9 @@ Good how-to-shaped units:
 - a focused recipe with a clear start state, a goal, and a verifiable end state.
 
 Both directions **declare `intent: tutorial` or `intent: how-to`** in the
-`unit.md` front-matter, and their draft-stage skill is **dogen-record** — the
-action-based counterpart to dogen-write. dogen-record walks the procedure step by
-step under the evidence gate and authors the page from what actually ran
-(actionable units route to dogen-record, never dogen-write).
+`unit.md` front-matter, and their draft-stage skill is **dogen-write** (evidence-walk
+branch). dogen-write walks the procedure step by step under the evidence gate and
+authors the page from what actually ran.
 
 ## Plan-stage outline / acceptance framing
 
@@ -59,7 +58,8 @@ reader's terms:
   *source pointers* only, never as what the page is "about".
 
 **Never write a step list at the plan stage.** Enumerating the procedure's steps
-is dogen-record's job — the walk *derives* the steps from evidence, capturing
+is dogen-write's job (evidence-walk branch) — the walk *derives* the steps from
+evidence, capturing
 what actually ran. A plan-stage outline that pre-lists steps pre-empts the walk
 and invites a draft written from imagination rather than from a recorded run. The
 outline states the procedure's *outcome and acceptance*, not its steps.
