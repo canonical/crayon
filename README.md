@@ -56,24 +56,20 @@ sudo cp "$DOGEN"/scripts/dogen-*.sh /usr/local/bin/
 mkdir -p ~/.local/bin && cp "$DOGEN"/scripts/dogen-*.sh ~/.local/bin/
 ```
 
-**Skills — copy them into each docs repo you want to draft in.** Run these from the
-**docs repo's root** (not the dogen checkout); the skills land in your harness's
-discovery root *inside that repo*:
+**Skills — install them at one of two scopes:**
 
 ```bash
+# Project-scoped (recommended) — copy into each docs repo, so the skills travel with it:
 cd /path/to/your-docs-repo
+cp -r "$DOGEN"/skills/dogen-* .agents/skills/
 
-# Claude Code:
-cp -r "$DOGEN"/skills/dogen-* .claude/skills/
-
-# GitHub Copilot CLI:
-cp -r "$DOGEN"/skills/dogen-* .github/skills/
-
-# opencode:
-cp -r "$DOGEN"/skills/dogen-* .opencode/skills/
+# Global — copy once, so every repo discovers them:
+mkdir -p ~/.agents/skills && cp -r "$DOGEN"/skills/dogen-* ~/.agents/skills/
 ```
 
-Repeat the skill copy in each docs repo (once per repo; re-run after upgrading dogen).
+Modern agents read the agent-compatible `.agents/skills/` (project) or `~/.agents/skills/`
+(global) discovery root, rather than the harness-specific `.claude/`, `.github/`, or `.opencode/`
+roots. Repeat the project-scoped copy in each docs repo (once per repo; re-run after upgrading dogen).
 
 The scripts are the deterministic enforcement layer; the skills are the interface. Your agent
 harness sees the `SKILL.md` files in the docs repo and invokes the scripts (which must be on
