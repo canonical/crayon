@@ -18,7 +18,7 @@ review grounded by re-checking claims against the recorded sources).
   it durably steers the next drafting pass.
 
 This skill never edits the draft or runs a build. Regeneration routes back to
-dogen-write or dogen-record.
+dogen-write.
 </objective>
 
 <quick_start>
@@ -148,10 +148,8 @@ reviewer's own words. Findings are cited by number (`F-2`, `F-5`).
 
 Then route:
 - **accept** → `Next: accepted — the publishing commit is yours.` The loop stops.
-- **fix** (reference/explanation) → `Next: /dogen-write — apply the recorded fix.`
-- **fix** (tutorial/how-to) → `Next: /dogen-record — apply the recorded fix and re-record.`
-- **redraft** (reference/explanation) → `Next: /dogen-write — re-draft against the recorded steering.`
-- **redraft** (tutorial/how-to) → `Next: /dogen-record — re-walk the procedure and record a fresh draft.`
+- **fix** → `Next: /dogen-write — apply the recorded fix.`
+- **redraft** → `Next: /dogen-write — re-draft against the recorded steering.`
 
 Quote the `git: committed <sha7>` line (on accept) or note that the steering note
 was appended (on fix/redraft). Then STOP: no build, no publish, no edits to the draft.
@@ -164,14 +162,14 @@ dogen-write to draft first.
 
 **Reviewer wants text edits:** this skill does not edit the draft. The ONE correction
 path is: record the change as a fix/redraft verdict (it lands in the steering stream)
-and route to dogen-write/dogen-record. Never offer to edit the draft yourself.
+and route to dogen-write. Never offer to edit the draft yourself.
 
 **Duplicate accept:** if the latest review row already has `verdict: accept` for the
 same draft hash, the unit is already sealed. Surface and stop — nothing needs redoing.
 
 **Reopening an accepted unit:** record a `fix` or `redraft` verdict (append to the
 `## reviews` section and the `## steering` section). This reopens the unit; the next
-dogen-write/dogen-record pass re-drafts it.
+dogen-write pass re-drafts it.
 
 **The plan is stale (unit.md changed after signoff):** surface it in the provenance
 summary. The reviewer may want the plan re-approved before judging the draft.
@@ -207,7 +205,7 @@ summary. The reviewer may want the plan re-approved before judging the draft.
 - [ ] On accept, `dogen-record-review.sh --verdict accept` was called and exited 0; the sealed hash was
       quoted.
 - [ ] On fix/redraft, the note was appended to the ledger's steering section; the
-      routing line pointed to dogen-write or dogen-record.
+      routing line pointed to dogen-write.
 - [ ] No build was run, no file under `docs/` was edited, and hand-editing the draft
       was never suggested.
 </success_criteria>
