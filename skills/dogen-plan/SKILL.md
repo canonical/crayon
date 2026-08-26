@@ -172,7 +172,7 @@ steering_notes: <synthesized steering note>
    `unit.md`, commits "signoff"):
 
 ```bash
-scripts/dogen-signoff.sh "$UNIT_ID"
+dogen-signoff.sh "$UNIT_ID"
 ```
 
 If the TA wants to amend the plan after signoff, edit `unit.md` with `Edit` and

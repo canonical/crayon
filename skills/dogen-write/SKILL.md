@@ -53,7 +53,7 @@ skip the walk for an actionable unit.
 3. Author the page in the unit's format (MyST for `.md`, rST for `.rst`), loading
    the direction register for the declared intent.
 4. Stage the draft under `.dogen/staging/<id>/handoff.<ext>`.
-5. Call `scripts/dogen-record-draft.sh <id> <staged-draft> --model <model>` via `Bash`.
+5. Call `dogen-record-draft.sh <id> <staged-draft> --model <model>` via `Bash`.
 6. Report the recorded draft and route the TA to dogen-review.
 </quick_start>
 
@@ -127,11 +127,10 @@ The `text_hash` is the SHA-256 of the step's text — `dogen-record-step.sh` use
 for staleness detection (if the step text changes after evidence is captured, the
 evidence is stale).
 
-Commit the step plan using the shared commit helper (stages only `.dogen/` and
-`docs/`, never the whole repo):
+Commit the step plan with the Dogen trailers (stages only `.dogen/`, never the
+whole repo):
 
 ```bash
-source scripts/dogen-common.sh
 git add .dogen/ && git commit -q -m "dogen: step-plan ${UNIT_ID}" \
   --trailer "Dogen-Unit: ${UNIT_ID}" --trailer "Dogen-Phase: step-plan"
 ```
@@ -166,7 +165,7 @@ resolves so the walk proceeds.
 **Recording a step's evidence:** write the evidence to a temp file, then call:
 
 ```bash
-scripts/dogen-record-step.sh "$UNIT_ID" "<step-id>" --evidence-file "<evidence-file>"
+dogen-record-step.sh "$UNIT_ID" "<step-id>" --evidence-file "<evidence-file>"
 ```
 
 The evidence file is a simple `key: value` format:
@@ -254,7 +253,7 @@ These staging files are the ONLY files this skill writes. Never write directly t
 Call the deterministic script:
 
 ```bash
-scripts/dogen-record-draft.sh "$UNIT_ID" \
+dogen-record-draft.sh "$UNIT_ID" \
   ".dogen/staging/$UNIT_ID/handoff.$EXT" \
   --model "$MODEL"
 ```

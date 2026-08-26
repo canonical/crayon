@@ -59,7 +59,7 @@ output_sha256: "$SHA"
 exit_code: 0
 step_text_sha256: "$HASH"
 YAML
-scripts/dogen-record-step.sh "$UNIT" verify --evidence-file "$WS/evidence/verify.evidence"
+dogen-record-step.sh "$UNIT" verify --evidence-file "$WS/evidence/verify.evidence"
 ```
 
 **TA-runs:** print the exact copy-pasteable command with capture built in, let the
