@@ -10,8 +10,8 @@ surface a Technical Author drives, backed by a thin layer of deterministic bash 
 enforce the load-bearing guarantees (HITL gate, provenance ordering, evidence verification,
 accept sealing). No Python, no CLI, no venv — just skills + scripts.
 
-- **Skills-first surface** — the portable `dogen-plan` / `dogen-write` / `dogen-review` /
-  `dogen-record` skill family is the primary, harness-agnostic human interface.
+- **Skills-first surface** — the portable `dogen-plan` / `dogen-write` / `dogen-review`
+  skill family is the primary, harness-agnostic human interface.
 - **Deterministic gates** — 4 bash scripts enforce the HITL gate, write ordering,
   identical-redraft suppression, evidence verification, and structured review
   recording (accept/fix/redraft). The model cannot bypass them.
@@ -56,7 +56,7 @@ cp -r skills/dogen-* .opencode/skills/
 ```
 
 The skills are the interface; the scripts are the deterministic enforcement layer. Your agent
-harness sees the four `SKILL.md` files and invokes the scripts via `Bash` as needed.
+harness sees the three `SKILL.md` files and invokes the scripts via `Bash` as needed.
 
 ### 2 — Add context files (recommended)
 
@@ -79,12 +79,14 @@ the human-in-the-loop gate at each step.
 
 1. **`dogen-plan`** — declare a unit and its sources, shape the outline, record your intent
    and audience, and **sign the plan off** (calls `dogen-signoff.sh` — the HITL gate).
-2. **Draft — by direction:**
-   - **reference / explanation** → **`dogen-write`** — the host agent drafts the page from the
-     signed-off plan, stages it, and calls `dogen-record-draft.sh` to record it.
-   - **tutorial / how-to** → **`dogen-record`** — drafted by *doing*: an evidence-gated step
-     walk that captures verbatim proof (output bytes, exit code, SHA-256) via
-     `dogen-record-step.sh`, then authors the page from what actually ran.
+2. **Draft — by direction:** all four directions route to **`dogen-write`**, the sole
+   drafting skill. It branches on the declared `intent`:
+   - **reference / explanation** — the host agent drafts the page from the signed-off
+     plan, stages it, and calls `dogen-record-draft.sh` to record it.
+   - **tutorial / how-to** — drafted by *doing*: an evidence-gated step walk that
+     captures verbatim proof (output bytes, exit code, SHA-256) via
+     `dogen-record-step.sh`, then authors the page from what actually ran (also
+     recorded via `dogen-record-draft.sh`).
 3. **`dogen-review`** — review the draft alongside its provenance and record a verdict
    (**accept** / **fix** / **redraft**) via `dogen-record-review.sh`. Accept seals
    page SHA-256 hashes; fix/redraft append the note to the steering stream.
@@ -146,7 +148,7 @@ at `.dogen/units/smoke/ledger.md` records the full audit trail. Clean up: `rm -r
 | Script | What it enforces | Exit codes |
 |---|---|---|
 | `dogen-signoff.sh <id> [--force]` | HITL gate: SHA-256 of `unit.md` + commit; lazy-creates ledger; validates unit-id against path traversal | 0 ok, 1 double-signoff, 2 bad input |
-| `dogen-record-draft.sh <id> <file> [--model M]` | Inline gate check + WR-03: ledger before page; identical-redraft check; path-traversal validation | 0 ok, 1 gate fail, 2 bad input, 3 identical |
+| `dogen-record-draft.sh <id> <file> [--model M]` | Inline gate check + WR-03: ledger before page; identical-redraft check; path-traversal validation | 0 ok, 1 gate fail, 2 bad input, 3 identical, 4 evidence incomplete (unresolved steps) |
 | `dogen-record-review.sh <id> --verdict accept\|fix\|redraft [--note N]` | Records verdict; accept seals page SHA-256; fix/redraft appends note to steering stream | 0 ok, 1 no generation, 2 bad input |
 | `dogen-record-step.sh <id> <step> --evidence-file F` | Evidence micro-gate: validates verdict enum, requires SHA-256 + exit_code + step_text_sha256; fail stays unverified; staleness check | 0 ok, 1 incomplete, 2 bad input, 3 stale |
 
@@ -177,8 +179,7 @@ python scripts/skill_lint.py
 skills/                          ← the human-facing surface (SKILL.md)
 ├── dogen-plan/SKILL.md
 ├── dogen-write/SKILL.md
-├── dogen-review/SKILL.md
-└── dogen-record/SKILL.md
+└── dogen-review/SKILL.md
 
 scripts/                         ← the deterministic enforcement layer
 ├── dogen-common.sh              ← shared helpers (SHA-256, ledger ops, path validation, commit)

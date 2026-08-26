@@ -5,7 +5,7 @@
 | Aspect | Before (CLI + Python core) | After (scripts + skills) | Why |
 |---|---|---|---|
 | **Install** | `uv tool install` + Python 3.12 + venv | Copy `scripts/` + `skills/` into repo | Zero Python runtime for the consumer |
-| **Interface** | Typer CLI (`dogen unit new`, `dogen signoff`, …) | 4 `SKILL.md` files + 4 bash scripts | Skills are the surface; scripts are the teeth |
+| **Interface** | Typer CLI (`dogen unit new`, `dogen signoff`, …) | 3 `SKILL.md` files + 4 bash scripts | Skills are the surface; scripts are the teeth |
 | **Provenance** | `provenance.yaml` (Pydantic v2, schema v2, 40+ fields) | `ledger.md` (plain markdown, pipe-delimited rows) | Human-readable; survives compaction; no migration needed |
 | **HITL gate** | `SignoffRequiredError` in `orchestrator.py` | `dogen-signoff.sh` computes SHA-256; `dogen-record-draft.sh` refuses inline | Gate stays in deterministic code, not prose |
 | **Draft recording** | `draft` in orchestrator (WR-03 ordering in Python) | `dogen-record-draft.sh` writes ledger before page | Same guarantee, ~100 lines of bash |
@@ -14,7 +14,13 @@
 | **Provider seam** | `DraftingProvider` port + `seam_check.py` + import-linter | Not applicable (no driver) | Nothing to swap; the seam's purpose disappears |
 | **Observability** | OTel API in `core/` + logfire in `obs/` | The ledger IS the observability record | No telemetry infra; the audit trail is on disk |
 | **Tests** | 57 pytest files (gate, ordering, routing, seam, CLI) | 1 bash test file (58 assertions) + Drill evals (deferred) | Scripts are unit-tested; skill behavior is eval-measured |
-| **Codebase size** | ~6000 lines Python (core + adapters + CLI + compose) | ~250 lines bash (4 scripts + common) + 4 SKILL.md | 96% reduction in deterministic code |
+| **Codebase size** | ~6000 lines Python (core + adapters + CLI + compose) | ~250 lines bash (4 scripts + common) + 3 SKILL.md | 96% reduction in deterministic code |
+
+> **Skill family folded:** the former `dogen-record` skill is folded into `dogen-write`,
+> which is now the sole drafting skill and branches on the declared `intent` — reference and
+> explanation author straight from sources; tutorial and how-to walk an evidence-gated step
+> plan. The evidence gate moved out of prose into `dogen-record-draft.sh` (exit 4 on
+> unresolved actionable steps).
 
 ## What's preserved (structurally)
 
@@ -26,7 +32,7 @@
 - **Path-traversal protection** — all scripts validate `unit_id` against `../` and `/`
 - **Commit trailers** — every script emits `Dogen-Unit:` / `Dogen-Phase:` / `Dogen-Draft:` / `Dogen-Verdict:` / `Dogen-Step:` trailers; staging limited to `.dogen/` + `docs/`
 - **Passenger honesty (T-03-03)** — automatically preserved; no driver mode to impersonate
-- **Diátaxis routing** — skills route on declared intent (reference/explanation → dogen-write; tutorial/how-to → dogen-record)
+- **Diátaxis routing** — skills route on declared intent (all four directions → dogen-write; tutorial/how-to take the evidence-walk branch)
 - **`unit.md` format** — unchanged; YAML frontmatter + body
 - **`.dogen/` layout** — unchanged directory structure
 

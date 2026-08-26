@@ -21,8 +21,7 @@ at runtime is physically embedded in each `SKILL.md`.
 ## Pipeline
 
 ```
-dogen-plan -> dogen-write   -> dogen-review
-           \-> dogen-record -> dogen-review
+dogen-plan -> dogen-write -> dogen-review
 ```
 
 - **dogen-plan** — grounds itself in the repo's prior art (`.dogen/context/`
@@ -30,18 +29,17 @@ dogen-plan -> dogen-write   -> dogen-review
   `unit.md`, and ends with the gate act (`dogen-signoff.sh`). Also serves
   advise-only triage asks ("does this need docs?") with a grounded Triage
   Recommendation, declaring nothing until the TA says go. Routes on Diátaxis
-  direction: reference/explanation → dogen-write; tutorial/how-to → dogen-record.
+  direction: all four directions → dogen-write.
 
-- **dogen-write** — drafts a review-ready reference or explanation page (MyST or
-  rST — the unit's target extension decides). The host agent authors the page
-  from the declared sources, stages it under `.dogen/staging/`, and records it
-  via `dogen-record-draft.sh` (which enforces the HITL gate inline, writes the
-  ledger row before the page, and checks for identical redrafts).
-
-- **dogen-record** — walks the TA through an evidence-gated step plan and drafts
-  a tutorial or how-to from what actually ran. Each step's verbatim proof (bytes
-  + exit code + SHA-256) is recorded via `dogen-record-step.sh`; the final page
-  is recorded via `dogen-record-draft.sh` (same as dogen-write).
+- **dogen-write** — the sole drafting skill, covering all four directions
+  (reference / explanation / tutorial / how-to) in two modes. Reference and
+  explanation author the page straight from the declared sources; tutorial and
+  how-to walk an evidence-gated step plan and draft from what actually ran, each
+  step's verbatim proof (bytes + exit code + SHA-256) recorded via
+  `dogen-record-step.sh`. Either way the host agent stages the page under
+  `.dogen/staging/` and records it via `dogen-record-draft.sh` (which enforces
+  the HITL gate inline, writes the ledger row before the page, checks for
+  identical redrafts, and exits 4 on unresolved actionable steps).
 
 - **dogen-review** — surfaces the drafted unit for human review through two modes
   (record / review with 5-dimension findings), then records the verdict via
@@ -53,9 +51,9 @@ dogen-plan -> dogen-write   -> dogen-review
 | Script | Enforces | Called by |
 |---|---|---|
 | `dogen-signoff.sh` | HITL gate: SHA-256 of `unit.md` + commit; lazy-creates ledger | dogen-plan |
-| `dogen-record-draft.sh` | Inline gate + WR-03: ledger before page + identical-redraft | dogen-write, dogen-record |
+| `dogen-record-draft.sh` | Inline gate + WR-03: ledger before page + identical-redraft; exits 4 on unresolved actionable steps | dogen-write |
 | `dogen-record-review.sh` | Verdict recording: accept seals hashes / fix\|redraft appends steering | dogen-review |
-| `dogen-record-step.sh` | Evidence micro-gate: validates verdict + SHA-256 + staleness; fail stays unverified | dogen-record |
+| `dogen-record-step.sh` | Evidence micro-gate: validates verdict + SHA-256 + staleness; fail stays unverified | dogen-write |
 
 Every script emits one local git commit with `Dogen-Unit:` / `Dogen-Phase:`
 trailers, staging only `.dogen/` and `docs/` (never the whole repo). Scripts never
