@@ -126,7 +126,7 @@ accept. The recommendation is a default, never a decision.
 **On accept** — call the deterministic script:
 
 ```bash
-scripts/dogen-record-review.sh "$UNIT_ID" --verdict accept --note "$REVIEWER_NOTE"
+dogen-record-review.sh "$UNIT_ID" --verdict accept --note "$REVIEWER_NOTE"
 ```
 
 The script computes the SHA-256 of the drafted page, writes a review row with
@@ -138,7 +138,7 @@ exists; exit 0 on success.
 steering stream AND records the verdict in one atomic commit):
 
 ```bash
-scripts/dogen-record-review.sh "$UNIT_ID" --verdict fix --note "$REVIEWER_NOTE"
+dogen-record-review.sh "$UNIT_ID" --verdict fix --note "$REVIEWER_NOTE"
 ```
 
 The script appends a steering row (origin: review) and a review row to the ledger,

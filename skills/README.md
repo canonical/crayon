@@ -6,7 +6,7 @@ loop a Technical Author (TA) actually drives, backed by 4 deterministic bash scr
 that enforce the load-bearing guarantees. Every `dogen-*` skill follows this contract.
 
 The skills are conversational LLM prompts (no flags) that invoke the deterministic
-scripts (`scripts/dogen-signoff.sh` / `dogen-record-draft.sh` /
+scripts (`dogen-signoff.sh` / `dogen-record-draft.sh` /
 `dogen-record-review.sh` / `dogen-record-step.sh`) via `Bash`, and write/edit files
 directly for non-load-bearing operations (writing `unit.md`, appending steering
 notes). The skills carry **intent and judgment**; the scripts hold the **provable
@@ -69,23 +69,24 @@ are derived by grepping the ledger — nothing is stored as a flag.
 
 ## Installation
 
-Copy the skills into your harness's discovery root:
+Point a `DOGEN` variable at your dogen checkout, then install the scripts (system-wide)
+and the skills (per docs repo):
 
 ```bash
+DOGEN=/path/to/dogen-mvp-1
+
+# Scripts — onto your PATH (once, system-wide, so they work from any repo):
+sudo cp "$DOGEN"/scripts/dogen-*.sh /usr/local/bin/
+#   or, without sudo:
+mkdir -p ~/.local/bin && cp "$DOGEN"/scripts/dogen-*.sh ~/.local/bin/
+
+# Skills — into each docs repo's harness discovery root (run from that repo):
 # Claude Code:
-cp -r skills/dogen-* .claude/skills/
-
+cp -r "$DOGEN"/skills/dogen-* .claude/skills/
 # GitHub Copilot CLI:
-cp -r skills/dogen-* .github/skills/
-
+cp -r "$DOGEN"/skills/dogen-* .github/skills/
 # opencode:
-cp -r skills/dogen-* .opencode/skills/
-```
-
-Copy the scripts onto your PATH (or reference them by relative path from the repo root):
-
-```bash
-cp scripts/dogen-*.sh /usr/local/bin/   # or: export PATH="$PWD/scripts:$PATH"
+cp -r "$DOGEN"/skills/dogen-* .opencode/skills/
 ```
 
 ## Vocabulary
