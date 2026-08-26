@@ -1,4 +1,4 @@
-Load this file at workflow step 1 (Open or resume).
+Load this file at the start of the actionable (tutorial/how-to) walk branch.
 
 # Walk protocol — evidence, capture, consent, workspace, resume
 
