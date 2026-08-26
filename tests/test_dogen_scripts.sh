@@ -249,6 +249,68 @@ test_record_draft_path_traversal() {
     cleanup
 }
 
+# --- Tests: evidence gate (record-draft, actionable units) ---
+
+test_record_draft_evidence_gate_unresolved() {
+    setup_repo
+    setup_unit "walk-unit" "tutorial"
+    "$REPO_SCRIPTS/dogen-signoff.sh" "walk-unit" >/dev/null 2>&1
+    local ledger=".dogen/units/walk-unit/ledger.md"
+    echo "" >>"$ledger"
+    echo "## steps" >>"$ledger"
+    echo "step-1 | text_hash: aaa111 | status: unverified" >>"$ledger"
+    git add .dogen/ && git commit -q -m "add steps"
+    mkdir -p .dogen/staging
+    echo "# Draft" >.dogen/staging/draft.md
+    "$REPO_SCRIPTS/dogen-record-draft.sh" "walk-unit" ".dogen/staging/draft.md" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "actionable draft with unresolved step exit code" "4" "$rc"
+    assert_file_not_exists "no page on unresolved step" "docs/walk-unit.md"
+    cleanup
+}
+
+test_record_draft_evidence_gate_no_steps() {
+    setup_repo
+    setup_unit "walk-unit" "tutorial"
+    "$REPO_SCRIPTS/dogen-signoff.sh" "walk-unit" >/dev/null 2>&1
+    mkdir -p .dogen/staging
+    echo "# Draft" >.dogen/staging/draft.md
+    "$REPO_SCRIPTS/dogen-record-draft.sh" "walk-unit" ".dogen/staging/draft.md" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "actionable draft with no step plan exit code" "4" "$rc"
+    cleanup
+}
+
+test_record_draft_evidence_gate_resolved() {
+    setup_repo
+    setup_unit "walk-unit" "tutorial"
+    "$REPO_SCRIPTS/dogen-signoff.sh" "walk-unit" >/dev/null 2>&1
+    local ledger=".dogen/units/walk-unit/ledger.md"
+    echo "" >>"$ledger"
+    echo "## steps" >>"$ledger"
+    echo "step-1 | text_hash: aaa111 | status: resolved" >>"$ledger"
+    git add .dogen/ && git commit -q -m "add steps"
+    mkdir -p .dogen/staging
+    echo "# Draft" >.dogen/staging/draft.md
+    "$REPO_SCRIPTS/dogen-record-draft.sh" "walk-unit" ".dogen/staging/draft.md" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "actionable draft with all steps resolved exit code" "0" "$rc"
+    assert_file_contains "page written" "docs/walk-unit.md" "# Draft"
+    cleanup
+}
+
+test_record_draft_reference_skips_evidence_gate() {
+    setup_repo
+    setup_unit "ref-unit" "reference"
+    "$REPO_SCRIPTS/dogen-signoff.sh" "ref-unit" >/dev/null 2>&1
+    mkdir -p .dogen/staging
+    echo "# Draft" >.dogen/staging/draft.md
+    "$REPO_SCRIPTS/dogen-record-draft.sh" "ref-unit" ".dogen/staging/draft.md" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "reference draft skips evidence gate exit code" "0" "$rc"
+    cleanup
+}
+
 # --- Tests: dogen-record-review.sh ---
 
 test_review_accept_happy_path() {

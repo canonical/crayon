@@ -79,6 +79,14 @@ ledger_has_section() {
     grep -q "^## ${section}$" "$ledger"
 }
 
+# Print unresolved (unverified) step ids in the ledger's ## steps section, one per line.
+# Usage: unresolved_steps <ledger_file>
+unresolved_steps() {
+    local ledger="$1"
+    ledger_section_rows "$ledger" "steps" | grep 'status: unverified' |
+        sed -E 's/^([^ ]+).*/\1/' || true
+}
+
 # Print all data rows in a ledger section (excluding header and blank lines).
 # Usage: ledger_section_rows <ledger_file> <section_name>
 ledger_section_rows() {
