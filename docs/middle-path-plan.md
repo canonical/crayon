@@ -352,7 +352,7 @@ negative_checks:
 The README is rewritten to reflect:
 - **No Python install** — just copy skills + scripts into the repo
 - **No CLI** — the skills are the entire interface
-- **Install:** `cp -r skills/ .claude/skills/ && cp scripts/dogen-*.sh /usr/local/bin/`
+- **Install:** `cp -r skills/dogen-* .agents/skills/ && cp scripts/dogen-*.sh /usr/local/bin/`
   (or a thin `install.sh`)
 - **Smoke check:** the same declare→signoff→draft→review loop, but driven from the harness
 - **Develop:** the test suite is `bash tests/test_dogen_scripts.sh`, not `uv run pytest`

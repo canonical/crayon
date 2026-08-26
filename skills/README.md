@@ -70,7 +70,7 @@ are derived by grepping the ledger — nothing is stored as a flag.
 ## Installation
 
 Point a `DOGEN` variable at your dogen checkout, then install the scripts (system-wide)
-and the skills (per docs repo):
+and the skills (project-scoped or global):
 
 ```bash
 DOGEN=/path/to/dogen-mvp-1
@@ -80,13 +80,12 @@ sudo cp "$DOGEN"/scripts/dogen-*.sh /usr/local/bin/
 #   or, without sudo:
 mkdir -p ~/.local/bin && cp "$DOGEN"/scripts/dogen-*.sh ~/.local/bin/
 
-# Skills — into each docs repo's harness discovery root (run from that repo):
-# Claude Code:
-cp -r "$DOGEN"/skills/dogen-* .claude/skills/
-# GitHub Copilot CLI:
-cp -r "$DOGEN"/skills/dogen-* .github/skills/
-# opencode:
-cp -r "$DOGEN"/skills/dogen-* .opencode/skills/
+# Skills — into the agent-compatible discovery root, project-scoped or global:
+# Project-scoped (recommended) — copy into each docs repo:
+cd /path/to/your-docs-repo
+cp -r "$DOGEN"/skills/dogen-* .agents/skills/
+# Global — copy once, so every repo discovers them:
+mkdir -p ~/.agents/skills && cp -r "$DOGEN"/skills/dogen-* ~/.agents/skills/
 ```
 
 ## Vocabulary
