@@ -177,7 +177,9 @@ dogen-signoff.sh "$UNIT_ID"
 
 If the TA wants to amend the plan after signoff, edit `unit.md` with `Edit` and
 re-run `dogen-signoff.sh "$UNIT_ID" --force` to re-sign. If the TA wants to append
-a steering note, append a row to the `## steering` section of `ledger.md` with `Edit`.
+a steering note, append a row to the `## steering` section of `ledger.md` with
+`Edit`, separated from its neighbours by a single blank line (and the section
+header from its first row by none).
 
 Present a single summary block:
 
