@@ -25,7 +25,7 @@ Confirm the TA's unit fits this shape before declaring. If the reader's real nee
 "teach me" (tutorial), "help me do X" (how-to), or "help me understand why"
 (explanation), it is NOT a reference unit — route to the matching intake instead:
 
-- **tutorial** / **how-to** → load `references/actionable-intake.md`, route to dogen-record.
+- **tutorial** / **how-to** → load `references/actionable-intake.md`, route to dogen-write (evidence-walk branch).
 - **explanation** → load `references/explanation-intake.md`, run the intent walk, route to dogen-write.
 
 ## The four directions at a glance
@@ -33,8 +33,8 @@ Confirm the TA's unit fits this shape before declaring. If the reader's real nee
 | Direction | Orientation | Draft-stage skill |
 |-----------|-------------|-------------------|
 | **reference** | information-oriented — look up the facts | dogen-write |
-| **tutorial** | learning-oriented — a guided lesson | dogen-record |
-| **how-to** | task-oriented — steps to reach a goal | dogen-record |
+| **tutorial** | learning-oriented — a guided lesson | dogen-write (evidence-walk branch) |
+| **how-to** | task-oriented — steps to reach a goal | dogen-write (evidence-walk branch) |
 | **explanation** | understanding-oriented — background and rationale | dogen-write |
 
 A TA-stated direction is honored verbatim; propose one only when the TA supplied

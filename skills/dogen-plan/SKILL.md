@@ -1,6 +1,6 @@
 ---
 name: dogen-plan
-description: Guides a Technical Author through declaring one documentation unit via one-question-at-a-time Socratic intake, grounding first in existing docs and dogen context artifacts, drawing out intent and audience before recording anything, then writing unit.md and calling dogen-signoff.sh to persist the declaration and record the HITL gate act (lazy-creates the ledger). Routes by declared Diataxis direction — reference/explanation to dogen-write, tutorial/how-to to dogen-record. Also serves advise-only triage asks. Use when a TA is ready to declare and sign off a new documentation unit before drafting, or asks whether a change needs documentation.
+description: Guides a Technical Author through declaring one documentation unit via one-question-at-a-time Socratic intake, grounding first in existing docs and dogen context artifacts, drawing out intent and audience before recording anything, then writing unit.md and calling dogen-signoff.sh to persist the declaration and record the HITL gate act (lazy-creates the ledger). Routes by declared Diataxis direction — reference/explanation to dogen-write, tutorial/how-to to dogen-write (evidence-walk branch). Also serves advise-only triage asks. Use when a TA is ready to declare and sign off a new documentation unit before drafting, or asks whether a change needs documentation.
 allowed-tools: Read, Bash, Glob, Grep, Write, Edit, AskUserQuestion
 ---
 
@@ -15,7 +15,7 @@ hash of `unit.md`) and unblocks drafting.
 </objective>
 
 <HARD-GATE>
-Do NOT invoke dogen-write or dogen-record, write any documentation, or take any
+Do NOT invoke dogen-write, write any documentation, or take any
 drafting action until:
 1. `unit.md` has been written under `.dogen/units/<id>/unit.md`
 2. `dogen-signoff.sh <id>` has been called and exited 0 (it lazy-creates the
@@ -42,12 +42,12 @@ valid signoff. You cannot bypass it.
 
 <pipeline>
 dogen-plan -> dogen-write -> dogen-review
-         \-> dogen-record -> dogen-review
 
 This skill is the declare+signoff stage. It consumes the TA's answers and produces
 `unit.md` + `ledger.md` under `.dogen/units/<id>/`; the scripts' commit seam records
-both transitions. On success it hands off to the draft-stage skill keyed on the
-declared direction: reference/explanation → dogen-write; tutorial/how-to → dogen-record.
+both transitions. On success it hands off to dogen-write, which branches internally
+on the declared direction: reference/explanation, or tutorial/how-to via the
+evidence-walk branch.
 </pipeline>
 
 <workflow>
@@ -117,7 +117,7 @@ Settle the unit's Diataxis direction, then route on it:
 
 - **reference** → declare `intent: reference`, route to dogen-write.
 - **tutorial** / **how-to** → declare `intent: tutorial` / `intent: how-to`, route
-  to dogen-record.
+  to dogen-write (evidence-walk branch).
 - **explanation** → run the intent walk (Socratic "5 whys" that draws out recorded
   intent), then declare `intent: explanation` and route to dogen-write.
 
@@ -135,7 +135,8 @@ appear only as source pointers, never as things the page is "about".
 
 For an actionable direction the outline is a procedure's outcome and acceptance —
 the reader's start state, the concrete end state, and the checkpoints — phrased
-outcome-framed, and **never a step list**. Enumerating steps is dogen-record's job.
+outcome-framed, and **never a step list**. Enumerating steps is dogen-write's job
+(evidence-walk branch).
 </step_5>
 
 <step_6 name="Write unit.md, init the ledger, sign off">
@@ -189,7 +190,7 @@ Present a single summary block:
 - Progress: signed off
 
 Next: /dogen-write — draft the unit.                    # reference/explanation
-Next: /dogen-record — walk the procedure and record.    # tutorial/how-to
+Next: /dogen-write — draft the unit (evidence-walk).    # tutorial/how-to
 ```
 </step_6>
 </workflow>
@@ -231,10 +232,9 @@ re-run `dogen-signoff.sh "$UNIT_ID" --force`. Steering notes append freely to th
 </must>
 <must_not>
 - Never override a TA-stated Diataxis direction — propose only when absent.
-- Never route an actionable (tutorial/how-to) unit to dogen-write.
 - Never record agent-invented intent as the TA's own — the steering note reflects
   only the TA's actual answers.
-- Never invoke dogen-write or dogen-record before `dogen-signoff.sh` exits 0.
+- Never invoke dogen-write before `dogen-signoff.sh` exits 0.
 - Never draft, review, push, or build — those belong to dogen-write/dogen-review.
 </must_not>
 </constraints>
@@ -244,6 +244,5 @@ re-run `dogen-signoff.sh "$UNIT_ID" --force`. Steering notes append freely to th
 - [ ] The intake ran one question at a time, drawing out intent and audience first.
 - [ ] `unit.md` was written with verified sources and a docs-tree-grounded target.
 - [ ] `dogen-signoff.sh` was called and exited 0.
-- [ ] The TA was routed to dogen-write (reference/explanation) or dogen-record
-      (tutorial/how-to) based on the declared direction.
+- [ ] The TA was routed to dogen-write based on the declared direction.
 </success_criteria>
