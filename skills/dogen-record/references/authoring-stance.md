@@ -1,4 +1,4 @@
-Load this file at workflow step 5 (Draft handoff (mirror dogen-write's passenger flow)).
+Load this file at workflow step 4 (Draft handoff (mirror dogen-write's flow)).
 
 # Authoring stance — tutorial and how-to (action-based drafting)
 
@@ -62,8 +62,8 @@ pasted, not curated. Evidence is internal observability; the page is the reader'
 
 ## Markup
 
-Author in the unit's `format` (from `dogen unit show --json`): MyST for `.md`
-targets (`colon_fence` directives, `{ref}` cross-references), reStructuredText for
-`.rst` targets (3-space directive indentation, one heading ladder). Never write one
-markup into the other's extension. A single top-level title, a clean heading
-ladder, no skipped levels — matching the page's siblings.
+Author in the unit's `format` (from the target extension in `unit.md`): MyST
+for `.md` targets (`colon_fence` directives, `{ref}` cross-references),
+reStructuredText for `.rst` targets (3-space directive indentation, one heading
+ladder). Never write one markup into the other's extension. A single top-level
+title, a clean heading ladder, no skipped levels — matching the page's siblings.

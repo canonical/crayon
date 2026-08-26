@@ -39,11 +39,11 @@ Good how-to-shaped units:
 - accomplish a named task ("migrate X to Y", "configure Z for W"),
 - a focused recipe with a clear start state, a goal, and a verifiable end state.
 
-Both directions **declare via `--intent tutorial` or `--intent how-to`**, and
-their draft-stage skill is **dogen-record** — the action-based counterpart to
-dogen-write. dogen-record walks the procedure step by step under the evidence
-gate and authors the page from what actually ran (D-02: actionable units route to
-dogen-record, never dogen-write).
+Both directions **declare `intent: tutorial` or `intent: how-to`** in the
+`unit.md` front-matter, and their draft-stage skill is **dogen-record** — the
+action-based counterpart to dogen-write. dogen-record walks the procedure step by
+step under the evidence gate and authors the page from what actually ran
+(actionable units route to dogen-record, never dogen-write).
 
 ## Plan-stage outline / acceptance framing
 
@@ -64,6 +64,6 @@ what actually ran. A plan-stage outline that pre-lists steps pre-empts the walk
 and invites a draft written from imagination rather than from a recorded run. The
 outline states the procedure's *outcome and acceptance*, not its steps.
 
-This is the single shared file for BOTH actionable directions (D-08). It mirrors
-the per-direction lazy-load pattern that the explanation intent-walk (Phase 15,
-EXPL-02) reuses at this same load point.
+This is the single shared file for BOTH actionable directions. It mirrors the
+per-direction lazy-load pattern that the explanation intent-walk reuses at this
+same load point.

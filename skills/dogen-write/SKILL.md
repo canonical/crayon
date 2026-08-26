@@ -76,6 +76,9 @@ it becomes the context report.
 </step_2>
 
 <step_3 name="Author the page">
+Load `references/writing-standards.md` now for the editorial standard. For an
+explanation unit, additionally load `references/explanation-stance.md`.
+
 Author a Sphinx-publishable page in the unit's Diátaxis direction:
 
 - **reference** → neutral, information-oriented register. Write as the product's
@@ -141,7 +144,6 @@ Report the recorded draft:
 ```
 ## dogen-write: <unit-id>
 
-- Provider: host-harness (passenger)
 - Handoff: .dogen/staging/<unit-id>/handoff.<ext>
 - Recorded draft: docs/<target>
 - Committed: <sha7 from the script's git: committed line>

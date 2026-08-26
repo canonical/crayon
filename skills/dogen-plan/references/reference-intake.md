@@ -1,10 +1,11 @@
-Load this file at workflow step 4 (Confirm the reference direction).
+Load this file at workflow step 4 (Confirm the Diataxis direction).
 
 # Reference-direction intake
 
-dogen drafts one Diataxis direction well this cycle: **reference**. This file holds
-the reference-shape checklist the intake confirms and the exact hard-block wording
-for the other three directions (D-07).
+The **reference** Diataxis direction is information-oriented: it describes the
+machinery accurately and completely so a reader who already knows what they want
+can look up the facts. This file holds the reference-shape checklist the intake
+confirms before declaring a reference unit.
 
 ## What the reference direction is for
 
@@ -22,30 +23,19 @@ Good reference-shaped units for dogen:
 
 Confirm the TA's unit fits this shape before declaring. If the reader's real need is
 "teach me" (tutorial), "help me do X" (how-to), or "help me understand why"
-(explanation), it is NOT a reference unit — hard-block below.
+(explanation), it is NOT a reference unit — route to the matching intake instead:
 
-## The three non-reference directions (hard-block this cycle)
+- **tutorial** / **how-to** → load `references/actionable-intake.md`, route to dogen-record.
+- **explanation** → load `references/explanation-intake.md`, run the intent walk, route to dogen-write.
 
-- **tutorial** — learning-oriented, a guided lesson.
-- **how-to** — task-oriented, steps to reach a goal.
-- **explanation** — understanding-oriented, background and rationale.
+## The four directions at a glance
 
-Declaring any of these would set up a draft that misleads or fails, because dogen
-only drafts the reference direction well right now.
+| Direction | Orientation | Draft-stage skill |
+|-----------|-------------|-------------------|
+| **reference** | information-oriented — look up the facts | dogen-write |
+| **tutorial** | learning-oriented — a guided lesson | dogen-record |
+| **how-to** | task-oriented — steps to reach a goal | dogen-record |
+| **explanation** | understanding-oriented — background and rationale | dogen-write |
 
-## Hard-block wording
-
-When the TA steers toward a non-reference type, use `AskUserQuestion` with wording of
-this shape, then STOP before declaring:
-
-> Right now dogen only drafts the **reference** Diataxis direction well — the neutral,
-> information-oriented "look it up" shape. What you're describing reads more like a
-> {tutorial | how-to | explanation}, which dogen doesn't draft reliably this cycle.
->
-> I can (a) note the intended type so a future cycle can pick it up, and stop here, or
-> (b) reframe this as a reference unit if there's a genuine reference surface to
-> document. Which would you like?
-
-Do not declare a unit with `--intent tutorial`, `--intent how-to`, or
-`--intent explanation`. The only intent this skill passes to `dogen unit new` is
-`--intent reference`.
+A TA-stated direction is honored verbatim; propose one only when the TA supplied
+none, and surface a stated-vs-evidence contradiction once for the TA to decide.

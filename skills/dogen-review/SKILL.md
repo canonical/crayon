@@ -69,6 +69,8 @@ reviewer asks.
 </step_2>
 
 <step_3 name="Present the provenance summary">
+Load `references/provenance-summary.md` now for the exact field map.
+
 Both modes. Present a human-readable summary from the ledger:
 
 - **Signoff:** author, when, and whether the plan is still the one signed off
@@ -84,6 +86,9 @@ Both modes. Present a human-readable summary from the ledger:
 </step_3>
 
 <step_4 name="Perform the findings review (review mode only)">
+Load `references/review-rubric.md` now for the pre-pass, dimensions, priority tags,
+and verification discipline.
+
 Skip entirely in record mode.
 
 **Deterministic pre-pass (before any judgment):** run cheap read-only greps over
