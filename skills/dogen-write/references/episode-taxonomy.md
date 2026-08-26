@@ -1,4 +1,4 @@
-Load this file at workflow step 3 (Walk each step).
+Load this file at the walk step (silent-until-signal).
 
 # Episode taxonomy — improvisation and frustration
 
