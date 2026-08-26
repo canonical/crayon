@@ -377,6 +377,7 @@ git commit -m "feat(skills): dogen-review routes fix/redraft to dogen-write"
 **Files:**
 - Modify: `skills/README.md`
 - Modify: `README.md`
+- Modify: `AGENTS.md`
 - Modify: `docs/middle-path-plan.md`
 - Modify: `docs/before-after.md`
 
@@ -384,14 +385,16 @@ git commit -m "feat(skills): dogen-review routes fix/redraft to dogen-write"
 
 - [ ] **Step 2: `README.md`** — "four SKILL.md files" → "three"; step-3 "Draft — by direction" now shows one skill branching (reference/explanation authored straight; tutorial/how-to via the evidence walk), all calling `dogen-record-draft.sh`; the script exit-code table gains row `4 = evidence incomplete (unresolved steps)` for `dogen-record-draft.sh`.
 
-- [ ] **Step 3: `docs/middle-path-plan.md`** — architecture tree (3 skills); feature-map rows referencing `dogen-record` → `dogen-write`; the "three preconditions" now realized (note the evidence gate is now in the script, not prose).
+- [ ] **Step 3: `AGENTS.md`** — the Architecture section drops `dogen-record` from the skill tree (3 skills) and folds its "draft tutorial/how-to from an evidence-gated step walk" line into `dogen-write`; the non-negotiables note `dogen-record-draft.sh` exits `4` on unresolved actionable steps.
 
-- [ ] **Step 4: `docs/before-after.md`** — skills count 4→3; the routing "tutorial/how-to → dogen-record" → "tutorial/how-to → dogen-write (evidence-walk branch)"; add a "folded dogen-record" note.
+- [ ] **Step 4: `docs/middle-path-plan.md`** — architecture tree (3 skills); feature-map rows referencing `dogen-record` → `dogen-write`; the "three preconditions" now realized (note the evidence gate is now in the script, not prose).
 
-- [ ] **Step 5: Commit.**
+- [ ] **Step 5: `docs/before-after.md`** — skills count 4→3; the routing "tutorial/how-to → dogen-record" → "tutorial/how-to → dogen-write (evidence-walk branch)"; add a "folded dogen-record" note.
+
+- [ ] **Step 6: Commit.**
 
 ```bash
-git add README.md skills/README.md docs/
+git add README.md AGENTS.md skills/README.md docs/
 git commit -m "docs: 3-skill architecture, folded routing, evidence-gate exit code"
 ```
 
@@ -436,9 +439,9 @@ Run `bash tests/test_dogen_scripts.sh` (expect all green) and `python3 scripts/s
 
 ---
 
-## Task 8 (flagged, not scheduled): orphaned `tests/*.py` cleanup
+## Task 8 (done) — orphaned `tests/*.py` cleanup
 
-The 57 `tests/*.py` files import the removed `dogen.*` Python core and are dead. They are untouched by this plan. Recommend a dedicated follow-up to either delete them or (if the Python evaluation is ever resurrected) to revive them against a restored core. Flag only; do not act here.
+The 57 orphaned `tests/*.py` files were removed in a prior commit (`de71584`) alongside the full Python purge. Nothing to do here.
 
 ---
 
