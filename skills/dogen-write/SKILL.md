@@ -1,6 +1,6 @@
 ---
 name: dogen-write
-description: Drafts a review-ready, Sphinx-publishable page (MyST or rST — the target extension decides) for a declared and signed-off documentation unit, branching on the unit's declared Diátaxis intent: reference and explanation are authored straight from the declared sources; tutorial and how-to are authored from an evidence-gated step walk (each step captured as proof and recorded via dogen-record-step.sh) and curated excerpts of what actually ran. Stages under .dogen/staging/ and records via dogen-record-draft.sh, which enforces the HITL gate and — for actionable units — refuses until every step is resolved. Carries Write for staging files only. Use when a TA is ready to draft a signed-off unit.
+description: Drafts a review-ready, Sphinx-publishable page (MyST or rST — the target extension decides) for a declared and signed-off documentation unit, branching on the unit's declared Diátaxis intent — reference and explanation are authored straight from the declared sources; tutorial and how-to are authored from an evidence-gated step walk (each step captured as proof and recorded via dogen-record-step.sh) and curated excerpts of what actually ran. Stages under .dogen/staging/ and records via dogen-record-draft.sh, which enforces the HITL gate and — for actionable units — refuses until every step is resolved. Carries Write for staging files only. Use when a TA is ready to draft a signed-off unit.
 allowed-tools: Read, Bash, Glob, Grep, Write, Edit
 ---
 
