@@ -26,7 +26,7 @@ touch anything.
 - **The ledger is the provenance.** The on-disk audit trail is `.dogen/units/<id>/ledger.md`
   (plain markdown). Never invent a second record-of-truth; state is *derived* by reading it.
 - **Skills are the surface; the scripts are the tool layer.** Technical Authors drive the
-  `dogen-plan` / `dogen-write` / `dogen-review` / `dogen-record` skills; those skills invoke the
+  `dogen-plan` / `dogen-write` / `dogen-review` skills; those skills invoke the
   deterministic scripts via `Bash`. Skills may `Write` only their staging files — never the
   canonical `docs/` page, never the ledger's gated sections directly.
 - **`main` stays green.** `bash tests/test_dogen_scripts.sh` and `python3 scripts/skill_lint.py`
@@ -62,7 +62,7 @@ recorded human signoff.
 - **No Python core.** dogen is bash scripts + `SKILL.md` files. `scripts/skill_lint.py` is a
   standalone stdlib-only lint utility (kept for the frontmatter gate); it is not a "core."
 - **Surface**: portable Agent Skills (`SKILL.md`) to the **agentskills.io** spec, split into
-  `dogen-plan` / `dogen-write` / `dogen-review` / `dogen-record`; validated on Claude Code and
+  `dogen-plan` / `dogen-write` / `dogen-review`; validated on Claude Code and
   Copilot CLI.
 - **Licensing**: scripts LGPL-3.0-only (single root `LICENSE`); skills Apache-2.0 (`skills/LICENSE`).
 - **Agnosticism**: platform-agnostic — any harness that reads `SKILL.md` and exposes `Bash` +
@@ -77,14 +77,13 @@ recorded human signoff.
 ```
 skills/                         ← the human-facing surface (SKILL.md + references/)
 ├── dogen-plan/                 ← declare + HITL signoff (Socratic intake, routes on Diátaxis)
-├── dogen-write/                ← draft reference/explanation from sources
-├── dogen-review/               ← review + record the verdict (accept/fix/redraft)
-└── dogen-record/               ← draft tutorial/how-to from an evidence-gated step walk
+├── dogen-write/                ← draft reference/explanation from sources; draft tutorial/how-to from an evidence-gated step walk
+└── dogen-review/               ← review + record the verdict (accept/fix/redraft)
 
 scripts/                        ← the deterministic enforcement layer
 ├── dogen-common.sh             ← shared helpers (SHA-256, ledger ops, path validation, commit)
 ├── dogen-signoff.sh            ← HITL gate: hash unit.md, lazy-create ledger, commit
-├── dogen-record-draft.sh       ← write gate: inline signoff check, WR-03 ordering, identical-redraft
+├── dogen-record-draft.sh       ← write gate: inline signoff check, WR-03 ordering, identical-redraft; refuses actionable units with unresolved steps (exit 4)
 ├── dogen-record-review.sh      ← verdict gate: accept seals hashes / fix|redraft appends steering
 ├── dogen-record-step.sh        ← evidence micro-gate: proves a step; fail stays unverified
 └── skill_lint.py               ← SKILL.md frontmatter gate (standalone, stdlib-only)
@@ -104,6 +103,7 @@ trailers (plus `Dogen-Draft:` / `Dogen-Verdict:` / `Dogen-Step:` where relevant)
 | `1`  | gate refusal — no signoff, stale plan, or evidence incomplete |
 | `2`  | bad input — unknown unit/step, missing file, path traversal, unknown flag |
 | `3`  | no-op — identical redraft, or stale step evidence |
+| `4`  | evidence incomplete — unresolved steps for an actionable unit (`dogen-record-draft.sh`) |
 
 `git log --grep 'Dogen-Unit: <id>'` replays a unit's whole path.
 
@@ -120,7 +120,7 @@ body) holds the plan: `unit_id`, `intent`, `audience`, `title`, `sources`, `sphi
 
 ```bash
 bash tests/test_dogen_scripts.sh     # 58 assertions across the script suite
-python3 scripts/skill_lint.py        # 4 skills, frontmatter invariants
+python3 scripts/skill_lint.py        # 3 skills, frontmatter invariants
 shellcheck scripts/dogen-*.sh        # if shellcheck is installed
 ```
 

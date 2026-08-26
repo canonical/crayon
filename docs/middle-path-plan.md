@@ -11,8 +11,7 @@
 skills/                          ← the human-facing surface (SKILL.md)
 ├── dogen-plan/SKILL.md
 ├── dogen-write/SKILL.md
-├── dogen-review/SKILL.md
-└── dogen-record/SKILL.md
+└── dogen-review/SKILL.md
 
 scripts/                         ← the deterministic enforcement layer (4 scripts + common)
 ├── dogen-common.sh              ← shared helpers (SHA-256, ledger ops, path validation, commit)
@@ -33,7 +32,7 @@ docs/
 `[project.scripts]`, the Copilot SDK dependency, Pydantic, Typer, logfire, opentelemetry,
 import-linter, `seam_check.py` (vacuous without `core/`).
 
-**What's kept:** the 4 `SKILL.md` files (rewritten), `skill_lint.py` (relaxed — all skills
+**What's kept:** the 3 `SKILL.md` files (rewritten), `skill_lint.py` (relaxed — all skills
 may `Write`), the `.dogen/` on-disk layout, the Diátaxis routing, the commit-trailer grammar.
 
 **What's new:** the ledger (`ledger.md` replaces `provenance.yaml`), the 6 scripts, the
@@ -47,6 +46,7 @@ Drill eval harness outline (§8).
 | Provenance-first write ordering (WR-03) | `draft` writes `provenance.yaml` before page | `dogen-record-draft.sh` writes ledger row before copying page | **Preserved** (structural) |
 | Identical-redraft suppression (D-02) | Byte-hash compare in `orchestrator.py` | `dogen-record-draft.sh` compares SHA-256, no-ops on match | **Preserved** (structural) |
 | Evidence micro-gate (v1.2) | `record_step` refuses done-without-proof | `dogen-record-step.sh` validates verdict enum, requires SHA-256 + exit_code + step_text_sha256; fail stays unverified | **Preserved** (structural) |
+| Evidence-incomplete refusal (actionable units) | prose-enforced "resolve all steps before drafting" | `dogen-record-draft.sh` exits 4 on unresolved steps for an actionable unit | **Preserved** (structural — now code-enforced) |
 | Review recording | `review` seals hashes / appends steering in `provenance.yaml` | `dogen-record-review.sh` handles accept (seals) / fix / redraft (appends steering) | **Preserved** (structural) |
 | Commit trailers | `_commit_transition` with `Dogen-*` trailers | Each script emits its own `Dogen-*` trailers | **Preserved** (structural) |
 | Schema validation | Pydantic v2 models with validators | None — ledger is plain markdown | **Lost** |
@@ -66,7 +66,7 @@ Drill eval harness outline (§8).
 | `dogen context add/ls` | CLI verb for `.dogen/context/` | Skill manages files directly | **Changed** (prose-enforced) |
 | `dogen skills install/status/update` | CLI verb | `cp -r` or a thin install script | **Simplified** |
 | Observability (OTel/logfire) | `core/observability.py` + `obs/logfire_backend.py` | The ledger IS the observability record | **Removed** (replaced by ledger) |
-| `skill_lint.py` write-isolation | Only dogen-write/dogen-record may `Write` | Relaxed — all 4 skills may `Write` (to the ledger) | **Changed** |
+| `skill_lint.py` write-isolation | Only dogen-write/dogen-record may `Write` | Relaxed — all 3 skills may `Write` (to the ledger) | **Changed** |
 | Testability (57 test files) | pytest asserting gate/ordering/routing/seam | ~1 bash test file for scripts + Drill evals | **Reduced** (scripts tested; skills eval'd) |
 
 ## 3. On-disk artifacts
@@ -178,9 +178,9 @@ Evidence micro-gate for tutorial/how-to steps.
 
 ## 5. Skills — human-facing surface
 
-### 5.1 Changes common to all 4 skills
+### 5.1 Changes common to all 3 skills
 
-- **`allowed-tools`:** all four gain `Write` and `Edit` (to write `unit.md` and append to
+- **`allowed-tools`:** all three gain `Write` and `Edit` (to write `unit.md` and append to
   `ledger.md`). `skill_lint.py` is relaxed to allow this.
 - **Delegation:** skills no longer call `dogen unit new` / `dogen signoff` / etc. They call
   the 6 scripts via `Bash`, and write/edit files directly for non-load-bearing operations.
@@ -195,24 +195,31 @@ Evidence micro-gate for tutorial/how-to steps.
 - Writes `unit.md` directly via `Write`
 - Calls `scripts/dogen-signoff.sh <id>` via `Bash` → HITL gate act (lazy-creates ledger)
 - Appends steering notes directly to `ledger.md` via `Edit` (under `## steering`)
-- **`<HARD-GATE>` block:** "Do NOT invoke `dogen-write` or `dogen-record` until
+- **`<HARD-GATE>` block:** "Do NOT invoke `dogen-write` until
   `dogen-signoff.sh` has been called and exited 0."
-- **Terminal state:** routes on Diátaxis direction — reference/explanation → `dogen-write`;
-  tutorial/how-to → `dogen-record`. Prose: "The ONLY skill you invoke after dogen-plan is
-  dogen-write or dogen-record, per the declared intent."
+- **Terminal state:** routes on Diátaxis direction — all four directions → `dogen-write`
+  (reference/explanation author straight; tutorial/how-to take the evidence-walk branch).
+  Prose: "The ONLY skill you invoke after dogen-plan is dogen-write, per the declared intent."
 
 ### 5.3 `dogen-write/SKILL.md`
 
 **Today:** Delegates to `dogen draft --draft-file/--report` (passenger) or `dogen draft` (driver).
 **New:**
 - **Driver mode removed.** The host agent is always the drafter.
-- Agent reads the declared sources, navigates the repo, authors the page
+- **Branches on the declared `intent`** — the sole drafting skill, covering all four directions:
+  - **reference / explanation** — agent reads the declared sources, navigates the repo, authors
+    the page straight from the sources.
+  - **tutorial / how-to** — evidence-walk branch: writes the step plan to `ledger.md` under
+    `## steps` via `Edit` (each step: `step-N | text_hash: <sha256> | status: unverified`); for
+    each step runs it, captures evidence (exit code, output SHA-256, excerpt) to a temp file, and
+    calls `scripts/dogen-record-step.sh <id> <step-id> --evidence-file <evidence>` via `Bash` →
+    verifies evidence, updates step status, commits.
 - Stages the draft under `.dogen/staging/<id>/handoff/<target>`
 - Writes a context report (what it read) to `.dogen/staging/<id>/report.md`
 - Calls `scripts/dogen-record-draft.sh <id> <staged-draft> --model <model> --report <report>`
-  via `Bash` → WR-03 ordering, identical-redraft check, commit
+  via `Bash` → WR-03 ordering, identical-redraft check, exit 4 on unresolved actionable steps, commit
 - **Iron Law:** "Do NOT write the page directly to `docs/`. Stage it, then call
-  `dogen-record-draft.sh`."
+  `dogen-record-draft.sh`." / "Do NOT mark a step resolved without calling `dogen-record-step.sh`."
 - **Terminal state:** "The ONLY skill you invoke after dogen-write is dogen-review."
 
 ### 5.4 `dogen-review/SKILL.md`
@@ -222,18 +229,6 @@ Evidence micro-gate for tutorial/how-to steps.
 - Two modes (unchanged): `record` (compact summary + verdict) and `review` (5-dimension findings)
 - For all verdicts: calls `scripts/dogen-record-review.sh <id> --verdict <accept|fix|redraft> --note <text>` via `Bash` → accept seals page hashes; fix/redraft appends note to steering stream; all in one atomic commit
 - **Iron Law:** "Do NOT record a verdict without calling `dogen-record-review.sh`."
-
-### 5.5 `dogen-record/SKILL.md`
-
-**Today:** Delegates to `dogen record plan|step`.
-**New:**
-- Writes the step plan to `ledger.md` under `## steps` via `Edit` (each step: `step-N | text_hash: <sha256> | status: unverified`)
-- For each step: runs the step, captures evidence (exit code, output SHA-256, excerpt), writes
-  evidence to a temp file
-- Calls `scripts/dogen-record-step.sh <id> <step-id> --evidence-file <evidence>` via `Bash`
-  → verifies evidence, updates step status, commits
-- After all steps resolved: stages the draft and calls `dogen-record-draft.sh` (same as dogen-write)
-- **Iron Law:** "Do NOT mark a step resolved without calling `dogen-record-step.sh`."
 
 ## 6. Tests
 
@@ -269,8 +264,8 @@ else is measured by the Drill eval harness (§8).
 
 ## 7. `skill_lint.py` changes
 
-- `WRITERS` set expanded from `{"dogen-write", "dogen-record"}` to include all four skills:
-  `{"dogen-plan", "dogen-write", "dogen-review", "dogen-record"}`
+- `WRITERS` set expanded from `{"dogen-write", "dogen-record"}` to include all three skills:
+  `{"dogen-plan", "dogen-write", "dogen-review"}`
 - The write-isolation gate is relaxed: all skills may carry `Write`/`Edit`
 - Frontmatter validation (`name` matches directory, `description` present) stays
 - The lint remains a pre-commit + CI gate
