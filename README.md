@@ -38,25 +38,46 @@ outside drafting:
 
 ### 1 — Install the scripts and skills
 
-From the root of your docs repo:
+dogen's scripts and skills live in your **dogen checkout**; you install them once and then use
+them from any project repo. Point a `DOGEN` variable at your checkout so the commands below
+work regardless of path:
 
 ```bash
-# Copy the deterministic scripts onto your PATH (or reference them by path):
-cp scripts/dogen-*.sh /usr/local/bin/   # or: export PATH="$PWD/scripts:$PATH"
-
-# Install the skills into your harness:
-# Claude Code:
-cp -r skills/dogen-* .claude/skills/
-
-# GitHub Copilot CLI:
-cp -r skills/dogen-* .github/skills/
-
-# opencode:
-cp -r skills/dogen-* .opencode/skills/
+DOGEN=/path/to/dogen-mvp-1       # your checkout of dogen
 ```
 
-The skills are the interface; the scripts are the deterministic enforcement layer. Your agent
-harness sees the three `SKILL.md` files and invokes the scripts via `Bash` as needed.
+**Scripts — put them on your PATH (once, system-wide, so they work from any repo):**
+
+```bash
+# System-wide (requires sudo):
+sudo cp "$DOGEN"/scripts/dogen-*.sh /usr/local/bin/
+
+# …or to your user bin (no sudo; ensure ~/.local/bin is on PATH):
+mkdir -p ~/.local/bin && cp "$DOGEN"/scripts/dogen-*.sh ~/.local/bin/
+```
+
+**Skills — copy them into each docs repo you want to draft in.** Run these from the
+**docs repo's root** (not the dogen checkout); the skills land in your harness's
+discovery root *inside that repo*:
+
+```bash
+cd /path/to/your-docs-repo
+
+# Claude Code:
+cp -r "$DOGEN"/skills/dogen-* .claude/skills/
+
+# GitHub Copilot CLI:
+cp -r "$DOGEN"/skills/dogen-* .github/skills/
+
+# opencode:
+cp -r "$DOGEN"/skills/dogen-* .opencode/skills/
+```
+
+Repeat the skill copy in each docs repo (once per repo; re-run after upgrading dogen).
+
+The scripts are the deterministic enforcement layer; the skills are the interface. Your agent
+harness sees the `SKILL.md` files in the docs repo and invokes the scripts (which must be on
+`PATH`) via `Bash`.
 
 ### 2 — Add context files (recommended)
 
