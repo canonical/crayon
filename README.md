@@ -122,11 +122,11 @@ steering_notes: ""
 # Smoke
 EOF
 
-# Run the gate:
-scripts/dogen-signoff.sh smoke
+# Run the gate (the scripts must be on your PATH from step 1):
+dogen-signoff.sh smoke
 echo "# Smoke API" > /tmp/smoke-draft.rst
-scripts/dogen-record-draft.sh smoke /tmp/smoke-draft.rst
-scripts/dogen-record-review.sh smoke --verdict accept --note "smoke test"
+dogen-record-draft.sh smoke /tmp/smoke-draft.rst
+dogen-record-review.sh smoke --verdict accept --note "smoke test"
 ```
 
 If every script exits 0 and `docs/smoke.rst` exists, your environment is wired up. The ledger
