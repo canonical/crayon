@@ -4,7 +4,7 @@ Load this file at workflow step 4 (Perform the findings review).
 
 This is the review-mode rubric: a small, generalized findings framework that
 grades a unit against **its own declared Diátaxis type**. dogen-write drafts the
-**reference** direction grounded in **human-pointed sources**; dogen-record
+**reference** direction grounded in **human-pointed sources**; dogen-write
 drafts the two **actionable** types — a **tutorial** and a **how-to** — from a
 step walk that provably ran, and this phase routes those drafts into review. The
 reference-only checks below are therefore **gated on the unit's declared type**
@@ -187,7 +187,8 @@ prose is the correct shape for those types, not drift).
 
 **For an actionable unit (a declared tutorial or how-to):** grade the page
 against the conformance shape for its type, imported from
-`skills/dogen-record/references/authoring-stance.md`:
+`skills/dogen-write/references/tutorial-stance.md` (tutorial conformance) and
+`skills/dogen-write/references/how-to-stance.md` (how-to conformance):
 
 - **Tutorial** — a **single guaranteed-to-work route** from a known starting
   state to one **visible success**, with per-step confirmation of what the
@@ -346,11 +347,8 @@ There are exactly TWO next steps: accept, or a recorded fix/redraft verdict that
 routes to the draft-stage skill. "Make the edit yourself" is not one of them — an
 unrecorded correction steers nothing and is invisible to any future audit.
 After the verdict is recorded, route on the unit's declared direction:
-- **fix**: `Next: /dogen-write — apply the recorded fix.` (reference/explanation)
-  or `Next: /dogen-record — apply the recorded fix and re-record.` (actionable)
+- **fix**: `Next: /dogen-write — apply the recorded fix.`
 - **redraft**: `Next: /dogen-write — re-draft against the recorded steering.`
-  (reference/explanation) or
-  `Next: /dogen-record — re-walk the procedure and record a fresh draft.` (actionable)
 
 ## Code-dump binding (keep in sync)
 
