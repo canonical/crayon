@@ -22,6 +22,19 @@
 > plan. The evidence gate moved out of prose into `dogen-record-draft.sh` (exit 4 on
 > unresolved actionable steps).
 
+> **Four per-direction stance files:** direction-specific authoring instructions were
+> restructured from an asymmetric arrangement — the reference register inline in
+> `dogen-write`'s workflow, `explanation-stance.md` standalone, tutorial+how-to sharing one
+> `authoring-stance.md` — into **four symmetric `references/*-stance.md` files**
+> (`reference-stance.md`, `explanation-stance.md`, `tutorial-stance.md`,
+> `how-to-stance.md`) over the register-neutral `writing-standards.md` base, with the
+> evidence-walk mechanics (`walk-protocol.md`, `episode-taxonomy.md`) lazy-loaded only on
+> the actionable branch. **Why:** register isolation (a model drafting a how-to sees only
+> the how-to register, with no reference-register prose in context to leak), a clean
+> four-entry dispatch on the declared `intent` in `dogen-write` step 1, and parity with the
+> review rubric, which already grades the four Diátaxis registers as distinct conformance
+> shapes.
+
 ## What's preserved (structurally)
 
 - **HITL gate** — `dogen-signoff.sh` refuses re-signoff; `dogen-record-draft.sh` refuses draft without signoff or on stale plan hash
