@@ -61,7 +61,7 @@ mkdir -p ~/.local/bin && cp "$DOGEN"/scripts/dogen-*.sh ~/.local/bin/
 ```bash
 # Project-scoped (recommended) — copy into each docs repo, so the skills travel with it:
 cd /path/to/your-docs-repo
-cp -r "$DOGEN"/skills/dogen-* .agents/skills/
+mkdir -p ~/.agents/skills && cp -r "$DOGEN"/skills/dogen-* .agents/skills/
 
 # Global — copy once, so every repo discovers them:
 mkdir -p ~/.agents/skills && cp -r "$DOGEN"/skills/dogen-* ~/.agents/skills/
