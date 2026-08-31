@@ -119,7 +119,7 @@ body) holds the plan: `unit_id`, `intent`, `audience`, `title`, `sources`, `sphi
 ## Develop dogen itself
 
 ```bash
-bash tests/test_dogen_scripts.sh     # 58 assertions across the script suite
+bash tests/test_dogen_scripts.sh     # 74 assertions across the script suite
 python3 scripts/skill_lint.py        # 3 skills, frontmatter invariants
 shellcheck scripts/dogen-*.sh        # if shellcheck is installed
 ```

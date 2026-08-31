@@ -180,7 +180,7 @@ trailers (plus `Dogen-Draft:` / `Dogen-Verdict:` / `Dogen-Step:` where relevant)
 The deterministic layer is bash; the test suite is bash.
 
 ```bash
-# Run the script tests (58 assertions across 21 tests):
+# Run the script tests (74 assertions across 32 tests):
 bash tests/test_dogen_scripts.sh
 
 # Lint shell scripts:
