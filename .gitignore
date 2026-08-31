@@ -9,3 +9,4 @@
 # dogen passenger handoff staging — MUST stay scoped to the staging path:
 # a blanket .dogen/ ignore would hide the committed .dogen/units/<id>/unit.md.
 .dogen/staging/
+.worktrees/
