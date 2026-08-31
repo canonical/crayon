@@ -54,6 +54,12 @@ if [ "$verdict" != "accept" ] && [ "$verdict" != "fix" ] && [ "$verdict" != "red
     exit 2
 fi
 
+# The note lands in pipe-delimited ledger rows; refuse separators/newlines
+# so it can't inject fake fields (e.g. a spoofed "verdict: accept").
+if [ -n "$note" ]; then
+    validate_ledger_freetext "note" "$note"
+fi
+
 unit_dir=".dogen/units/${unit_id}"
 unit_file="${unit_dir}/unit.md"
 ledger="${unit_dir}/ledger.md"
@@ -87,6 +93,7 @@ if [ "$verdict" = "accept" ]; then
         echo "ERROR: sphinx_target not found in ${unit_file}" >&2
         exit 2
     fi
+    validate_target "$target"
     page_path="docs/${target}"
     if [ ! -f "$page_path" ]; then
         echo "ERROR: draft page not found: ${page_path}" >&2

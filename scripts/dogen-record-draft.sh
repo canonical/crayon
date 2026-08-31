@@ -88,6 +88,7 @@ if [ -z "$target" ]; then
     echo "ERROR: sphinx_target not found in ${unit_file}" >&2
     exit 2
 fi
+validate_target "$target"
 
 # Compute draft hash.
 draft_sha=$(sha256_file "$draft_file")
@@ -107,8 +108,9 @@ if ledger_has_section "$ledger" "steering"; then
     steering_count=$(ledger_section_rows "$ledger" "steering" | wc -l)
 fi
 
-# Generate a run_id (timestamp-based).
-run_id=$(date -u +"%Y%m%d%H%M%S")$(printf '%06d' $((RANDOM % 1000000)))
+# Generate a run_id: nanosecond timestamp + random suffix (collision-resistant
+# even within the same second in scripted/batch runs).
+run_id="$(date -u +%Y%m%d%H%M%S%N)-$(printf '%04x%04x' $((RANDOM)) $((RANDOM)))"
 timestamp=$(get_timestamp)
 
 # WR-03: write ledger row FIRST (before the page).

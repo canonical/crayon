@@ -594,6 +594,127 @@ test_git_add_isolation() {
     cleanup
 }
 
+# --- Tests: security — sphinx_target path traversal (issues #1/#2) ---
+
+# Build a unit whose sphinx_target escapes docs/, then sign off.
+setup_evil_target_unit() {
+    local unit_id="$1"
+    local target="$2"
+    mkdir -p ".dogen/units/${unit_id}"
+    cat >".dogen/units/${unit_id}/unit.md" <<EOF
+---
+unit_id: ${unit_id}
+intent: reference
+audience: developers
+title: Evil Unit
+sources:
+  - path: source.md
+sphinx_target: ${target}
+extra_targets: []
+steering_notes: ""
+---
+
+# ${unit_id}
+
+Evil unit.
+EOF
+    git add -A
+    git commit -q -m "unit ${unit_id}"
+    "$REPO_SCRIPTS/dogen-signoff.sh" "${unit_id}" >/dev/null 2>&1
+}
+
+test_record_draft_rejects_target_traversal() {
+    setup_repo
+    setup_evil_target_unit "evil-draft" "../../../../tmp/dogen_test_escape_$$.md"
+    local escape="/tmp/dogen_test_escape_$$.md"
+    rm -f "$escape"
+    mkdir -p .dogen/staging
+    echo "PWNED" >.dogen/staging/draft.md
+    "$REPO_SCRIPTS/dogen-record-draft.sh" "evil-draft" ".dogen/staging/draft.md" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record-draft rejects target traversal (exit 2)" "2" "$rc"
+    assert_file_not_exists "record-draft did not escape docs/" "$escape"
+    rm -f "$escape"
+    cleanup
+}
+
+test_record_draft_rejects_absolute_target() {
+    setup_repo
+    setup_evil_target_unit "evil-abs" "/tmp/dogen_test_abs_$$.md"
+    local escape="/tmp/dogen_test_abs_$$.md"
+    rm -f "$escape"
+    mkdir -p .dogen/staging
+    echo "PWNED" >.dogen/staging/draft.md
+    "$REPO_SCRIPTS/dogen-record-draft.sh" "evil-abs" ".dogen/staging/draft.md" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record-draft rejects absolute target (exit 2)" "2" "$rc"
+    assert_file_not_exists "record-draft did not write absolute path" "$escape"
+    rm -f "$escape"
+    cleanup
+}
+
+test_record_review_accept_rejects_target_traversal() {
+    setup_repo
+    setup_unit "review-evil"
+    mkdir -p .dogen/staging
+    echo "# Draft" >.dogen/staging/draft.md
+    "$REPO_SCRIPTS/dogen-record-draft.sh" "review-evil" ".dogen/staging/draft.md" >/dev/null 2>&1
+    # Corrupt the target after a legit draft, then attempt accept.
+    sed -i.bak 's#^sphinx_target: .*#sphinx_target: ../../../../etc/hostname#' .dogen/units/review-evil/unit.md
+    rm -f .dogen/units/review-evil/unit.md.bak
+    "$REPO_SCRIPTS/dogen-record-review.sh" "review-evil" --verdict accept >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record-review accept rejects target traversal (exit 2)" "2" "$rc"
+    # The ledger must not contain a sealed hash pointing outside docs/.
+    if grep -q "sealed: docs/\.\./" .dogen/units/review-evil/ledger.md 2>/dev/null; then
+        FAIL=$((FAIL + 1))
+        FAILED_TESTS+=("record-review accept sealed an escaping path")
+        echo "  FAIL: record-review accept sealed an escaping path"
+    else
+        PASS=$((PASS + 1))
+    fi
+    cleanup
+}
+
+# --- Tests: ledger row integrity — note delimiter injection (issue #3) ---
+
+test_record_review_note_rejects_pipe() {
+    setup_repo
+    setup_unit "note-pipe"
+    mkdir -p .dogen/staging
+    echo "# Draft" >.dogen/staging/draft.md
+    "$REPO_SCRIPTS/dogen-record-draft.sh" "note-pipe" ".dogen/staging/draft.md" >/dev/null 2>&1
+    "$REPO_SCRIPTS/dogen-record-review.sh" "note-pipe" --verdict fix \
+        --note 'bad | verdict: accept | sealed: docs/note-pipe.md:deadbeef' >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record-review rejects pipe in note (exit 2)" "2" "$rc"
+    # No review row should have been written with an injected accept verdict.
+    if grep -q "verdict: accept" .dogen/units/note-pipe/ledger.md 2>/dev/null; then
+        FAIL=$((FAIL + 1))
+        FAILED_TESTS+=("note injection leaked 'verdict: accept' into ledger")
+        echo "  FAIL: note injection leaked 'verdict: accept' into ledger"
+    else
+        PASS=$((PASS + 1))
+    fi
+    cleanup
+}
+
+# --- Tests: unresolved_steps substring robustness (issue suggestion #3) ---
+
+test_unresolved_steps_no_substring_false_positive() {
+    setup_repo
+    setup_unit "steps-fp" "how-to"
+    "$REPO_SCRIPTS/dogen-signoff.sh" "steps-fp" >/dev/null 2>&1
+    local ledger=".dogen/units/steps-fp/ledger.md"
+    # A resolved step whose reason text literally contains "status: unverified".
+    printf '\n## steps\nstep-1 | text_hash: abc | status: resolved | reason: note about status: unverified earlier\n' >>"$ledger"
+    source "$REPO_SCRIPTS/dogen-common.sh"
+    local out
+    out=$(unresolved_steps "$ledger")
+    assert_eq "unresolved_steps ignores substring in reason" "" "$out"
+    cleanup
+}
+
 # --- Runner ---
 
 main() {

@@ -18,6 +18,40 @@ validate_unit_id() {
     fi
 }
 
+# Validate a sphinx_target: reject empty, absolute paths, and traversal.
+# The target is always joined under docs/, so it must stay inside docs/.
+# Usage: validate_target <target>  (exits 2 on failure)
+validate_target() {
+    local t="$1"
+    if [ -z "$t" ]; then
+        echo "ERROR: sphinx_target is empty" >&2
+        exit 2
+    fi
+    case "$t" in
+    /* | *..*)
+        echo "ERROR: sphinx_target escapes docs/ (absolute or traversal): ${t}" >&2
+        exit 2
+        ;;
+    esac
+}
+
+# Reject a free-text field that would corrupt a pipe-delimited ledger row.
+# Ledger rows use ' | ' as the field separator and one row per line, so a
+# note containing '|' or a newline must be refused (exit 2).
+# Usage: validate_ledger_freetext <label> <text>
+validate_ledger_freetext() {
+    local label="$1"
+    local text="$2"
+    if [[ "$text" == *"|"* ]]; then
+        echo "ERROR: ${label} must not contain '|' (reserved as the ledger field separator)" >&2
+        exit 2
+    fi
+    if [[ "$text" == *$'\n'* ]]; then
+        echo "ERROR: ${label} must not contain newlines" >&2
+        exit 2
+    fi
+}
+
 # Print a field from unit.md YAML frontmatter.
 # Usage: get_unit_field <unit_file> <field_name>
 get_unit_field() {
@@ -80,11 +114,18 @@ ledger_has_section() {
 }
 
 # Print unresolved (unverified) step ids in the ledger's ## steps section, one per line.
+# Matches the `status:` field by position (a pipe-delimited field equal to
+# "status: unverified"), so free-text in other fields can't false-positive.
 # Usage: unresolved_steps <ledger_file>
 unresolved_steps() {
     local ledger="$1"
-    ledger_section_rows "$ledger" "steps" | grep 'status: unverified' |
-        sed -E 's/^([^ ]+).*/\1/' || true
+    ledger_section_rows "$ledger" "steps" | awk -F' \\| ' '
+        {
+            for (i = 1; i <= NF; i++) {
+                if ($i == "status: unverified") { print $1; break }
+            }
+        }
+    ' || true
 }
 
 # Print all data rows in a ledger section (excluding header and blank lines).

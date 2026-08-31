@@ -13,7 +13,7 @@
 | **Provider model** | Driver (Copilot SDK) + Passenger (host agent) | Passenger only — host agent is always the drafter | The host agent you're talking to IS the agent; no headless session needed |
 | **Provider seam** | `DraftingProvider` port + `seam_check.py` + import-linter | Not applicable (no driver) | Nothing to swap; the seam's purpose disappears |
 | **Observability** | OTel API in `core/` + logfire in `obs/` | The ledger IS the observability record | No telemetry infra; the audit trail is on disk |
-| **Tests** | 57 pytest files (gate, ordering, routing, seam, CLI) | 1 bash test file (65 assertions across 27 tests) + Drill evals (deferred) | Scripts are unit-tested; skill behavior is eval-measured |
+| **Tests** | 57 pytest files (gate, ordering, routing, seam, CLI) | 1 bash test file (74 assertions across 32 tests) + Drill evals (deferred) | Scripts are unit-tested; skill behavior is eval-measured |
 | **Codebase size** | ~6000 lines Python (core + adapters + CLI + compose) | ~645 lines of bash (4 gate scripts + shared helpers) + 3 SKILL.md | ~89% reduction in deterministic code |
 
 > **Skill family folded:** the former `dogen-record` skill is folded into `dogen-write`,
@@ -58,7 +58,7 @@
 - **`--json` contract** — no CLI, no structured output. Skills read the ledger directly.
 - **Driver mode** — no headless Copilot SDK session. The host agent is always the drafter.
 - **Multi-file units** — scripts handle single `sphinx_target` only; `extra_targets` is ignored.
-- **57 pytest files** — replaced by 65 bash assertions for scripts + deferred Drill evals for skills.
+- **57 pytest files** — replaced by 74 bash assertions for scripts + deferred Drill evals for skills.
 - **`dogen status` / `unit ls` / `unit show`** — become skill-level ledger reads, not CLI verbs.
 
 ## What's gained
@@ -77,7 +77,7 @@
 | **Simplicity** | ~645 lines of bash; anyone can read the scripts | No schema validation; malformed ledger rows possible |
 | **Install** | Scripts to `PATH`, skills to `.agents/skills/` — no Python, no venv, no `uv` | Scripts must be on `PATH` (skills invoke them by bare name) |
 | **Gate enforcement** | SHA-256 + exit codes + path validation are structural | Routing, lease checks, and coverage checks are prose-enforced |
-| **Testability** | Scripts are unit-tested (65 assertions across 27 tests) | Skill behavior needs Drill evals (deferred investment) |
+| **Testability** | Scripts are unit-tested (74 assertions across 32 tests) | Skill behavior needs Drill evals (deferred investment) |
 | **Portability** | Any agent that reads the `.agents/skills/` convention (or `SKILL.md`) | Loses the Typer CLI fallback for power users / CI |
 | **Provenance** | Human-readable markdown ledger in canonical blank-line format | No v0→v2 migration; no derived state on read |
 | **Driver mode** | Removed — simpler, no SDK dependency | Can't batch-draft headlessly; host agent must be present |
