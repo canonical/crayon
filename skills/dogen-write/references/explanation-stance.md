@@ -1,16 +1,15 @@
-Load this file at workflow step 3 (Passenger branch (host-harness)).
+Load this file at workflow step 3 (Author the page).
 
-# Explanation stance (passenger authoring)
+# Explanation stance (authoring)
 
-The register a passenger-authored **explanation** page answers to. Load it in the
-passenger branch when the unit's declared direction is explanation; the reference
-path never loads it. It sits above `references/writing-standards.md` the same way
-the reference stance does — writing-standards.md governs what the text is and how
-it treats its own history for every direction; this file governs the explanation
-register on top of it. It does NOT replace the per-format markup standards in
-`references/provider-branch.md` (MyST vs rST mechanics, the report shape); those
-still apply. What it does replace is the reference direction's neutral register:
-an explanation page is not written as a look-it-up inventory.
+The register an authored **explanation** page answers to. Load it when the unit's
+declared direction is explanation; the reference path never loads it. It sits
+above `references/writing-standards.md` the same way the reference stance does —
+writing-standards.md governs what the text is and how it treats its own history
+for every direction; this file governs the explanation register on top of it. It
+does NOT replace the per-format markup standards (MyST vs rST, held in the SKILL.md
+step 3); those still apply. What it does replace is the reference direction's
+neutral register: an explanation page is not written as a look-it-up inventory.
 
 ## The understanding-oriented register — the governing stance
 
@@ -63,7 +62,7 @@ Every rationale, trade-off, and causal claim ("X was chosen because…", "this
 avoids…") must be grounded in the recorded intent steering or the declared
 sources — pass the three-check grounding rule in `references/writing-standards.md`
 (locate, confirm, corroborate) before it enters prose. A rationale you cannot
-ground goes into the context report's `gaps`, never into the page as confident
+ground goes into the report's gaps, never into the page as confident
 explanation. A fabricated *why* is worse than a missing one: it reads as authority
 and misleads.
 

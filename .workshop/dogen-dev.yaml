@@ -1,5 +1,0 @@
-name: dogen-dev
-base: ubuntu@24.04
-sdks:
-  - name: uv
-  - name: copilot
