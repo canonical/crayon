@@ -191,62 +191,6 @@
       border-top: 4px solid var(--blue);
     }
 
-    .controls-wrap {
-      position: sticky;
-      z-index: 20;
-      top: 0;
-      padding: 10px 0;
-      background: linear-gradient(to bottom, rgba(246, 244, 238, 0.98), rgba(246, 244, 238, 0.9));
-      backdrop-filter: blur(12px);
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns: minmax(170px, 0.8fr) minmax(180px, 1fr) minmax(190px, 1.25fr) auto;
-      gap: 10px;
-      align-items: center;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: rgba(255, 253, 248, 0.94);
-      box-shadow: var(--shadow);
-    }
-
-    .field {
-      display: grid;
-      gap: 3px;
-    }
-
-    .field label {
-      color: var(--muted);
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .field select,
-    .field input {
-      width: 100%;
-      min-height: 38px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: var(--paper-strong);
-      color: var(--ink);
-      padding: 7px 10px;
-    }
-
-    .catalog-toggle {
-      min-height: 42px;
-      border: 1px solid var(--ink);
-      border-radius: 11px;
-      background: var(--ink);
-      color: white;
-      padding: 9px 14px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
     .architecture {
       padding: 28px 0 18px;
     }
@@ -764,128 +708,6 @@
       background: var(--red);
     }
 
-    .ticket-chip.filtered-out {
-      display: none;
-    }
-
-    .catalog {
-      margin-top: 28px;
-      padding: 24px;
-      border: 1px solid var(--line-strong);
-      border-radius: var(--radius-lg);
-      background: rgba(255, 253, 248, 0.94);
-      box-shadow: var(--shadow);
-    }
-
-    .catalog[hidden] {
-      display: none;
-    }
-
-    .catalog-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      align-items: start;
-      margin-bottom: 16px;
-    }
-
-    .catalog-head h2 {
-      margin-bottom: 4px;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 2rem;
-      font-weight: 500;
-    }
-
-    .catalog-head p {
-      margin: 0;
-      color: var(--muted);
-    }
-
-    .catalog-count {
-      flex: none;
-      border-radius: 999px;
-      background: var(--gray-soft);
-      padding: 7px 10px;
-      color: var(--muted);
-      font-size: 0.76rem;
-      font-weight: 800;
-    }
-
-    .ticket-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .ticket-row {
-      display: grid;
-      grid-template-columns: minmax(100px, auto) 1fr auto;
-      gap: 11px;
-      align-items: center;
-      min-height: 69px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fafaf6;
-      padding: 10px 11px;
-    }
-
-    .ticket-row-key {
-      display: grid;
-      gap: 3px;
-    }
-
-    .ticket-row-key a {
-      color: var(--ink);
-      font-size: 0.78rem;
-      font-weight: 900;
-      text-decoration-thickness: 1px;
-      text-underline-offset: 3px;
-    }
-
-    .ticket-row-status {
-      color: var(--muted);
-      font-size: 0.66rem;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
-
-    .ticket-row-copy {
-      min-width: 0;
-    }
-
-    .ticket-row-copy strong {
-      display: block;
-      overflow: hidden;
-      margin-bottom: 2px;
-      font-size: 0.82rem;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .ticket-row-copy span {
-      color: var(--muted);
-      font-size: 0.72rem;
-    }
-
-    .ticket-row button {
-      border: 1px solid var(--line);
-      border-radius: 9px;
-      background: white;
-      padding: 7px 8px;
-      color: var(--muted);
-      font-size: 0.7rem;
-      font-weight: 800;
-    }
-
-    .empty-state {
-      grid-column: 1 / -1;
-      padding: 34px;
-      border: 1px dashed var(--line-strong);
-      border-radius: 14px;
-      color: var(--muted);
-      text-align: center;
-    }
-
     .legend-note {
       margin: 24px 0 44px;
     }
@@ -1084,14 +906,6 @@
     }
 
     @media (max-width: 1080px) {
-      .controls {
-        grid-template-columns: 1fr 1fr 1fr;
-      }
-
-      .catalog-toggle {
-        grid-column: span 1;
-      }
-
       .prep-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -1123,18 +937,6 @@
         grid-template-columns: 1fr;
       }
 
-      .controls-wrap {
-        position: static;
-      }
-
-      .controls {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .catalog-toggle {
-        grid-column: 1 / -1;
-      }
-
       .skill-flow {
         grid-template-columns: 1fr;
       }
@@ -1145,8 +947,7 @@
       }
 
       .artifact-grid,
-      .engine-grid,
-      .ticket-list {
+      .engine-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1154,8 +955,7 @@
         grid-template-columns: repeat(2, 1fr);
       }
 
-      .section-head,
-      .catalog-head {
+      .section-head {
         align-items: start;
         flex-direction: column;
       }
@@ -1166,27 +966,12 @@
     }
 
     @media (max-width: 520px) {
-      .controls,
       .prep-grid {
         grid-template-columns: 1fr;
       }
 
-      .field,
-      .catalog-toggle {
-        grid-column: 1;
-      }
-
       .machine {
         padding: 14px;
-      }
-
-      .ticket-row {
-        grid-template-columns: 1fr auto;
-      }
-
-      .ticket-row-copy {
-        grid-column: 1 / -1;
-        grid-row: 2;
       }
     }
 
@@ -1238,30 +1023,6 @@
       </article>
     </div>
   </header>
-
-  <div class="controls-wrap">
-    <nav class="controls shell" aria-label="Architecture ticket filters">
-      <div class="field">
-        <label for="person-filter">Person</label>
-        <select id="person-filter">
-          <option value="all">Everyone</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="component-filter">Component</label>
-        <select id="component-filter">
-          <option value="all">All components</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="ticket-search">Find a ticket</label>
-        <input id="ticket-search" type="search" placeholder="Key, title, or person">
-      </div>
-      <button class="catalog-toggle" id="catalog-toggle" type="button" aria-expanded="false" aria-controls="ticket-catalog">
-        Open 40-ticket catalog
-      </button>
-    </nav>
-  </div>
 
   <main class="shell">
     <section class="architecture" aria-labelledby="architecture-title">
@@ -1597,17 +1358,6 @@
       </div>
     </section>
 
-    <section class="catalog" id="ticket-catalog" aria-labelledby="catalog-title" hidden>
-      <div class="catalog-head">
-        <div>
-          <h2 id="catalog-title">All 40 DOCPR-2845 child tickets</h2>
-          <p>Use the filters above to reveal completed history, active work, and rejected or deferred options.</p>
-        </div>
-        <span class="catalog-count" id="catalog-count">0 shown</span>
-      </div>
-      <div class="ticket-list" id="ticket-list"></div>
-    </section>
-
     <section class="legend-note" aria-label="Architecture legend">
       <div class="legend">
         <h2>Architecture legend</h2>
@@ -1818,34 +1568,6 @@
     const ticketMap = new Map([...tickets, ...externalTickets].map((ticket) => [ticket.key, ticket]));
     const childKeySet = new Set(tickets.map((ticket) => ticket.key));
     const externalKeySet = new Set(externalTickets.map((ticket) => ticket.key));
-    const componentLabels = {
-      authoring: "Author and harness",
-      context: "Context and customization",
-      intake: "External intake",
-      onboarding: "Onboarding",
-      mapping: "Mapping",
-      skills: "Skill flow",
-      core: "Deterministic core",
-      artifacts: "On-disk artifacts",
-      delivery: "Delivery boundary",
-      qa: "Optional QA seam",
-      validation: "Validation and adoption",
-      archive: "Rejected and deferred"
-    };
-
-    const state = {
-      person: "all",
-      component: "all",
-      query: ""
-    };
-
-    const personFilter = document.getElementById("person-filter");
-    const componentFilter = document.getElementById("component-filter");
-    const ticketSearch = document.getElementById("ticket-search");
-    const catalog = document.getElementById("ticket-catalog");
-    const catalogToggle = document.getElementById("catalog-toggle");
-    const ticketList = document.getElementById("ticket-list");
-    const catalogCount = document.getElementById("catalog-count");
     const statusSummary = document.getElementById("status-summary");
     const drawer = document.getElementById("detail-drawer");
     const drawerBackdrop = document.getElementById("drawer-backdrop");
@@ -1865,17 +1587,6 @@
         node.textContent = text;
       }
       return node;
-    }
-
-    function ticketMatches(ticket) {
-      const personMatches = state.person === "all" || ticket.person === state.person ||
-        ticket.collaborators.some((name) => name.toLowerCase().includes(state.person.toLowerCase()));
-      const componentMatches = state.component === "all" || ticket.component === state.component;
-      const haystack = [ticket.key, ticket.summary, ticket.person, ticket.status, ...ticket.collaborators]
-        .join(" ")
-        .toLowerCase();
-      const queryMatches = !state.query || haystack.includes(state.query);
-      return personMatches && componentMatches && queryMatches;
     }
 
     function makeTicketChip(ticket) {
@@ -1907,50 +1618,10 @@
           if (!ticket) {
             return;
           }
-          const chip = makeTicketChip(ticket);
-          if (!ticketMatches(ticket)) {
-            chip.classList.add("filtered-out");
-          }
-          fragment.appendChild(chip);
+          fragment.appendChild(makeTicketChip(ticket));
         });
         slot.replaceChildren(fragment);
       });
-    }
-
-    function makeTicketRow(ticket) {
-      const row = element("article", "ticket-row");
-      const keyBlock = element("div", "ticket-row-key");
-      const link = element("a", "", ticket.key);
-      link.href = JIRA_BASE + ticket.key;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.setAttribute("aria-label", ticket.key + " in Jira, opens in a new tab");
-      keyBlock.append(link, element("span", "ticket-row-status", ticket.status));
-
-      const copy = element("div", "ticket-row-copy");
-      copy.append(
-        element("strong", "", ticket.summary),
-        element("span", "", ticket.person + " / " + componentLabels[ticket.component])
-      );
-
-      const detailButton = element("button", "", "Details");
-      detailButton.type = "button";
-      detailButton.dataset.ticketDetail = ticket.key;
-      detailButton.setAttribute("aria-label", "Show details for " + ticket.key);
-      row.append(keyBlock, copy, detailButton);
-      return row;
-    }
-
-    function renderCatalog() {
-      const visible = tickets.filter(ticketMatches);
-      const fragment = document.createDocumentFragment();
-      if (visible.length === 0) {
-        fragment.appendChild(element("div", "empty-state", "No child tickets match these filters."));
-      } else {
-        visible.forEach((ticket) => fragment.appendChild(makeTicketRow(ticket)));
-      }
-      ticketList.replaceChildren(fragment);
-      catalogCount.textContent = visible.length + " of 40 shown";
     }
 
     function renderSummary() {
@@ -1963,26 +1634,6 @@
         counts.Triaged + " Triaged / " +
         counts.Done + " Done / " +
         counts.Rejected + " Rejected";
-    }
-
-    function populateFilters() {
-      const people = Array.from(new Set(tickets.map((ticket) => ticket.person))).sort();
-      people.forEach((person) => {
-        const option = element("option", "", person);
-        option.value = person;
-        personFilter.appendChild(option);
-      });
-
-      Object.entries(componentLabels).forEach(([value, label]) => {
-        const option = element("option", "", label);
-        option.value = value;
-        componentFilter.appendChild(option);
-      });
-    }
-
-    function updateFilters() {
-      renderPinnedTickets();
-      renderCatalog();
     }
 
     function appendDetailBlock(title, contentNode) {
@@ -2021,38 +1672,6 @@
 
       const related = [...tickets, ...externalTickets].filter((ticket) => ticket.component === component);
       appendDetailBlock("Related Jira work", makeDetailTicketList(related));
-      openDrawer();
-    }
-
-    function openTicketDetail(key) {
-      const ticket = ticketMap.get(key);
-      if (!ticket) {
-        return;
-      }
-      drawerKicker.textContent = componentLabels[ticket.component] || "Related work";
-      drawerTitle.textContent = ticket.key;
-      drawerSummary.textContent = ticket.summary;
-      drawerExtra.replaceChildren();
-
-      const facts = element("ul", "detail-list");
-      facts.append(
-        element("li", "", "Jira status: " + ticket.status),
-        element("li", "", "Assignee: " + ticket.person),
-        element("li", "", "Architecture area: " + (componentLabels[ticket.component] || ticket.component))
-      );
-      appendDetailBlock("Current Jira facts", facts);
-
-      if (ticket.collaborators.length > 0) {
-        const collaborators = element("ul", "detail-list");
-        ticket.collaborators.forEach((person) => collaborators.appendChild(element("li", "", person)));
-        appendDetailBlock("Named collaborators or reviewers", collaborators);
-      }
-
-      const jiraLink = element("a", "", "Open " + ticket.key + " in Jira");
-      jiraLink.href = JIRA_BASE + ticket.key;
-      jiraLink.target = "_blank";
-      jiraLink.rel = "noopener noreferrer";
-      appendDetailBlock("Source", jiraLink);
       openDrawer();
     }
 
@@ -2122,40 +1741,10 @@
       return true;
     }
 
-    personFilter.addEventListener("change", () => {
-      state.person = personFilter.value;
-      updateFilters();
-    });
-
-    componentFilter.addEventListener("change", () => {
-      state.component = componentFilter.value;
-      updateFilters();
-    });
-
-    ticketSearch.addEventListener("input", () => {
-      state.query = ticketSearch.value.trim().toLowerCase();
-      updateFilters();
-    });
-
-    catalogToggle.addEventListener("click", () => {
-      const willOpen = catalog.hidden;
-      catalog.hidden = !willOpen;
-      catalogToggle.setAttribute("aria-expanded", String(willOpen));
-      catalogToggle.textContent = willOpen ? "Close ticket catalog" : "Open 40-ticket catalog";
-      if (willOpen) {
-        catalog.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    });
-
     document.addEventListener("click", (event) => {
       const componentButton = event.target.closest("[data-component-detail]");
       if (componentButton) {
         openComponentDetail(componentButton.dataset.componentDetail);
-        return;
-      }
-      const ticketButton = event.target.closest("[data-ticket-detail]");
-      if (ticketButton) {
-        openTicketDetail(ticketButton.dataset.ticketDetail);
       }
     });
 
@@ -2183,10 +1772,8 @@
       }
     });
 
-    populateFilters();
     renderSummary();
     renderPinnedTickets();
-    renderCatalog();
     validateData();
   </script>
 </body>
