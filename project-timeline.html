@@ -28,6 +28,8 @@
       --status-triaged: #4b5d6e;
       --status-untriaged: #8c9ba8;
       --status-deferred: #8a5c92;
+      --status-rejected: #a13f4b;
+      --priority-highest: #8f2638;
       --priority-high: #b94134;
       --priority-medium: #8d702d;
       --priority-low: #66706b;
@@ -108,6 +110,38 @@
       color: #4f5a55;
       font-size: 14px;
       line-height: 1.45;
+    }
+
+    .decision-note {
+      display: grid;
+      gap: 7px;
+      margin-top: 12px;
+      max-width: 980px;
+      padding: 10px 12px;
+      border: 1px solid rgba(40, 111, 107, 0.22);
+      border-left: 4px solid #286f6b;
+      border-radius: 7px;
+      background: rgba(230, 243, 238, 0.72);
+      color: #33413a;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .decision-note strong {
+      color: #1f4f4c;
+    }
+
+    .decision-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+    }
+
+    .decision-items span::before {
+      content: "•";
+      margin-right: 6px;
+      color: #286f6b;
+      font-weight: 900;
     }
 
     .controls {
@@ -476,6 +510,27 @@
       background: rgba(252, 244, 255, 0.96);
     }
 
+    .work-card.status-rejected {
+      background: rgba(255, 242, 244, 0.96);
+    }
+
+    .time-cell.active-pulse,
+    .lane-cell.active-pulse {
+      background:
+        linear-gradient(180deg, rgba(232, 246, 239, 0.92), rgba(243, 249, 245, 0.72));
+    }
+
+    .time-cell.active-pulse .pulse-index {
+      background: #176b5b;
+      box-shadow: 0 0 0 4px rgba(23, 107, 91, 0.12);
+    }
+
+    .time-cell.rejected-pulse,
+    .lane-cell.rejected-pulse {
+      background:
+        linear-gradient(180deg, rgba(248, 238, 240, 0.8), rgba(252, 247, 247, 0.62));
+    }
+
     .card-top {
       display: flex;
       align-items: center;
@@ -543,6 +598,11 @@
       color: var(--priority-high);
     }
 
+    .badge.priority-highest {
+      background: rgba(143, 38, 56, 0.14);
+      color: var(--priority-highest);
+    }
+
     .badge.priority-medium {
       background: rgba(141, 112, 45, 0.16);
       color: var(--priority-medium);
@@ -586,6 +646,11 @@
     .badge.status-deferred {
       background: rgba(138, 92, 146, 0.13);
       color: var(--status-deferred);
+    }
+
+    .badge.status-rejected {
+      background: rgba(161, 63, 75, 0.13);
+      color: var(--status-rejected);
     }
 
     .card-title {
@@ -641,6 +706,11 @@
     .chip.clickable:hover {
       border-color: #316c8e;
       color: #245c7a;
+    }
+
+    .chip.related-chip {
+      background: #f2e9dc;
+      color: #79592c;
     }
 
     .card-footer {
@@ -841,12 +911,21 @@
   <div class="app">
     <header class="toolbar" id="toolbar">
       <div class="title-block">
-        <p class="eyebrow">DOCPR-2845 local planning diagram</p>
-        <h1>Pulse timeline by component</h1>
+        <p class="eyebrow">DOCPR-2845 · Jira snapshot 15 September 2026</p>
+        <h1>Current work and project history</h1>
         <p class="subtitle">
-          Vertical component pillars with pulse windows descending. Cards carry type, priority,
-          size, owner class, assignment, status, Jira, and dependency metadata.
+          Active work comes first; completed pulses, backlog, and rejected scope remain visible.
+          Cards use Jira status, assignee, sprint, and issue-link data, with historical context
+          retained where the plan changed.
         </p>
+        <div class="decision-note" role="note" aria-label="September 14 project decisions">
+          <strong>September 14 direction</strong>
+          <div class="decision-items">
+            <span>Move the deterministic scripts to one standard-library Python executable.</span>
+            <span>Try mapping as a visible direct script, then A/B test a skill wrapper.</span>
+            <span>Dogfood the current workflow and converge on the October 12 milestone.</span>
+          </div>
+        </div>
       </div>
 
       <form class="controls" id="controls" aria-label="Timeline controls">
@@ -889,65 +968,77 @@
 
   <script>
     const COMPONENTS = [
-      { key: "A", name: "Core", color: "#2f6f9f" },
+      { key: "A", name: "Foundation", color: "#2f6f9f" },
       { key: "B", name: "Onboarding", color: "#287b68" },
-      { key: "C", name: "Lookup", color: "#7b5fb2" },
-      { key: "D", name: "Customization", color: "#b45c3a" },
-      { key: "E", name: "Generation", color: "#b43c64" },
-      { key: "F", name: "HITL", color: "#4f7560" },
-      { key: "G", name: "DOCPR-2822", color: "#63752f" },
+      { key: "M", name: "Mapping", color: "#6661a8" },
+      { key: "C", name: "Context + sources", color: "#7b5fb2" },
+      { key: "E", name: "Authoring", color: "#b43c64" },
+      { key: "F", name: "HITL + state", color: "#4f7560" },
       { key: "H", name: "Validation", color: "#8b6b2f" },
-      { key: "S", name: "Spike", color: "#6661a8" },
-      { key: "T", name: "Tail", color: "#5f6670" },
-      { key: "Deferred", name: "Deferred", color: "#8c5a89" }
+      { key: "R", name: "Release + adoption", color: "#b45c3a" },
+      { key: "G", name: "QA extension", color: "#63752f" },
+      { key: "X", name: "Rejected / deferred", color: "#8c5a89" }
     ];
 
     const PULSES = [
-      { key: "#12", label: "#12", window: "Jun 15-19" },
-      { key: "#13", label: "#13", window: "Jun 22-Jul 03" },
-      { key: "#14", label: "#14", window: "Jul 06-17" },
+      { key: "#19", label: "#19", window: "Sep 14-28", active: true },
+      { key: "Carried", label: "Carried", window: "Active outside #19", active: true },
+      { key: "Backlog", label: "Backlog", window: "Triaged · no active sprint" },
       { key: "#15-16", label: "#15-16", window: "Jul 20-Aug 14" },
-      { key: "#17", label: "#17", window: "Aug 17-28" },
-      { key: "Tail", label: "Tail", window: "Aug 31+" },
-      { key: "Deferred", label: "Deferred", window: "end-cycle" }
+      { key: "#14", label: "#14", window: "Jul 06-17" },
+      { key: "#13", label: "#13", window: "Jun 22-Jul 03" },
+      { key: "#12", label: "#12", window: "Jun 15-19" },
+      { key: "Rejected", label: "Rejected", window: "Removed from current scope", rejected: true }
     ];
 
     const ITEMS = [
-      { id: "A1", title: "Select and record the agentic SDK decision", status: "Done", pulse: "#12", window: "Jun 15-19", type: "Spike", priority: "High", size: "S", theme: "Core", owner: "Expert", jiraKey: "DOCPR-2981", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2981", dependencies: [], assignee: "Teodora Mihoc" },
-      { id: "A2", title: "Build the thin end-to-end walking skeleton + workflow", status: "Done", pulse: "#12", window: "Jun 15-19", type: "Story", priority: "High", size: "S", theme: "Core", owner: "Expert", jiraKey: "DOCPR-2982", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2982", dependencies: ["A1"], assignee: "Artem Konev" },
-      { id: "F1", title: "Define the planning-directory schema v0", status: "Done", pulse: "#12", window: "Jun 15-19", type: "Task", priority: "High", size: "S", theme: "HITL", owner: "Expert", jiraKey: "DOCPR-2983", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2983", dependencies: [], assignee: "Artem Konev" },
-      { id: "H1", title: "Capture the from-scratch UX and time baseline (AC6)", status: "In Review", pulse: "#12", window: "Jun 15-19", type: "Task", priority: "Medium", size: "S", theme: "Validation", owner: "General", jiraKey: "DOCPR-2984", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2984", dependencies: [], assignee: "Robert Krátký" },
-      { id: "H2", title: "Identify and assess greenfield/brownfield candidates", status: "Done", pulse: "#12", window: "Jun 15-19", type: "Task", priority: "Medium", size: "S", theme: "Validation", owner: "General", jiraKey: "DOCPR-2985", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2985", dependencies: [], assignee: "charles.odada" },
-      { id: "B1", title: "Build the local onboarding scraper v1", status: "Done", pulse: "#13", window: "Jun 22-Jul 03", type: "Story", priority: "High", size: "M", theme: "Onboarding", owner: "Mixed", jiraKey: "DOCPR-2986", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2986", dependencies: ["H2"], assignee: "Anne Chew Yii Huei" },
-      { id: "B2", title: "Generate the code-to-docs map v1", status: "Done", pulse: "#13", window: "Jun 22-Jul 03", type: "Story", priority: "High", size: "M", theme: "Onboarding", owner: "Expert", jiraKey: "DOCPR-2987", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2987", dependencies: ["B1", "H2"], assignee: "charles.odada" },
-      { id: "C1", title: "Wire the agentic source-lookup baseline", status: "Done", pulse: "#13", window: "Jun 22-Jul 03", type: "Task", priority: "High", size: "M", theme: "Lookup", owner: "Expert", jiraKey: "DOCPR-2988", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2988", dependencies: ["A2", "B2"], assignee: "Artem Konev" },
-      { id: "E1", title: "Build type-aware, intent-steered generation v1", status: "Done", pulse: "#13", window: "Jun 22-Jul 03", type: "Story", priority: "High", size: "M", theme: "Generation", owner: "Expert", jiraKey: "DOCPR-2989", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2989", dependencies: ["A2", "C1", "F1"], assignee: "Artem Konev" },
-      { id: "F2", title: "Enforce the HITL steering gate with planning capture", status: "Done", pulse: "#13", window: "Jun 22-Jul 03", type: "Story", priority: "High", size: "M", theme: "HITL", owner: "Expert", jiraKey: "DOCPR-2990", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2990", dependencies: ["F1", "E1"], assignee: "Artem Konev" },
-      { id: "G1", title: "Define the DOCPR-2822 QA interface contract", status: "Done", pulse: "#13", window: "Jun 22-Jul 03", type: "Task", priority: "Medium", size: "M", theme: "DOCPR-2822", owner: "Mixed", jiraKey: "DOCPR-2991", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2991", dependencies: [], assignee: "Artem Konev" },
-      { id: "E2", title: "Add the evidence-gated verification step for actionable content", status: "Done", pulse: "#14", window: "Jul 06-17", type: "Story", priority: "High", size: "M", theme: "Generation", owner: "Expert", jiraKey: "DOCPR-2992", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2992", dependencies: ["E1"], assignee: "Artem Konev" },
-      { id: "E3", title: "Enable explanation-type drafting driven by recorded steering", status: "Done", pulse: "#14", window: "Jul 06-17", type: "Story", priority: "Medium", size: "M", theme: "Generation", owner: "Mixed", jiraKey: "DOCPR-2993", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2993", dependencies: ["E1", "F2"], assignee: "Artem Konev" },
-      { id: "C2", title: "Build non-file SDLC source connectors (PRs, bugs, commit discussion)", status: "In Progress", pulse: "#14", window: "Jul 06-17", type: "Story", priority: "High", size: "L", theme: "Lookup", owner: "Expert", jiraKey: "DOCPR-2994", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2994", dependencies: ["A1", "C1"], assignee: "Anne Chew Yii Huei" },
-      { id: "D1", title: "Build layered customization v1 from remote URLs/repos (org guidance + writer prefs)", status: "Done", pulse: "#14", window: "Jul 06-17", type: "Story", priority: "High", size: "M", theme: "Customization", owner: "Mixed", jiraKey: "DOCPR-2995", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2995", dependencies: ["E1"], assignee: "charles.odada" },
-      { id: "F3", title: "Decompose generated content into atomic, author-legible commits", status: "Done", pulse: "#14", window: "Jul 06-17", type: "Story", priority: "High", size: "M", theme: "HITL", owner: "Expert", jiraKey: "DOCPR-2996", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2996", dependencies: ["E1", "F2"], assignee: "Artem Konev" },
-      { id: "S1", title: "Spike - measure lookup limits, define seam", status: "Untriaged", pulse: "#15-16", window: "Jul 20-Aug 14", type: "Spike", priority: "High", size: "M", theme: "Spike", owner: "Expert", jiraKey: "DOCPR-2997", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2997", dependencies: ["C1", "C2", "B2", "H2"], assignee: "Artem Konev" },
-      { id: "D2", title: "Evolve layered customization toward MCP", status: "Untriaged", pulse: "#15-16", window: "Jul 20-Aug 14", type: "Story", priority: "High", size: "M", theme: "Customization", owner: "Expert", jiraKey: "DOCPR-2998", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2998", dependencies: ["D1"], assignee: "" },
-      { id: "H3", title: "Prove out-of-the-box onboarding (AC2)", status: "Untriaged", pulse: "#15-16", window: "Jul 20-Aug 14", type: "Task", priority: "Medium", size: "M", theme: "Validation", owner: "Mixed", jiraKey: "DOCPR-2999", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-2999", dependencies: ["B1", "B2", "C1", "E1", "E2", "E3", "F2", "F3"], assignee: "" },
-      { id: "H4", title: "Prove on the GitHub/RTD/Sphinx primary stack (AC3)", status: "Untriaged", pulse: "#15-16", window: "Jul 20-Aug 14", type: "Task", priority: "Medium", size: "M", theme: "Validation", owner: "Mixed", jiraKey: "DOCPR-3000", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3000", dependencies: ["H3"], assignee: "Artem Konev" },
-      { id: "E4", title: "Harden generation quality", status: "Untriaged", pulse: "#15-16", window: "Jul 20-Aug 14", type: "Task", priority: "High", size: "M", theme: "Generation", owner: "Expert", jiraKey: "DOCPR-3001", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3001", dependencies: ["H3"], assignee: "Artem Konev" },
-      { id: "H5", title: "Prove and dogfood across designated projects (AC4)", status: "Untriaged", pulse: "#17", window: "Aug 17-28", type: "Task", priority: "Medium", size: "L", theme: "Validation", owner: "Mixed", jiraKey: "DOCPR-3002", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3002", dependencies: ["H3", "H4"], assignee: "" },
-      { id: "H7", title: "Write install-to-first-draft onboarding docs", status: "Untriaged", pulse: "#17", window: "Aug 17-28", type: "Task", priority: "Medium", size: "M", theme: "Validation", owner: "General", jiraKey: "DOCPR-3003", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3003", dependencies: ["H3"], assignee: "" },
-      { id: "H6", title: "Run the outside-author install test (AC1)", status: "Untriaged", pulse: "#17", window: "Aug 17-28", type: "Task", priority: "Medium", size: "M", theme: "Validation", owner: "Mixed", jiraKey: "DOCPR-3004", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3004", dependencies: ["H3", "H7"], assignee: "" },
-      { id: "F4", title: "Audit provenance and HITL coverage (AC5)", status: "Untriaged", pulse: "#17", window: "Aug 17-28", type: "Task", priority: "High", size: "M", theme: "HITL", owner: "Mixed", jiraKey: "DOCPR-3005", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3005", dependencies: ["F2", "F3", "H3"], assignee: "" },
-      { id: "H8", title: "Measure UX improvement vs baseline (AC6)", status: "Untriaged", pulse: "#17", window: "Aug 17-28", type: "Task", priority: "Medium", size: "M", theme: "Validation", owner: "Mixed", jiraKey: "DOCPR-3006", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3006", dependencies: ["H1", "H3"], assignee: "" },
-      { id: "D3", title: "Package guidance as Agent Skills and contribute back", status: "Untriaged", pulse: "Tail", window: "Aug 31+", type: "Task", priority: "High", size: "M", theme: "Customization", owner: "Expert", jiraKey: "DOCPR-3007", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3007", dependencies: ["D1", "D2"], assignee: "" },
-      { id: "T1", title: "Cleanup, spill absorption, landing-zone wrap-up", status: "Untriaged", pulse: "Tail", window: "Aug 31+", type: "Task", priority: "Medium", size: "M", theme: "Tail", owner: "Mixed", jiraKey: "DOCPR-3008", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3008", dependencies: ["H5", "H6", "F4", "H8"], assignee: "" },
-      { id: "DOCPR-3009", title: "Full Mode B - agent-guided research/planning", status: "Untriaged", pulse: "Deferred", window: "end-cycle", type: "Story", priority: "Low", size: "XL", theme: "Mode B", owner: "", jiraKey: "DOCPR-3009", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3009", dependencies: [], assignee: "", component: "Deferred" },
-      { id: "DOCPR-3010", title: "Persistent agentic memory", status: "Untriaged", pulse: "Deferred", window: "end-cycle", type: "Spike", priority: "Low", size: "-", theme: "Memory", owner: "", jiraKey: "DOCPR-3010", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3010", dependencies: [], assignee: "", component: "Deferred" },
-      { id: "DOCPR-3011", title: "Context-augmentation build", status: "Untriaged", pulse: "Deferred", window: "end-cycle", type: "Story", priority: "Low", size: "-", theme: "Augmentation", owner: "", jiraKey: "DOCPR-3011", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3011", dependencies: [], assignee: "", component: "Deferred" },
-      { id: "DOCPR-3012", title: "Broad hands-free adoption", status: "Untriaged", pulse: "Deferred", window: "end-cycle", type: "Story", priority: "Low", size: "-", theme: "Adoption", owner: "", jiraKey: "DOCPR-3012", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3012", dependencies: [], assignee: "", component: "Deferred" },
-      { id: "DOCPR-3013", title: "Deep DOCPR-2822 integration", status: "Untriaged", pulse: "Deferred", window: "end-cycle", type: "Story", priority: "Low", size: "-", theme: "DOCPR-2822", owner: "", jiraKey: "DOCPR-3013", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3013", dependencies: [], assignee: "", component: "Deferred" },
-      { id: "DOCPR-3014", title: "Broader stack/provider agnosticism", status: "Untriaged", pulse: "Deferred", window: "end-cycle", type: "Story", priority: "Low", size: "-", theme: "Agnosticism", owner: "", jiraKey: "DOCPR-3014", jiraUrl: "https://warthogs.atlassian.net/browse/DOCPR-3014", dependencies: [], assignee: "", component: "Deferred" }
-    ];
+      { id: "DOCPR-2981", code: "A1", title: "A1: Select and record the agentic SDK decision (agnosticism, cost, MCP/Skills fit)", status: "Done", pulse: "#12", type: "Spike", priority: "High", size: "S", theme: "Foundation", owner: "Expert", component: "A", dependencies: [], related: [], assignee: "Teodora Mihoc", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #12 and #13." },
+      { id: "DOCPR-2982", code: "A2", title: "A2: Build the thin end-to-end walking skeleton and core drafting workflow", status: "Done", pulse: "#12", type: "Story", priority: "High", size: "S", theme: "Foundation", owner: "Expert", component: "A", dependencies: ["DOCPR-2981"], related: [], assignee: "Artem Konev", updated: "6 Jul 2026", history: "Jira sprint history: Pulses #12, #13, and #14." },
+      { id: "DOCPR-2983", code: "F1", title: "F1: Define the planning-directory schema v0 (steering, plan, provenance, progress)", status: "Done", pulse: "#12", type: "Task", priority: "High", size: "S", theme: "HITL", owner: "Expert", component: "F", dependencies: [], related: [], assignee: "Artem Konev", updated: "6 Jul 2026", history: "Jira sprint history: Pulses #12, #13, and #14." },
+      { id: "DOCPR-2984", code: "H1", title: "H1: Capture the from-scratch UX and time baseline (AC6 kickoff measurement)", status: "Done", pulse: "#12", type: "Task", priority: "Medium", size: "S", theme: "Validation", owner: "General", component: "H", dependencies: [], related: [], assignee: "Robert Krátký", updated: "27 Jul 2026", history: "The July timeline showed In Review; Jira now records Done." },
+      { id: "DOCPR-2985", code: "H2", title: "H2: Identify and assess greenfield/brownfield candidate projects", status: "Done", pulse: "#12", type: "Task", priority: "Medium", size: "S", theme: "Validation", owner: "General", component: "H", dependencies: [], related: [], assignee: "charles.odada", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #12 and #13." },
+      { id: "DOCPR-2986", code: "B1", title: "B1: Build the local onboarding scraper v1 (doc-style, glossary, structure artefacts)", status: "Done", pulse: "#13", type: "Story", priority: "High", size: "M", theme: "Onboarding", owner: "Mixed", component: "B", dependencies: ["DOCPR-2985"], related: ["DOCPR-3214"], assignee: "Anne Chew Yii Huei", updated: "7 Sep 2026", history: "Prior art for the remaining-cycle onboarding work." },
+      { id: "DOCPR-2987", code: "B2", title: "B2: Generate the code-to-docs map v1 for a candidate repo", status: "Done", pulse: "#13", type: "Story", priority: "High", size: "M", theme: "Mapping", owner: "Expert", component: "M", dependencies: ["DOCPR-2986", "DOCPR-2985"], related: ["DOCPR-3215"], assignee: "charles.odada", updated: "7 Sep 2026", history: "Prior art for the remaining-cycle mapping experiment." },
+      { id: "DOCPR-2988", code: "C1", title: "C1: Wire the agentic source-lookup baseline (grep, file-read, traversal)", status: "Done", pulse: "#14", type: "Task", priority: "High", size: "M", theme: "Source lookup", owner: "Expert", component: "C", dependencies: ["DOCPR-2982", "DOCPR-2987"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Completed after carrying into Pulse #14." },
+      { id: "DOCPR-2989", code: "E1", title: "E1: Build type-aware, intent-steered generation v1 (reference first)", status: "Done", pulse: "#14", type: "Story", priority: "High", size: "M", theme: "Authoring", owner: "Expert", component: "E", dependencies: ["DOCPR-2988", "DOCPR-2983", "DOCPR-2982"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #13 and #14." },
+      { id: "DOCPR-2990", code: "F2", title: "F2: Enforce the HITL steering gate with planning-directory capture", status: "Done", pulse: "#14", type: "Story", priority: "High", size: "M", theme: "HITL", owner: "Expert", component: "F", dependencies: ["DOCPR-2983", "DOCPR-2989"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #13 and #14." },
+      { id: "DOCPR-2991", code: "G1", title: "G1: Define the DOCPR-2822 QA interface contract (optional extension point)", status: "Done", pulse: "#14", type: "Task", priority: "Medium", size: "M", theme: "QA seam", owner: "Mixed", component: "G", dependencies: [], related: ["DOCPR-2822"], assignee: "Artem Konev", updated: "7 Sep 2026", history: "The QA framework remains an optional external extension, not a core dependency." },
+      { id: "DOCPR-2992", code: "E2", title: "E2: Add the evidence-gated verification step for actionable content", status: "Done", pulse: "#15-16", type: "Story", priority: "High", size: "M", theme: "Actionable authoring", owner: "Expert", component: "E", dependencies: ["DOCPR-2989"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #14 and #15." },
+      { id: "DOCPR-2993", code: "E3", title: "E3: Enable explanation-type drafting driven by recorded steering", status: "Done", pulse: "#15-16", type: "Story", priority: "Medium", size: "M", theme: "Explanation authoring", owner: "Mixed", component: "E", dependencies: ["DOCPR-2989", "DOCPR-2990"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #14 and #15." },
+      { id: "DOCPR-2994", code: "C2", title: "Define portable external-source intake and provenance for dogen-slim", status: "In Progress", pulse: "Carried", type: "Story", priority: "High", size: "L", theme: "External intake", owner: "Expert", component: "C", dependencies: ["DOCPR-3211"], related: [], assignee: "Anne Chew Yii Huei", updated: "8 Sep 2026", history: "Previously scheduled in Pulses #15 and #16; Jira shows no active sprint.", decision: "September 14: publish fetch examples on a separate slim-based branch." },
+      { id: "DOCPR-2995", code: "D1", title: "D1: Build layered customization v1 from remote URLs/repos (org guidance + writer prefs)", status: "Done", pulse: "#15-16", type: "Story", priority: "High", size: "M", theme: "Context", owner: "Mixed", component: "C", dependencies: ["DOCPR-2989"], related: ["DOCPR-3007"], assignee: "charles.odada", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #14 and #15." },
+      { id: "DOCPR-2996", code: "F3", title: "F3: Decompose generated content into atomic, author-legible commits", status: "Done", pulse: "#14", type: "Story", priority: "High", size: "M", theme: "Commit boundary", owner: "Expert", component: "F", dependencies: ["DOCPR-2990", "DOCPR-2989"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Completed in the original Pulse #14 plan." },
+      { id: "DOCPR-2997", code: "S1", title: "Decide whether dogen-slim needs richer retrieval", status: "Triaged", pulse: "Backlog", type: "Spike", priority: "High", size: "M", theme: "Retrieval", owner: "Expert", component: "M", dependencies: ["DOCPR-3002"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; now triaged without an active sprint." },
+      { id: "DOCPR-2998", code: "D2", title: "Superseded: MCP-served shared guidance", status: "Rejected", pulse: "Rejected", type: "Story", priority: "High", size: "M", theme: "Shared guidance", owner: "Expert", component: "X", dependencies: [], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; Jira now marks the approach rejected and superseded." },
+      { id: "DOCPR-2999", code: "H3", title: "Prove dogen onboarding and mapping on greenfield and brownfield projects", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Project proof", owner: "Mixed", component: "H", dependencies: ["DOCPR-3212", "DOCPR-3214", "DOCPR-3215", "DOCPR-3216"], related: ["DOCPR-3001"], assignee: "Anne Chew Yii Huei", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; now gated by the remaining-cycle implementation tickets." },
+      { id: "DOCPR-3000", code: "H4", title: "Prove dogen-slim on the GitHub/RTD/Sphinx stack", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Primary-stack proof", owner: "Mixed", component: "H", dependencies: ["DOCPR-3212", "DOCPR-3216"], related: ["DOCPR-3001"], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; now triaged without an active sprint." },
+      { id: "DOCPR-3001", code: "E4", title: "Harden dogen-slim from observed validation and dogfood gaps", status: "Triaged", pulse: "Backlog", type: "Task", priority: "High", size: "M", theme: "Hardening", owner: "Expert", component: "H", dependencies: ["DOCPR-3216"], related: ["DOCPR-2999", "DOCPR-3000", "DOCPR-3002", "DOCPR-3004", "DOCPR-3005", "DOCPR-3006"], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; now a rolling hardening bucket after validation." },
+      { id: "DOCPR-3002", code: "H5", title: "Dogfood dogen-slim across the project proof matrix", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "L", theme: "Dogfooding", owner: "Mixed", component: "H", dependencies: ["DOCPR-3000", "DOCPR-2999"], related: ["DOCPR-3001"], assignee: "", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged without an active sprint.", decision: "September 14: every team member should use dogen on real documentation to expose friction and bugs." },
+      { id: "DOCPR-3003", code: "H7", title: "Publish dogen-slim onboarding and demonstration material", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Communication", owner: "General", component: "R", dependencies: [], related: [], assignee: "Robert Krátký", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged without an active sprint.", decision: "September 14: keep the product story concise and simplify the README after the Python and mapping decisions settle." },
+      { id: "DOCPR-3004", code: "H6", title: "Run an unaided dogen-slim adoption test with an outside author", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Adoption", owner: "Mixed", component: "H", dependencies: ["DOCPR-3003", "DOCPR-2999", "DOCPR-3000"], related: ["DOCPR-3001"], assignee: "", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged without an active sprint." },
+      { id: "DOCPR-3005", code: "F4", title: "Audit dogen-slim HITL steering and provenance", status: "Triaged", pulse: "Backlog", type: "Task", priority: "High", size: "M", theme: "Audit", owner: "Mixed", component: "F", dependencies: ["DOCPR-3212", "DOCPR-3002"], related: ["DOCPR-3001"], assignee: "", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged behind the deterministic hardening and dogfood work." },
+      { id: "DOCPR-3006", code: "H8", title: "Measure dogen-slim UX improvement on matched tasks", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "UX measurement", owner: "Mixed", component: "H", dependencies: ["DOCPR-2984", "DOCPR-3002", "DOCPR-3004"], related: ["DOCPR-3001"], assignee: "", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged behind dogfooding and the outside-author test." },
+      { id: "DOCPR-3007", code: "D3", title: "Package onboarding, mapping, and shared guidance as dogen skills", status: "Triaged", pulse: "Backlog", type: "Task", priority: "High", size: "M", theme: "Packaging", owner: "Expert", component: "R", dependencies: [], related: ["DOCPR-3213", "DOCPR-3214", "DOCPR-3215", "DOCPR-2995"], assignee: "", updated: "8 Sep 2026", history: "Originally a Tail item; now split across the remaining-cycle tickets.", decision: "The September 14 mapping decision makes skill packaging conditional on the direct-script A/B result." },
+      { id: "DOCPR-3008", code: "T1", title: "Close out dogen-slim findings, fixes, and spill", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Closeout", owner: "Mixed", component: "R", dependencies: ["DOCPR-3002", "DOCPR-3004", "DOCPR-3006", "DOCPR-3005", "DOCPR-2997", "DOCPR-3001"], related: [], assignee: "", updated: "7 Sep 2026", history: "Originally a Tail item; now triaged as the final spill and findings bucket.", decision: "The final project milestone remains October 12." },
+      { id: "DOCPR-3009", title: "Deferred: Full autonomous Mode B research and planning", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "XL", theme: "Autonomy", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected and retained only as historical deferred scope." },
+      { id: "DOCPR-3010", title: "Deferred: Persistent agentic memory", status: "Rejected", pulse: "Rejected", type: "Spike", priority: "Low", size: "-", theme: "Memory", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected and retained only as historical deferred scope." },
+      { id: "DOCPR-3011", title: "Deferred: Semantic or structural context-augmentation build", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "-", theme: "Augmentation", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected and retained only as historical deferred scope." },
+      { id: "DOCPR-3012", title: "Superseded: Broad hands-free adoption rollout", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "-", theme: "Adoption", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected as superseded scope." },
+      { id: "DOCPR-3013", title: "Deferred: Deep DOCPR-2822 integration", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "-", theme: "QA integration", owner: "Unassigned", component: "X", dependencies: [], related: ["DOCPR-2822"], assignee: "", updated: "7 Sep 2026", history: "Rejected; only the optional QA extension point remains in scope." },
+      { id: "DOCPR-3014", title: "Deferred: Broad documentation-stack and provider agnosticism", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "-", theme: "Agnosticism", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected and retained only as historical deferred scope." },
+      { id: "DOCPR-3211", code: "N1", title: "Freeze the dogen-slim lifecycle and artifact contract", status: "In Progress", pulse: "#19", type: "Story", priority: "Highest", size: "-", theme: "Contract", owner: "Expert", component: "F", dependencies: [], related: [], assignee: "Artem Konev", updated: "14 Sep 2026", history: "Created and triaged on 7 Sep; assigned to Pulse #19 and moved to In Progress on 14 Sep.", repoSignal: "Local gsd evidence marks Phase 16 complete; Jira remains the status authority." },
+      { id: "DOCPR-3212", code: "N2", title: "Harden dogen-slim deterministic gates, provenance, and commit boundaries", status: "In Progress", pulse: "#19", type: "Story", priority: "Highest", size: "-", theme: "Deterministic runtime", owner: "Expert", component: "F", dependencies: ["DOCPR-3211"], related: [], assignee: "Artem Konev", updated: "14 Sep 2026", history: "Created and triaged on 7 Sep; assigned to Pulse #19 and moved to In Progress on 14 Sep.", repoSignal: "Local gsd evidence records the Phase 17 plan list complete and under verification; Jira remains In Progress." },
+      { id: "DOCPR-3213", code: "N3", title: "Restore dogen-slim CI, quality, installation, and release gates", status: "In Progress", pulse: "#19", type: "Task", priority: "High", size: "-", theme: "Release", owner: "Mixed", component: "R", dependencies: ["DOCPR-3211", "DOCPR-3212"], related: ["DOCPR-3007"], assignee: "Artem Konev", updated: "14 Sep 2026", history: "Created 7 Sep and assigned to active Pulse #19 on 14 Sep.", decision: "The release design uses one stdlib-only Python file, restores CI/install checks, and eventually lands the implementation on main." },
+      { id: "DOCPR-3214", code: "N4", title: "Add the agent-native dogen-onboard skill", status: "Triaged", pulse: "#19", type: "Story", priority: "Highest", size: "-", theme: "Onboarding", owner: "Mixed", component: "B", dependencies: ["DOCPR-3211"], related: ["DOCPR-3007", "DOCPR-2986"], assignee: "charles.odada", updated: "14 Sep 2026", history: "Originally assigned to Anne, reassigned to Charles on 8 Sep, and added to Pulse #19 on 14 Sep.", decision: "Onboarding is optional; authors may instead bring existing style, glossary, and structure context." },
+      { id: "DOCPR-3215", code: "N5", title: "Add the agent-native dogen-map skill", status: "Triaged", pulse: "#19", type: "Story", priority: "Highest", size: "-", theme: "Mapping experiment", owner: "Expert", component: "M", dependencies: ["DOCPR-3211", "DOCPR-3214"], related: ["DOCPR-3007", "DOCPR-2987"], assignee: "charles.odada", updated: "14 Sep 2026", history: "Assigned to Charles on 8 Sep and added to Pulse #19 on 14 Sep.", decision: "September 14 decision: run mapping directly first so authors see its artifacts, then A/B test whether a skill wrapper improves the experience." },
+      { id: "DOCPR-3216", code: "N6", title: "Adapt the validation kit and scorer to dogen-slim", status: "Triaged", pulse: "#19", type: "Task", priority: "Highest", size: "-", theme: "Validation kit", owner: "Expert", component: "H", dependencies: ["DOCPR-3211", "DOCPR-3212"], related: [], assignee: "Artem Konev", updated: "14 Sep 2026", history: "Created 7 Sep and assigned to active Pulse #19 on 14 Sep." }
+    ].map((item) => ({
+      ...item,
+      jiraKey: item.id,
+      jiraUrl: `https://warthogs.atlassian.net/browse/${item.id}`,
+      window: PULSES.find((pulse) => pulse.key === item.pulse)?.window || "",
+      related: item.related || []
+    }));
 
     const byId = new Map(ITEMS.map((item) => [item.id, item]));
     const grid = document.getElementById("timelineGrid");
@@ -1028,6 +1119,7 @@
     function matchesFilters(item) {
       const text = [
         item.id,
+        item.code,
         item.title,
         item.status,
         item.pulse,
@@ -1039,7 +1131,11 @@
         item.owner,
         item.assignee,
         item.jiraKey,
-        item.dependencies.join(" ")
+        item.dependencies.join(" "),
+        item.related.join(" "),
+        item.history,
+        item.decision,
+        item.repoSignal
       ].join(" ").toLowerCase();
       const query = filters.search.value.trim().toLowerCase();
       return (
@@ -1084,29 +1180,44 @@
         .join("");
     }
 
+    function relatedLabel(item) {
+      if (!item.related.length) return `<span class="chip">None</span>`;
+      return item.related
+        .map((related) => {
+          if (byId.has(related)) {
+            return `<span class="chip related-chip clickable" data-focus-id="${escapeHtml(related)}">${escapeHtml(related)}</span>`;
+          }
+          return `<a class="chip related-chip jira-link" href="https://warthogs.atlassian.net/browse/${escapeHtml(related)}" target="_blank" rel="noreferrer">${escapeHtml(related)}</a>`;
+        })
+        .join("");
+    }
+
     function renderCard(item) {
       const component = componentFor(componentKeyFor(item));
       const typeClass = `type-${slug(item.type)}`;
       const priorityClass = `priority-${slug(item.priority)}`;
       const statusClass = `status-${slug(item.status)}`;
       const assignee = item.assignee || "Unassigned";
+      const displayId = item.code || item.jiraKey;
+      const idContext = item.code ? `${item.jiraKey} · ${item.pulse}` : item.pulse;
       return `
-        <button class="work-card ${statusClass}" type="button" data-id="${escapeHtml(item.id)}" style="--component-color: ${component.color}">
+        <button class="work-card ${statusClass}" type="button" data-id="${escapeHtml(item.id)}" style="--component-color: ${component.color}" aria-label="Open ${escapeHtml(item.jiraKey)} details">
           <span class="card-top">
             <span class="item-id">
-              ${escapeHtml(item.id)}
-              <span class="mini-pulse">${escapeHtml(item.pulse)}</span>
+              ${escapeHtml(displayId)}
+              <span class="mini-pulse">${escapeHtml(idContext)}</span>
             </span>
             <span class="badges">
               <span class="badge ${statusClass}">${escapeHtml(item.status)}</span>
               <span class="badge ${typeClass}">${escapeHtml(item.type)}</span>
+              <span class="badge ${priorityClass}">${escapeHtml(item.priority)}</span>
             </span>
           </span>
           <span class="card-title">${escapeHtml(item.title)}</span>
           <span class="card-meta">
             <span class="meta-pair"><strong>Priority</strong> ${escapeHtml(item.priority)}</span>
             <span class="meta-pair"><strong>Size</strong> ${escapeHtml(item.size)}</span>
-            <span class="meta-pair"><strong>Owner</strong> ${escapeHtml(item.owner || "Unassigned")}</span>
+            <span class="meta-pair"><strong>Work</strong> ${escapeHtml(item.owner || "Unassigned")}</span>
             <span class="meta-pair"><strong>Assignee</strong> ${escapeHtml(assignee)}</span>
           </span>
           <span class="dependency-row">
@@ -1115,7 +1226,7 @@
           </span>
           <span class="card-footer">
             <span>${escapeHtml(item.theme)}</span>
-            <a class="jira-link" href="${escapeHtml(item.jiraUrl)}" target="_blank" rel="noreferrer" onclick="event.stopPropagation()">${escapeHtml(item.jiraKey)}</a>
+            <span class="jira-link">${escapeHtml(item.jiraKey)}</span>
           </span>
         </button>
       `;
@@ -1145,8 +1256,9 @@
       const rows = [];
       PULSES.forEach((pulse) => {
         const pulseItems = visibleItems.filter((item) => item.pulse === pulse.key);
+        const pulseClass = pulse.active ? "active-pulse" : (pulse.rejected ? "rejected-pulse" : "");
         rows.push(`
-          <div class="time-cell">
+          <div class="time-cell ${pulseClass}">
             <div class="pulse"><span class="pulse-index">${escapeHtml(pulse.label)}</span></div>
             <div class="pulse-window">${escapeHtml(pulse.window)}</div>
             <div class="pulse-count">${pulseItems.length} visible item${pulseItems.length === 1 ? "" : "s"}</div>
@@ -1158,7 +1270,7 @@
             .map(renderCard)
             .join("");
           rows.push(`
-            <div class="lane-cell" style="--component-color: ${component.color}">
+            <div class="lane-cell ${pulseClass}" style="--component-color: ${component.color}">
               <div class="card-stack">${cards || '<div class="empty-lane"></div>'}</div>
             </div>
           `);
@@ -1176,13 +1288,14 @@
         return counts;
       }, {});
       statusStrip.innerHTML = `
+        <span class="metric">Jira snapshot · 15 Sep 2026</span>
         <span class="metric">${visibleItems.length} / ${ITEMS.length} items</span>
         <span class="metric">${dependencyCount} visible dependency lines</span>
         ${Object.entries(statusCounts).map(([status, count]) => `<span class="metric badge status-${slug(status)}">${escapeHtml(status)}: ${count}</span>`).join("")}
         <span class="legend-chip" style="color: var(--type-story)"><span class="legend-dot"></span>Story</span>
         <span class="legend-chip" style="color: var(--type-task)"><span class="legend-dot"></span>Task</span>
         <span class="legend-chip" style="color: var(--type-spike)"><span class="legend-dot"></span>Spike</span>
-        <span class="legend-chip" style="color: var(--priority-high)"><span class="legend-dot"></span>High priority</span>
+        <span class="legend-chip" style="color: var(--priority-highest)"><span class="legend-dot"></span>Highest priority</span>
         <span class="legend-chip"><span class="legend-line"></span>Dependency</span>
       `;
     }
@@ -1277,9 +1390,10 @@
           <div class="detail-box"><div class="detail-label">Component</div><div class="detail-value">${escapeHtml(componentFor(componentKeyFor(item)).name)}</div></div>
           <div class="detail-box"><div class="detail-label">Type</div><div class="detail-value">${escapeHtml(item.type)}</div></div>
           <div class="detail-box"><div class="detail-label">Priority / size</div><div class="detail-value">${escapeHtml(item.priority)} / ${escapeHtml(item.size)}</div></div>
-          <div class="detail-box"><div class="detail-label">Owner class</div><div class="detail-value">${escapeHtml(item.owner || "Unassigned")}</div></div>
+          <div class="detail-box"><div class="detail-label">Work shape</div><div class="detail-value">${escapeHtml(item.owner || "Unassigned")}</div></div>
           <div class="detail-box"><div class="detail-label">Assignee</div><div class="detail-value">${escapeHtml(item.assignee || "Unassigned")}</div></div>
           <div class="detail-box"><div class="detail-label">Theme</div><div class="detail-value">${escapeHtml(item.theme)}</div></div>
+          <div class="detail-box"><div class="detail-label">Jira updated</div><div class="detail-value">${escapeHtml(item.updated)}</div></div>
           <div class="detail-box"><div class="detail-label">Jira</div><div class="detail-value"><a class="jira-link" href="${escapeHtml(item.jiraUrl)}" target="_blank" rel="noreferrer">${escapeHtml(item.jiraKey)}</a></div></div>
         </div>
         <div class="details-section">
@@ -1295,8 +1409,30 @@
           <div class="detail-chip-list">${downstream.length ? downstream.map((id) => `<span class="chip clickable" data-focus-id="${escapeHtml(id)}">${escapeHtml(id)}</span>`).join("") : '<span class="chip">None</span>'}</div>
         </div>
         <div class="details-section">
-          <h3>Update hook</h3>
-          <p>To update the diagram later, edit this item's embedded data object: status, assignee, owner, dependencies, or other metadata.</p>
+          <h3>Related work</h3>
+          <div class="detail-chip-list">${relatedLabel(item)}</div>
+        </div>
+        ${item.history ? `
+          <div class="details-section">
+            <h3>Timeline history</h3>
+            <p>${escapeHtml(item.history)}</p>
+          </div>
+        ` : ""}
+        ${item.decision ? `
+          <div class="details-section">
+            <h3>Current decision context</h3>
+            <p>${escapeHtml(item.decision)}</p>
+          </div>
+        ` : ""}
+        ${item.repoSignal ? `
+          <div class="details-section">
+            <h3>Repository evidence</h3>
+            <p>${escapeHtml(item.repoSignal)}</p>
+          </div>
+        ` : ""}
+        <div class="details-section">
+          <h3>Data policy</h3>
+          <p>Jira supplies current status, assignment, sprint, and issue links. Meeting and repository notes are shown separately as context and do not override Jira status.</p>
         </div>
       `;
       detailsPanel.classList.add("open");
