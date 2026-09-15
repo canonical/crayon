@@ -1,0 +1,2283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive architecture map for the planned dogen v0.2 documentation workflow.">
+  <title>Dogen v0.2 architecture</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f6f4ee;
+      --paper-strong: #fffdf8;
+      --ink: #19231f;
+      --muted: #607068;
+      --line: #cfd6ce;
+      --line-strong: #aebbb1;
+      --green: #23664c;
+      --green-soft: #e4f1e9;
+      --blue: #315f86;
+      --blue-soft: #e7f0f7;
+      --amber: #9a6421;
+      --amber-soft: #fbefd9;
+      --violet: #68548c;
+      --violet-soft: #eee9f7;
+      --red: #8e433e;
+      --red-soft: #f7e8e5;
+      --gray: #68716c;
+      --gray-soft: #eceeea;
+      --shadow: 0 18px 50px rgba(25, 35, 31, 0.08);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --max: 1480px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(35, 102, 76, 0.09), transparent 26rem),
+        radial-gradient(circle at 95% 16%, rgba(49, 95, 134, 0.08), transparent 30rem),
+        var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button,
+    select,
+    input {
+      font: inherit;
+    }
+
+    button,
+    select {
+      cursor: pointer;
+    }
+
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible,
+    a:focus-visible {
+      outline: 3px solid rgba(49, 95, 134, 0.38);
+      outline-offset: 3px;
+    }
+
+    .shell {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+    }
+
+    .hero {
+      padding: 42px 0 24px;
+    }
+
+    .eyebrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      align-items: center;
+      margin: 0 0 14px;
+      color: var(--green);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .eyebrow span + span::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--line-strong);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 980px;
+      margin-bottom: 18px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.45rem, 6vw, 5.8rem);
+      font-weight: 500;
+      letter-spacing: -0.055em;
+      line-height: 0.95;
+    }
+
+    .hero-copy {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
+      gap: 28px;
+      align-items: end;
+    }
+
+    .hero-copy > p {
+      max-width: 830px;
+      margin: 0;
+      color: #425149;
+      font-size: clamp(1.05rem, 2vw, 1.34rem);
+    }
+
+    .hero-note {
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255, 253, 248, 0.7);
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .snapshot {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 26px 0 0;
+    }
+
+    .snapshot-card {
+      min-height: 132px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255, 253, 248, 0.84);
+      box-shadow: 0 8px 26px rgba(25, 35, 31, 0.04);
+    }
+
+    .snapshot-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1.02rem;
+    }
+
+    .snapshot-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .snapshot-card.current {
+      border-top: 4px solid var(--green);
+    }
+
+    .snapshot-card.target {
+      border-top: 4px solid var(--amber);
+    }
+
+    .snapshot-card.authority {
+      border-top: 4px solid var(--blue);
+    }
+
+    .controls-wrap {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      padding: 10px 0;
+      background: linear-gradient(to bottom, rgba(246, 244, 238, 0.98), rgba(246, 244, 238, 0.9));
+      backdrop-filter: blur(12px);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: auto minmax(170px, 0.8fr) minmax(180px, 1fr) minmax(190px, 1.25fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 253, 248, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .segmented {
+      display: inline-flex;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #eef0eb;
+    }
+
+    .segmented button {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 11px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .segmented button[aria-pressed="true"] {
+      background: var(--paper-strong);
+      color: var(--ink);
+      box-shadow: 0 2px 7px rgba(25, 35, 31, 0.09);
+    }
+
+    .field {
+      display: grid;
+      gap: 3px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .field select,
+    .field input {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--paper-strong);
+      color: var(--ink);
+      padding: 7px 10px;
+    }
+
+    .catalog-toggle {
+      min-height: 42px;
+      border: 1px solid var(--ink);
+      border-radius: 11px;
+      background: var(--ink);
+      color: white;
+      padding: 9px 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .architecture {
+      padding: 28px 0 18px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .section-head h2 {
+      margin-bottom: 4px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.85rem, 3vw, 2.6rem);
+      font-weight: 500;
+      letter-spacing: -0.025em;
+    }
+
+    .section-head p {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .status-summary {
+      flex: none;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-align: right;
+    }
+
+    .machine {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(18px, 3vw, 34px);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-lg);
+      background:
+        linear-gradient(rgba(255, 253, 248, 0.82), rgba(255, 253, 248, 0.94)),
+        repeating-linear-gradient(90deg, transparent 0, transparent 39px, rgba(35, 102, 76, 0.04) 40px);
+      box-shadow: var(--shadow);
+    }
+
+    .flow-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .flow-label::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+    }
+
+    .flow-arrow {
+      display: grid;
+      place-items: center;
+      min-height: 40px;
+      color: var(--line-strong);
+      font-size: 1.45rem;
+      font-weight: 900;
+    }
+
+    .card {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--paper-strong);
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(25, 35, 31, 0.04);
+    }
+
+    .card[data-state="implemented"] {
+      border-top: 4px solid var(--green);
+    }
+
+    .card[data-state="planned"] {
+      border-top: 4px solid var(--amber);
+    }
+
+    .card[data-state="optional"] {
+      border-top: 4px solid var(--violet);
+    }
+
+    .card[data-state="external"] {
+      border-top: 4px solid var(--blue);
+    }
+
+    .card[data-state="deferred"] {
+      border-top: 4px solid var(--gray);
+    }
+
+    .card-topline {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 8px;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 1.04rem;
+      line-height: 1.25;
+    }
+
+    .card p {
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .state-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: none;
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 0.66rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .state-tag::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .state-tag.implemented {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .state-tag.planned {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .state-tag.optional {
+      background: var(--violet-soft);
+      color: var(--violet);
+    }
+
+    .state-tag.external {
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
+    .state-tag.deferred {
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .inspect {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      padding: 6px 8px;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .inspect:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .author-row {
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+      gap: 14px;
+    }
+
+    .author-card {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+    }
+
+    .icon-box {
+      display: grid;
+      place-items: center;
+      width: 56px;
+      height: 56px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #f1f3ed;
+      color: var(--green);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .source-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .source-pill {
+      min-height: 45px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #f7f7f2;
+      padding: 8px;
+      color: #425149;
+      font-size: 0.78rem;
+      font-weight: 750;
+      text-align: center;
+    }
+
+    .prep-bay {
+      padding: 18px;
+      border: 1px dashed #b8aacd;
+      border-radius: 20px;
+      background: rgba(238, 233, 247, 0.36);
+    }
+
+    .prep-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .prep-heading strong {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    .prep-heading span {
+      color: var(--violet);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .prep-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mapping-decision {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .decision-row {
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      padding: 9px;
+      border-radius: 10px;
+      background: #f7f5fa;
+      font-size: 0.78rem;
+    }
+
+    .decision-row strong {
+      color: var(--violet);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .skill-flow {
+      display: grid;
+      grid-template-columns: 1fr 48px 1fr 48px 1fr;
+      align-items: stretch;
+    }
+
+    .skill {
+      min-height: 185px;
+    }
+
+    .skill code,
+    .engine code,
+    .artifact code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    .skill h3 {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 1.08rem;
+    }
+
+    .plain-list,
+    .artifact-list,
+    .capability-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .plain-list li,
+    .capability-list li {
+      position: relative;
+      margin-top: 6px;
+      padding-left: 16px;
+      color: #435149;
+      font-size: 0.8rem;
+    }
+
+    .plain-list li::before,
+    .capability-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.57em;
+      width: 6px;
+      height: 6px;
+      border-radius: 2px;
+      background: var(--green);
+    }
+
+    .engine {
+      overflow: hidden;
+      padding: 24px;
+      border: 2px solid #bf9459;
+      border-radius: 22px;
+      background:
+        linear-gradient(135deg, rgba(251, 239, 217, 0.74), rgba(255, 253, 248, 0.95) 48%),
+        var(--paper-strong);
+      box-shadow: 0 18px 42px rgba(154, 100, 33, 0.09);
+    }
+
+    .engine-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(230px, 0.7fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .engine h3 {
+      margin-bottom: 7px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.55rem, 3vw, 2.35rem);
+      font-weight: 500;
+      letter-spacing: -0.025em;
+    }
+
+    .engine-subtitle {
+      max-width: 760px;
+      color: #67543a;
+      font-size: 0.95rem;
+    }
+
+    .engine-badge {
+      justify-self: end;
+      padding: 12px 14px;
+      border: 1px solid #d9bd91;
+      border-radius: 13px;
+      background: rgba(255, 253, 248, 0.78);
+      color: #6f4a1c;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .engine-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .capability {
+      border: 1px solid #dfc7a4;
+      border-radius: 14px;
+      background: rgba(255, 253, 248, 0.74);
+      padding: 14px;
+    }
+
+    .capability strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.86rem;
+    }
+
+    .artifact-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .artifact {
+      min-height: 144px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fafaf6;
+      padding: 14px;
+    }
+
+    .artifact code {
+      display: block;
+      overflow-wrap: anywhere;
+      margin-bottom: 8px;
+      color: var(--green);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .artifact p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .boundary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .boundary {
+      min-height: 170px;
+    }
+
+    .ticket-slot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+      min-height: 22px;
+    }
+
+    .ticket-chip {
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      gap: 2px 7px;
+      align-items: center;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      padding: 6px 8px;
+      text-decoration: none;
+      box-shadow: 0 2px 7px rgba(25, 35, 31, 0.04);
+    }
+
+    .ticket-chip:hover {
+      border-color: var(--ink);
+      transform: translateY(-1px);
+    }
+
+    .ticket-chip .ticket-key {
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .ticket-chip .ticket-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      justify-self: end;
+      color: var(--muted);
+      font-size: 0.62rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .ticket-chip .ticket-status::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gray);
+    }
+
+    .ticket-chip .ticket-person {
+      grid-column: 1 / -1;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 0.65rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ticket-chip[data-status="Done"] .ticket-status::before {
+      background: var(--green);
+    }
+
+    .ticket-chip[data-status="In Progress"] .ticket-status::before {
+      background: var(--amber);
+    }
+
+    .ticket-chip[data-status="Triaged"] .ticket-status::before {
+      background: var(--blue);
+    }
+
+    .ticket-chip[data-status="Rejected"] .ticket-status::before {
+      background: var(--red);
+    }
+
+    .ticket-chip.filtered-out {
+      display: none;
+    }
+
+    .catalog {
+      margin-top: 28px;
+      padding: 24px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 253, 248, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .catalog[hidden] {
+      display: none;
+    }
+
+    .catalog-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+
+    .catalog-head h2 {
+      margin-bottom: 4px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 2rem;
+      font-weight: 500;
+    }
+
+    .catalog-head p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .catalog-count {
+      flex: none;
+      border-radius: 999px;
+      background: var(--gray-soft);
+      padding: 7px 10px;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .ticket-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .ticket-row {
+      display: grid;
+      grid-template-columns: minmax(100px, auto) 1fr auto;
+      gap: 11px;
+      align-items: center;
+      min-height: 69px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fafaf6;
+      padding: 10px 11px;
+    }
+
+    .ticket-row-key {
+      display: grid;
+      gap: 3px;
+    }
+
+    .ticket-row-key a {
+      color: var(--ink);
+      font-size: 0.78rem;
+      font-weight: 900;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .ticket-row-status {
+      color: var(--muted);
+      font-size: 0.66rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .ticket-row-copy {
+      min-width: 0;
+    }
+
+    .ticket-row-copy strong {
+      display: block;
+      overflow: hidden;
+      margin-bottom: 2px;
+      font-size: 0.82rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ticket-row-copy span {
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+
+    .ticket-row button {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: white;
+      padding: 7px 8px;
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 34px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 14px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .legend-note {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 16px;
+      margin: 24px 0 44px;
+    }
+
+    .legend,
+    .source-note {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255, 253, 248, 0.84);
+    }
+
+    .legend h2,
+    .source-note h2 {
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    .legend-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .legend-item span {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      background: var(--gray);
+    }
+
+    .legend-item .implemented-dot {
+      background: var(--green);
+    }
+
+    .legend-item .planned-dot {
+      background: var(--amber);
+    }
+
+    .legend-item .optional-dot {
+      background: var(--violet);
+    }
+
+    .legend-item .external-dot {
+      background: var(--blue);
+    }
+
+    .legend-item .deferred-dot {
+      background: var(--red);
+    }
+
+    .source-note p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .integrity {
+      margin-top: 10px;
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .drawer-backdrop {
+      position: fixed;
+      z-index: 49;
+      inset: 0;
+      background: rgba(20, 28, 24, 0.38);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease;
+    }
+
+    .drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer {
+      position: fixed;
+      z-index: 50;
+      top: 0;
+      right: 0;
+      width: min(480px, 94vw);
+      height: 100vh;
+      overflow-y: auto;
+      transform: translateX(102%);
+      border-left: 1px solid var(--line-strong);
+      background: var(--paper-strong);
+      box-shadow: -18px 0 60px rgba(25, 35, 31, 0.17);
+      transition: transform 190ms ease;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-head {
+      position: sticky;
+      top: 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 253, 248, 0.96);
+      backdrop-filter: blur(10px);
+    }
+
+    .drawer-head strong {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .drawer-close {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: white;
+      color: var(--ink);
+      font-size: 1.15rem;
+    }
+
+    .drawer-body {
+      padding: 24px 20px 54px;
+    }
+
+    .drawer-body h2 {
+      margin-bottom: 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 2rem;
+      font-weight: 500;
+      line-height: 1.1;
+    }
+
+    .drawer-kicker {
+      margin-bottom: 12px;
+      color: var(--green);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .drawer-body > p {
+      color: var(--muted);
+    }
+
+    .detail-block {
+      margin-top: 20px;
+      padding-top: 17px;
+      border-top: 1px solid var(--line);
+    }
+
+    .detail-block h3 {
+      margin-bottom: 9px;
+      font-size: 0.83rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .detail-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 0.87rem;
+    }
+
+    .detail-list li + li {
+      margin-top: 6px;
+    }
+
+    .detail-ticket-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .detail-ticket {
+      display: grid;
+      gap: 4px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 10px;
+      background: #fafaf6;
+    }
+
+    .detail-ticket a {
+      font-size: 0.78rem;
+      font-weight: 900;
+    }
+
+    .detail-ticket span {
+      color: var(--muted);
+      font-size: 0.73rem;
+    }
+
+    .no-scroll {
+      overflow: hidden;
+    }
+
+    @media (max-width: 1080px) {
+      .controls {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .segmented {
+        grid-column: 1 / -1;
+        justify-content: center;
+      }
+
+      .catalog-toggle {
+        grid-column: span 1;
+      }
+
+      .prep-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .artifact-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .engine-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 780px) {
+      .shell {
+        width: min(calc(100% - 20px), var(--max));
+      }
+
+      .hero {
+        padding-top: 26px;
+      }
+
+      .hero-copy,
+      .snapshot,
+      .author-row,
+      .engine-header,
+      .boundary-grid,
+      .legend-note {
+        grid-template-columns: 1fr;
+      }
+
+      .controls-wrap {
+        position: static;
+      }
+
+      .controls {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .segmented,
+      .catalog-toggle {
+        grid-column: 1 / -1;
+      }
+
+      .skill-flow {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-arrow {
+        min-height: 34px;
+        transform: rotate(90deg);
+      }
+
+      .artifact-grid,
+      .engine-grid,
+      .ticket-list {
+        grid-template-columns: 1fr;
+      }
+
+      .source-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .section-head,
+      .catalog-head {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .status-summary {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .controls,
+      .prep-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .field,
+      .catalog-toggle,
+      .segmented {
+        grid-column: 1;
+      }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .machine {
+        padding: 14px;
+      }
+
+      .ticket-row {
+        grid-template-columns: 1fr auto;
+      }
+
+      .ticket-row-copy {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero shell">
+    <p class="eyebrow">
+      <span>DOCPR-2845</span>
+      <span>Planned v0.2 architecture</span>
+      <span>As of 2026-09-15</span>
+    </p>
+    <h1>Dogen is a guided writing appliance with optional context attachments.</h1>
+    <div class="hero-copy">
+      <p>
+        A Technical Author works through three human-facing skills. One deterministic local
+        executable records decisions, protects files, and leaves an inspectable trail. Optional
+        intake, onboarding, and mapping prepare context before the main writing loop.
+      </p>
+      <div class="hero-note">
+        This is the target architecture, not a claim that every part is shipped. Jira status
+        labels are authoritative; implementation notes only explain what exists in the current
+        worktrees.
+      </div>
+    </div>
+    <div class="snapshot" aria-label="Current and target state summary">
+      <article class="snapshot-card current">
+        <strong>Current baseline in merged main</strong>
+        <p>The slim Bash implementation and its human-facing workflow are the implemented bridge.</p>
+      </article>
+      <article class="snapshot-card target">
+        <strong>Target v0.2 engine</strong>
+        <p>One Python 3.9-compatible, standard-library-only <code>dogen</code> CLI. Jira still marks the core migration tickets In Progress; the team milestone is October 12.</p>
+      </article>
+      <article class="snapshot-card authority">
+        <strong>Human remains the release gate</strong>
+        <p>The tool can draft, record, recover, and verify. A person still reviews, merges, and publishes.</p>
+      </article>
+    </div>
+  </header>
+
+  <div class="controls-wrap">
+    <nav class="controls shell" aria-label="Architecture ticket filters">
+      <div class="segmented" role="group" aria-label="Filter by Jira status">
+        <button type="button" data-status-filter="active" aria-pressed="true">Active</button>
+        <button type="button" data-status-filter="done" aria-pressed="false">Done</button>
+        <button type="button" data-status-filter="rejected" aria-pressed="false">Rejected</button>
+        <button type="button" data-status-filter="all" aria-pressed="false">All</button>
+      </div>
+      <div class="field">
+        <label for="person-filter">Person</label>
+        <select id="person-filter">
+          <option value="all">Everyone</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="component-filter">Component</label>
+        <select id="component-filter">
+          <option value="all">All components</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="ticket-search">Find a ticket</label>
+        <input id="ticket-search" type="search" placeholder="Key, title, or person">
+      </div>
+      <button class="catalog-toggle" id="catalog-toggle" type="button" aria-expanded="false" aria-controls="ticket-catalog">
+        Open 40-ticket catalog
+      </button>
+    </nav>
+  </div>
+
+  <main class="shell">
+    <section class="architecture" aria-labelledby="architecture-title">
+      <div class="section-head">
+        <div>
+          <h2 id="architecture-title">The appliance, from request to published docs</h2>
+          <p>Follow the center line for the normal author journey. The dashed context bay is optional.</p>
+        </div>
+        <div class="status-summary" id="status-summary" aria-live="polite"></div>
+      </div>
+
+      <div class="machine">
+        <p class="flow-label">1. Author and source material enter</p>
+        <div class="author-row">
+          <article class="card author-card" data-state="implemented">
+            <div class="icon-box" aria-hidden="true">TA</div>
+            <div>
+              <div class="card-topline">
+                <h3>Technical Author</h3>
+                <span class="state-tag implemented">Current role</span>
+              </div>
+              <p>Sets intent, audience, scope, and final judgment. Signoff and review are explicit human checkpoints.</p>
+              <button class="inspect" type="button" data-component-detail="authoring">Details</button>
+              <div class="ticket-slot" data-ticket-slot="DOCPR-2981,DOCPR-2982"></div>
+            </div>
+          </article>
+
+          <article class="card" data-state="implemented">
+            <div class="card-topline">
+              <h3>Agent harness</h3>
+              <span class="state-tag implemented">Current seam</span>
+            </div>
+            <p>The author talks naturally to an agent. Skills translate that conversation into deterministic <code>dogen</code> verbs; authors should not need to type tool commands.</p>
+            <div class="source-grid" aria-label="External input sources">
+              <div class="source-pill">Code</div>
+              <div class="source-pill">Specs</div>
+              <div class="source-pill">Existing docs</div>
+              <div class="source-pill">Pull requests</div>
+              <div class="source-pill">Bugs</div>
+              <div class="source-pill">Commit discussions</div>
+              <div class="source-pill">Style and glossary</div>
+              <div class="source-pill">Prepared context</div>
+            </div>
+            <div class="ticket-slot" data-ticket-slot="DOCPR-2988,DOCPR-2995"></div>
+          </article>
+        </div>
+
+        <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+        <p class="flow-label">2. Optional context preparation attachments</p>
+        <section class="prep-bay" aria-labelledby="prep-title">
+          <div class="prep-heading">
+            <strong id="prep-title">Attach only what the project needs</strong>
+            <span>Optional, never a prerequisite</span>
+          </div>
+          <div class="prep-grid">
+            <article class="card" data-state="optional">
+              <div class="card-topline">
+                <h3>Bring your own context</h3>
+                <span class="state-tag optional">Optional</span>
+              </div>
+              <p>Point the agent at an existing glossary, style guide, architecture note, or writer preference file. Dogen must not force regeneration.</p>
+              <button class="inspect" type="button" data-component-detail="context">Details</button>
+              <div class="ticket-slot" data-ticket-slot="DOCPR-2995,DOCPR-2998,DOCPR-3007"></div>
+            </article>
+
+            <article class="card" data-state="optional">
+              <div class="card-topline">
+                <h3>External-source intake and fetch</h3>
+                <span class="state-tag planned">In progress</span>
+              </div>
+              <p>Bring material from a local directory, repository, or unauthenticated external source into a portable, provenance-aware context bundle.</p>
+              <button class="inspect" type="button" data-component-detail="intake">Details</button>
+              <div class="ticket-slot" data-ticket-slot="DOCPR-2994"></div>
+            </article>
+
+            <article class="card" data-state="optional">
+              <div class="card-topline">
+                <h3>Onboarding</h3>
+                <span class="state-tag optional">Optional</span>
+              </div>
+              <p>Prepare author-visible notes about terminology, documentation style, and repository structure. Charles owns the current skill ticket; Anne built the earlier scraper work.</p>
+              <button class="inspect" type="button" data-component-detail="onboarding">Details</button>
+              <div class="ticket-slot" data-ticket-slot="DOCPR-3214,DOCPR-2985,DOCPR-2986"></div>
+            </article>
+
+            <article class="card" data-state="optional">
+              <div class="card-topline">
+                <h3>Mapping and retrieval</h3>
+                <span class="state-tag optional">Optional experiment</span>
+              </div>
+              <p>Quantitatively maps code to documentation opportunities. The author must be able to inspect and discuss the produced map.</p>
+              <div class="mapping-decision" aria-label="Mapping interface decision">
+                <div class="decision-row">
+                  <strong>Baseline</strong>
+                  <span>Run the script directly and keep artifacts visible to the author.</span>
+                </div>
+                <div class="decision-row">
+                  <strong>Experiment</strong>
+                  <span>A/B test an optional skill wrapper. It is not a settled dependency.</span>
+                </div>
+              </div>
+              <button class="inspect" type="button" data-component-detail="mapping">Decision details</button>
+              <div class="ticket-slot" data-ticket-slot="DOCPR-3215,DOCPR-2987,DOCPR-2997"></div>
+            </article>
+          </div>
+        </section>
+
+        <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+        <p class="flow-label">3. The human-facing control panel</p>
+        <div class="skill-flow">
+          <article class="card skill" data-state="planned">
+            <div class="card-topline">
+              <h3>dogen-plan</h3>
+              <span class="state-tag planned">Target flow</span>
+            </div>
+            <p>Turn a request into one signed documentation unit: title, intent, audience, targets, sources, and steering.</p>
+            <ul class="plain-list">
+              <li>Infer safe defaults</li>
+              <li>Ask only for missing decisions</li>
+              <li>Adopt existing pages when needed</li>
+            </ul>
+            <button class="inspect" type="button" data-component-detail="skills">Skill details</button>
+            <div class="ticket-slot" data-ticket-slot="DOCPR-2982,DOCPR-2990,DOCPR-2993"></div>
+          </article>
+
+          <div class="flow-arrow" aria-hidden="true">&rarr;</div>
+
+          <article class="card skill" data-state="planned">
+            <div class="card-topline">
+              <h3>dogen-write</h3>
+              <span class="state-tag planned">Target flow</span>
+            </div>
+            <p>Read the signed plan and sources, walk actionable steps when required, then stage and draft every target.</p>
+            <ul class="plain-list">
+              <li>Record evidence, not claims</li>
+              <li>Refuse unsteered redrafts</li>
+              <li>Never hide target drift</li>
+            </ul>
+            <div class="ticket-slot" data-ticket-slot="DOCPR-2989,DOCPR-2992,DOCPR-3212"></div>
+          </article>
+
+          <div class="flow-arrow" aria-hidden="true">&rarr;</div>
+
+          <article class="card skill" data-state="planned">
+            <div class="card-topline">
+              <h3>dogen-review</h3>
+              <span class="state-tag planned">Target flow</span>
+            </div>
+            <p>Show provenance and differences, record fixes or author edits, resolve requests, and accept only a current basis.</p>
+            <ul class="plain-list">
+              <li>One explicit verdict</li>
+              <li>Recorded request dispositions</li>
+              <li>Human acceptance remains final</li>
+            </ul>
+            <div class="ticket-slot" data-ticket-slot="DOCPR-2996,DOCPR-3005,DOCPR-3212"></div>
+          </article>
+        </div>
+
+        <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+        <p class="flow-label">4. The deterministic motor underneath</p>
+        <section class="engine" aria-labelledby="engine-title">
+          <div class="engine-header">
+            <div>
+              <div class="card-topline">
+                <h3 id="engine-title">One stdlib-only Python CLI: <code>dogen</code></h3>
+                <span class="state-tag planned">Jira: in progress</span>
+              </div>
+              <p class="engine-subtitle">
+                A single Python file, standard library only, owns every state transition. Skills
+                guide the conversation; the executable enforces the contract.
+              </p>
+              <button class="inspect" type="button" data-component-detail="core">Core details</button>
+            </div>
+            <div class="engine-badge">
+              Python 3.9 syntax<br>
+              no package<br>
+              no venv<br>
+              no runtime dependencies
+            </div>
+          </div>
+          <div class="engine-grid">
+            <div class="capability">
+              <strong>Lifecycle</strong>
+              <ul class="capability-list">
+                <li>Declare, sign off, steer, draft, edit, review, retire</li>
+                <li>Derive state instead of storing a second state file</li>
+              </ul>
+            </div>
+            <div class="capability">
+              <strong>Signoff and HITL gates</strong>
+              <ul class="capability-list">
+                <li>Plan hashes expose stale intent</li>
+                <li>No substantial redraft without recorded human input</li>
+              </ul>
+            </div>
+            <div class="capability">
+              <strong>Evidence</strong>
+              <ul class="capability-list">
+                <li>Step text, command, exit code, output digest, bounded excerpt</li>
+                <li>Tool-computed evidence for actionable content</li>
+              </ul>
+            </div>
+            <div class="capability">
+              <strong>Recovery</strong>
+              <ul class="capability-list">
+                <li>Pending manifest protects before/after bytes</li>
+                <li>Two-pass resume preserves ambiguous author work</li>
+              </ul>
+            </div>
+            <div class="capability">
+              <strong>Verification</strong>
+              <ul class="capability-list">
+                <li>Read-only record, page, and git corroboration checks</li>
+                <li>Honest warnings for squash, drift, and unsupported recovery</li>
+              </ul>
+            </div>
+            <div class="capability">
+              <strong>Scoped local commits</strong>
+              <ul class="capability-list">
+                <li>Exactly one local commit per transition</li>
+                <li>Explicit pathspecs; no sweeping <code>git add docs/</code></li>
+              </ul>
+            </div>
+          </div>
+          <div class="ticket-slot" data-ticket-slot="DOCPR-3211,DOCPR-3212,DOCPR-3213,DOCPR-2983,DOCPR-2990,DOCPR-2992,DOCPR-2996"></div>
+        </section>
+
+        <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+        <p class="flow-label">5. Visible service record on disk</p>
+        <section class="card" data-state="planned">
+          <div class="card-topline">
+            <h3>Everything important remains inspectable in the repository</h3>
+            <span class="state-tag planned">Target artifacts</span>
+          </div>
+          <div class="artifact-grid">
+            <article class="artifact">
+              <code>.dogen/units/&lt;id&gt;/unit.md</code>
+              <p>The signed human-readable plan: intent, audience, targets, sources, and body.</p>
+            </article>
+            <article class="artifact">
+              <code>.dogen/units/&lt;id&gt;/ledger.jsonl</code>
+              <p>Append-only canonical JSON events, hash-chained so transitions can be verified.</p>
+            </article>
+            <article class="artifact">
+              <code>.dogen/staging/&lt;id&gt;/</code>
+              <p>Draft inputs, reports, bounded evidence excerpts, and recovery material.</p>
+            </article>
+            <article class="artifact">
+              <code>docs/*.md or docs/*.rst</code>
+              <p>The actual drafted documentation files, including multi-file units.</p>
+            </article>
+            <article class="artifact">
+              <code>git log -- Dogen-*</code>
+              <p>Traceable local commits with unit, phase, sequence, and head trailers.</p>
+            </article>
+          </div>
+          <button class="inspect" type="button" data-component-detail="artifacts">Artifact details</button>
+          <div class="ticket-slot" data-ticket-slot="DOCPR-2983,DOCPR-2996,DOCPR-3211,DOCPR-3212"></div>
+        </section>
+
+        <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+        <p class="flow-label">6. External output boundary</p>
+        <div class="boundary-grid">
+          <article class="card boundary" data-state="external">
+            <div class="card-topline">
+              <h3>Human review, merge, and publish</h3>
+              <span class="state-tag external">Outside dogen</span>
+            </div>
+            <p>Dogen prepares review-ready local work. A person decides whether it is correct, opens or approves the PR, merges, and publishes.</p>
+            <button class="inspect" type="button" data-component-detail="delivery">Delivery details</button>
+            <div class="ticket-slot" data-ticket-slot="DOCPR-3003,DOCPR-3004,DOCPR-3213"></div>
+          </article>
+
+          <article class="card boundary" data-state="external">
+            <div class="card-topline">
+              <h3>Sphinx and Read the Docs</h3>
+              <span class="state-tag external">Build boundary</span>
+            </div>
+            <p>The documentation stack remains the publication system. Dogen records or consumes build results; it does not replace Sphinx, RTD, or GitHub review.</p>
+            <div class="ticket-slot" data-ticket-slot="DOCPR-3000,DOCPR-3213,DOCPR-3216"></div>
+          </article>
+
+          <article class="card boundary" data-state="optional">
+            <div class="card-topline">
+              <h3>Optional QA seam</h3>
+              <span class="state-tag optional">Extension point</span>
+            </div>
+            <p>A narrow interface may hand documentation to the separate DOCPR-2822 testing effort. Deep integration is explicitly deferred.</p>
+            <button class="inspect" type="button" data-component-detail="qa">QA seam details</button>
+            <div class="ticket-slot" data-ticket-slot="DOCPR-2991,DOCPR-3013,DOCPR-2822"></div>
+          </article>
+        </div>
+
+        <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+        <p class="flow-label">7. Validation and adoption feedback</p>
+        <section class="card" data-state="planned">
+          <div class="card-topline">
+            <h3>Prove the loop, then feed findings back into it</h3>
+            <span class="state-tag planned">Planned and triaged</span>
+          </div>
+          <p>
+            Acceptance suites, real authoring sessions, install tests, provenance audits, UX
+            comparison, and a four-check independent scorer establish what can honestly be claimed.
+            Multi-file support remains unproven until the reference validation leg passes.
+          </p>
+          <button class="inspect" type="button" data-component-detail="validation">Validation details</button>
+          <div class="ticket-slot" data-ticket-slot="DOCPR-2984,DOCPR-2999,DOCPR-3000,DOCPR-3001,DOCPR-3002,DOCPR-3004,DOCPR-3005,DOCPR-3006,DOCPR-3008,DOCPR-3216"></div>
+        </section>
+
+        <div class="flow-arrow" aria-hidden="true">&darr;</div>
+
+        <p class="flow-label">8. Ideas deliberately outside the v0.2 machine</p>
+        <section class="card" data-state="deferred">
+          <div class="card-topline">
+            <h3>Rejected, superseded, or deferred pieces</h3>
+            <span class="state-tag deferred">Rejected / deferred</span>
+          </div>
+          <p>
+            Autonomous research, persistent memory, semantic augmentation, broad hands-free
+            rollout, deep QA integration, and broad provider or stack agnosticism are not part of
+            the planned v0.2 dependency chain.
+          </p>
+          <button class="inspect" type="button" data-component-detail="archive">Why these are outside</button>
+          <div class="ticket-slot" data-ticket-slot="DOCPR-2998,DOCPR-3009,DOCPR-3010,DOCPR-3011,DOCPR-3012,DOCPR-3013,DOCPR-3014"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="catalog" id="ticket-catalog" aria-labelledby="catalog-title" hidden>
+      <div class="catalog-head">
+        <div>
+          <h2 id="catalog-title">All 40 DOCPR-2845 child tickets</h2>
+          <p>Use the filters above to reveal completed history, active work, and rejected or deferred options.</p>
+        </div>
+        <span class="catalog-count" id="catalog-count">0 shown</span>
+      </div>
+      <div class="ticket-list" id="ticket-list"></div>
+    </section>
+
+    <section class="legend-note" aria-label="Legend and source notes">
+      <div class="legend">
+        <h2>Architecture legend</h2>
+        <div class="legend-items">
+          <span class="legend-item"><span class="implemented-dot"></span>Current or implemented baseline</span>
+          <span class="legend-item"><span class="planned-dot"></span>Planned or in progress</span>
+          <span class="legend-item"><span class="optional-dot"></span>Optional or experimental</span>
+          <span class="legend-item"><span class="external-dot"></span>External boundary</span>
+          <span class="legend-item"><span class="deferred-dot"></span>Rejected or deferred</span>
+        </div>
+      </div>
+      <div class="source-note">
+        <h2>Sources and authority</h2>
+        <p>
+          Status and assignee data: Jira snapshot of the 40 DOCPR-2845 child issues, as of
+          2026-09-15. Target design: rev8 slim implementation plan. Interface decision: Sep 14
+          regular sync. Local ROADMAP and STATE are implementation evidence only and never
+          override Jira. Robert Kratky is named as contract and PR reviewer by the plan; Anne
+          Chew and Charles Odada are named only where Jira or the meeting assigns their work.
+        </p>
+        <p class="integrity" id="integrity-note">Checking ticket references...</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+  <aside class="drawer" id="detail-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-describedby="drawer-summary" aria-hidden="true" inert>
+    <div class="drawer-head">
+      <strong>Architecture details</strong>
+      <button class="drawer-close" id="drawer-close" type="button" aria-label="Close details panel">&times;</button>
+    </div>
+    <div class="drawer-body" id="drawer-body">
+      <p class="drawer-kicker" id="drawer-kicker"></p>
+      <h2 id="drawer-title">Details</h2>
+      <p id="drawer-summary"></p>
+      <div id="drawer-extra"></div>
+    </div>
+  </aside>
+
+  <script>
+    "use strict";
+
+    const JIRA_BASE = "https://warthogs.atlassian.net/browse/";
+
+    const tickets = [
+      { key: "DOCPR-2981", summary: "A1: Select and record the agentic SDK decision (agnosticism, cost, MCP/Skills fit)", status: "Done", person: "Teodora Mihoc", component: "authoring", collaborators: [] },
+      { key: "DOCPR-2982", summary: "A2: Build the thin end-to-end walking skeleton and core drafting workflow", status: "Done", person: "Artem Konev", component: "skills", collaborators: [] },
+      { key: "DOCPR-2983", summary: "F1: Define the planning-directory schema v0 (steering, plan, provenance, progress)", status: "Done", person: "Artem Konev", component: "artifacts", collaborators: [] },
+      { key: "DOCPR-2984", summary: "H1: Capture the from-scratch UX and time baseline (AC6 kickoff measurement)", status: "Done", person: "Robert Kratky", component: "validation", collaborators: [] },
+      { key: "DOCPR-2985", summary: "H2: Identify and assess greenfield/brownfield candidate projects", status: "Done", person: "Charles Odada", component: "onboarding", collaborators: [] },
+      { key: "DOCPR-2986", summary: "B1: Build the local onboarding scraper v1 (doc-style, glossary, structure artefacts)", status: "Done", person: "Anne Chew", component: "onboarding", collaborators: [] },
+      { key: "DOCPR-2987", summary: "B2: Generate the code-to-docs map v1 for a candidate repo", status: "Done", person: "Charles Odada", component: "mapping", collaborators: ["Robert Kratky and Artem Konev: Sep 14 interface decision"] },
+      { key: "DOCPR-2988", summary: "C1: Wire the agentic source-lookup baseline (grep, file-read, traversal)", status: "Done", person: "Artem Konev", component: "intake", collaborators: [] },
+      { key: "DOCPR-2989", summary: "E1: Build type-aware, intent-steered generation v1 (reference first)", status: "Done", person: "Artem Konev", component: "skills", collaborators: [] },
+      { key: "DOCPR-2990", summary: "F2: Enforce the HITL steering gate with planning-directory capture", status: "Done", person: "Artem Konev", component: "core", collaborators: [] },
+      { key: "DOCPR-2991", summary: "G1: Define the DOCPR-2822 QA interface contract (optional extension point)", status: "Done", person: "Artem Konev", component: "qa", collaborators: [] },
+      { key: "DOCPR-2992", summary: "E2: Add the evidence-gated verification step for actionable content", status: "Done", person: "Artem Konev", component: "core", collaborators: [] },
+      { key: "DOCPR-2993", summary: "E3: Enable explanation-type drafting driven by recorded steering", status: "Done", person: "Artem Konev", component: "skills", collaborators: [] },
+      { key: "DOCPR-2994", summary: "Define portable external-source intake and provenance for dogen-slim", status: "In Progress", person: "Anne Chew", component: "intake", collaborators: [] },
+      { key: "DOCPR-2995", summary: "D1: Build layered customization v1 from remote URLs/repos (org guidance + writer prefs)", status: "Done", person: "Charles Odada", component: "context", collaborators: [] },
+      { key: "DOCPR-2996", summary: "F3: Decompose generated content into atomic, author-legible commits", status: "Done", person: "Artem Konev", component: "artifacts", collaborators: [] },
+      { key: "DOCPR-2997", summary: "Decide whether dogen-slim needs richer retrieval", status: "Triaged", person: "Artem Konev", component: "mapping", collaborators: ["Charles Odada and Robert Kratky: mapping discussion"] },
+      { key: "DOCPR-2998", summary: "Superseded: MCP-served shared guidance", status: "Rejected", person: "Artem Konev", component: "context", collaborators: [] },
+      { key: "DOCPR-2999", summary: "Prove dogen onboarding and mapping on greenfield and brownfield projects", status: "Triaged", person: "Anne Chew", component: "validation", collaborators: ["Charles Odada: mapping work"] },
+      { key: "DOCPR-3000", summary: "Prove dogen-slim on the GitHub/RTD/Sphinx stack", status: "Triaged", person: "Artem Konev", component: "delivery", collaborators: [] },
+      { key: "DOCPR-3001", summary: "Harden dogen-slim from observed validation and dogfood gaps", status: "Triaged", person: "Artem Konev", component: "validation", collaborators: [] },
+      { key: "DOCPR-3002", summary: "Dogfood dogen-slim across the project proof matrix", status: "Triaged", person: "Unassigned", component: "validation", collaborators: [] },
+      { key: "DOCPR-3003", summary: "Publish dogen-slim onboarding and demonstration material", status: "Triaged", person: "Robert Kratky", component: "delivery", collaborators: [] },
+      { key: "DOCPR-3004", summary: "Run an unaided dogen-slim adoption test with an outside author", status: "Triaged", person: "Unassigned", component: "validation", collaborators: [] },
+      { key: "DOCPR-3005", summary: "Audit dogen-slim HITL steering and provenance", status: "Triaged", person: "Unassigned", component: "validation", collaborators: [] },
+      { key: "DOCPR-3006", summary: "Measure dogen-slim UX improvement on matched tasks", status: "Triaged", person: "Unassigned", component: "validation", collaborators: [] },
+      { key: "DOCPR-3007", summary: "Package onboarding, mapping, and shared guidance as dogen skills", status: "Triaged", person: "Unassigned", component: "context", collaborators: [] },
+      { key: "DOCPR-3008", summary: "Close out dogen-slim findings, fixes, and spill", status: "Triaged", person: "Unassigned", component: "validation", collaborators: [] },
+      { key: "DOCPR-3009", summary: "Deferred: Full autonomous Mode B research and planning", status: "Rejected", person: "Unassigned", component: "archive", collaborators: [] },
+      { key: "DOCPR-3010", summary: "Deferred: Persistent agentic memory", status: "Rejected", person: "Unassigned", component: "archive", collaborators: [] },
+      { key: "DOCPR-3011", summary: "Deferred: Semantic or structural context-augmentation build", status: "Rejected", person: "Unassigned", component: "archive", collaborators: [] },
+      { key: "DOCPR-3012", summary: "Superseded: Broad hands-free adoption rollout", status: "Rejected", person: "Unassigned", component: "archive", collaborators: [] },
+      { key: "DOCPR-3013", summary: "Deferred: Deep DOCPR-2822 integration", status: "Rejected", person: "Unassigned", component: "qa", collaborators: [] },
+      { key: "DOCPR-3014", summary: "Deferred: Broad documentation-stack and provider agnosticism", status: "Rejected", person: "Unassigned", component: "archive", collaborators: [] },
+      { key: "DOCPR-3211", summary: "Freeze the dogen-slim lifecycle and artifact contract", status: "In Progress", person: "Artem Konev", component: "core", collaborators: ["Robert Kratky: contract reviewer"] },
+      { key: "DOCPR-3212", summary: "Harden dogen-slim deterministic gates, provenance, and commit boundaries", status: "In Progress", person: "Artem Konev", component: "core", collaborators: ["Robert Kratky: acceptance-suite source", "Charles Odada and Anne Chew: planned full-session participants"] },
+      { key: "DOCPR-3213", summary: "Restore dogen-slim CI, quality, installation, and release gates", status: "In Progress", person: "Artem Konev", component: "delivery", collaborators: ["Robert Kratky: PR reviewer", "Teodora Mihoc and Anne Chew: named non-implementer sessions"] },
+      { key: "DOCPR-3214", summary: "Add the agent-native dogen-onboard skill", status: "Triaged", person: "Charles Odada", component: "onboarding", collaborators: ["Anne Chew: historical onboarding and fetch contributor"] },
+      { key: "DOCPR-3215", summary: "Add the agent-native dogen-map skill", status: "Triaged", person: "Charles Odada", component: "mapping", collaborators: ["Robert Kratky and Artem Konev: direct-script baseline and A/B decision"] },
+      { key: "DOCPR-3216", summary: "Adapt the validation kit and scorer to dogen-slim", status: "Triaged", person: "Artem Konev", component: "validation", collaborators: [] }
+    ];
+
+    const externalTickets = [
+      { key: "DOCPR-2822", summary: "Agentic documentation testing", status: "In Progress", person: "Erin Conley", component: "qa", collaborators: [] }
+    ];
+
+    const componentInfo = {
+      authoring: {
+        label: "Technical Author and agent harness",
+        state: "Current input",
+        summary: "The author supplies intent and judgment; the agent supplies conversational orchestration. Neither replaces the deterministic record.",
+        bullets: [
+          "The author confirms the unit plan and later accepts, fixes, or redirects the draft.",
+          "Skills should answer from dogen show before asking the author.",
+          "Normal journeys target zero manually typed dogen commands."
+        ]
+      },
+      context: {
+        label: "Bring-your-own context and customization",
+        state: "Optional attachment",
+        summary: "Existing project guidance can be used directly. Generated context is a convenience, not a required front door.",
+        bullets: [
+          "Style, glossary, architecture, and writer preference files can be supplied as-is.",
+          "MCP-served shared guidance was rejected as the default architecture.",
+          "Packaging every preparatory action as a skill remains a triaged idea, not a dependency."
+        ]
+      },
+      intake: {
+        label: "External-source intake and fetch",
+        state: "Optional, in progress",
+        summary: "Portable intake collects external material while preserving where it came from.",
+        bullets: [
+          "Anne Chew owns DOCPR-2994.",
+          "The Sep 14 examples covered local directories and repositories without authentication.",
+          "Fetched material feeds context; it does not bypass plan signoff or evidence gates."
+        ]
+      },
+      onboarding: {
+        label: "Onboarding",
+        state: "Optional and triaged",
+        summary: "Onboarding prepares author-visible notes about the documentation environment.",
+        bullets: [
+          "Charles Odada owns the current agent-native skill ticket.",
+          "Anne Chew delivered the earlier local onboarding scraper.",
+          "A project with a trusted glossary or style guide may skip onboarding."
+        ]
+      },
+      mapping: {
+        label: "Mapping and retrieval",
+        state: "Optional experiment",
+        summary: "The Sep 14 decision is a direct-script baseline, with visible artifacts, followed by an A/B test of an optional skill wrapper.",
+        bullets: [
+          "Charles Odada owns the mapping work.",
+          "Robert Kratky argued that wrapping the script could obscure its output.",
+          "Artem Konev accepted the direct-script baseline; Charles, Robert, and Artem are named in the decision.",
+          "The skill wrapper is an experiment, not a settled prerequisite."
+        ]
+      },
+      skills: {
+        label: "Human-facing skill flow",
+        state: "Target interaction",
+        summary: "dogen-plan, dogen-write, and dogen-review form one routed loop over the deterministic executable.",
+        bullets: [
+          "Plan defines and signs a documentation unit.",
+          "Write gathers source material, records evidence, and drafts.",
+          "Review records author edits and verdicts, then either loops or hands off to publication."
+        ]
+      },
+      core: {
+        label: "Deterministic dogen executable",
+        state: "Planned v0.2, Jira in progress",
+        summary: "One standard-library-only Python file owns lifecycle, gates, recovery, evidence, verification, and scoped commits.",
+        bullets: [
+          "DOCPR-3211 freezes the contract; Robert Kratky reviews it.",
+          "DOCPR-3212 hardens gates, evidence, recovery, skills, and suites.",
+          "DOCPR-3213 supplies CI, installation, release, and the Robert-reviewed PR.",
+          "The current merged-main baseline is still Bash; separate local evidence does not change Jira status."
+        ]
+      },
+      artifacts: {
+        label: "On-disk artifacts",
+        state: "Target contract",
+        summary: "The architecture leaves plans, events, drafts, evidence, pages, and commits visible on disk.",
+        bullets: [
+          "unit.md is human-readable and signed by hash.",
+          "ledger.jsonl is append-only, canonical, and hash-chained.",
+          "Staging and pending manifests make interrupted writes recoverable.",
+          "Every transition uses explicit file pathspecs in a traceable local commit."
+        ]
+      },
+      delivery: {
+        label: "Delivery boundary",
+        state: "External system",
+        summary: "Dogen stops at review-ready local work. GitHub, Sphinx, Read the Docs, and human publishing remain outside the executable.",
+        bullets: [
+          "A human reviews and merges.",
+          "Sphinx and RTD build and publish.",
+          "Release claims must say what validation has not yet proved."
+        ]
+      },
+      qa: {
+        label: "Optional DOCPR-2822 QA seam",
+        state: "Optional extension",
+        summary: "A narrow interface can hand a drafted unit to the separate agentic documentation testing effort.",
+        bullets: [
+          "DOCPR-2991 defines the extension point.",
+          "DOCPR-2822 is a related external project, not one of the 40 child tickets.",
+          "Deep integration is deferred by DOCPR-3013."
+        ]
+      },
+      validation: {
+        label: "Validation, adoption, and feedback",
+        state: "Active and triaged",
+        summary: "Tests and real sessions establish what the team may honestly claim about usability, provenance, recovery, and output quality.",
+        bullets: [
+          "The acceptance suite preserves Robert Kratky's Bash tests by intent.",
+          "Install, outside-author, dogfood, provenance, and matched-task UX work remain visible in Jira.",
+          "DOCPR-3216 adds the independent scorer and the reference leg that must prove multi-file output."
+        ]
+      },
+      archive: {
+        label: "Rejected and deferred scope",
+        state: "Outside v0.2",
+        summary: "These ideas remain discoverable but do not sit on the v0.2 dependency path.",
+        bullets: [
+          "No full autonomous research mode.",
+          "No persistent agent memory.",
+          "No semantic augmentation build.",
+          "No broad hands-free rollout, deep QA coupling, or broad provider agnosticism."
+        ]
+      }
+    };
+
+    const ticketMap = new Map([...tickets, ...externalTickets].map((ticket) => [ticket.key, ticket]));
+    const childKeySet = new Set(tickets.map((ticket) => ticket.key));
+    const externalKeySet = new Set(externalTickets.map((ticket) => ticket.key));
+    const componentLabels = {
+      authoring: "Author and harness",
+      context: "Context and customization",
+      intake: "External intake",
+      onboarding: "Onboarding",
+      mapping: "Mapping",
+      skills: "Skill flow",
+      core: "Deterministic core",
+      artifacts: "On-disk artifacts",
+      delivery: "Delivery boundary",
+      qa: "Optional QA seam",
+      validation: "Validation and adoption",
+      archive: "Rejected and deferred"
+    };
+
+    const state = {
+      status: "active",
+      person: "all",
+      component: "all",
+      query: ""
+    };
+
+    const statusFilterButtons = Array.from(document.querySelectorAll("[data-status-filter]"));
+    const personFilter = document.getElementById("person-filter");
+    const componentFilter = document.getElementById("component-filter");
+    const ticketSearch = document.getElementById("ticket-search");
+    const catalog = document.getElementById("ticket-catalog");
+    const catalogToggle = document.getElementById("catalog-toggle");
+    const ticketList = document.getElementById("ticket-list");
+    const catalogCount = document.getElementById("catalog-count");
+    const statusSummary = document.getElementById("status-summary");
+    const integrityNote = document.getElementById("integrity-note");
+    const drawer = document.getElementById("detail-drawer");
+    const drawerBackdrop = document.getElementById("drawer-backdrop");
+    const drawerClose = document.getElementById("drawer-close");
+    const drawerKicker = document.getElementById("drawer-kicker");
+    const drawerTitle = document.getElementById("drawer-title");
+    const drawerSummary = document.getElementById("drawer-summary");
+    const drawerExtra = document.getElementById("drawer-extra");
+    let lastFocused = null;
+
+    function element(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) {
+        node.className = className;
+      }
+      if (typeof text === "string") {
+        node.textContent = text;
+      }
+      return node;
+    }
+
+    function statusGroup(status) {
+      if (status === "Done") {
+        return "done";
+      }
+      if (status === "Rejected") {
+        return "rejected";
+      }
+      return "active";
+    }
+
+    function ticketMatches(ticket) {
+      const statusMatches = state.status === "all" || statusGroup(ticket.status) === state.status;
+      const personMatches = state.person === "all" || ticket.person === state.person ||
+        ticket.collaborators.some((name) => name.toLowerCase().includes(state.person.toLowerCase()));
+      const componentMatches = state.component === "all" || ticket.component === state.component;
+      const haystack = [ticket.key, ticket.summary, ticket.person, ticket.status, ...ticket.collaborators]
+        .join(" ")
+        .toLowerCase();
+      const queryMatches = !state.query || haystack.includes(state.query);
+      return statusMatches && personMatches && componentMatches && queryMatches;
+    }
+
+    function makeTicketChip(ticket) {
+      const link = element("a", "ticket-chip");
+      link.href = JIRA_BASE + ticket.key;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.dataset.ticketKey = ticket.key;
+      link.dataset.status = ticket.status;
+      link.setAttribute(
+        "aria-label",
+        ticket.key + ": " + ticket.summary + ". Status " + ticket.status + ". Assignee " + ticket.person + ". Opens Jira in a new tab."
+      );
+
+      link.append(
+        element("span", "ticket-key", ticket.key),
+        element("span", "ticket-status", ticket.status),
+        element("span", "ticket-person", ticket.person)
+      );
+      return link;
+    }
+
+    function renderPinnedTickets() {
+      document.querySelectorAll("[data-ticket-slot]").forEach((slot) => {
+        const keys = slot.dataset.ticketSlot.split(",").map((key) => key.trim()).filter(Boolean);
+        const fragment = document.createDocumentFragment();
+        keys.forEach((key) => {
+          const ticket = ticketMap.get(key);
+          if (!ticket) {
+            return;
+          }
+          const chip = makeTicketChip(ticket);
+          if (!ticketMatches(ticket)) {
+            chip.classList.add("filtered-out");
+          }
+          fragment.appendChild(chip);
+        });
+        slot.replaceChildren(fragment);
+      });
+    }
+
+    function makeTicketRow(ticket) {
+      const row = element("article", "ticket-row");
+      const keyBlock = element("div", "ticket-row-key");
+      const link = element("a", "", ticket.key);
+      link.href = JIRA_BASE + ticket.key;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.setAttribute("aria-label", ticket.key + " in Jira, opens in a new tab");
+      keyBlock.append(link, element("span", "ticket-row-status", ticket.status));
+
+      const copy = element("div", "ticket-row-copy");
+      copy.append(
+        element("strong", "", ticket.summary),
+        element("span", "", ticket.person + " / " + componentLabels[ticket.component])
+      );
+
+      const detailButton = element("button", "", "Details");
+      detailButton.type = "button";
+      detailButton.dataset.ticketDetail = ticket.key;
+      detailButton.setAttribute("aria-label", "Show details for " + ticket.key);
+      row.append(keyBlock, copy, detailButton);
+      return row;
+    }
+
+    function renderCatalog() {
+      const visible = tickets.filter(ticketMatches);
+      const fragment = document.createDocumentFragment();
+      if (visible.length === 0) {
+        fragment.appendChild(element("div", "empty-state", "No child tickets match these filters."));
+      } else {
+        visible.forEach((ticket) => fragment.appendChild(makeTicketRow(ticket)));
+      }
+      ticketList.replaceChildren(fragment);
+      catalogCount.textContent = visible.length + " of 40 shown";
+    }
+
+    function renderSummary() {
+      const counts = tickets.reduce((result, ticket) => {
+        result[ticket.status] = (result[ticket.status] || 0) + 1;
+        return result;
+      }, {});
+      statusSummary.textContent =
+        counts["In Progress"] + " In Progress / " +
+        counts.Triaged + " Triaged / " +
+        counts.Done + " Done / " +
+        counts.Rejected + " Rejected";
+    }
+
+    function populateFilters() {
+      const people = Array.from(new Set(tickets.map((ticket) => ticket.person))).sort();
+      people.forEach((person) => {
+        const option = element("option", "", person);
+        option.value = person;
+        personFilter.appendChild(option);
+      });
+
+      Object.entries(componentLabels).forEach(([value, label]) => {
+        const option = element("option", "", label);
+        option.value = value;
+        componentFilter.appendChild(option);
+      });
+    }
+
+    function updateFilters() {
+      renderPinnedTickets();
+      renderCatalog();
+    }
+
+    function appendDetailBlock(title, contentNode) {
+      const block = element("section", "detail-block");
+      block.append(element("h3", "", title), contentNode);
+      drawerExtra.appendChild(block);
+    }
+
+    function makeDetailTicketList(detailTickets) {
+      const list = element("div", "detail-ticket-list");
+      detailTickets.forEach((ticket) => {
+        const item = element("div", "detail-ticket");
+        const link = element("a", "", ticket.key + " / " + ticket.status);
+        link.href = JIRA_BASE + ticket.key;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        item.append(link, element("span", "", ticket.person + ": " + ticket.summary));
+        list.appendChild(item);
+      });
+      return list;
+    }
+
+    function openComponentDetail(component) {
+      const info = componentInfo[component];
+      if (!info) {
+        return;
+      }
+      drawerKicker.textContent = info.state;
+      drawerTitle.textContent = info.label;
+      drawerSummary.textContent = info.summary;
+      drawerExtra.replaceChildren();
+
+      const bulletList = element("ul", "detail-list");
+      info.bullets.forEach((bullet) => bulletList.appendChild(element("li", "", bullet)));
+      appendDetailBlock("What this means", bulletList);
+
+      const related = [...tickets, ...externalTickets].filter((ticket) => ticket.component === component);
+      appendDetailBlock("Related Jira work", makeDetailTicketList(related));
+      openDrawer();
+    }
+
+    function openTicketDetail(key) {
+      const ticket = ticketMap.get(key);
+      if (!ticket) {
+        return;
+      }
+      drawerKicker.textContent = componentLabels[ticket.component] || "Related work";
+      drawerTitle.textContent = ticket.key;
+      drawerSummary.textContent = ticket.summary;
+      drawerExtra.replaceChildren();
+
+      const facts = element("ul", "detail-list");
+      facts.append(
+        element("li", "", "Jira status: " + ticket.status),
+        element("li", "", "Assignee: " + ticket.person),
+        element("li", "", "Architecture area: " + (componentLabels[ticket.component] || ticket.component))
+      );
+      appendDetailBlock("Current Jira facts", facts);
+
+      if (ticket.collaborators.length > 0) {
+        const collaborators = element("ul", "detail-list");
+        ticket.collaborators.forEach((person) => collaborators.appendChild(element("li", "", person)));
+        appendDetailBlock("Named collaborators or reviewers", collaborators);
+      }
+
+      const jiraLink = element("a", "", "Open " + ticket.key + " in Jira");
+      jiraLink.href = JIRA_BASE + ticket.key;
+      jiraLink.target = "_blank";
+      jiraLink.rel = "noopener noreferrer";
+      appendDetailBlock("Source", jiraLink);
+      openDrawer();
+    }
+
+    function openDrawer() {
+      lastFocused = document.activeElement;
+      drawerBackdrop.hidden = false;
+      drawer.removeAttribute("inert");
+      requestAnimationFrame(() => {
+        drawer.classList.add("open");
+        drawerBackdrop.classList.add("open");
+      });
+      drawer.setAttribute("aria-hidden", "false");
+      document.body.classList.add("no-scroll");
+      drawerClose.focus();
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove("open");
+      drawerBackdrop.classList.remove("open");
+      drawer.setAttribute("aria-hidden", "true");
+      drawer.setAttribute("inert", "");
+      document.body.classList.remove("no-scroll");
+      window.setTimeout(() => {
+        drawerBackdrop.hidden = true;
+      }, 200);
+      if (lastFocused && typeof lastFocused.focus === "function") {
+        lastFocused.focus();
+      }
+    }
+
+    function validateData() {
+      const allChildKeys = tickets.map((ticket) => ticket.key);
+      const uniqueKeys = new Set(allChildKeys);
+      const expectedKeys = [];
+      for (let number = 2981; number <= 3014; number += 1) {
+        expectedKeys.push("DOCPR-" + number);
+      }
+      for (let number = 3211; number <= 3216; number += 1) {
+        expectedKeys.push("DOCPR-" + number);
+      }
+
+      const missingChildren = expectedKeys.filter((key) => !childKeySet.has(key));
+      const unexpectedChildren = allChildKeys.filter((key) => !expectedKeys.includes(key));
+      const unresolvedSlots = [];
+      document.querySelectorAll("[data-ticket-slot]").forEach((slot) => {
+        slot.dataset.ticketSlot.split(",").map((key) => key.trim()).filter(Boolean).forEach((key) => {
+          if (!ticketMap.has(key)) {
+            unresolvedSlots.push(key);
+          }
+        });
+      });
+
+      const valid = tickets.length === 40 &&
+        uniqueKeys.size === 40 &&
+        missingChildren.length === 0 &&
+        unexpectedChildren.length === 0 &&
+        unresolvedSlots.length === 0 &&
+        externalKeySet.has("DOCPR-2822");
+
+      integrityNote.textContent = valid
+        ? "Data integrity: 40/40 child keys loaded; all pinned ticket references resolve."
+        : "Data integrity warning: ticket data or pinned references need review.";
+      integrityNote.style.color = valid ? "var(--green)" : "var(--red)";
+      return valid;
+    }
+
+    statusFilterButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.status = button.dataset.statusFilter;
+        statusFilterButtons.forEach((candidate) => {
+          candidate.setAttribute("aria-pressed", String(candidate === button));
+        });
+        updateFilters();
+      });
+    });
+
+    personFilter.addEventListener("change", () => {
+      state.person = personFilter.value;
+      updateFilters();
+    });
+
+    componentFilter.addEventListener("change", () => {
+      state.component = componentFilter.value;
+      updateFilters();
+    });
+
+    ticketSearch.addEventListener("input", () => {
+      state.query = ticketSearch.value.trim().toLowerCase();
+      updateFilters();
+    });
+
+    catalogToggle.addEventListener("click", () => {
+      const willOpen = catalog.hidden;
+      catalog.hidden = !willOpen;
+      catalogToggle.setAttribute("aria-expanded", String(willOpen));
+      catalogToggle.textContent = willOpen ? "Close ticket catalog" : "Open 40-ticket catalog";
+      if (willOpen) {
+        catalog.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      const componentButton = event.target.closest("[data-component-detail]");
+      if (componentButton) {
+        openComponentDetail(componentButton.dataset.componentDetail);
+        return;
+      }
+      const ticketButton = event.target.closest("[data-ticket-detail]");
+      if (ticketButton) {
+        openTicketDetail(ticketButton.dataset.ticketDetail);
+      }
+    });
+
+    drawerClose.addEventListener("click", closeDrawer);
+    drawerBackdrop.addEventListener("click", closeDrawer);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && drawer.classList.contains("open")) {
+        closeDrawer();
+      }
+      if (event.key === "Tab" && drawer.classList.contains("open")) {
+        const focusable = Array.from(drawer.querySelectorAll("button, a[href], select, input"))
+          .filter((node) => !node.hasAttribute("disabled"));
+        if (focusable.length === 0) {
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    populateFilters();
+    renderSummary();
+    renderPinnedTickets();
+    renderCatalog();
+    validateData();
+  </script>
+</body>
+</html>

@@ -21,6 +21,15 @@ accept sealing). No Python, no CLI, no venv — just skills + scripts.
 - **Zero Python install** — drop `scripts/` + `skills/` into any repo; works in any harness
   that reads `SKILL.md` and exposes `Bash` + `Write`.
 
+## Project views
+
+- [Project timeline](./project-timeline.html) — the Jira-backed history, current Pulse #19 work,
+  backlog, dependencies, and September 14 decisions.
+- [Planned v0.2 architecture](./dogen-architecture.html) — an interactive map of the proposed
+  stdlib-only Python CLI, skills, optional onboarding and mapping flows, artifacts, boundaries,
+  and the Jira work attached to each element. This is a target design; the current merged
+  implementation remains the Bash-based slim baseline described below.
+
 ## Scope border (the hard line)
 
 dogen **drafts and stops at a single, traceable local commit.** It stays deliberately "dumb"
