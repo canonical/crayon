@@ -1,22 +1,3 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-env/
-dist/
-build/
-*.egg-info/
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-.ty_cache/
-.import_linter_cache/
-
-# Tool caches (code-graph index, etc.)
-.tokensave/
-
 # Env / secrets
 .env
 .env.*
@@ -25,12 +6,7 @@ build/
 .DS_Store
 *.swp
 
-# dogen passenger handoff staging (D-11). MUST stay scoped to the staging path:
+# dogen passenger handoff staging — MUST stay scoped to the staging path:
 # a blanket .dogen/ ignore would hide the committed .dogen/units/<id>/unit.md.
 .dogen/staging/
-
-# GSD planning artifacts — tracked on the 'gsd' branch, ignored on main
-.planning/
-
-# workshop runtime lock (the .workshop/*.yaml definitions themselves are tracked)
-.workshop.lock
+.worktrees/

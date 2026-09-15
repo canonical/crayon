@@ -14,9 +14,9 @@ differently:
 - **Facts** live in the environment: what a change touches, where sibling pages
   sit, what a toctree already references, what the glossary calls a concept, what
   a source file actually defines. Look these up with the read-only tools
-  (`Read`/`Grep`/`Glob`, `git diff`/`git log`, `dogen context ls`) **before**
-  asking anything. A question whose answer is on disk wastes the TA's turn and
-  teaches them the intake isn't paying attention.
+  (`Read`/`Grep`/`Glob`, `git diff`/`git log`, the `.dogen/context/` artifacts)
+  **before** asking anything. A question whose answer is on disk wastes the TA's
+  turn and teaches them the intake isn't paying attention.
 - **Decisions** belong to the TA: the reader's problem, the audience, the scope,
   the angle. These cannot be grepped. Put each one to the TA — one at a time —
   and wait for the answer.
@@ -77,7 +77,7 @@ Terminology settles during the dialogue, and catching it there is cheap:
   'attachment' — which should the page use?" — and use the settled term from
   then on.
 - When a genuinely new term crystallizes, fold it into the outline and the
-  synthesized `--notes` so the drafter inherits it (this skill writes no file;
-  the notes are the carrier).
+  synthesized steering note so the drafter inherits it (this skill writes the
+  note into `unit.md`'s `steering_notes`; the note is the carrier).
 - Sparingly: only terms the unit's page actually leans on. The glossary artifact
   itself is maintained outside this loop.

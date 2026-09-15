@@ -1,21 +1,25 @@
 # dogen
 
-**dogen** is a platform-agnostic, agentic **documentation-drafting** framework for Technical
+**dogen** is a skills-first, agentic **documentation-drafting** framework for Technical
 Authors. It drafts review-ready, **Sphinx-publishable** documentation (MyST Markdown or
 reStructuredText, Diátaxis-structured) from human-pointed sources — human-in-the-loop — and
 deliberately stops at the boundary of a single traceable local commit.
 
-This iteration is a **skills-first rebuild**: portable Agent Skills (`SKILL.md`) are the
-surface a Technical Author drives, layered over a deterministic Python core.
+This iteration is a **pure-skills architecture**: portable Agent Skills (`SKILL.md`) are the
+surface a Technical Author drives, backed by a thin layer of deterministic bash scripts that
+enforce the load-bearing guarantees (HITL gate, provenance ordering, evidence verification,
+accept sealing). No Python, no CLI, no venv — just skills + scripts.
 
 - **Skills-first surface** — the portable `dogen-plan` / `dogen-write` / `dogen-review`
-  skill family is the primary, harness-agnostic human interface (Claude Code, Copilot CLI,
-  opencode, and any harness that reads `SKILL.md`).
+  skill family is the primary, harness-agnostic human interface.
+- **Deterministic gates** — 4 bash scripts enforce the HITL gate, write ordering,
+  identical-redraft suppression, evidence verification, and structured review
+  recording (accept/fix/redraft). The model cannot bypass them.
 - **Type-aware drafting**, steered by human intent, audience, and product expertise.
-- **Provider-agnostic by design** — the agentic backend (the GitHub Copilot SDK today) sits
-  behind a thin, genuinely multi-provider seam so it can be swapped cheaply.
 - **Sphinx-publishable output** — the target docs-as-code stack is GitHub + Read the Docs +
   Sphinx, structured along Diátaxis.
+- **Zero Python install** — drop `scripts/` + `skills/` into any repo; works in any harness
+  that reads `SKILL.md` and exposes `Bash` + `Write`.
 
 ## Scope border (the hard line)
 
@@ -32,268 +36,188 @@ outside drafting:
 
 ## Quickstart: use dogen in a docs repo
 
-### Prerequisites & assumptions
+### 1 — Install the scripts and skills
 
-This walkthrough runs everything inside a disposable **Workshop** environment and names what it
-needs, so your host stays clean and a fresh box works on the first try. It assumes:
-
-- **[Workshop](https://github.com/canonical/workshop) on your host** — Canonical's "secure, fast,
-  and composable" ([snapcraft.io/workshop](https://snapcraft.io/workshop)), LXD-backed
-  dev-environment tool. dogen drives an autonomous agent that reads and writes files and runs
-  commands on your behalf, so isolate it from anything you can't afford to lose; a Workshop is
-  exactly that throwaway boundary. Install it once: `sudo snap install workshop --classic`.
-- **The runtime and harness come from SDKs, not your host.** Workshop layers `uv` (which provides
-  Python 3.12+) and your agent harness into the container for you, so there's no system Python,
-  Node.js, or `PATH` setup to do by hand.
-- **git with an identity** — set *inside* the workshop (its `$HOME` isn't shared with the host);
-  dogen records every step as a local commit.
-- **A docs repository to draft in** — a Git repo with a Sphinx/Diátaxis docs tree (or where you
-  intend to start one), plus any code or artefacts you want documented. Your project mounts into
-  the workshop automatically at `/project`.
-- **Outbound network access**, and **optional provider credentials** — the latter only if you
-  switch from the default host-harness passenger to the Copilot *driver* (see step 1).
-
-### 0 — Set up your environment
-
-dogen is an agentic system still in development, so run your testing in an **isolated environment**
-to limit any potential for loss or corruption of data.
-[Workshop](https://github.com/canonical/workshop) gives you a disposable, LXD-backed container and
-layers in everything dogen needs as **SDKs** — no base-package, Node.js, `uv`, or `PATH` setup to
-do by hand:
-
-1. **Install Workshop** on your host: `sudo snap install workshop --classic`.
-2. **Define a workshop in your docs repo.** `workshop init dogen-dev --sdks uv,copilot --base
-   ubuntu@24.04` scaffolds [`.workshop/dogen-dev.yaml`](.workshop/dogen-dev.yaml), layering the
-   `uv` and **GitHub Copilot CLI** SDKs. (This repo already ships that file with both SDKs, so you
-   can skip straight to the launch below.) Prefer Claude Code or opencode? Their SDKs are in the
-   Store too — swap the `copilot` entry, and check what's on offer with `sdk find <name>` /
-   `sdk info <name>` (or `workshop.sdk …` if `sdk` isn't on your `PATH`).
-3. **Launch it:** `workshop launch dogen-dev`. This builds the container, runs the SDK setup, and
-   mounts your project at `/project` inside the workshop.
-4. **Get a shell inside it:** `workshop shell dogen-dev` (or run one-off commands with
-   `workshop exec dogen-dev -- <command>`). **Every step from here on runs inside the workshop.**
-5. **Set your git identity** — `git config --global user.name "…"` and
-   `git config --global user.email "…"`. The workshop's `$HOME` isn't shared with the host, and
-   dogen commits every transition, so this needs setting inside.
-6. **Authenticate your harness** — launch `copilot` and run `/login` (credentials persist in the
-   workshop). With the default `host-harness` provider your harness is the passenger that authors
-   drafts, so this single login is the only credential you need. Using Claude Code or opencode
-   instead? Authenticate it the same way and pass `--harness claude` / `--harness opencode` when
-   you install the skills below.
-7. **Installing dogen from a private repo?** Add a **read-only, repo-scoped**
-   [deploy key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys#deploy-keys)
-   inside the workshop, and accept GitHub's host key once with `ssh -T git@github.com`, so
-   installing the dogen CLI (next) doesn't stall.
-
-### 1 — Install the `dogen` CLI
-
-Run this and the remaining steps **inside the workshop** (`workshop shell dogen-dev`). dogen isn't
-on a public package index yet — install it from this repository with `uv` (already provided by the
-workshop's `uv` SDK):
+dogen's scripts and skills live in your **dogen checkout**; you install them once and then use
+them from any project repo. Point a `DOGEN` variable at your checkout so the commands below
+work regardless of path:
 
 ```bash
-# Install the CLI as a uv tool (isolated, on your PATH):
-uv tool install git+ssh://git@github.com/canonical/dogen-mvp-1
-
-# …or from a local checkout / built wheel:
-#   uv build && uv tool install dist/dogen-*.whl
-
-dogen --help          # verify the install
+DOGEN=/path/to/dogen-mvp-1       # your checkout of dogen
 ```
 
-If a fresh shell reports `dogen: command not found`, put uv's tool directory on your `PATH` with
-`uv tool update-shell` (or add `~/.local/bin`) and reopen the shell.
-
-**Provider setup (optional).** By default dogen uses the zero-setup **host-harness passenger**
-provider — your own agent authors the draft and dogen records it. To use the **GitHub Copilot
-driver** (generation in-process behind a read-only toolset), fetch its runtime once and select
-it explicitly:
+**Scripts — put them on your PATH (once, system-wide, so they work from any repo):**
 
 ```bash
-python -m copilot download-runtime        # one-time, pins the Copilot CLI runtime
-dogen provider set copilot                # or: export DOGEN_PROVIDER=copilot, or --provider
+# System-wide (requires sudo):
+sudo cp "$DOGEN"/scripts/dogen-*.sh /usr/local/bin/
+
+# …or to your user bin (no sudo; ensure ~/.local/bin is on PATH):
+mkdir -p ~/.local/bin && cp "$DOGEN"/scripts/dogen-*.sh ~/.local/bin/
 ```
 
-Provider selection is always explicit — flag > `DOGEN_PROVIDER` > repo config > `host-harness`;
-there is no silent fallback.
-
-### 2 — Install the skills into your agent
-
-Run from the **root of the docs repo** you want to draft in (inside the workshop, that's `/project`):
+**Skills — install them at one of two scopes:**
 
 ```bash
-dogen skills install --harness copilot    # repeatable: --harness claude --harness opencode
-#                                         # …or omit --harness to auto-detect present harnesses
-dogen skills status                       # show each install's drift vs the canonical family
-dogen skills update                       # re-stage after upgrading dogen
+# Project-scoped (recommended) — copy into each docs repo, so the skills travel with it:
+cd /path/to/your-docs-repo
+mkdir -p ~/.agents/skills && cp -r "$DOGEN"/skills/dogen-* .agents/skills/
+
+# Global — copy once, so every repo discovers them:
+mkdir -p ~/.agents/skills && cp -r "$DOGEN"/skills/dogen-* ~/.agents/skills/
 ```
 
-Each harness has its own discovery root:
+Modern agents read the agent-compatible `.agents/skills/` (project) or `~/.agents/skills/`
+(global) discovery root, rather than the harness-specific `.claude/`, `.github/`, or `.opencode/`
+roots. Repeat the project-scoped copy in each docs repo (once per repo; re-run after upgrading dogen).
 
-| Harness | Skills land in |
-|---------|----------------|
-| `claude`   | `.claude/skills/` |
-| `copilot`  | `.github/skills/` |
-| `opencode` | `.opencode/skills/` |
+The scripts are the deterministic enforcement layer; the skills are the interface. Your agent
+harness sees the `SKILL.md` files in the docs repo and invokes the scripts (which must be on
+`PATH`) via `Bash`.
 
-The install is recorded in `.dogen/skills-install.yaml`. Your agent now sees the
-`dogen-plan`, `dogen-write`, and `dogen-review` skills. `skills/` is the single source of
-truth — re-run `dogen skills update` rather than hand-editing an installed copy.
+### 2 — Add context files (recommended)
+
+Context files teach dogen your house style, vocabulary, and where facts live. They land in
+`.dogen/context/`:
+
+```bash
+mkdir -p .dogen/context
+cp path/to/your-style-guide.md .dogen/context/doc-style.md
+cp path/to/glossary.md .dogen/context/glossary.md
+```
+
+Well-known names the skills look for: `doc-style.md`, `glossary.md`, `structure.md`,
+`code-to-docs-map.md`, `doc-gaps.md`.
+
+### 3 — Draft a documentation unit
+
+Drive the skills in order from your agent. They call the deterministic scripts and enforce
+the human-in-the-loop gate at each step.
+
+1. **`dogen-plan`** — declare a unit and its sources, shape the outline, record your intent
+   and audience, and **sign the plan off** (calls `dogen-signoff.sh` — the HITL gate).
+2. **Draft — by direction:** all four directions route to **`dogen-write`**, the sole
+   drafting skill. It branches on the declared `intent`:
+   - **reference / explanation** — the host agent drafts the page from the signed-off
+     plan, stages it, and calls `dogen-record-draft.sh` to record it.
+   - **tutorial / how-to** — drafted by *doing*: an evidence-gated step walk that
+     captures verbatim proof (output bytes, exit code, SHA-256) via
+     `dogen-record-step.sh`, then authors the page from what actually ran (also
+     recorded via `dogen-record-draft.sh`).
+3. **`dogen-review`** — review the draft alongside its provenance and record a verdict
+   (**accept** / **fix** / **redraft**) via `dogen-record-review.sh`. Accept seals
+   page SHA-256 hashes; fix/redraft append the note to the steering stream.
+
+The gate is enforced in code, not by convention: `dogen-record-draft.sh` inlines
+the gate check and refuses — with no side effects — until a signoff is on record
+and the plan hash is current. When you're done, the draft sits in **one local
+commit** for you to review and merge. dogen never pushes.
 
 ### Confirm your setup works (smoke check)
 
-Still inside the workshop, prove the plumbing end-to-end before pointing dogen at real docs. The
-credential-free `mock` provider drafts deterministically in-process, so nothing here needs a
-harness login or a provider token, and nothing touches your docs repo:
-
 ```bash
-dogen --help                 # the CLI is installed and on your PATH
-dogen provider show          # resolves to host-harness (from default)
-
-# Drive one throwaway unit through the full gate in a scratch repo:
+# Create a scratch repo:
 mkdir /tmp/dogen-smoke && cd /tmp/dogen-smoke && git init -q
+git config user.name "Test" && git config user.email "test@example.com"
 printf '# Widget API\n\nThe widget API exposes create and delete.\n' > source.md
 git add -A && git commit -q -m "seed source"
 
-dogen unit new smoke --intent reference --title "Smoke" --source source.md --target smoke.rst
-dogen steer smoke --note "Audience: developers evaluating dogen; keep it terse."
-dogen signoff smoke
-dogen draft smoke --provider mock          # writes docs/smoke.rst
-dogen review smoke --verdict accept --note "smoke"
-dogen status                               # smoke -> reviewed, signoff yes
+# Set up a unit:
+mkdir -p .dogen/units/smoke
+cat > .dogen/units/smoke/unit.md <<'EOF'
+---
+unit_id: smoke
+intent: reference
+audience: developers
+title: Smoke
+sources:
+  - path: source.md
+sphinx_target: smoke.rst
+extra_targets: []
+steering_notes: ""
+---
+# Smoke
+EOF
+
+# Run the gate (the scripts must be on your PATH from step 1):
+dogen-signoff.sh smoke
+echo "# Smoke API" > /tmp/smoke-draft.rst
+dogen-record-draft.sh smoke /tmp/smoke-draft.rst
+dogen-record-review.sh smoke --verdict accept --note "smoke test"
 ```
 
-If every command exits cleanly and `dogen status` shows `smoke` at `reviewed`, your environment is
-wired up — the same `unit new → signoff → draft → review` gate runs for real in steps 3–4. As a
-last check, from your **docs-repo root** open your harness (`copilot`) and confirm it lists the
-`dogen-plan`, `dogen-write`, and `dogen-review` skills you installed above. Clean up the scratch
-repo when done: `rm -rf /tmp/dogen-smoke`.
-
-### 3 — Add context files (recommended)
-
-Context files teach dogen your house style, vocabulary, and where facts live. They land in the
-**`.dogen/context/`** zone; add each with `dogen context add`, which files **and commits** it:
-
-```bash
-dogen context add path/to/your-style-guide.md --as doc-style.md
-dogen context add path/to/glossary.md         --as glossary.md
-dogen context ls                              # list what's landed
-```
-
-`--as` sets the landing filename (defaults to the source file's name; pass `--no-commit` to
-stage without committing). Free-form names are welcome, but a set of **well-known names** is
-what the skills look for by default:
-
-| File | What it holds |
-|------|---------------|
-| `doc-style.md`        | Voice, register, and house style |
-| `glossary.md`         | Preferred terms and vocabulary |
-| `structure.md`        | Section / page structure conventions |
-| `code-to-docs-map.md` | Map from code areas to the concepts that document them (grep-first; can be large) |
-| `doc-gaps.md`         | Known documentation gaps |
-
-To include organization-wide guidance in the agent's context, create a directory called `optional-guidance`
-at the root of your project and add the relevant files. Expected files include style guides,
-syntax guides, framework guides (Diataxis), and similar guidance. Any context added here is
-considered optional and is mainly intended to augment the 'knowledge' of less-capable models.
-
-### 4 — Draft a documentation unit
-
-Drive the skills in order from your agent. They call the deterministic dogen verbs and
-enforce the human-in-the-loop gate at each step. `dogen-plan` opens and `dogen-review` closes
-**every** direction; only the middle drafting step branches by the unit's declared Diátaxis
-direction:
-
-1. **`dogen-plan`** — declare a unit and its sources, shape the outline, record your **intent
-   and audience** steering, and **sign the plan off**. This is also where the direction is
-   declared, which routes the drafting step below.
-2. **Draft — by direction:**
-   - **reference** → **`dogen-write`** — draft the page(s) from the signed-off plan, grounded
-     in the declared sources and steered by what you recorded.
-   - **tutorial / how-to** → **`dogen-record`** — drafted by *doing*: an interactive,
-     evidence-gated step walk that captures verbatim proof as each step runs (redirected output
-     bytes, a real exit code, a SHA-256) and authors the page from what actually ran, not from
-     static sources.
-   - **explanation** → **`dogen-plan`**'s intent walk (the 5-whys, understanding-first mode) to
-     draw out and record the *why*, then **`dogen-write`** drafting with an explanation stance.
-3. **`dogen-review`** — review the draft alongside its provenance and record a verdict
-   (**accept** / **fix** / **redraft**).
-
-The gate is enforced in code, not by convention: `dogen draft` refuses — with no side effects —
-until intent/audience steering **and** a signoff are on record. When you're done, the draft sits
-in **one local commit** for you to review and merge. dogen never pushes.
-
-> **Power users / CI:** the same operations are callable directly —
-> `dogen unit new`, `dogen signoff`, `dogen steer`, `dogen draft`, `dogen review`,
-> `dogen status`, `dogen unit show`. The skills are the recommended path; the CLI is the
-> always-available fallback. Run `dogen --help` for the full verb set.
+If every script exits 0 and `docs/smoke.rst` exists, your environment is wired up. The ledger
+at `.dogen/units/smoke/ledger.md` records the full audit trail. Clean up: `rm -rf /tmp/dogen-smoke`.
 
 ### Vocabulary
 
-A few terms recur across the skills and the provenance record:
+- **sealed** — a unit whose latest review is an **accept**. Sealed status is derived from the
+  ledger's `## reviews` section.
+- **ledger** — the plain-markdown audit trail at `.dogen/units/<id>/ledger.md` (replaces the
+  old `provenance.yaml`). Records signoff, steering, generations, reviews, and steps.
+- **gate** — the signoff act recorded by `dogen-signoff.sh`. `dogen-record-draft.sh`
+  checks it inline before recording any draft.
 
-- **sealed** — a unit whose latest verdict-bearing review is an **accept**. Sealing is
-  *derived* from the review history, never stored as a flag; a later `fix`/`redraft`
-  verdict reopens the unit (see dogen-review).
-- **lease** — a unit owns (claims) its target pages only *while it is in flight*.
-  Accepting the unit **releases** the lease, so another unit may then claim the page;
-  an in-flight unit's pages stay claimed and a competing declare/edit is refused
-  (`target_claimed`).
-- **supersede** — a seal attests the text accepted at that moment; a later unit may
-  supersede it; digests + git trailers order the seals. Declaring or editing onto a
-  page a sealed unit owns records the supersede as an `extends:` body line and a
-  `Dogen-Extends: <owner-id>` commit trailer.
+---
+
+## The deterministic scripts
+
+| Script | What it enforces | Exit codes |
+|---|---|---|
+| `dogen-signoff.sh <id> [--force]` | HITL gate: SHA-256 of `unit.md` + commit; lazy-creates ledger; validates unit-id against path traversal | 0 ok, 1 double-signoff, 2 bad input |
+| `dogen-record-draft.sh <id> <file> [--model M]` | Inline gate check + WR-03: ledger before page; identical-redraft check; path-traversal validation | 0 ok, 1 gate fail, 2 bad input, 3 identical, 4 evidence incomplete (unresolved steps) |
+| `dogen-record-review.sh <id> --verdict accept\|fix\|redraft [--note N]` | Records verdict; accept seals page SHA-256; fix/redraft appends note to steering stream | 0 ok, 1 no generation, 2 bad input |
+| `dogen-record-step.sh <id> <step> --evidence-file F` | Evidence micro-gate: validates verdict enum, requires SHA-256 + exit_code + step_text_sha256; fail stays unverified; staleness check | 0 ok, 1 incomplete, 2 bad input, 3 stale |
+
+Every state-changing script emits one local git commit with `Dogen-Unit:` / `Dogen-Phase:`
+trailers (plus `Dogen-Draft:` / `Dogen-Verdict:` / `Dogen-Step:` where relevant), so
+`git log --grep 'Dogen-Unit: <id>'` replays a unit's whole path.
 
 ---
 
 ## Develop dogen itself
 
-dogen uses [`uv`](https://docs.astral.sh/uv/) for environments, dependencies, the lockfile, and
-builds. Python **3.12** is the target.
+The deterministic layer is bash; the test suite is bash.
 
 ```bash
-# Create the environment and install the project with dev dependencies.
-uv sync
+# Run the script tests (74 assertions across 32 tests):
+bash tests/test_dogen_scripts.sh
 
-# Lint and format (ruff) and type-check (ty).
-uv run ruff check .
-uv run ruff format --check .
-uv run ty check
+# Lint shell scripts:
+shellcheck scripts/dogen-*.sh
 
-# Enforce the provider seam (AST guard + import-linter) and lint the skills.
-uv run python scripts/seam_check.py
-uv run python scripts/skill_lint.py
-uv run lint-imports
-
-# Run the test suite (pytest + pytest-asyncio).
-uv run pytest
-
-# Build the distributable package.
-uv build
+# Lint skill frontmatter + tool-surface:
+python scripts/skill_lint.py
 ```
 
-The provider seam is the load-bearing invariant: `dogen.core` never imports a provider SDK or a
-concrete telemetry backend. See [`AGENTS.md`](./AGENTS.md) for the full operating contract and
-stack rationale.
+### Architecture
 
-## Validation
+```
+skills/                          ← the human-facing surface (SKILL.md)
+├── dogen-plan/SKILL.md
+├── dogen-write/SKILL.md
+└── dogen-review/SKILL.md
 
-dogen has been exercised end-to-end across three agent harnesses. See
-[`validation/round-3-report.md`](./validation/round-3-report.md) for the latest report (Sphinx
-builds, output-vs-gold comparison, and provenance), with the per-leg captures under
-[`validation/round-3/`](./validation/round-3/).
+scripts/                         ← the deterministic enforcement layer
+├── dogen-common.sh              ← shared helpers (SHA-256, ledger ops, path validation, commit)
+├── dogen-signoff.sh             ← HITL gate: hash unit.md, lazy-create ledger, commit "signoff"
+├── dogen-record-draft.sh        ← inline gate check + WR-03: ledger before page, commit "draft"
+├── dogen-record-review.sh       ← record verdict (accept seals / fix|redraft appends steering), commit "review"
+└── dogen-record-step.sh         ← evidence micro-gate, commit "step"
+```
 
-## Project timeline
+See [`docs/middle-path-plan.md`](./docs/middle-path-plan.md) for the full implementation plan
+with feature mapping, and [`docs/before-after.md`](./docs/before-after.md) for a concise
+comparison of the old (CLI + Python core) and new (scripts + skills) architectures.
 
-An interactive milestone planning timeline lives in
-[`project-timeline.html`](./project-timeline.html) — pulses by component, with dependency
-links and per-item detail. It's a standalone page (inline CSS/JS, no build step). GitHub
-shows it as source; view it by opening the file in a browser, or on the repo's
-(access-controlled) GitHub Pages site at
-<https://effective-doodle-ee1w8gm.pages.github.io/project-timeline.html>.
+### Drill eval harness (deferred)
+
+Skill compliance is measured by a Drill-style eval harness (tmux-driven sessions, LLM-judged
+verifier) — outlined in the [plan](./docs/middle-path-plan.md#8-drill-eval-harness--outline-implementation-deferred),
+implementation deferred to a subsequent phase.
 
 ## Licensing
 
-The packaged core is licensed under **LGPL-3.0-only** (see [`LICENSE`](./LICENSE)). The portable
-skills under [`skills/`](./skills/) are licensed separately under **Apache-2.0** (see
-[`skills/LICENSE`](./skills/LICENSE)).
+The core scripts are licensed under **LGPL-3.0-only** (see [`LICENSE`](./LICENSE)). The
+portable skills under [`skills/`](./skills/) are licensed separately under **Apache-2.0**
+(see [`skills/LICENSE`](./skills/LICENSE)).
