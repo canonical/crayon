@@ -202,7 +202,7 @@
 
     .controls {
       display: grid;
-      grid-template-columns: auto minmax(170px, 0.8fr) minmax(180px, 1fr) minmax(190px, 1.25fr) auto;
+      grid-template-columns: minmax(170px, 0.8fr) minmax(180px, 1fr) minmax(190px, 1.25fr) auto;
       gap: 10px;
       align-items: center;
       padding: 12px;
@@ -210,30 +210,6 @@
       border-radius: 18px;
       background: rgba(255, 253, 248, 0.94);
       box-shadow: var(--shadow);
-    }
-
-    .segmented {
-      display: inline-flex;
-      padding: 4px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #eef0eb;
-    }
-
-    .segmented button {
-      border: 0;
-      border-radius: 8px;
-      padding: 8px 11px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 800;
-    }
-
-    .segmented button[aria-pressed="true"] {
-      background: var(--paper-strong);
-      color: var(--ink);
-      box-shadow: 0 2px 7px rgba(25, 35, 31, 0.09);
     }
 
     .field {
@@ -1129,11 +1105,6 @@
         grid-template-columns: 1fr 1fr 1fr;
       }
 
-      .segmented {
-        grid-column: 1 / -1;
-        justify-content: center;
-      }
-
       .catalog-toggle {
         grid-column: span 1;
       }
@@ -1177,7 +1148,6 @@
         grid-template-columns: 1fr 1fr;
       }
 
-      .segmented,
       .catalog-toggle {
         grid-column: 1 / -1;
       }
@@ -1219,14 +1189,8 @@
       }
 
       .field,
-      .catalog-toggle,
-      .segmented {
+      .catalog-toggle {
         grid-column: 1;
-      }
-
-      .segmented {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
       }
 
       .machine {
@@ -1279,7 +1243,7 @@
     <div class="snapshot" aria-label="Current and target state summary">
       <article class="snapshot-card current">
         <strong>Current baseline in merged main</strong>
-        <p>The slim Bash implementation and its human-facing workflow are the implemented bridge.</p>
+        <p>The slim Bash implementation and three-skill workflow are the implemented bridge. Robert Kratky did most of this 21-commit slim rework.</p>
       </article>
       <article class="snapshot-card target">
         <strong>Target v0.2 engine</strong>
@@ -1294,12 +1258,6 @@
 
   <div class="controls-wrap">
     <nav class="controls shell" aria-label="Architecture ticket filters">
-      <div class="segmented" role="group" aria-label="Filter by Jira status">
-        <button type="button" data-status-filter="active" aria-pressed="true">Active</button>
-        <button type="button" data-status-filter="done" aria-pressed="false">Done</button>
-        <button type="button" data-status-filter="rejected" aria-pressed="false">Rejected</button>
-        <button type="button" data-status-filter="all" aria-pressed="false">All</button>
-      </div>
       <div class="field">
         <label for="person-filter">Person</label>
         <select id="person-filter">
@@ -1455,7 +1413,7 @@
               <h3>dogen-write</h3>
               <span class="state-tag planned">Target flow</span>
             </div>
-            <p>Read the signed plan and sources, walk actionable steps when required, then stage and draft every target.</p>
+            <p>Read the signed plan and sources, walk actionable steps when required, then stage and draft every target. Robert Kratky's slim rework consolidated the direction-specific flows into this single writing skill.</p>
             <ul class="plain-list">
               <li>Record evidence, not claims</li>
               <li>Refuse unsteered redrafts</li>
@@ -1493,7 +1451,8 @@
               </div>
               <p class="engine-subtitle">
                 A single Python file, standard library only, owns every state transition. Skills
-                guide the conversation; the executable enforces the contract.
+                guide the conversation; the executable enforces the contract. It replaces the
+                Bash enforcement layer developed mostly by Robert Kratky during the slim rework.
               </p>
               <button class="inspect" type="button" data-component-detail="core">Core details</button>
             </div>
@@ -1683,8 +1642,9 @@
           Status and assignee data: Jira snapshot of the 40 DOCPR-2845 child issues, as of
           2026-09-15. Target design: rev8 slim implementation plan. Interface decision: Sep 14
           regular sync. Local ROADMAP and STATE are implementation evidence only and never
-          override Jira. Robert Kratky is named as contract and PR reviewer by the plan; Anne
-          Chew and Charles Odada are named only where Jira or the meeting assigns their work.
+          override Jira. Git history attributes all 21 commits on the merged slim branch to
+          Robert Kratky; the plan also names him as contract and PR reviewer. Anne Chew and
+          Charles Odada are named only where Jira or the meeting assigns their work.
         </p>
         <p class="integrity" id="integrity-note">Checking ticket references...</p>
       </div>
@@ -1903,13 +1863,11 @@
     };
 
     const state = {
-      status: "active",
       person: "all",
       component: "all",
       query: ""
     };
 
-    const statusFilterButtons = Array.from(document.querySelectorAll("[data-status-filter]"));
     const personFilter = document.getElementById("person-filter");
     const componentFilter = document.getElementById("component-filter");
     const ticketSearch = document.getElementById("ticket-search");
@@ -1939,18 +1897,7 @@
       return node;
     }
 
-    function statusGroup(status) {
-      if (status === "Done") {
-        return "done";
-      }
-      if (status === "Rejected") {
-        return "rejected";
-      }
-      return "active";
-    }
-
     function ticketMatches(ticket) {
-      const statusMatches = state.status === "all" || statusGroup(ticket.status) === state.status;
       const personMatches = state.person === "all" || ticket.person === state.person ||
         ticket.collaborators.some((name) => name.toLowerCase().includes(state.person.toLowerCase()));
       const componentMatches = state.component === "all" || ticket.component === state.component;
@@ -1958,7 +1905,7 @@
         .join(" ")
         .toLowerCase();
       const queryMatches = !state.query || haystack.includes(state.query);
-      return statusMatches && personMatches && componentMatches && queryMatches;
+      return personMatches && componentMatches && queryMatches;
     }
 
     function makeTicketChip(ticket) {
@@ -2201,16 +2148,6 @@
       integrityNote.style.color = valid ? "var(--green)" : "var(--red)";
       return valid;
     }
-
-    statusFilterButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        state.status = button.dataset.statusFilter;
-        statusFilterButtons.forEach((candidate) => {
-          candidate.setAttribute("aria-pressed", String(candidate === button));
-        });
-        updateFilters();
-      });
-    });
 
     personFilter.addEventListener("change", () => {
       state.person = personFilter.value;
