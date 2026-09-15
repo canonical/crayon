@@ -3,1499 +3,1262 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DOCPR-2845 Project Timeline</title>
+  <meta name="description" content="Current, upcoming, and historical roadmap for DOCPR-2845.">
+  <title>DOCPR-2845 project timeline</title>
   <style>
     :root {
       color-scheme: light;
-      --bg: #f5f3ed;
-      --panel: #fffdf8;
-      --ink: #1f2623;
-      --muted: #66706b;
-      --line: #d7d0c4;
-      --line-strong: #a69c8d;
-      --shadow: 0 14px 40px rgba(31, 38, 35, 0.12);
-      --time-col: 156px;
-      --pillar-col: 270px;
-      --toolbar-height: 0px;
-      --radius: 8px;
-      --type-story: #316c8e;
-      --type-task: #5f7a42;
-      --type-spike: #9b5c28;
-      --status-todo: #6a6f78;
-      --status-done: #2b7a3b;
-      --status-in-progress: #b96b00;
-      --status-in-review: #2260cc;
-      --status-triaged: #4b5d6e;
-      --status-untriaged: #8c9ba8;
-      --status-deferred: #8a5c92;
-      --status-rejected: #a13f4b;
-      --priority-highest: #8f2638;
-      --priority-high: #b94134;
-      --priority-medium: #8d702d;
-      --priority-low: #66706b;
+      --paper: #f4f2eb;
+      --surface: #fffdf8;
+      --surface-soft: #f8f7f1;
+      --ink: #1d2723;
+      --muted: #65716b;
+      --line: #d0d6cf;
+      --line-strong: #aeb9b1;
+      --green: #1f6b50;
+      --green-soft: #e2f1e9;
+      --blue: #2f648a;
+      --blue-soft: #e6f0f7;
+      --amber: #75470f;
+      --amber-soft: #fbefd9;
+      --violet: #6d5593;
+      --violet-soft: #eee8f8;
+      --red: #9b414a;
+      --red-soft: #f7e7e8;
+      --gray-soft: #eceeea;
+      --shadow: 0 18px 48px rgba(29, 39, 35, 0.08);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --max: 1320px;
     }
 
     * {
       box-sizing: border-box;
     }
 
-    html,
-    body {
-      height: 100%;
+    html {
+      scroll-behavior: smooth;
     }
 
     body {
       margin: 0;
-      background: var(--bg);
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 4% 0%, rgba(31, 107, 80, 0.1), transparent 27rem),
+        radial-gradient(circle at 96% 12%, rgba(47, 100, 138, 0.08), transparent 30rem),
+        var(--paper);
       color: var(--ink);
-      font-family:
-        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", sans-serif;
-      letter-spacing: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
     }
 
-    button,
-    input,
-    select {
-      font: inherit;
+    a {
+      color: inherit;
     }
 
-    button {
-      cursor: pointer;
+    a:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 3px;
     }
 
-    .app {
-      min-height: 100%;
-      display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+    .shell {
+      width: min(calc(100% - 32px), var(--max));
+      margin-inline: auto;
     }
 
-    .toolbar {
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      display: grid;
-      grid-template-columns: minmax(280px, 1fr) auto;
-      gap: 18px;
-      align-items: end;
-      padding: 18px 22px 14px;
-      background: rgba(245, 243, 237, 0.95);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(14px);
-    }
-
-    .title-block {
-      min-width: 0;
+    .hero {
+      padding: 38px 0 24px;
     }
 
     .eyebrow {
-      margin: 0 0 5px;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin: 0 0 12px;
+      color: var(--green);
+      font-size: 0.76rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+    }
+
+    .eyebrow span + span::before {
+      content: "";
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      margin-right: 14px;
+      border-radius: 50%;
+      background: var(--line-strong);
+      vertical-align: middle;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
     }
 
     h1 {
-      margin: 0;
-      font-size: clamp(24px, 3vw, 38px);
-      line-height: 1.05;
-      letter-spacing: 0;
+      max-width: 940px;
+      margin-bottom: 14px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.5rem, 5.7vw, 5.3rem);
+      font-weight: 500;
+      letter-spacing: -0.055em;
+      line-height: 0.96;
     }
 
-    .subtitle {
-      margin: 8px 0 0;
-      max-width: 880px;
-      color: #4f5a55;
-      font-size: 14px;
-      line-height: 1.45;
-    }
-
-    .decision-note {
+    .hero-copy {
       display: grid;
-      gap: 7px;
-      margin-top: 12px;
-      max-width: 980px;
-      padding: 10px 12px;
-      border: 1px solid rgba(40, 111, 107, 0.22);
-      border-left: 4px solid #286f6b;
-      border-radius: 7px;
-      background: rgba(230, 243, 238, 0.72);
-      color: #33413a;
-      font-size: 12px;
-      line-height: 1.45;
+      grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
+      gap: 26px;
+      align-items: end;
     }
 
-    .decision-note strong {
-      color: #1f4f4c;
+    .hero-copy > p {
+      max-width: 820px;
+      margin-bottom: 0;
+      color: #425149;
+      font-size: clamp(1rem, 1.8vw, 1.22rem);
     }
 
-    .decision-items {
+    .snapshot-note {
+      padding: 15px 17px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255, 253, 248, 0.76);
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .metrics {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px 14px;
+      gap: 8px;
+      margin-top: 20px;
     }
 
-    .decision-items span::before {
-      content: "•";
-      margin-right: 6px;
-      color: #286f6b;
+    .metric {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 253, 248, 0.86);
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .metric strong {
+      color: var(--ink);
+    }
+
+    main {
+      padding-bottom: 48px;
+    }
+
+    .roadmap-section {
+      margin-top: 18px;
+      padding: clamp(18px, 3vw, 30px);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: var(--shadow);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 22px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    .section-kicker {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--green);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .section-head h2 {
+      margin-bottom: 5px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.9rem, 3.8vw, 3.25rem);
+      font-weight: 500;
+      letter-spacing: -0.035em;
+      line-height: 1;
+    }
+
+    .section-head p {
+      max-width: 760px;
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .window {
+      flex: none;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 0.78rem;
       font-weight: 900;
     }
 
-    .controls {
-      display: grid;
-      grid-template-columns: minmax(220px, 320px) repeat(4, minmax(132px, auto)) auto auto;
-      gap: 8px;
-      align-items: center;
-      justify-content: end;
+    .current-section {
+      border-top: 5px solid var(--green);
     }
 
-    .control,
-    .toggle,
-    .ghost-button {
-      min-height: 38px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: var(--panel);
-      color: var(--ink);
-      box-shadow: 0 1px 0 rgba(31, 38, 35, 0.04);
+    .lane + .lane {
+      margin-top: 22px;
     }
 
-    .control {
-      width: 100%;
-      padding: 8px 10px;
-    }
-
-    .toggle {
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: center;
-      padding: 8px 11px;
-      white-space: nowrap;
-      user-select: none;
-    }
-
-    .toggle input {
-      width: 16px;
-      height: 16px;
-      margin: 0;
-      accent-color: #286f6b;
-    }
-
-    .ghost-button {
-      padding: 8px 11px;
-      white-space: nowrap;
-    }
-
-    .ghost-button:hover,
-    .control:focus,
-    .toggle:hover {
-      border-color: var(--line-strong);
-    }
-
-    .status-strip {
+    .lane-head {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 10px 22px;
-      border-bottom: 1px solid var(--line);
-      background: #ece8dd;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 10px;
     }
 
-    .metric,
-    .legend-chip {
+    .lane-head h3 {
+      margin-bottom: 0;
+      font-size: 0.92rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .lane-count {
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .n-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .n-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      padding: 15px;
+      box-shadow: 0 8px 24px rgba(29, 39, 35, 0.05);
+    }
+
+    .n-card.status-in-progress {
+      border-left-color: var(--amber);
+      background: linear-gradient(145deg, rgba(251, 239, 217, 0.58), var(--surface) 58%);
+    }
+
+    .n-card.status-triaged {
+      border-left-color: var(--blue);
+      background: linear-gradient(145deg, rgba(230, 240, 247, 0.58), var(--surface) 58%);
+    }
+
+    .ticket-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 9px;
+    }
+
+    .ticket-id {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .ticket-code {
+      color: var(--ink);
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 1.55rem;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+
+    .jira-key {
+      color: var(--blue);
+      font-size: 0.7rem;
+      font-weight: 900;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .status {
+      flex: none;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      min-height: 28px;
-      padding: 5px 9px;
-      border: 1px solid rgba(31, 38, 35, 0.12);
-      border-radius: 7px;
-      background: rgba(255, 253, 248, 0.7);
-      color: #33413a;
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
+      gap: 5px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 0.64rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
-    .legend-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 999px;
+    .status::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
       background: currentColor;
     }
 
-    .legend-line {
-      width: 24px;
-      height: 0;
-      border-top: 2px solid #366f8d;
+    .status-in-progress {
+      background: var(--amber-soft);
+      color: var(--amber);
     }
 
-    .workspace {
-      min-height: 0;
+    .status-triaged {
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
+    .status-done {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .status-rejected {
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .n-card h3 {
+      min-height: 48px;
+      margin-bottom: 11px;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .ticket-facts {
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      position: relative;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 0;
     }
 
-    .board-scroll {
-      position: relative;
-      overflow: auto;
-      min-height: 0;
-      height: calc(100vh - var(--toolbar-height));
-      overscroll-behavior: contain;
-      scrollbar-color: #9a9489 #e8e2d6;
+    .ticket-facts div {
+      min-width: 0;
+      padding: 8px;
+      border-radius: 9px;
+      background: rgba(244, 242, 235, 0.75);
     }
 
-    .board-wrap {
-      position: relative;
-      width: max-content;
-      min-width: 100%;
-    }
-
-    .link-layer {
-      position: absolute;
-      inset: 0;
-      z-index: 3;
-      pointer-events: none;
-      overflow: visible;
-    }
-
-    .link-path {
-      fill: none;
-      stroke: rgba(49, 108, 142, 0.46);
-      stroke-width: 2;
-      marker-end: url(#arrow-default);
-      transition: opacity 120ms ease, stroke-width 120ms ease, stroke 120ms ease;
-    }
-
-    .link-path.muted {
-      opacity: 0.08;
-    }
-
-    .link-path.active {
-      stroke: #b94134;
-      stroke-width: 3;
-      marker-end: url(#arrow-active);
-      opacity: 0.94;
-    }
-
-    .timeline-grid {
-      position: relative;
-      z-index: 5;
-      display: grid;
-      grid-template-columns: var(--time-col) repeat(var(--component-count), var(--pillar-col));
-      align-items: stretch;
-      min-width: calc(var(--time-col) + (var(--pillar-col) * var(--component-count)));
-      padding-bottom: 32px;
-    }
-
-    .corner,
-    .component-header {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      min-height: 86px;
-      border-bottom: 1px solid var(--line-strong);
-      background: rgba(236, 232, 221, 0.96);
-      backdrop-filter: blur(14px);
-    }
-
-    .corner {
-      left: 0;
-      z-index: 30;
-      padding: 15px 14px;
-      border-right: 1px solid var(--line-strong);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 4px;
-    }
-
-    .corner strong {
-      font-size: 13px;
-    }
-
-    .corner span {
+    .ticket-facts dt {
       color: var(--muted);
-      font-size: 12px;
-      line-height: 1.3;
+      font-size: 0.61rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
 
-    .component-header {
-      padding: 12px 12px 10px;
-      border-right: 1px solid var(--line);
+    .ticket-facts dd {
+      overflow-wrap: anywhere;
+      margin: 2px 0 0;
+      font-size: 0.76rem;
+      font-weight: 800;
     }
 
-    .component-header::before {
-      content: "";
-      display: block;
-      height: 4px;
-      margin: -12px -12px 10px;
-      background: var(--component-color);
+    .dependency-line,
+    .ticket-note {
+      margin: 11px 0 0;
+      color: var(--muted);
+      font-size: 0.75rem;
     }
 
-    .component-code {
+    .dependency-line strong,
+    .ticket-note strong {
+      color: var(--ink);
+    }
+
+    .dep-chip {
+      display: inline-flex;
+      margin: 3px 3px 0 0;
+      padding: 3px 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-soft);
+      color: var(--ink);
+      font-size: 0.65rem;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .carried-card {
+      display: grid;
+      grid-template-columns: minmax(190px, 0.42fr) minmax(0, 1.58fr);
+      gap: 18px;
+      align-items: center;
+      margin-top: 22px;
+      padding: 16px;
+      border: 1px solid #d9bd91;
+      border-radius: var(--radius-md);
+      background: var(--amber-soft);
+    }
+
+    .carried-label {
+      color: var(--amber);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .carried-card h3 {
+      margin: 4px 0 0;
+      font-size: 1rem;
+    }
+
+    .carried-copy {
+      color: #684d2b;
+      font-size: 0.84rem;
+    }
+
+    .forecast-section {
+      border: 2px dashed #d5ae72;
+      background:
+        linear-gradient(150deg, rgba(251, 239, 217, 0.58), rgba(255, 253, 248, 0.95) 48%),
+        var(--surface);
+    }
+
+    .forecast-section .window {
+      background: #f5dfbd;
+      color: #75470f;
+    }
+
+    .forecast-banner {
+      margin-bottom: 16px;
+      padding: 11px 13px;
+      border-left: 4px solid var(--amber);
+      border-radius: 0 10px 10px 0;
+      background: rgba(255, 253, 248, 0.72);
+      color: #674b27;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .track-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .forecast-track {
+      border: 1px solid #dec59d;
+      border-radius: var(--radius-md);
+      background: rgba(255, 253, 248, 0.82);
+      padding: 15px;
+    }
+
+    .track-index {
       display: inline-grid;
       place-items: center;
       width: 28px;
       height: 28px;
-      margin-right: 8px;
-      border-radius: 7px;
-      background: var(--component-color);
-      color: #fff;
-      font-size: 13px;
+      margin-bottom: 9px;
+      border-radius: 9px;
+      background: var(--amber);
+      color: white;
+      font-size: 0.72rem;
       font-weight: 900;
-      vertical-align: middle;
     }
 
-    .component-name {
-      font-size: 15px;
-      font-weight: 900;
-      vertical-align: middle;
+    .forecast-track h3 {
+      margin-bottom: 5px;
+      font-size: 1rem;
     }
 
-    .component-meta {
-      margin-top: 7px;
-      color: #53605b;
-      font-size: 12px;
-      line-height: 1.35;
+    .forecast-track > p {
+      min-height: 60px;
+      margin-bottom: 11px;
+      color: var(--muted);
+      font-size: 0.8rem;
     }
 
-    .time-cell,
-    .lane-cell {
-      min-height: 174px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .time-cell {
-      position: sticky;
-      left: 0;
-      z-index: 18;
-      padding: 18px 13px;
-      border-right: 1px solid var(--line-strong);
-      background: rgba(245, 243, 237, 0.97);
-    }
-
-    .pulse {
-      display: inline-flex;
-      align-items: center;
+    .mini-tickets {
+      display: grid;
       gap: 7px;
-      color: var(--ink);
-      font-size: 18px;
-      font-weight: 900;
-      line-height: 1.1;
     }
 
-    .pulse-index {
+    .mini-ticket {
       display: grid;
-      place-items: center;
-      min-width: 32px;
-      height: 32px;
-      padding: 0 8px;
-      border-radius: 7px;
-      background: #22312d;
-      color: #fff;
-      font-size: 12px;
-    }
-
-    .pulse-window {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .pulse-count {
-      margin-top: 14px;
-      color: #59645f;
-      font-size: 12px;
-      line-height: 1.4;
-    }
-
-    .lane-cell {
-      position: relative;
-      padding: 13px 12px 16px;
-      border-right: 1px solid rgba(215, 208, 196, 0.72);
-      background:
-        linear-gradient(180deg, rgba(255, 253, 248, 0.66), rgba(255, 253, 248, 0.36)),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
-    }
-
-    .lane-cell::before {
-      content: "";
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 3px;
-      background: color-mix(in srgb, var(--component-color) 48%, transparent);
-      opacity: 0.55;
-    }
-
-    .card-stack {
-      display: grid;
-      gap: 10px;
-      min-height: 100%;
-    }
-
-    .empty-lane {
-      min-height: 76px;
-    }
-
-    .work-card {
-      position: relative;
-      z-index: 10;
-      display: grid;
-      gap: 9px;
-      width: 100%;
-      min-height: 122px;
-      padding: 11px;
-      border: 1px solid rgba(31, 38, 35, 0.14);
-      border-left: 5px solid var(--component-color);
-      border-radius: var(--radius);
-      background: rgba(255, 253, 248, 0.96);
-      box-shadow: 0 6px 18px rgba(31, 38, 35, 0.07);
-      text-align: left;
-      transition:
-        border-color 120ms ease,
-        box-shadow 120ms ease,
-        opacity 120ms ease,
-        transform 120ms ease;
-    }
-
-    .work-card:hover {
-      border-color: rgba(31, 38, 35, 0.34);
-      box-shadow: 0 10px 24px rgba(31, 38, 35, 0.12);
-      transform: translateY(-1px);
-    }
-
-    .work-card.selected {
-      border-color: #b94134;
-      box-shadow: 0 0 0 3px rgba(185, 65, 52, 0.16), 0 12px 26px rgba(31, 38, 35, 0.14);
-    }
-
-    .work-card.related {
-      border-color: rgba(49, 108, 142, 0.72);
-      box-shadow: 0 0 0 3px rgba(49, 108, 142, 0.12), 0 8px 20px rgba(31, 38, 35, 0.1);
-    }
-
-    .work-card.dimmed {
-      opacity: 0.34;
-    }
-
-    .work-card.status-todo,
-    .work-card.status-triaged {
-      background: rgba(242, 246, 248, 0.96);
-    }
-
-    .work-card.status-done {
-      background: rgba(238, 250, 241, 0.96);
-    }
-
-    .work-card.status-in-progress {
-      background: rgba(255, 249, 235, 0.96);
-    }
-
-    .work-card.status-in-review {
-      background: rgba(240, 246, 255, 0.96);
-    }
-
-    .work-card.status-untriaged {
-      background: rgba(255, 253, 248, 0.96);
-    }
-
-    .work-card.status-deferred {
-      background: rgba(252, 244, 255, 0.96);
-    }
-
-    .work-card.status-rejected {
-      background: rgba(255, 242, 244, 0.96);
-    }
-
-    .time-cell.active-pulse,
-    .lane-cell.active-pulse {
-      background:
-        linear-gradient(180deg, rgba(232, 246, 239, 0.92), rgba(243, 249, 245, 0.72));
-    }
-
-    .time-cell.active-pulse .pulse-index {
-      background: #176b5b;
-      box-shadow: 0 0 0 4px rgba(23, 107, 91, 0.12);
-    }
-
-    .time-cell.rejected-pulse,
-    .lane-cell.rejected-pulse {
-      background:
-        linear-gradient(180deg, rgba(248, 238, 240, 0.8), rgba(252, 247, 247, 0.62));
-    }
-
-    .card-top {
-      display: flex;
+      grid-template-columns: auto 1fr;
+      gap: 3px 9px;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .item-id {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-      color: var(--ink);
-      font-size: 15px;
-      font-weight: 950;
-    }
-
-    .item-id .mini-pulse {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      justify-content: flex-end;
-    }
-
-    .badge,
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      min-height: 21px;
-      max-width: 100%;
-      padding: 3px 7px;
-      border-radius: 999px;
-      border: 1px solid rgba(31, 38, 35, 0.12);
-      background: #f2eee4;
-      color: #33413a;
-      font-size: 11px;
-      font-weight: 850;
-      line-height: 1.2;
-      white-space: nowrap;
-    }
-
-    .badge.type-story {
-      background: rgba(49, 108, 142, 0.13);
-      color: var(--type-story);
-    }
-
-    .badge.type-task {
-      background: rgba(95, 122, 66, 0.14);
-      color: var(--type-task);
-    }
-
-    .badge.type-spike {
-      background: rgba(155, 92, 40, 0.14);
-      color: var(--type-spike);
-    }
-
-    .badge.priority-high {
-      background: rgba(185, 65, 52, 0.13);
-      color: var(--priority-high);
-    }
-
-    .badge.priority-highest {
-      background: rgba(143, 38, 56, 0.14);
-      color: var(--priority-highest);
-    }
-
-    .badge.priority-medium {
-      background: rgba(141, 112, 45, 0.16);
-      color: var(--priority-medium);
-    }
-
-    .badge.priority-low {
-      background: rgba(102, 112, 107, 0.14);
-      color: var(--priority-low);
-    }
-
-    .badge.status-todo {
-      background: rgba(106, 111, 120, 0.13);
-      color: var(--status-todo);
-    }
-
-    .badge.status-done {
-      background: rgba(43, 122, 59, 0.13);
-      color: var(--status-done);
-    }
-
-    .badge.status-in-progress {
-      background: rgba(185, 107, 0, 0.13);
-      color: var(--status-in-progress);
-    }
-
-    .badge.status-in-review {
-      background: rgba(34, 96, 204, 0.13);
-      color: var(--status-in-review);
-    }
-
-    .badge.status-triaged {
-      background: rgba(75, 93, 110, 0.13);
-      color: var(--status-triaged);
-    }
-
-    .badge.status-untriaged {
-      background: rgba(140, 155, 168, 0.13);
-      color: var(--status-untriaged);
-    }
-
-    .badge.status-deferred {
-      background: rgba(138, 92, 146, 0.13);
-      color: var(--status-deferred);
-    }
-
-    .badge.status-rejected {
-      background: rgba(161, 63, 75, 0.13);
-      color: var(--status-rejected);
-    }
-
-    .card-title {
-      margin: 0;
-      color: #27312d;
-      font-size: 13px;
-      font-weight: 850;
-      line-height: 1.35;
-    }
-
-    .card-meta {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 5px 8px;
-      color: #59645f;
-      font-size: 11px;
-      line-height: 1.3;
-    }
-
-    .meta-pair {
-      min-width: 0;
-    }
-
-    .meta-pair strong {
-      color: #36433e;
-      font-weight: 850;
-    }
-
-    .dependency-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      align-items: center;
-      min-height: 22px;
-    }
-
-    .dependency-row .label {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .chip {
-      border-radius: 6px;
-      background: #ebe6da;
-      color: #3f4a45;
-    }
-
-    .chip.clickable {
-      cursor: pointer;
-    }
-
-    .chip.clickable:hover {
-      border-color: #316c8e;
-      color: #245c7a;
-    }
-
-    .chip.related-chip {
-      background: #f2e9dc;
-      color: #79592c;
-    }
-
-    .card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      border-top: 1px solid rgba(31, 38, 35, 0.08);
-      padding-top: 8px;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .jira-link {
-      color: #255f83;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
       text-decoration: none;
     }
 
-    .jira-link:hover {
-      text-decoration: underline;
+    .mini-ticket strong {
+      font-size: 0.76rem;
     }
 
-    .details {
-      position: fixed;
-      top: var(--toolbar-height);
-      right: 14px;
-      z-index: 60;
-      width: min(420px, calc(100vw - 28px));
-      max-height: calc(100vh - var(--toolbar-height) - 18px);
-      overflow: auto;
-      padding: 16px;
-      border: 1px solid rgba(31, 38, 35, 0.18);
-      border-radius: var(--radius);
-      background: rgba(255, 253, 248, 0.98);
-      box-shadow: var(--shadow);
-      transform: translateX(calc(100% + 24px));
-      transition: transform 160ms ease;
-    }
-
-    .details.open {
-      transform: translateX(0);
-    }
-
-    .details-head {
-      display: flex;
-      align-items: start;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .details h2 {
-      margin: 0;
-      font-size: 20px;
-      line-height: 1.15;
-    }
-
-    .details-title {
-      margin: 8px 0 0;
-      color: #33413a;
-      font-size: 14px;
-      line-height: 1.4;
-      font-weight: 800;
-    }
-
-    .icon-button {
-      display: grid;
-      place-items: center;
-      flex: 0 0 auto;
-      width: 34px;
-      height: 34px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: #f5f1e7;
-      color: var(--ink);
-      font-size: 20px;
-      line-height: 1;
-    }
-
-    .details-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin: 14px 0;
-    }
-
-    .detail-box {
-      min-height: 58px;
-      padding: 9px;
-      border: 1px solid rgba(31, 38, 35, 0.11);
-      border-radius: 7px;
-      background: #f6f1e7;
-    }
-
-    .detail-label {
+    .mini-ticket span {
       color: var(--muted);
-      font-size: 11px;
-      font-weight: 850;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-size: 0.68rem;
     }
 
-    .detail-value {
-      margin-top: 4px;
-      color: #27312d;
-      font-size: 13px;
-      font-weight: 850;
-      line-height: 1.3;
-      overflow-wrap: anywhere;
+    .mini-ticket .mini-title {
+      grid-column: 1 / -1;
+      color: var(--ink);
+      line-height: 1.25;
     }
 
-    .details-section {
-      margin-top: 14px;
+    .follow-ons {
+      margin-top: 18px;
+      padding-top: 17px;
+      border-top: 1px solid #dec59d;
     }
 
-    .details-section h3 {
-      margin: 0 0 8px;
-      color: #34413c;
-      font-size: 13px;
-      font-weight: 950;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .follow-ons h3 {
+      margin-bottom: 5px;
+      font-size: 0.94rem;
     }
 
-    .details-section p {
-      margin: 0;
-      color: #53605b;
-      font-size: 13px;
-      line-height: 1.45;
+    .follow-ons > p {
+      color: var(--muted);
+      font-size: 0.8rem;
     }
 
-    .detail-chip-list {
+    .follow-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .follow-group {
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255, 253, 248, 0.7);
+    }
+
+    .follow-group strong {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 0.78rem;
+    }
+
+    .chip-list {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
     }
 
-    .empty-state {
-      display: none;
-      padding: 42px 24px;
-      color: #53605b;
+    .ticket-chip {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+      padding: 5px 7px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: white;
+      font-size: 0.66rem;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .ticket-chip span {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .milestone {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: center;
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: var(--ink);
+      color: white;
+    }
+
+    .milestone-date {
+      display: grid;
+      place-items: center;
+      min-width: 82px;
+      min-height: 62px;
+      border-radius: 12px;
+      background: white;
+      color: var(--ink);
+      font-size: 1.15rem;
+      font-weight: 900;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .milestone strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .milestone p {
+      margin-bottom: 0;
+      color: #d8ded9;
+      font-size: 0.82rem;
+    }
+
+    .secondary-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .secondary-card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 253, 248, 0.86);
+    }
+
+    .secondary-card h2 {
+      margin-bottom: 5px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.8rem;
+      font-weight: 500;
+    }
+
+    .secondary-card > p {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .ticket-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .ticket-row {
+      display: grid;
+      grid-template-columns: minmax(94px, auto) minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--surface);
+    }
+
+    .ticket-row-id {
+      display: grid;
+      gap: 2px;
+    }
+
+    .ticket-row-id strong {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.78rem;
+    }
+
+    .ticket-row-id a {
+      color: var(--blue);
+      font-size: 0.66rem;
       font-weight: 800;
     }
 
-    .empty-state.visible {
+    .ticket-row-title {
+      min-width: 0;
+    }
+
+    .ticket-row-title strong {
       display: block;
+      font-size: 0.78rem;
+      line-height: 1.3;
     }
 
-    @media (max-width: 1180px) {
-      .toolbar {
+    .ticket-row-title span {
+      color: var(--muted);
+      font-size: 0.69rem;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255, 253, 248, 0.82);
+    }
+
+    details + details {
+      margin-top: 8px;
+    }
+
+    summary {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 13px 15px;
+      cursor: pointer;
+      font-weight: 900;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::after {
+      content: "+";
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+
+    details[open] summary::after {
+      content: "-";
+    }
+
+    .details-body {
+      padding: 0 12px 12px;
+    }
+
+    .history-section {
+      margin-top: 18px;
+    }
+
+    .history-head {
+      margin-bottom: 12px;
+    }
+
+    .history-head h2 {
+      margin-bottom: 4px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 2rem;
+      font-weight: 500;
+    }
+
+    .history-head p {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .n-grid,
+      .track-grid,
+      .follow-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .secondary-grid {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .shell {
+        width: min(calc(100% - 20px), var(--max));
+      }
+
+      .hero {
+        padding-top: 26px;
+      }
+
+      .hero-copy,
+      .n-grid,
+      .track-grid,
+      .follow-grid,
+      .carried-card {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head {
         align-items: start;
+        flex-direction: column;
       }
 
-      .controls {
-        grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(132px, 1fr));
-        justify-content: stretch;
+      .window {
+        align-self: start;
       }
 
-      .toggle,
-      .ghost-button {
-        justify-content: center;
-      }
-    }
-
-    @media (max-width: 720px) {
-      :root {
-        --time-col: 132px;
-        --pillar-col: 245px;
+      .n-card h3,
+      .forecast-track > p {
+        min-height: 0;
       }
 
-      .toolbar {
-        padding: 14px 12px 12px;
+      .ticket-row {
+        grid-template-columns: 88px minmax(0, 1fr);
       }
 
-      .controls {
+      .ticket-row .status {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+
+      .milestone {
         grid-template-columns: 1fr;
       }
 
-      .status-strip {
-        padding-inline: 12px;
+      .milestone-date {
+        justify-self: start;
       }
+    }
 
-      .corner,
-      .component-header {
-        min-height: 78px;
-      }
-
-      .time-cell,
-      .lane-cell {
-        min-height: 156px;
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
       }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header class="toolbar" id="toolbar">
-      <div class="title-block">
-        <p class="eyebrow">DOCPR-2845 · Jira snapshot 15 September 2026</p>
-        <h1>Current work and project history</h1>
-        <p class="subtitle">
-          Active work comes first; completed pulses, backlog, and rejected scope remain visible.
-          Cards use Jira status, assignee, sprint, and issue-link data, with historical context
-          retained where the plan changed.
-        </p>
-        <div class="decision-note" role="note" aria-label="September 14 project decisions">
-          <strong>September 14 direction</strong>
-          <div class="decision-items">
-            <span>Move the deterministic scripts to one standard-library Python executable.</span>
-            <span>Try mapping as a visible direct script, then A/B test a skill wrapper.</span>
-            <span>Dogfood the current workflow and converge on the October 12 milestone.</span>
+  <header class="hero shell">
+    <p class="eyebrow">
+      <span>DOCPR-2845</span>
+      <span>Remaining-cycle roadmap</span>
+      <span>Saved Jira snapshot: 15 Sep 2026</span>
+    </p>
+    <h1>Current pulse, next pulse, and the path to October 12.</h1>
+    <div class="hero-copy">
+      <p>
+        N1-N6 are the remaining-cycle work. They are shown together first, followed by a
+        clearly labeled forecast for the next pulse, then unscheduled backlog and project
+        history.
+      </p>
+      <div class="snapshot-note">
+        Jira assigns all six N tickets to active Pulse #19. Pulse #20 below is a forecast from
+        the rev8 delivery order, not a Jira sprint assignment.
+      </div>
+    </div>
+    <div class="metrics" id="metrics" aria-label="Jira status summary"></div>
+  </header>
+
+  <main class="shell">
+    <section class="roadmap-section current-section" aria-labelledby="current-title">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Current - Jira assignment</span>
+          <h2 id="current-title">Doc Pulse 2026#19</h2>
+          <p>All six N tickets are assigned to the active pulse. Status separates work underway from work queued in the same pulse.</p>
+        </div>
+        <span class="window">Sep 14-28</span>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head">
+          <h3>In progress now</h3>
+          <span class="lane-count">N1-N3</span>
+        </div>
+        <div class="n-grid" id="current-in-progress"></div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head">
+          <h3>Queued in the active pulse</h3>
+          <span class="lane-count">N4-N6</span>
+        </div>
+        <div class="n-grid" id="current-queued"></div>
+      </div>
+
+      <div class="carried-card" id="carried-work"></div>
+    </section>
+
+    <section class="roadmap-section forecast-section" aria-labelledby="forecast-title">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Next - planning forecast</span>
+          <h2 id="forecast-title">Pulse #20</h2>
+          <p>The likely handoffs if remaining-cycle work follows the rev8 dependency order.</p>
+        </div>
+        <span class="window">Sep 28-Oct 11</span>
+      </div>
+
+      <div class="forecast-banner">
+        Forecast from rev8 sequencing and the September 14 decisions. These are not future Jira
+        sprint assignments.
+      </div>
+
+      <div class="track-grid" id="forecast-tracks"></div>
+
+      <div class="follow-ons">
+        <h3>Candidate follow-ons after the N-ticket gates</h3>
+        <p>Unscheduled Jira work, grouped by the outcome it supports rather than falsely placed into Pulse #20.</p>
+        <div class="follow-grid" id="follow-on-groups"></div>
+      </div>
+
+      <div class="milestone">
+        <div class="milestone-date">OCT<br>12</div>
+        <div>
+          <strong>Completion milestone</strong>
+          <p>Finish the remaining-cycle implementation, validation, and claims boundary before the announced October 12 deadline.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="secondary-grid">
+      <section class="secondary-card" aria-labelledby="backlog-title">
+        <h2 id="backlog-title">Unscheduled backlog</h2>
+        <p>Triaged work without an active Jira sprint. Forecast candidates remain here until Jira assigns them.</p>
+        <div class="ticket-list" id="backlog-list"></div>
+      </section>
+
+      <section class="secondary-card" aria-labelledby="decision-title">
+        <h2 id="decision-title">Remaining-cycle decisions</h2>
+        <p>The decisions that change how the current and next pulse should be read.</p>
+        <div class="ticket-list">
+          <div class="ticket-row">
+            <div class="ticket-row-id"><strong>Runtime</strong></div>
+            <div class="ticket-row-title"><strong>One stdlib-only Python CLI</strong><span>Replace the Bash enforcement layer while preserving the human-facing skill flow.</span></div>
+          </div>
+          <div class="ticket-row">
+            <div class="ticket-row-id"><strong>Mapping</strong></div>
+            <div class="ticket-row-title"><strong>Direct script first</strong><span>Keep map artifacts visible, then A/B test whether a skill wrapper improves the experience.</span></div>
+          </div>
+          <div class="ticket-row">
+            <div class="ticket-row-id"><strong>Adoption</strong></div>
+            <div class="ticket-row-title"><strong>Dogfood continuously</strong><span>Use dogen on real documentation throughout the remaining cycle to expose friction.</span></div>
           </div>
         </div>
+      </section>
+    </div>
+
+    <section class="history-section" aria-labelledby="history-title">
+      <div class="history-head">
+        <h2 id="history-title">Completed history and removed scope</h2>
+        <p>Historical tickets remain available without competing with current and upcoming work.</p>
       </div>
+      <div id="history-groups"></div>
+      <div id="rejected-group"></div>
+    </section>
 
-      <form class="controls" id="controls" aria-label="Timeline controls">
-        <input class="control" id="searchInput" type="search" placeholder="Search ID, title, Jira, theme" aria-label="Search">
-        <select class="control" id="typeFilter" aria-label="Filter by type"></select>
-        <select class="control" id="priorityFilter" aria-label="Filter by priority"></select>
-        <select class="control" id="ownerFilter" aria-label="Filter by owner"></select>
-        <select class="control" id="statusFilter" aria-label="Filter by status"></select>
-        <label class="toggle" title="Show dependency lines">
-          <input id="dependencyToggle" type="checkbox" checked>
-          Dependencies
-        </label>
-        <button class="ghost-button" id="clearButton" type="button">Clear</button>
-      </form>
-    </header>
-
-    <section class="status-strip" id="statusStrip" aria-label="Timeline legend and summary"></section>
-
-    <main class="workspace">
-      <div class="board-scroll" id="boardScroll" tabindex="0" aria-label="Scrollable project timeline">
-        <div class="board-wrap" id="boardWrap">
-          <svg class="link-layer" id="linkLayer" aria-hidden="true">
-            <defs>
-              <marker id="arrow-default" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(49, 108, 142, 0.58)"></path>
-              </marker>
-              <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#b94134"></path>
-              </marker>
-            </defs>
-          </svg>
-          <div class="timeline-grid" id="timelineGrid"></div>
-          <div class="empty-state" id="emptyState">No items match the current filters.</div>
-        </div>
-      </div>
-    </main>
-
-    <aside class="details" id="detailsPanel" aria-label="Work item details" aria-hidden="true"></aside>
-  </div>
+    <p class="footer-note">
+      Jira is authoritative for status, assignee, and current sprint. Pulse #20 is explicitly a planning forecast.
+    </p>
+  </main>
 
   <script>
-    const COMPONENTS = [
-      { key: "A", name: "Foundation", color: "#2f6f9f" },
-      { key: "B", name: "Onboarding", color: "#287b68" },
-      { key: "M", name: "Mapping", color: "#6661a8" },
-      { key: "C", name: "Context + sources", color: "#7b5fb2" },
-      { key: "E", name: "Authoring", color: "#b43c64" },
-      { key: "F", name: "HITL + state", color: "#4f7560" },
-      { key: "H", name: "Validation", color: "#8b6b2f" },
-      { key: "R", name: "Release + adoption", color: "#b45c3a" },
-      { key: "G", name: "QA extension", color: "#63752f" },
-      { key: "X", name: "Rejected / deferred", color: "#8c5a89" }
-    ];
+    "use strict";
 
-    const PULSES = [
-      { key: "#19", label: "#19", window: "Sep 14-28", active: true },
-      { key: "Carried", label: "Carried", window: "Active outside #19", active: true },
-      { key: "Backlog", label: "Backlog", window: "Triaged · no active sprint" },
-      { key: "#15-16", label: "#15-16", window: "Jul 20-Aug 14" },
-      { key: "#14", label: "#14", window: "Jul 06-17" },
-      { key: "#13", label: "#13", window: "Jun 22-Jul 03" },
-      { key: "#12", label: "#12", window: "Jun 15-19" },
-      { key: "Rejected", label: "Rejected", window: "Removed from current scope", rejected: true }
-    ];
+    const JIRA_BASE = "https://warthogs.atlassian.net/browse/";
 
     const ITEMS = [
-      { id: "DOCPR-2981", code: "A1", title: "A1: Select and record the agentic SDK decision (agnosticism, cost, MCP/Skills fit)", status: "Done", pulse: "#12", type: "Spike", priority: "High", size: "S", theme: "Foundation", owner: "Expert", component: "A", dependencies: [], related: [], assignee: "Teodora Mihoc", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #12 and #13." },
-      { id: "DOCPR-2982", code: "A2", title: "A2: Build the thin end-to-end walking skeleton and core drafting workflow", status: "Done", pulse: "#12", type: "Story", priority: "High", size: "S", theme: "Foundation", owner: "Expert", component: "A", dependencies: ["DOCPR-2981"], related: [], assignee: "Artem Konev", updated: "6 Jul 2026", history: "Jira sprint history: Pulses #12, #13, and #14." },
-      { id: "DOCPR-2983", code: "F1", title: "F1: Define the planning-directory schema v0 (steering, plan, provenance, progress)", status: "Done", pulse: "#12", type: "Task", priority: "High", size: "S", theme: "HITL", owner: "Expert", component: "F", dependencies: [], related: [], assignee: "Artem Konev", updated: "6 Jul 2026", history: "Jira sprint history: Pulses #12, #13, and #14." },
-      { id: "DOCPR-2984", code: "H1", title: "H1: Capture the from-scratch UX and time baseline (AC6 kickoff measurement)", status: "Done", pulse: "#12", type: "Task", priority: "Medium", size: "S", theme: "Validation", owner: "General", component: "H", dependencies: [], related: [], assignee: "Robert Krátký", updated: "27 Jul 2026", history: "The July timeline showed In Review; Jira now records Done." },
-      { id: "DOCPR-2985", code: "H2", title: "H2: Identify and assess greenfield/brownfield candidate projects", status: "Done", pulse: "#12", type: "Task", priority: "Medium", size: "S", theme: "Validation", owner: "General", component: "H", dependencies: [], related: [], assignee: "charles.odada", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #12 and #13." },
-      { id: "DOCPR-2986", code: "B1", title: "B1: Build the local onboarding scraper v1 (doc-style, glossary, structure artefacts)", status: "Done", pulse: "#13", type: "Story", priority: "High", size: "M", theme: "Onboarding", owner: "Mixed", component: "B", dependencies: ["DOCPR-2985"], related: ["DOCPR-3214"], assignee: "Anne Chew Yii Huei", updated: "7 Sep 2026", history: "Prior art for the remaining-cycle onboarding work." },
-      { id: "DOCPR-2987", code: "B2", title: "B2: Generate the code-to-docs map v1 for a candidate repo", status: "Done", pulse: "#13", type: "Story", priority: "High", size: "M", theme: "Mapping", owner: "Expert", component: "M", dependencies: ["DOCPR-2986", "DOCPR-2985"], related: ["DOCPR-3215"], assignee: "charles.odada", updated: "7 Sep 2026", history: "Prior art for the remaining-cycle mapping experiment." },
-      { id: "DOCPR-2988", code: "C1", title: "C1: Wire the agentic source-lookup baseline (grep, file-read, traversal)", status: "Done", pulse: "#14", type: "Task", priority: "High", size: "M", theme: "Source lookup", owner: "Expert", component: "C", dependencies: ["DOCPR-2982", "DOCPR-2987"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Completed after carrying into Pulse #14." },
-      { id: "DOCPR-2989", code: "E1", title: "E1: Build type-aware, intent-steered generation v1 (reference first)", status: "Done", pulse: "#14", type: "Story", priority: "High", size: "M", theme: "Authoring", owner: "Expert", component: "E", dependencies: ["DOCPR-2988", "DOCPR-2983", "DOCPR-2982"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #13 and #14." },
-      { id: "DOCPR-2990", code: "F2", title: "F2: Enforce the HITL steering gate with planning-directory capture", status: "Done", pulse: "#14", type: "Story", priority: "High", size: "M", theme: "HITL", owner: "Expert", component: "F", dependencies: ["DOCPR-2983", "DOCPR-2989"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #13 and #14." },
-      { id: "DOCPR-2991", code: "G1", title: "G1: Define the DOCPR-2822 QA interface contract (optional extension point)", status: "Done", pulse: "#14", type: "Task", priority: "Medium", size: "M", theme: "QA seam", owner: "Mixed", component: "G", dependencies: [], related: ["DOCPR-2822"], assignee: "Artem Konev", updated: "7 Sep 2026", history: "The QA framework remains an optional external extension, not a core dependency." },
-      { id: "DOCPR-2992", code: "E2", title: "E2: Add the evidence-gated verification step for actionable content", status: "Done", pulse: "#15-16", type: "Story", priority: "High", size: "M", theme: "Actionable authoring", owner: "Expert", component: "E", dependencies: ["DOCPR-2989"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #14 and #15." },
-      { id: "DOCPR-2993", code: "E3", title: "E3: Enable explanation-type drafting driven by recorded steering", status: "Done", pulse: "#15-16", type: "Story", priority: "Medium", size: "M", theme: "Explanation authoring", owner: "Mixed", component: "E", dependencies: ["DOCPR-2989", "DOCPR-2990"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #14 and #15." },
-      { id: "DOCPR-2994", code: "C2", title: "Define portable external-source intake and provenance for dogen-slim", status: "In Progress", pulse: "Carried", type: "Story", priority: "High", size: "L", theme: "External intake", owner: "Expert", component: "C", dependencies: ["DOCPR-3211"], related: [], assignee: "Anne Chew Yii Huei", updated: "8 Sep 2026", history: "Previously scheduled in Pulses #15 and #16; Jira shows no active sprint.", decision: "September 14: publish fetch examples on a separate slim-based branch." },
-      { id: "DOCPR-2995", code: "D1", title: "D1: Build layered customization v1 from remote URLs/repos (org guidance + writer prefs)", status: "Done", pulse: "#15-16", type: "Story", priority: "High", size: "M", theme: "Context", owner: "Mixed", component: "C", dependencies: ["DOCPR-2989"], related: ["DOCPR-3007"], assignee: "charles.odada", updated: "7 Sep 2026", history: "Jira sprint history: Pulses #14 and #15." },
-      { id: "DOCPR-2996", code: "F3", title: "F3: Decompose generated content into atomic, author-legible commits", status: "Done", pulse: "#14", type: "Story", priority: "High", size: "M", theme: "Commit boundary", owner: "Expert", component: "F", dependencies: ["DOCPR-2990", "DOCPR-2989"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Completed in the original Pulse #14 plan." },
-      { id: "DOCPR-2997", code: "S1", title: "Decide whether dogen-slim needs richer retrieval", status: "Triaged", pulse: "Backlog", type: "Spike", priority: "High", size: "M", theme: "Retrieval", owner: "Expert", component: "M", dependencies: ["DOCPR-3002"], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; now triaged without an active sprint." },
-      { id: "DOCPR-2998", code: "D2", title: "Superseded: MCP-served shared guidance", status: "Rejected", pulse: "Rejected", type: "Story", priority: "High", size: "M", theme: "Shared guidance", owner: "Expert", component: "X", dependencies: [], related: [], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; Jira now marks the approach rejected and superseded." },
-      { id: "DOCPR-2999", code: "H3", title: "Prove dogen onboarding and mapping on greenfield and brownfield projects", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Project proof", owner: "Mixed", component: "H", dependencies: ["DOCPR-3212", "DOCPR-3214", "DOCPR-3215", "DOCPR-3216"], related: ["DOCPR-3001"], assignee: "Anne Chew Yii Huei", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; now gated by the remaining-cycle implementation tickets." },
-      { id: "DOCPR-3000", code: "H4", title: "Prove dogen-slim on the GitHub/RTD/Sphinx stack", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Primary-stack proof", owner: "Mixed", component: "H", dependencies: ["DOCPR-3212", "DOCPR-3216"], related: ["DOCPR-3001"], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; now triaged without an active sprint." },
-      { id: "DOCPR-3001", code: "E4", title: "Harden dogen-slim from observed validation and dogfood gaps", status: "Triaged", pulse: "Backlog", type: "Task", priority: "High", size: "M", theme: "Hardening", owner: "Expert", component: "H", dependencies: ["DOCPR-3216"], related: ["DOCPR-2999", "DOCPR-3000", "DOCPR-3002", "DOCPR-3004", "DOCPR-3005", "DOCPR-3006"], assignee: "Artem Konev", updated: "7 Sep 2026", history: "Originally planned for Pulses #15-16; now a rolling hardening bucket after validation." },
-      { id: "DOCPR-3002", code: "H5", title: "Dogfood dogen-slim across the project proof matrix", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "L", theme: "Dogfooding", owner: "Mixed", component: "H", dependencies: ["DOCPR-3000", "DOCPR-2999"], related: ["DOCPR-3001"], assignee: "", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged without an active sprint.", decision: "September 14: every team member should use dogen on real documentation to expose friction and bugs." },
-      { id: "DOCPR-3003", code: "H7", title: "Publish dogen-slim onboarding and demonstration material", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Communication", owner: "General", component: "R", dependencies: [], related: [], assignee: "Robert Krátký", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged without an active sprint.", decision: "September 14: keep the product story concise and simplify the README after the Python and mapping decisions settle." },
-      { id: "DOCPR-3004", code: "H6", title: "Run an unaided dogen-slim adoption test with an outside author", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Adoption", owner: "Mixed", component: "H", dependencies: ["DOCPR-3003", "DOCPR-2999", "DOCPR-3000"], related: ["DOCPR-3001"], assignee: "", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged without an active sprint." },
-      { id: "DOCPR-3005", code: "F4", title: "Audit dogen-slim HITL steering and provenance", status: "Triaged", pulse: "Backlog", type: "Task", priority: "High", size: "M", theme: "Audit", owner: "Mixed", component: "F", dependencies: ["DOCPR-3212", "DOCPR-3002"], related: ["DOCPR-3001"], assignee: "", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged behind the deterministic hardening and dogfood work." },
-      { id: "DOCPR-3006", code: "H8", title: "Measure dogen-slim UX improvement on matched tasks", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "UX measurement", owner: "Mixed", component: "H", dependencies: ["DOCPR-2984", "DOCPR-3002", "DOCPR-3004"], related: ["DOCPR-3001"], assignee: "", updated: "7 Sep 2026", history: "Originally planned for Pulse #17; now triaged behind dogfooding and the outside-author test." },
-      { id: "DOCPR-3007", code: "D3", title: "Package onboarding, mapping, and shared guidance as dogen skills", status: "Triaged", pulse: "Backlog", type: "Task", priority: "High", size: "M", theme: "Packaging", owner: "Expert", component: "R", dependencies: [], related: ["DOCPR-3213", "DOCPR-3214", "DOCPR-3215", "DOCPR-2995"], assignee: "", updated: "8 Sep 2026", history: "Originally a Tail item; now split across the remaining-cycle tickets.", decision: "The September 14 mapping decision makes skill packaging conditional on the direct-script A/B result." },
-      { id: "DOCPR-3008", code: "T1", title: "Close out dogen-slim findings, fixes, and spill", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", size: "M", theme: "Closeout", owner: "Mixed", component: "R", dependencies: ["DOCPR-3002", "DOCPR-3004", "DOCPR-3006", "DOCPR-3005", "DOCPR-2997", "DOCPR-3001"], related: [], assignee: "", updated: "7 Sep 2026", history: "Originally a Tail item; now triaged as the final spill and findings bucket.", decision: "The final project milestone remains October 12." },
-      { id: "DOCPR-3009", title: "Deferred: Full autonomous Mode B research and planning", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "XL", theme: "Autonomy", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected and retained only as historical deferred scope." },
-      { id: "DOCPR-3010", title: "Deferred: Persistent agentic memory", status: "Rejected", pulse: "Rejected", type: "Spike", priority: "Low", size: "-", theme: "Memory", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected and retained only as historical deferred scope." },
-      { id: "DOCPR-3011", title: "Deferred: Semantic or structural context-augmentation build", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "-", theme: "Augmentation", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected and retained only as historical deferred scope." },
-      { id: "DOCPR-3012", title: "Superseded: Broad hands-free adoption rollout", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "-", theme: "Adoption", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected as superseded scope." },
-      { id: "DOCPR-3013", title: "Deferred: Deep DOCPR-2822 integration", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "-", theme: "QA integration", owner: "Unassigned", component: "X", dependencies: [], related: ["DOCPR-2822"], assignee: "", updated: "7 Sep 2026", history: "Rejected; only the optional QA extension point remains in scope." },
-      { id: "DOCPR-3014", title: "Deferred: Broad documentation-stack and provider agnosticism", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", size: "-", theme: "Agnosticism", owner: "Unassigned", component: "X", dependencies: [], related: [], assignee: "", updated: "7 Sep 2026", history: "Rejected and retained only as historical deferred scope." },
-      { id: "DOCPR-3211", code: "N1", title: "Freeze the dogen-slim lifecycle and artifact contract", status: "In Progress", pulse: "#19", type: "Story", priority: "Highest", size: "-", theme: "Contract", owner: "Expert", component: "F", dependencies: [], related: [], assignee: "Artem Konev", updated: "14 Sep 2026", history: "Created and triaged on 7 Sep; assigned to Pulse #19 and moved to In Progress on 14 Sep.", repoSignal: "Local gsd evidence marks Phase 16 complete; Jira remains the status authority." },
-      { id: "DOCPR-3212", code: "N2", title: "Harden dogen-slim deterministic gates, provenance, and commit boundaries", status: "In Progress", pulse: "#19", type: "Story", priority: "Highest", size: "-", theme: "Deterministic runtime", owner: "Expert", component: "F", dependencies: ["DOCPR-3211"], related: [], assignee: "Artem Konev", updated: "14 Sep 2026", history: "Created and triaged on 7 Sep; assigned to Pulse #19 and moved to In Progress on 14 Sep.", repoSignal: "Local gsd evidence records the Phase 17 plan list complete and under verification; Jira remains In Progress." },
-      { id: "DOCPR-3213", code: "N3", title: "Restore dogen-slim CI, quality, installation, and release gates", status: "In Progress", pulse: "#19", type: "Task", priority: "High", size: "-", theme: "Release", owner: "Mixed", component: "R", dependencies: ["DOCPR-3211", "DOCPR-3212"], related: ["DOCPR-3007"], assignee: "Artem Konev", updated: "14 Sep 2026", history: "Created 7 Sep and assigned to active Pulse #19 on 14 Sep.", decision: "The release design uses one stdlib-only Python file, restores CI/install checks, and eventually lands the implementation on main." },
-      { id: "DOCPR-3214", code: "N4", title: "Add the agent-native dogen-onboard skill", status: "Triaged", pulse: "#19", type: "Story", priority: "Highest", size: "-", theme: "Onboarding", owner: "Mixed", component: "B", dependencies: ["DOCPR-3211"], related: ["DOCPR-3007", "DOCPR-2986"], assignee: "charles.odada", updated: "14 Sep 2026", history: "Originally assigned to Anne, reassigned to Charles on 8 Sep, and added to Pulse #19 on 14 Sep.", decision: "Onboarding is optional; authors may instead bring existing style, glossary, and structure context." },
-      { id: "DOCPR-3215", code: "N5", title: "Add the agent-native dogen-map skill", status: "Triaged", pulse: "#19", type: "Story", priority: "Highest", size: "-", theme: "Mapping experiment", owner: "Expert", component: "M", dependencies: ["DOCPR-3211", "DOCPR-3214"], related: ["DOCPR-3007", "DOCPR-2987"], assignee: "charles.odada", updated: "14 Sep 2026", history: "Assigned to Charles on 8 Sep and added to Pulse #19 on 14 Sep.", decision: "September 14 decision: run mapping directly first so authors see its artifacts, then A/B test whether a skill wrapper improves the experience." },
-      { id: "DOCPR-3216", code: "N6", title: "Adapt the validation kit and scorer to dogen-slim", status: "Triaged", pulse: "#19", type: "Task", priority: "Highest", size: "-", theme: "Validation kit", owner: "Expert", component: "H", dependencies: ["DOCPR-3211", "DOCPR-3212"], related: [], assignee: "Artem Konev", updated: "14 Sep 2026", history: "Created 7 Sep and assigned to active Pulse #19 on 14 Sep." }
-    ].map((item) => ({
-      ...item,
-      jiraKey: item.id,
-      jiraUrl: `https://warthogs.atlassian.net/browse/${item.id}`,
-      window: PULSES.find((pulse) => pulse.key === item.pulse)?.window || "",
-      related: item.related || []
-    }));
+      { key: "DOCPR-2981", code: "A1", title: "A1: Select and record the agentic SDK decision (agnosticism, cost, MCP/Skills fit)", status: "Done", pulse: "#12", type: "Spike", priority: "High", theme: "Foundation", assignee: "Teodora Mihoc", dependencies: [], related: [] },
+      { key: "DOCPR-2982", code: "A2", title: "A2: Build the thin end-to-end walking skeleton and core drafting workflow", status: "Done", pulse: "#12", type: "Story", priority: "High", theme: "Foundation", assignee: "Artem Konev", dependencies: ["DOCPR-2981"], related: [] },
+      { key: "DOCPR-2983", code: "F1", title: "F1: Define the planning-directory schema v0 (steering, plan, provenance, progress)", status: "Done", pulse: "#12", type: "Task", priority: "High", theme: "HITL", assignee: "Artem Konev", dependencies: [], related: [] },
+      { key: "DOCPR-2984", code: "H1", title: "H1: Capture the from-scratch UX and time baseline (AC6 kickoff measurement)", status: "Done", pulse: "#12", type: "Task", priority: "Medium", theme: "Validation", assignee: "Robert Kratky", dependencies: [], related: [] },
+      { key: "DOCPR-2985", code: "H2", title: "H2: Identify and assess greenfield/brownfield candidate projects", status: "Done", pulse: "#12", type: "Task", priority: "Medium", theme: "Validation", assignee: "Charles Odada", dependencies: [], related: [] },
+      { key: "DOCPR-2986", code: "B1", title: "B1: Build the local onboarding scraper v1 (doc-style, glossary, structure artefacts)", status: "Done", pulse: "#13", type: "Story", priority: "High", theme: "Onboarding", assignee: "Anne Chew", dependencies: ["DOCPR-2985"], related: ["DOCPR-3214"] },
+      { key: "DOCPR-2987", code: "B2", title: "B2: Generate the code-to-docs map v1 for a candidate repo", status: "Done", pulse: "#13", type: "Story", priority: "High", theme: "Mapping", assignee: "Charles Odada", dependencies: ["DOCPR-2986", "DOCPR-2985"], related: ["DOCPR-3215"] },
+      { key: "DOCPR-2988", code: "C1", title: "C1: Wire the agentic source-lookup baseline (grep, file-read, traversal)", status: "Done", pulse: "#14", type: "Task", priority: "High", theme: "Source lookup", assignee: "Artem Konev", dependencies: ["DOCPR-2982", "DOCPR-2987"], related: [] },
+      { key: "DOCPR-2989", code: "E1", title: "E1: Build type-aware, intent-steered generation v1 (reference first)", status: "Done", pulse: "#14", type: "Story", priority: "High", theme: "Authoring", assignee: "Artem Konev", dependencies: ["DOCPR-2988", "DOCPR-2983", "DOCPR-2982"], related: [] },
+      { key: "DOCPR-2990", code: "F2", title: "F2: Enforce the HITL steering gate with planning-directory capture", status: "Done", pulse: "#14", type: "Story", priority: "High", theme: "HITL", assignee: "Artem Konev", dependencies: ["DOCPR-2983", "DOCPR-2989"], related: [] },
+      { key: "DOCPR-2991", code: "G1", title: "G1: Define the DOCPR-2822 QA interface contract (optional extension point)", status: "Done", pulse: "#14", type: "Task", priority: "Medium", theme: "QA seam", assignee: "Artem Konev", dependencies: [], related: ["DOCPR-2822"] },
+      { key: "DOCPR-2992", code: "E2", title: "E2: Add the evidence-gated verification step for actionable content", status: "Done", pulse: "#15-16", type: "Story", priority: "High", theme: "Actionable authoring", assignee: "Artem Konev", dependencies: ["DOCPR-2989"], related: [] },
+      { key: "DOCPR-2993", code: "E3", title: "E3: Enable explanation-type drafting driven by recorded steering", status: "Done", pulse: "#15-16", type: "Story", priority: "Medium", theme: "Explanation authoring", assignee: "Artem Konev", dependencies: ["DOCPR-2989", "DOCPR-2990"], related: [] },
+      { key: "DOCPR-2994", code: "C2", title: "Define portable external-source intake and provenance for dogen-slim", status: "In Progress", pulse: "Carried", type: "Story", priority: "High", theme: "External intake", assignee: "Anne Chew", dependencies: ["DOCPR-3211"], related: [], note: "Active outside a Jira sprint. September 14 direction: publish fetch examples on a separate slim-based branch." },
+      { key: "DOCPR-2995", code: "D1", title: "D1: Build layered customization v1 from remote URLs/repos (org guidance + writer prefs)", status: "Done", pulse: "#15-16", type: "Story", priority: "High", theme: "Context", assignee: "Charles Odada", dependencies: ["DOCPR-2989"], related: ["DOCPR-3007"] },
+      { key: "DOCPR-2996", code: "F3", title: "F3: Decompose generated content into atomic, author-legible commits", status: "Done", pulse: "#14", type: "Story", priority: "High", theme: "Commit boundary", assignee: "Artem Konev", dependencies: ["DOCPR-2990", "DOCPR-2989"], related: [] },
+      { key: "DOCPR-2997", code: "S1", title: "Decide whether dogen-slim needs richer retrieval", status: "Triaged", pulse: "Backlog", type: "Spike", priority: "High", theme: "Retrieval", assignee: "Artem Konev", dependencies: ["DOCPR-3002"], related: [] },
+      { key: "DOCPR-2998", code: "D2", title: "Superseded: MCP-served shared guidance", status: "Rejected", pulse: "Rejected", type: "Story", priority: "High", theme: "Shared guidance", assignee: "Artem Konev", dependencies: [], related: [] },
+      { key: "DOCPR-2999", code: "H3", title: "Prove dogen onboarding and mapping on greenfield and brownfield projects", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", theme: "Project proof", assignee: "Anne Chew", dependencies: ["DOCPR-3212", "DOCPR-3214", "DOCPR-3215", "DOCPR-3216"], related: ["DOCPR-3001"] },
+      { key: "DOCPR-3000", code: "H4", title: "Prove dogen-slim on the GitHub/RTD/Sphinx stack", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", theme: "Primary-stack proof", assignee: "Artem Konev", dependencies: ["DOCPR-3212", "DOCPR-3216"], related: ["DOCPR-3001"] },
+      { key: "DOCPR-3001", code: "E4", title: "Harden dogen-slim from observed validation and dogfood gaps", status: "Triaged", pulse: "Backlog", type: "Task", priority: "High", theme: "Hardening", assignee: "Artem Konev", dependencies: ["DOCPR-3216"], related: ["DOCPR-2999", "DOCPR-3000", "DOCPR-3002", "DOCPR-3004", "DOCPR-3005", "DOCPR-3006"] },
+      { key: "DOCPR-3002", code: "H5", title: "Dogfood dogen-slim across the project proof matrix", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", theme: "Dogfooding", assignee: "Unassigned", dependencies: ["DOCPR-3000", "DOCPR-2999"], related: ["DOCPR-3001"] },
+      { key: "DOCPR-3003", code: "H7", title: "Publish dogen-slim onboarding and demonstration material", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", theme: "Communication", assignee: "Robert Kratky", dependencies: [], related: [] },
+      { key: "DOCPR-3004", code: "H6", title: "Run an unaided dogen-slim adoption test with an outside author", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", theme: "Adoption", assignee: "Unassigned", dependencies: ["DOCPR-3003", "DOCPR-2999", "DOCPR-3000"], related: ["DOCPR-3001"] },
+      { key: "DOCPR-3005", code: "F4", title: "Audit dogen-slim HITL steering and provenance", status: "Triaged", pulse: "Backlog", type: "Task", priority: "High", theme: "Audit", assignee: "Unassigned", dependencies: ["DOCPR-3212", "DOCPR-3002"], related: ["DOCPR-3001"] },
+      { key: "DOCPR-3006", code: "H8", title: "Measure dogen-slim UX improvement on matched tasks", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", theme: "UX measurement", assignee: "Unassigned", dependencies: ["DOCPR-2984", "DOCPR-3002", "DOCPR-3004"], related: ["DOCPR-3001"] },
+      { key: "DOCPR-3007", code: "D3", title: "Package onboarding, mapping, and shared guidance as dogen skills", status: "Triaged", pulse: "Backlog", type: "Task", priority: "High", theme: "Packaging", assignee: "Unassigned", dependencies: [], related: ["DOCPR-3213", "DOCPR-3214", "DOCPR-3215", "DOCPR-2995"] },
+      { key: "DOCPR-3008", code: "T1", title: "Close out dogen-slim findings, fixes, and spill", status: "Triaged", pulse: "Backlog", type: "Task", priority: "Medium", theme: "Closeout", assignee: "Unassigned", dependencies: ["DOCPR-3002", "DOCPR-3004", "DOCPR-3006", "DOCPR-3005", "DOCPR-2997", "DOCPR-3001"], related: [] },
+      { key: "DOCPR-3009", code: "", title: "Deferred: Full autonomous Mode B research and planning", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", theme: "Autonomy", assignee: "Unassigned", dependencies: [], related: [] },
+      { key: "DOCPR-3010", code: "", title: "Deferred: Persistent agentic memory", status: "Rejected", pulse: "Rejected", type: "Spike", priority: "Low", theme: "Memory", assignee: "Unassigned", dependencies: [], related: [] },
+      { key: "DOCPR-3011", code: "", title: "Deferred: Semantic or structural context-augmentation build", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", theme: "Augmentation", assignee: "Unassigned", dependencies: [], related: [] },
+      { key: "DOCPR-3012", code: "", title: "Superseded: Broad hands-free adoption rollout", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", theme: "Adoption", assignee: "Unassigned", dependencies: [], related: [] },
+      { key: "DOCPR-3013", code: "", title: "Deferred: Deep DOCPR-2822 integration", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", theme: "QA integration", assignee: "Unassigned", dependencies: [], related: ["DOCPR-2822"] },
+      { key: "DOCPR-3014", code: "", title: "Deferred: Broad documentation-stack and provider agnosticism", status: "Rejected", pulse: "Rejected", type: "Story", priority: "Low", theme: "Agnosticism", assignee: "Unassigned", dependencies: [], related: [] },
+      { key: "DOCPR-3211", code: "N1", title: "Freeze the dogen-slim lifecycle and artifact contract", status: "In Progress", pulse: "#19", type: "Story", priority: "Highest", theme: "Contract", assignee: "Artem Konev", dependencies: [], related: [], note: "Contract first. Robert Kratky reviews before gate code proceeds." },
+      { key: "DOCPR-3212", code: "N2", title: "Harden dogen-slim deterministic gates, provenance, and commit boundaries", status: "In Progress", pulse: "#19", type: "Story", priority: "Highest", theme: "Deterministic runtime", assignee: "Artem Konev", dependencies: ["DOCPR-3211"], related: [], note: "Core Python CLI, skills, recovery, evidence, verification, and acceptance suites." },
+      { key: "DOCPR-3213", code: "N3", title: "Restore dogen-slim CI, quality, installation, and release gates", status: "In Progress", pulse: "#19", type: "Task", priority: "High", theme: "Release", assignee: "Artem Konev", dependencies: ["DOCPR-3211", "DOCPR-3212"], related: ["DOCPR-3007"], note: "Follows N2; supplies install smoke and the release boundary needed by validation." },
+      { key: "DOCPR-3214", code: "N4", title: "Add the agent-native dogen-onboard skill", status: "Triaged", pulse: "#19", type: "Story", priority: "Highest", theme: "Onboarding", assignee: "Charles Odada", dependencies: ["DOCPR-3211"], related: ["DOCPR-3007", "DOCPR-2986"], note: "Optional context preparation; existing trusted context remains a valid alternative." },
+      { key: "DOCPR-3215", code: "N5", title: "Add the agent-native dogen-map skill", status: "Triaged", pulse: "#19", type: "Story", priority: "Highest", theme: "Mapping experiment", assignee: "Charles Odada", dependencies: ["DOCPR-3211", "DOCPR-3214"], related: ["DOCPR-3007", "DOCPR-2987"], note: "Direct-script baseline first; A/B test the skill wrapper before treating it as a dependency." },
+      { key: "DOCPR-3216", code: "N6", title: "Adapt the validation kit and scorer to dogen-slim", status: "Triaged", pulse: "#19", type: "Task", priority: "Highest", theme: "Validation kit", assignee: "Artem Konev", dependencies: ["DOCPR-3211", "DOCPR-3212"], related: [], note: "Runs in parallel; real validation legs follow N3 installation readiness." }
+    ];
 
-    const byId = new Map(ITEMS.map((item) => [item.id, item]));
-    const grid = document.getElementById("timelineGrid");
-    const boardWrap = document.getElementById("boardWrap");
-    const boardScroll = document.getElementById("boardScroll");
-    const linkLayer = document.getElementById("linkLayer");
-    const detailsPanel = document.getElementById("detailsPanel");
-    const statusStrip = document.getElementById("statusStrip");
-    const emptyState = document.getElementById("emptyState");
-    const toolbar = document.getElementById("toolbar");
-    const filters = {
-      search: document.getElementById("searchInput"),
-      type: document.getElementById("typeFilter"),
-      priority: document.getElementById("priorityFilter"),
-      owner: document.getElementById("ownerFilter"),
-      status: document.getElementById("statusFilter"),
-      dependencies: document.getElementById("dependencyToggle")
-    };
-    const clearButton = document.getElementById("clearButton");
-    let selectedId = "";
-    let visibleItems = [];
+    const CURRENT_IN_PROGRESS = ["DOCPR-3211", "DOCPR-3212", "DOCPR-3213"];
+    const CURRENT_QUEUED = ["DOCPR-3214", "DOCPR-3215", "DOCPR-3216"];
+    const HISTORY_PULSES = ["#12", "#13", "#14", "#15-16"];
 
-    function componentKeyFor(item) {
-      return item.component || item.id.slice(0, 1);
-    }
+    const FORECAST_TRACKS = [
+      {
+        index: "1",
+        title: "Core to release",
+        summary: "Complete the contract and deterministic runtime, then finish CI, install, and release readiness.",
+        keys: ["DOCPR-3212", "DOCPR-3213"]
+      },
+      {
+        index: "2",
+        title: "Optional context",
+        summary: "Finish onboarding, then test direct-script mapping against the optional skill-wrapper experience.",
+        keys: ["DOCPR-3214", "DOCPR-3215"]
+      },
+      {
+        index: "3",
+        title: "Validation in parallel",
+        summary: "Prepare the scorer and fixtures now; run real legs when N3 makes installation repeatable.",
+        keys: ["DOCPR-3216", "DOCPR-3213"]
+      }
+    ];
 
-    function componentFor(key) {
-      return COMPONENTS.find((component) => component.key === key) || COMPONENTS[0];
-    }
+    const FOLLOW_ONS = [
+      { title: "Project proof and dogfooding", keys: ["DOCPR-2999", "DOCPR-3000", "DOCPR-3002"] },
+      { title: "Audit, adoption, and UX", keys: ["DOCPR-3005", "DOCPR-3004", "DOCPR-3006"] },
+      { title: "Hardening and closeout", keys: ["DOCPR-3001", "DOCPR-3003", "DOCPR-3008"] }
+    ];
 
-    function slug(value) {
-      return String(value || "none").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    }
+    const byKey = new Map(ITEMS.map((item) => [item.key, item]));
 
     function escapeHtml(value) {
       return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
-    function uniqueValues(field) {
-      return [...new Set(ITEMS.map((item) => item[field] || "Unassigned"))].sort((a, b) => a.localeCompare(b));
+    function statusClass(status) {
+      return `status-${status.toLowerCase().replaceAll(" ", "-")}`;
     }
 
-    function fillSelect(select, label, values) {
-      select.innerHTML = [
-        `<option value="">${escapeHtml(label)}</option>`,
-        ...values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
-      ].join("");
+    function jiraLink(key, label = key, className = "jira-key") {
+      return `<a class="${className}" href="${JIRA_BASE}${escapeHtml(key)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
     }
 
-    function initializeControls() {
-      fillSelect(filters.type, "All types", uniqueValues("type"));
-      fillSelect(filters.priority, "All priorities", uniqueValues("priority"));
-      fillSelect(filters.owner, "All owners", uniqueValues("owner"));
-      fillSelect(filters.status, "All statuses", uniqueValues("status"));
-      document.getElementById("controls").addEventListener("submit", (event) => event.preventDefault());
-      Object.values(filters).forEach((control) => {
-        control.addEventListener("input", () => {
-          selectedId = "";
-          render();
-        });
-      });
-      clearButton.addEventListener("click", () => {
-        filters.search.value = "";
-        filters.type.value = "";
-        filters.priority.value = "";
-        filters.owner.value = "";
-        filters.status.value = "";
-        filters.dependencies.checked = true;
-        selectedId = "";
-        render();
-      });
-    }
-
-    function matchesFilters(item) {
-      const text = [
-        item.id,
-        item.code,
-        item.title,
-        item.status,
-        item.pulse,
-        item.window,
-        item.type,
-        item.priority,
-        item.size,
-        item.theme,
-        item.owner,
-        item.assignee,
-        item.jiraKey,
-        item.dependencies.join(" "),
-        item.related.join(" "),
-        item.history,
-        item.decision,
-        item.repoSignal
-      ].join(" ").toLowerCase();
-      const query = filters.search.value.trim().toLowerCase();
-      return (
-        (!query || text.includes(query)) &&
-        (!filters.type.value || item.type === filters.type.value) &&
-        (!filters.priority.value || item.priority === filters.priority.value) &&
-        (!filters.owner.value || (item.owner || "Unassigned") === filters.owner.value) &&
-        (!filters.status.value || item.status === filters.status.value)
-      );
-    }
-
-    function upstreamIds(id, found = new Set()) {
-      const item = byId.get(id);
-      if (!item) return found;
-      item.dependencies.forEach((dependency) => {
-        if (!found.has(dependency)) {
-          found.add(dependency);
-          upstreamIds(dependency, found);
-        }
-      });
-      return found;
-    }
-
-    function downstreamIds(id, found = new Set()) {
-      ITEMS.forEach((item) => {
-        if (item.dependencies.includes(id) && !found.has(item.id)) {
-          found.add(item.id);
-          downstreamIds(item.id, found);
-        }
-      });
-      return found;
-    }
-
-    function dependencyLabel(item) {
-      if (!item.dependencies.length) return `<span class="chip">No dependencies</span>`;
+    function dependencyMarkup(item) {
+      if (!item.dependencies.length) {
+        return '<span class="dep-chip">No blockers</span>';
+      }
       return item.dependencies
-        .map((dependency) => {
-          const exists = byId.has(dependency);
-          const className = exists ? "chip clickable" : "chip";
-          return `<span class="${className}" data-focus-id="${escapeHtml(dependency)}">${escapeHtml(dependency)}</span>`;
+        .map((key) => {
+          const dependency = byKey.get(key);
+          const label = dependency?.code ? `${dependency.code} / ${key}` : key;
+          return jiraLink(key, label, "dep-chip");
         })
         .join("");
     }
 
-    function relatedLabel(item) {
-      if (!item.related.length) return `<span class="chip">None</span>`;
-      return item.related
-        .map((related) => {
-          if (byId.has(related)) {
-            return `<span class="chip related-chip clickable" data-focus-id="${escapeHtml(related)}">${escapeHtml(related)}</span>`;
-          }
-          return `<a class="chip related-chip jira-link" href="https://warthogs.atlassian.net/browse/${escapeHtml(related)}" target="_blank" rel="noreferrer">${escapeHtml(related)}</a>`;
-        })
-        .join("");
-    }
-
-    function renderCard(item) {
-      const component = componentFor(componentKeyFor(item));
-      const typeClass = `type-${slug(item.type)}`;
-      const priorityClass = `priority-${slug(item.priority)}`;
-      const statusClass = `status-${slug(item.status)}`;
-      const assignee = item.assignee || "Unassigned";
-      const displayId = item.code || item.jiraKey;
-      const idContext = item.code ? `${item.jiraKey} · ${item.pulse}` : item.pulse;
+    function renderNCard(item) {
       return `
-        <button class="work-card ${statusClass}" type="button" data-id="${escapeHtml(item.id)}" style="--component-color: ${component.color}" aria-label="Open ${escapeHtml(item.jiraKey)} details">
-          <span class="card-top">
-            <span class="item-id">
-              ${escapeHtml(displayId)}
-              <span class="mini-pulse">${escapeHtml(idContext)}</span>
-            </span>
-            <span class="badges">
-              <span class="badge ${statusClass}">${escapeHtml(item.status)}</span>
-              <span class="badge ${typeClass}">${escapeHtml(item.type)}</span>
-              <span class="badge ${priorityClass}">${escapeHtml(item.priority)}</span>
-            </span>
-          </span>
-          <span class="card-title">${escapeHtml(item.title)}</span>
-          <span class="card-meta">
-            <span class="meta-pair"><strong>Priority</strong> ${escapeHtml(item.priority)}</span>
-            <span class="meta-pair"><strong>Size</strong> ${escapeHtml(item.size)}</span>
-            <span class="meta-pair"><strong>Work</strong> ${escapeHtml(item.owner || "Unassigned")}</span>
-            <span class="meta-pair"><strong>Assignee</strong> ${escapeHtml(assignee)}</span>
-          </span>
-          <span class="dependency-row">
-            <span class="label">Needs</span>
-            ${dependencyLabel(item)}
-          </span>
-          <span class="card-footer">
-            <span>${escapeHtml(item.theme)}</span>
-            <span class="jira-link">${escapeHtml(item.jiraKey)}</span>
-          </span>
-        </button>
+        <article class="n-card ${statusClass(item.status)}" data-ticket-key="${escapeHtml(item.key)}">
+          <div class="ticket-top">
+            <div class="ticket-id">
+              <span class="ticket-code">${escapeHtml(item.code)}</span>
+              ${jiraLink(item.key)}
+            </div>
+            <span class="status ${statusClass(item.status)}">${escapeHtml(item.status)}</span>
+          </div>
+          <h3>${escapeHtml(item.title)}</h3>
+          <dl class="ticket-facts">
+            <div><dt>Assignee</dt><dd>${escapeHtml(item.assignee)}</dd></div>
+            <div><dt>Work area</dt><dd>${escapeHtml(item.theme)}</dd></div>
+          </dl>
+          <p class="dependency-line"><strong>Depends on</strong><br>${dependencyMarkup(item)}</p>
+          ${item.note ? `<p class="ticket-note"><strong>Why it matters:</strong> ${escapeHtml(item.note)}</p>` : ""}
+        </article>
       `;
     }
 
-    function renderGrid() {
-      const visibleSet = new Set(visibleItems.map((item) => item.id));
-      grid.style.setProperty("--component-count", COMPONENTS.length);
-      const header = [
-        `<div class="corner"><strong>Timeline</strong><span>Scroll down by pulse and across by component.</span></div>`,
-        ...COMPONENTS.map((component) => {
-          const count = visibleItems.filter((item) => componentKeyFor(item) === component.key).length;
-          const dependencyCount = visibleItems.reduce((total, item) => {
-            if (componentKeyFor(item) !== component.key) return total;
-            return total + item.dependencies.filter((dependency) => visibleSet.has(dependency)).length;
-          }, 0);
+    function renderMiniTicket(key) {
+      const item = byKey.get(key);
+      if (!item) return "";
+      const label = item.code ? `${item.code} / ${item.key}` : item.key;
+      return `
+        <a class="mini-ticket" href="${JIRA_BASE}${escapeHtml(item.key)}" target="_blank" rel="noopener noreferrer">
+          <strong>${escapeHtml(label)}</strong>
+          <span>${escapeHtml(item.status)}</span>
+          <span class="mini-title">${escapeHtml(item.title)}</span>
+        </a>
+      `;
+    }
+
+    function renderTicketChip(key) {
+      const item = byKey.get(key);
+      if (!item) return "";
+      const label = item.code || item.key;
+      return `<a class="ticket-chip" href="${JIRA_BASE}${escapeHtml(item.key)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)} <span>${escapeHtml(item.status)}</span></a>`;
+    }
+
+    function renderTicketRow(item) {
+      return `
+        <article class="ticket-row">
+          <div class="ticket-row-id">
+            <strong>${escapeHtml(item.code || item.key)}</strong>
+            ${jiraLink(item.key)}
+          </div>
+          <div class="ticket-row-title">
+            <strong>${escapeHtml(item.title)}</strong>
+            <span>${escapeHtml(item.assignee)} / ${escapeHtml(item.theme)}</span>
+          </div>
+          <span class="status ${statusClass(item.status)}">${escapeHtml(item.status)}</span>
+        </article>
+      `;
+    }
+
+    function renderCurrent() {
+      document.getElementById("current-in-progress").innerHTML = CURRENT_IN_PROGRESS
+        .map((key) => renderNCard(byKey.get(key)))
+        .join("");
+      document.getElementById("current-queued").innerHTML = CURRENT_QUEUED
+        .map((key) => renderNCard(byKey.get(key)))
+        .join("");
+
+      const carried = byKey.get("DOCPR-2994");
+      document.getElementById("carried-work").innerHTML = `
+        <div>
+          <span class="carried-label">Active outside a sprint</span>
+          <h3>${escapeHtml(carried.code)} / ${jiraLink(carried.key, carried.key)}</h3>
+        </div>
+        <div class="carried-copy">
+          <strong>${escapeHtml(carried.title)}</strong><br>
+          ${escapeHtml(carried.assignee)}. ${escapeHtml(carried.note)}
+        </div>
+      `;
+    }
+
+    function renderForecast() {
+      document.getElementById("forecast-tracks").innerHTML = FORECAST_TRACKS
+        .map((track) => `
+          <article class="forecast-track">
+            <span class="track-index">${escapeHtml(track.index)}</span>
+            <h3>${escapeHtml(track.title)}</h3>
+            <p>${escapeHtml(track.summary)}</p>
+            <div class="mini-tickets">${track.keys.map(renderMiniTicket).join("")}</div>
+          </article>
+        `)
+        .join("");
+
+      document.getElementById("follow-on-groups").innerHTML = FOLLOW_ONS
+        .map((group) => `
+          <div class="follow-group">
+            <strong>${escapeHtml(group.title)}</strong>
+            <div class="chip-list">${group.keys.map(renderTicketChip).join("")}</div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function renderBacklog() {
+      const backlog = ITEMS.filter((item) => item.status === "Triaged" && item.pulse === "Backlog");
+      document.getElementById("backlog-list").innerHTML = backlog.map(renderTicketRow).join("");
+    }
+
+    function renderHistory() {
+      document.getElementById("history-groups").innerHTML = HISTORY_PULSES
+        .map((pulse) => {
+          const items = ITEMS.filter((item) => item.status === "Done" && item.pulse === pulse);
           return `
-            <div class="component-header" style="--component-color: ${component.color}">
-              <span class="component-code">${escapeHtml(component.key === "Deferred" ? "Def" : component.key)}</span>
-              <span class="component-name">${escapeHtml(component.name)}</span>
-              <div class="component-meta">${count} visible item${count === 1 ? "" : "s"} / ${dependencyCount} visible dependencies</div>
-            </div>
+            <details>
+              <summary><span>Pulse ${escapeHtml(pulse)} history</span><span>${items.length} tickets</span></summary>
+              <div class="details-body ticket-list">${items.map(renderTicketRow).join("")}</div>
+            </details>
           `;
         })
-      ];
+        .join("");
 
-      const rows = [];
-      PULSES.forEach((pulse) => {
-        const pulseItems = visibleItems.filter((item) => item.pulse === pulse.key);
-        const pulseClass = pulse.active ? "active-pulse" : (pulse.rejected ? "rejected-pulse" : "");
-        rows.push(`
-          <div class="time-cell ${pulseClass}">
-            <div class="pulse"><span class="pulse-index">${escapeHtml(pulse.label)}</span></div>
-            <div class="pulse-window">${escapeHtml(pulse.window)}</div>
-            <div class="pulse-count">${pulseItems.length} visible item${pulseItems.length === 1 ? "" : "s"}</div>
-          </div>
-        `);
-        COMPONENTS.forEach((component) => {
-          const cards = pulseItems
-            .filter((item) => componentKeyFor(item) === component.key)
-            .map(renderCard)
-            .join("");
-          rows.push(`
-            <div class="lane-cell ${pulseClass}" style="--component-color: ${component.color}">
-              <div class="card-stack">${cards || '<div class="empty-lane"></div>'}</div>
-            </div>
-          `);
-        });
-      });
-      grid.innerHTML = [...header, ...rows].join("");
+      const rejected = ITEMS.filter((item) => item.status === "Rejected");
+      document.getElementById("rejected-group").innerHTML = `
+        <details>
+          <summary><span>Rejected, superseded, or deferred</span><span>${rejected.length} tickets</span></summary>
+          <div class="details-body ticket-list">${rejected.map(renderTicketRow).join("")}</div>
+        </details>
+      `;
     }
 
-    function renderStatusStrip() {
-      const dependencyCount = visibleItems.reduce((total, item) => {
-        return total + item.dependencies.filter((dependency) => visibleItems.some((visible) => visible.id === dependency)).length;
-      }, 0);
-      const statusCounts = visibleItems.reduce((counts, item) => {
-        counts[item.status] = (counts[item.status] || 0) + 1;
-        return counts;
+    function renderMetrics() {
+      const counts = ITEMS.reduce((result, item) => {
+        result[item.status] = (result[item.status] || 0) + 1;
+        return result;
       }, {});
-      statusStrip.innerHTML = `
-        <span class="metric">Jira snapshot · 15 Sep 2026</span>
-        <span class="metric">${visibleItems.length} / ${ITEMS.length} items</span>
-        <span class="metric">${dependencyCount} visible dependency lines</span>
-        ${Object.entries(statusCounts).map(([status, count]) => `<span class="metric badge status-${slug(status)}">${escapeHtml(status)}: ${count}</span>`).join("")}
-        <span class="legend-chip" style="color: var(--type-story)"><span class="legend-dot"></span>Story</span>
-        <span class="legend-chip" style="color: var(--type-task)"><span class="legend-dot"></span>Task</span>
-        <span class="legend-chip" style="color: var(--type-spike)"><span class="legend-dot"></span>Spike</span>
-        <span class="legend-chip" style="color: var(--priority-highest)"><span class="legend-dot"></span>Highest priority</span>
-        <span class="legend-chip"><span class="legend-line"></span>Dependency</span>
+      document.getElementById("metrics").innerHTML = `
+        <span class="metric"><strong>${ITEMS.length}</strong> child tickets</span>
+        <span class="metric"><strong>${counts["In Progress"]}</strong> In Progress</span>
+        <span class="metric"><strong>${counts.Triaged}</strong> Triaged</span>
+        <span class="metric"><strong>${counts.Done}</strong> Done</span>
+        <span class="metric"><strong>${counts.Rejected}</strong> Rejected</span>
+        <span class="metric"><strong>6</strong> N tickets in Pulse #19</span>
       `;
     }
 
-    function drawLinks() {
-      const defs = linkLayer.querySelector("defs").outerHTML;
-      linkLayer.innerHTML = defs;
-      const dependencyVisible = filters.dependencies.checked;
-      if (!dependencyVisible || !visibleItems.length) return;
-
-      const gridRect = grid.getBoundingClientRect();
-      linkLayer.setAttribute("width", String(grid.scrollWidth));
-      linkLayer.setAttribute("height", String(grid.scrollHeight));
-      linkLayer.style.width = `${grid.scrollWidth}px`;
-      linkLayer.style.height = `${grid.scrollHeight}px`;
-
-      const visibleIds = new Set(visibleItems.map((item) => item.id));
-      const activeRelated = selectedId
-        ? new Set([...upstreamIds(selectedId), ...downstreamIds(selectedId), selectedId])
-        : new Set();
-
-      visibleItems.forEach((target) => {
-        target.dependencies.forEach((sourceId) => {
-          if (!visibleIds.has(sourceId)) return;
-          const sourceNode = grid.querySelector(`[data-id="${CSS.escape(sourceId)}"]`);
-          const targetNode = grid.querySelector(`[data-id="${CSS.escape(target.id)}"]`);
-          if (!sourceNode || !targetNode) return;
-
-          const sourceRect = sourceNode.getBoundingClientRect();
-          const targetRect = targetNode.getBoundingClientRect();
-          const x1 = sourceRect.left + sourceRect.width / 2 - gridRect.left;
-          const y1 = sourceRect.bottom - gridRect.top;
-          const x2 = targetRect.left + targetRect.width / 2 - gridRect.left;
-          const y2 = targetRect.top - gridRect.top;
-          const gap = y2 - y1;
-          const bend = Math.max(34, Math.min(120, Math.abs(gap) / 2));
-          const controlY1 = y1 + (gap >= 0 ? bend : -bend);
-          const controlY2 = y2 - (gap >= 0 ? bend : -bend);
-          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          path.setAttribute("d", `M ${x1} ${y1} C ${x1} ${controlY1}, ${x2} ${controlY2}, ${x2} ${y2}`);
-          path.setAttribute("class", "link-path");
-          path.setAttribute("data-source", sourceId);
-          path.setAttribute("data-target", target.id);
-          if (selectedId) {
-            const isActive = activeRelated.has(sourceId) && activeRelated.has(target.id);
-            path.classList.toggle("active", isActive);
-            path.classList.toggle("muted", !isActive);
-          }
-          linkLayer.appendChild(path);
-        });
-      });
-    }
-
-    function syncToolbarHeight() {
-      const toolbarHeight = toolbar.getBoundingClientRect().height + statusStrip.getBoundingClientRect().height;
-      document.documentElement.style.setProperty("--toolbar-height", `${toolbarHeight}px`);
-    }
-
-    function applySelectionClasses() {
-      const cards = grid.querySelectorAll(".work-card");
-      const upstream = selectedId ? upstreamIds(selectedId) : new Set();
-      const downstream = selectedId ? downstreamIds(selectedId) : new Set();
-      cards.forEach((card) => {
-        const id = card.dataset.id;
-        const selected = id === selectedId;
-        const related = upstream.has(id) || downstream.has(id);
-        card.classList.toggle("selected", selected);
-        card.classList.toggle("related", related);
-        card.classList.toggle("dimmed", Boolean(selectedId && !selected && !related));
-      });
-    }
-
-    function renderDetails(item) {
-      if (!item) {
-        detailsPanel.classList.remove("open");
-        detailsPanel.setAttribute("aria-hidden", "true");
-        detailsPanel.innerHTML = "";
-        return;
+    function validateData() {
+      const expectedKeys = [];
+      for (let number = 2981; number <= 3014; number += 1) {
+        expectedKeys.push(`DOCPR-${number}`);
       }
-      const upstream = [...upstreamIds(item.id)];
-      const downstream = [...downstreamIds(item.id)];
-      detailsPanel.innerHTML = `
-        <div class="details-head">
-          <div>
-            <h2>${escapeHtml(item.id)} <span class="badge status-${slug(item.status)}">${escapeHtml(item.status)}</span></h2>
-            <p class="details-title">${escapeHtml(item.title)}</p>
-          </div>
-          <button class="icon-button" type="button" id="closeDetails" aria-label="Close details">x</button>
-        </div>
-        <div class="details-grid">
-          <div class="detail-box"><div class="detail-label">Pulse</div><div class="detail-value">${escapeHtml(item.pulse)} / ${escapeHtml(item.window)}</div></div>
-          <div class="detail-box"><div class="detail-label">Component</div><div class="detail-value">${escapeHtml(componentFor(componentKeyFor(item)).name)}</div></div>
-          <div class="detail-box"><div class="detail-label">Type</div><div class="detail-value">${escapeHtml(item.type)}</div></div>
-          <div class="detail-box"><div class="detail-label">Priority / size</div><div class="detail-value">${escapeHtml(item.priority)} / ${escapeHtml(item.size)}</div></div>
-          <div class="detail-box"><div class="detail-label">Work shape</div><div class="detail-value">${escapeHtml(item.owner || "Unassigned")}</div></div>
-          <div class="detail-box"><div class="detail-label">Assignee</div><div class="detail-value">${escapeHtml(item.assignee || "Unassigned")}</div></div>
-          <div class="detail-box"><div class="detail-label">Theme</div><div class="detail-value">${escapeHtml(item.theme)}</div></div>
-          <div class="detail-box"><div class="detail-label">Jira updated</div><div class="detail-value">${escapeHtml(item.updated)}</div></div>
-          <div class="detail-box"><div class="detail-label">Jira</div><div class="detail-value"><a class="jira-link" href="${escapeHtml(item.jiraUrl)}" target="_blank" rel="noreferrer">${escapeHtml(item.jiraKey)}</a></div></div>
-        </div>
-        <div class="details-section">
-          <h3>Direct dependencies</h3>
-          <div class="detail-chip-list">${item.dependencies.length ? dependencyLabel(item) : '<span class="chip">None</span>'}</div>
-        </div>
-        <div class="details-section">
-          <h3>Upstream chain</h3>
-          <div class="detail-chip-list">${upstream.length ? upstream.map((id) => `<span class="chip clickable" data-focus-id="${escapeHtml(id)}">${escapeHtml(id)}</span>`).join("") : '<span class="chip">None</span>'}</div>
-        </div>
-        <div class="details-section">
-          <h3>Downstream chain</h3>
-          <div class="detail-chip-list">${downstream.length ? downstream.map((id) => `<span class="chip clickable" data-focus-id="${escapeHtml(id)}">${escapeHtml(id)}</span>`).join("") : '<span class="chip">None</span>'}</div>
-        </div>
-        <div class="details-section">
-          <h3>Related work</h3>
-          <div class="detail-chip-list">${relatedLabel(item)}</div>
-        </div>
-        ${item.history ? `
-          <div class="details-section">
-            <h3>Timeline history</h3>
-            <p>${escapeHtml(item.history)}</p>
-          </div>
-        ` : ""}
-        ${item.decision ? `
-          <div class="details-section">
-            <h3>Current decision context</h3>
-            <p>${escapeHtml(item.decision)}</p>
-          </div>
-        ` : ""}
-        ${item.repoSignal ? `
-          <div class="details-section">
-            <h3>Repository evidence</h3>
-            <p>${escapeHtml(item.repoSignal)}</p>
-          </div>
-        ` : ""}
-        <div class="details-section">
-          <h3>Data policy</h3>
-          <p>Jira supplies current status, assignment, sprint, and issue links. Meeting and repository notes are shown separately as context and do not override Jira status.</p>
-        </div>
-      `;
-      detailsPanel.classList.add("open");
-      detailsPanel.setAttribute("aria-hidden", "false");
-      document.getElementById("closeDetails").addEventListener("click", () => {
-        selectedId = "";
-        renderDetails(null);
-        applySelectionClasses();
-        drawLinks();
-      });
-      detailsPanel.querySelectorAll("[data-focus-id]").forEach((chip) => {
-        chip.addEventListener("click", (event) => {
-          event.stopPropagation();
-          focusItem(chip.dataset.focusId);
+      for (let number = 3211; number <= 3216; number += 1) {
+        expectedKeys.push(`DOCPR-${number}`);
+      }
+
+      const keys = ITEMS.map((item) => item.key);
+      const uniqueKeys = new Set(keys);
+      const missing = expectedKeys.filter((key) => !uniqueKeys.has(key));
+      const unexpected = keys.filter((key) => !expectedKeys.includes(key));
+      const unresolved = new Set();
+      ITEMS.forEach((item) => {
+        [...item.dependencies, ...item.related].forEach((key) => {
+          if (!byKey.has(key) && key !== "DOCPR-2822") unresolved.add(key);
         });
       });
-    }
+      const nKeys = new Set([...CURRENT_IN_PROGRESS, ...CURRENT_QUEUED]);
+      const counts = ITEMS.reduce((result, item) => {
+        result[item.status] = (result[item.status] || 0) + 1;
+        return result;
+      }, {});
 
-    function focusItem(id) {
-      if (!byId.has(id)) return;
-      selectedId = id;
-      renderDetails(byId.get(id));
-      applySelectionClasses();
-      drawLinks();
-      const node = grid.querySelector(`[data-id="${CSS.escape(id)}"]`);
-      if (node) {
-        node.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+      const valid = ITEMS.length === 40 &&
+        uniqueKeys.size === 40 &&
+        missing.length === 0 &&
+        unexpected.length === 0 &&
+        unresolved.size === 0 &&
+        nKeys.size === 6 &&
+        [...nKeys].every((key) => byKey.get(key)?.pulse === "#19") &&
+        counts.Done === 15 &&
+        counts["In Progress"] === 4 &&
+        counts.Triaged === 14 &&
+        counts.Rejected === 7;
+
+      if (!valid) {
+        throw new Error(
+          `Timeline data integrity failure. Missing: ${missing.join(", ")}; ` +
+          `unexpected: ${unexpected.join(", ")}; unresolved: ${[...unresolved].join(", ")}`
+        );
       }
     }
 
-    function wireGridInteractions() {
-      grid.querySelectorAll(".work-card").forEach((card) => {
-        card.addEventListener("click", () => focusItem(card.dataset.id));
-      });
-      document.querySelectorAll("[data-focus-id]").forEach((chip) => {
-        chip.addEventListener("click", (event) => {
-          event.stopPropagation();
-          focusItem(chip.dataset.focusId);
-        });
-      });
-    }
-
-    function render() {
-      visibleItems = ITEMS.filter(matchesFilters);
-      renderStatusStrip();
-      renderGrid();
-      emptyState.classList.toggle("visible", visibleItems.length === 0);
-      syncToolbarHeight();
-      wireGridInteractions();
-      renderDetails(selectedId ? byId.get(selectedId) : null);
-      applySelectionClasses();
-      requestAnimationFrame(drawLinks);
-    }
-
-    initializeControls();
-    render();
-    window.addEventListener("resize", () => {
-      syncToolbarHeight();
-      requestAnimationFrame(drawLinks);
-    });
-    boardScroll.addEventListener("scroll", () => {
-      if (selectedId) requestAnimationFrame(drawLinks);
-    }, { passive: true });
+    validateData();
+    renderMetrics();
+    renderCurrent();
+    renderForecast();
+    renderBacklog();
+    renderHistory();
   </script>
 </body>
 </html>
