@@ -887,22 +887,17 @@
     }
 
     .legend-note {
-      display: grid;
-      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-      gap: 16px;
       margin: 24px 0 44px;
     }
 
-    .legend,
-    .source-note {
+    .legend {
       padding: 20px;
       border: 1px solid var(--line);
       border-radius: var(--radius-md);
       background: rgba(255, 253, 248, 0.84);
     }
 
-    .legend h2,
-    .source-note h2 {
+    .legend h2 {
       margin-bottom: 10px;
       font-size: 1rem;
     }
@@ -946,18 +941,6 @@
 
     .legend-item .deferred-dot {
       background: var(--red);
-    }
-
-    .source-note p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.8rem;
-    }
-
-    .integrity {
-      margin-top: 10px;
-      color: var(--green);
-      font-weight: 800;
     }
 
     .drawer-backdrop {
@@ -1625,7 +1608,7 @@
       <div class="ticket-list" id="ticket-list"></div>
     </section>
 
-    <section class="legend-note" aria-label="Legend and source notes">
+    <section class="legend-note" aria-label="Architecture legend">
       <div class="legend">
         <h2>Architecture legend</h2>
         <div class="legend-items">
@@ -1635,18 +1618,6 @@
           <span class="legend-item"><span class="external-dot"></span>External boundary</span>
           <span class="legend-item"><span class="deferred-dot"></span>Rejected or deferred</span>
         </div>
-      </div>
-      <div class="source-note">
-        <h2>Sources and authority</h2>
-        <p>
-          Status and assignee data: Jira snapshot of the 40 DOCPR-2845 child issues, as of
-          2026-09-15. Target design: rev8 slim implementation plan. Interface decision: Sep 14
-          regular sync. Local ROADMAP and STATE are implementation evidence only and never
-          override Jira. Git history attributes all 21 commits on the merged slim branch to
-          Robert Kratky; the plan also names him as contract and PR reviewer. Anne Chew and
-          Charles Odada are named only where Jira or the meeting assigns their work.
-        </p>
-        <p class="integrity" id="integrity-note">Checking ticket references...</p>
       </div>
     </section>
   </main>
@@ -1876,7 +1847,6 @@
     const ticketList = document.getElementById("ticket-list");
     const catalogCount = document.getElementById("catalog-count");
     const statusSummary = document.getElementById("status-summary");
-    const integrityNote = document.getElementById("integrity-note");
     const drawer = document.getElementById("detail-drawer");
     const drawerBackdrop = document.getElementById("drawer-backdrop");
     const drawerClose = document.getElementById("drawer-close");
@@ -2142,11 +2112,14 @@
         unresolvedSlots.length === 0 &&
         externalKeySet.has("DOCPR-2822");
 
-      integrityNote.textContent = valid
-        ? "Data integrity: 40/40 child keys loaded; all pinned ticket references resolve."
-        : "Data integrity warning: ticket data or pinned references need review.";
-      integrityNote.style.color = valid ? "var(--green)" : "var(--red)";
-      return valid;
+      if (!valid) {
+        throw new Error(
+          "Ticket data integrity failure. Missing: " + missingChildren.join(", ") +
+          "; unexpected: " + unexpectedChildren.join(", ") +
+          "; unresolved pins: " + unresolvedSlots.join(", ")
+        );
+      }
+      return true;
     }
 
     personFilter.addEventListener("change", () => {
