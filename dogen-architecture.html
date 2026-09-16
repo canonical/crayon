@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Interactive architecture map for the planned dogen v0.2 documentation workflow.">
+  <meta name="description" content="Interactive map of the current dogen slim workflow and planned v0.2 architecture.">
   <title>Dogen v0.2 architecture</title>
   <style>
     :root {
@@ -189,6 +189,600 @@
 
     .snapshot-card.authority {
       border-top: 4px solid var(--blue);
+    }
+
+    .workflow-tldr {
+      margin: 8px 0 34px;
+      padding: clamp(20px, 3vw, 34px);
+      border: 1px solid var(--line-strong);
+      border-top: 6px solid var(--green);
+      border-radius: 26px;
+      background:
+        linear-gradient(145deg, rgba(228, 241, 233, 0.82), rgba(255, 253, 248, 0.97) 34%),
+        var(--paper-strong);
+      box-shadow: var(--shadow);
+    }
+
+    .workflow-tldr code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      overflow-wrap: anywhere;
+    }
+
+    .workflow-tldr-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .workflow-kicker {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--green);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .workflow-tldr h2 {
+      max-width: 900px;
+      margin-bottom: 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 4vw, 3.65rem);
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .workflow-tldr-head p {
+      max-width: 850px;
+      margin-bottom: 0;
+      color: #435149;
+      font-size: 0.96rem;
+    }
+
+    .implementation-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 11px;
+      border: 1px solid #a9c9b8;
+      border-radius: 999px;
+      background: rgba(255, 253, 248, 0.82);
+      color: var(--green);
+      font-size: 0.72rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .implementation-badge::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .workflow-principles {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .workflow-principle {
+      padding: 10px 11px;
+      border: 1px solid rgba(174, 187, 177, 0.75);
+      border-radius: 11px;
+      background: rgba(255, 253, 248, 0.7);
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    .workflow-principle strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--ink);
+      font-size: 0.77rem;
+    }
+
+    .slim-credit {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    .workflow-stack {
+      margin-top: 22px;
+    }
+
+    .workflow-stage {
+      --stage-color: var(--green);
+      position: relative;
+      overflow: hidden;
+      padding: clamp(16px, 2.5vw, 24px);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255, 253, 248, 0.94);
+      box-shadow: 0 10px 30px rgba(25, 35, 31, 0.055);
+    }
+
+    .workflow-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: var(--stage-color);
+    }
+
+    .workflow-stage.write-stage {
+      --stage-color: var(--violet);
+    }
+
+    .workflow-stage.review-stage {
+      --stage-color: var(--blue);
+    }
+
+    .workflow-stage-head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 13px;
+      align-items: start;
+      margin-bottom: 15px;
+    }
+
+    .workflow-step {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--stage-color);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 900;
+    }
+
+    .workflow-stage-head h3 {
+      margin-bottom: 3px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: clamp(1.1rem, 2vw, 1.38rem);
+    }
+
+    .workflow-stage-head p {
+      max-width: 860px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .stage-kind {
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.64rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .workflow-stage-grid {
+      display: grid;
+      grid-template-columns: minmax(230px, 0.72fr) minmax(0, 1.28fr);
+      gap: 13px;
+    }
+
+    .stage-purpose,
+    .script-card,
+    .branch-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fafaf6;
+      padding: 14px;
+    }
+
+    .stage-purpose h4,
+    .branch-card h4 {
+      margin: 0 0 7px;
+      font-size: 0.9rem;
+    }
+
+    .stage-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .stage-list li {
+      position: relative;
+      margin-top: 6px;
+      padding-left: 14px;
+      color: #435149;
+      font-size: 0.76rem;
+    }
+
+    .stage-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 6px;
+      height: 6px;
+      border-radius: 2px;
+      background: var(--stage-color);
+    }
+
+    .script-card {
+      border-left: 4px solid var(--stage-color);
+      background: white;
+    }
+
+    .script-card.compact {
+      margin-top: 11px;
+      border-left-color: var(--violet);
+      padding: 12px;
+    }
+
+    .script-call {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px 10px;
+      align-items: center;
+      margin-bottom: 11px;
+    }
+
+    .script-call span {
+      color: var(--muted);
+      font-size: 0.64rem;
+      font-weight: 900;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .script-call code {
+      color: var(--ink);
+      font-size: 0.9rem;
+      font-weight: 900;
+    }
+
+    .script-facts {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+    }
+
+    .script-facts > div {
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr);
+      gap: 9px;
+      align-items: start;
+      padding-top: 7px;
+      border-top: 1px solid #e4e7e1;
+    }
+
+    .script-facts dt {
+      color: var(--stage-color);
+      font-size: 0.63rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .script-facts dd {
+      margin: 0;
+      color: #435149;
+      font-size: 0.76rem;
+    }
+
+    .script-law {
+      margin-top: 10px;
+      padding: 9px 10px;
+      border-radius: 10px;
+      background: var(--green-soft);
+      color: #1d5943;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .workflow-connector {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 60px;
+      color: var(--muted);
+      font-size: 0.65rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .workflow-connector::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      bottom: 7px;
+      left: 50%;
+      width: 2px;
+      background: var(--line-strong);
+    }
+
+    .workflow-connector::after {
+      content: "";
+      position: absolute;
+      bottom: 5px;
+      left: calc(50% - 5px);
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--line-strong);
+      border-bottom: 2px solid var(--line-strong);
+      transform: rotate(45deg);
+    }
+
+    .workflow-connector span {
+      position: relative;
+      z-index: 1;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--paper);
+    }
+
+    .write-branches {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .branch-card {
+      border-top: 4px solid var(--blue);
+      background: rgba(231, 240, 247, 0.42);
+    }
+
+    .branch-card.actionable {
+      border-top-color: var(--violet);
+      background: rgba(238, 233, 247, 0.46);
+    }
+
+    .branch-label {
+      display: inline-block;
+      margin-bottom: 8px;
+      color: var(--blue);
+      font-size: 0.65rem;
+      font-weight: 900;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .branch-card.actionable .branch-label {
+      color: var(--violet);
+    }
+
+    .branch-card > p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 0.77rem;
+    }
+
+    .branch-card .stage-list {
+      margin-top: 10px;
+    }
+
+    .branch-card:not(.actionable) .stage-list li::before {
+      background: var(--blue);
+    }
+
+    .convergence {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 13px 0;
+      color: var(--muted);
+      font-size: 0.66rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .convergence::before,
+    .convergence::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: var(--line-strong);
+    }
+
+    .exit-codes {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .exit-code {
+      padding: 7px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--paper-strong);
+      color: var(--muted);
+      font-size: 0.66rem;
+    }
+
+    .exit-code strong {
+      display: block;
+      color: var(--ink);
+      font-size: 0.72rem;
+    }
+
+    .review-modes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 11px;
+    }
+
+    .review-mode {
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+
+    .review-mode strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--ink);
+    }
+
+    .dimension-list {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .dimension {
+      padding: 7px 6px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #244f6e;
+      font-size: 0.63rem;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .verdict-fork {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .verdict {
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: white;
+    }
+
+    .verdict.accept {
+      border-left: 5px solid var(--green);
+      background: rgba(228, 241, 233, 0.44);
+    }
+
+    .verdict.rework {
+      border-left: 5px solid var(--violet);
+      background: rgba(238, 233, 247, 0.48);
+    }
+
+    .verdict-label {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 0.63rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .verdict strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.87rem;
+    }
+
+    .verdict p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 0.74rem;
+    }
+
+    .loop-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      color: var(--violet);
+      font-size: 0.68rem;
+      font-weight: 900;
+    }
+
+    .loop-arrow {
+      display: grid;
+      place-items: center;
+      width: 19px;
+      height: 19px;
+      border: 1px solid #b9abd0;
+      border-radius: 50%;
+      background: white;
+      font-size: 0.78rem;
+      line-height: 1;
+    }
+
+    .workflow-foundation {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
+      gap: 18px;
+      align-items: center;
+      margin-top: 16px;
+      padding: 17px;
+      border-radius: 16px;
+      background: var(--ink);
+      color: white;
+    }
+
+    .foundation-name span {
+      display: block;
+      margin-bottom: 3px;
+      color: #b9c8c0;
+      font-size: 0.63rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .foundation-name code {
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .foundation-copy {
+      color: #d4ddd8;
+      font-size: 0.75rem;
+    }
+
+    .foundation-scripts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .foundation-scripts code {
+      padding: 4px 6px;
+      border: 1px solid #52645b;
+      border-radius: 7px;
+      color: white;
+      font-size: 0.62rem;
+    }
+
+    .target-surface-note {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-left: 4px solid var(--amber);
+      border-radius: 0 10px 10px 0;
+      background: var(--amber-soft);
+      color: #67491f;
+      font-size: 0.77rem;
+    }
+
+    .target-surface-note a {
+      font-weight: 900;
+      text-underline-offset: 3px;
     }
 
     .architecture {
@@ -906,6 +1500,16 @@
     }
 
     @media (max-width: 1080px) {
+      .workflow-principles,
+      .dimension-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .workflow-stage-grid,
+      .workflow-foundation {
+        grid-template-columns: 1fr;
+      }
+
       .prep-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -931,9 +1535,28 @@
       .hero-copy,
       .snapshot,
       .author-row,
+      .workflow-tldr-head,
       .engine-header,
       .boundary-grid,
       .legend-note {
+        grid-template-columns: 1fr;
+      }
+
+      .implementation-badge {
+        justify-self: start;
+      }
+
+      .workflow-stage-head {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+
+      .stage-kind {
+        grid-column: 2;
+        justify-self: start;
+      }
+
+      .write-branches,
+      .verdict-fork {
         grid-template-columns: 1fr;
       }
 
@@ -966,6 +1589,26 @@
     }
 
     @media (max-width: 520px) {
+      .workflow-tldr {
+        padding: 16px;
+      }
+
+      .workflow-principles,
+      .dimension-list,
+      .review-modes,
+      .exit-codes {
+        grid-template-columns: 1fr;
+      }
+
+      .workflow-stage {
+        padding: 15px 13px 15px 17px;
+      }
+
+      .script-facts > div {
+        grid-template-columns: 1fr;
+        gap: 3px;
+      }
+
       .prep-grid {
         grid-template-columns: 1fr;
       }
@@ -1025,6 +1668,198 @@
   </header>
 
   <main class="shell">
+    <section class="workflow-tldr" id="current-slim-workflow" aria-labelledby="current-workflow-title">
+      <div class="workflow-tldr-head">
+        <div>
+          <span class="workflow-kicker">TL;DR - current slim workflow in merged main</span>
+          <h2 id="current-workflow-title">Skills guide the work; Bash scripts enforce the durable gates.</h2>
+          <p>
+            The author moves through three conversational skills. Four deterministic scripts
+            enforce signoff, evidence, draft ordering, and review recording in
+            <code>ledger.md</code>. The planned Python replacement appears later on this page.
+          </p>
+        </div>
+        <span class="implementation-badge">Implemented: skills + Bash</span>
+      </div>
+
+      <div class="workflow-principles" aria-label="Current workflow responsibilities">
+        <div class="workflow-principle"><strong>Skills</strong>Guide the conversation and route by intent.</div>
+        <div class="workflow-principle"><strong>Scripts</strong>Validate and record state transitions.</div>
+        <div class="workflow-principle"><strong><code>ledger.md</code></strong>Keeps signoff, steps, generations, steering, and reviews inspectable.</div>
+        <div class="workflow-principle"><strong>Human</strong>Approves the plan, gives the verdict, and owns publishing.</div>
+      </div>
+
+      <div class="workflow-stack">
+        <article class="workflow-stage plan-stage">
+          <header class="workflow-stage-head">
+            <span class="workflow-step">1</span>
+            <div>
+              <h3><code>dogen-plan</code></h3>
+              <p>Runs a one-question-at-a-time Socratic intake, declares one unit, and routes by the author's Diataxis intent.</p>
+            </div>
+            <span class="stage-kind">Skill - conversation</span>
+          </header>
+
+          <div class="workflow-stage-grid">
+            <div class="stage-purpose">
+              <h4>Declares an approved documentation unit</h4>
+              <ul class="stage-list">
+                <li>Grounds in existing docs and optional <code>.dogen/context/</code> first.</li>
+                <li>Draws out the reader problem and audience before mechanical fields.</li>
+                <li>Records audience, sources, targets, intent, and a reader-facing outline in <code>.dogen/units/&lt;id&gt;/unit.md</code>.</li>
+              </ul>
+              <div class="ticket-slot" data-ticket-slot="DOCPR-2982,DOCPR-2990,DOCPR-2993"></div>
+            </div>
+
+            <div class="script-card">
+              <div class="script-call"><span>Calls after explicit approval</span><code>dogen-signoff.sh</code></div>
+              <dl class="script-facts">
+                <div><dt>Why</dt><dd>Freeze the approved plan by recording the SHA-256 of <code>unit.md</code>, plus the current short Git HEAD as provenance.</dd></div>
+                <div><dt>Gate</dt><dd><code>dogen-record-draft.sh</code> later refuses when no signoff exists or the current plan hash no longer matches the signed hash.</dd></div>
+                <div><dt>Durable output</dt><dd>Create <code>.dogen/units/&lt;id&gt;/ledger.md</code> if absent, append the <code>## signoff</code> row, and create one local commit.</dd></div>
+              </dl>
+              <div class="script-law">Iron law: no draft can be recorded before a valid signoff.</div>
+            </div>
+          </div>
+        </article>
+
+        <div class="workflow-connector" aria-hidden="true"><span>signed plan</span></div>
+
+        <article class="workflow-stage write-stage">
+          <header class="workflow-stage-head">
+            <span class="workflow-step">2</span>
+            <div>
+              <h3><code>dogen-write</code></h3>
+              <p>Drafts in the declared format and takes one of two evidence paths before every intent converges on the same recording gate.</p>
+            </div>
+            <span class="stage-kind">Skill - intent branch</span>
+          </header>
+
+          <div class="write-branches">
+            <section class="branch-card">
+              <span class="branch-label">Reference / explanation</span>
+              <h4>Author directly from declared sources</h4>
+              <p>Both directions author from the signed unit and declared sources. No mechanical step-evidence walk applies.</p>
+              <ul class="stage-list">
+                <li>Reference organizes precise facts for lookup.</li>
+                <li>Explanation builds understanding around concepts and relationships.</li>
+                <li>Source fidelity still matters; only the executable-step gate is skipped.</li>
+              </ul>
+            </section>
+
+            <section class="branch-card actionable">
+              <span class="branch-label">Tutorial / how-to</span>
+              <h4>Walk the procedure before authoring</h4>
+              <p>Agree and commit an annotated step plan, then capture each step's actual output before writing from curated evidence.</p>
+              <div class="script-card compact">
+                <div class="script-call"><span>Once per step</span><code>dogen-record-step.sh</code></div>
+                <dl class="script-facts">
+                  <div><dt>Proof</dt><dd>Capture output bytes; record their SHA-256 with exit code, verdict, mode, command, and step-text SHA-256.</dd></div>
+                  <div><dt>Checks</dt><dd>Reject malformed evidence and stale evidence whose step-text hash no longer matches the plan.</dd></div>
+                  <div><dt>Result</dt><dd><code>pass</code>, <code>skipped</code>, and <code>deviated</code> resolve the step. <code>fail</code> is recorded but remains <code>unverified</code>, so drafting stays blocked.</dd></div>
+                  <div><dt>Durable output</dt><dd>Replace the matching <code>## steps</code> row and create one local commit for that step.</dd></div>
+                </dl>
+              </div>
+            </section>
+          </div>
+
+          <div class="convergence">Both branches stage the draft and converge here</div>
+
+          <div class="script-card">
+            <div class="script-call"><span>Final record for every intent</span><code>dogen-record-draft.sh</code></div>
+            <dl class="script-facts">
+              <div><dt>Why</dt><dd>Recheck signoff, enforce actionable evidence, suppress byte-identical redrafts, and preserve WR-03 ledger-before-page ordering.</dd></div>
+              <div><dt>Order</dt><dd>Append the <code>## generations</code> row first, then write <code>docs/&lt;target&gt;</code>, then create one local commit.</dd></div>
+              <div><dt>Durable output</dt><dd>A generation record, the drafted page, and a traceable <code>Dogen-Phase: draft</code> commit.</dd></div>
+            </dl>
+            <div class="exit-codes" aria-label="Draft recording exit codes">
+              <div class="exit-code"><strong>Exit 1</strong>Missing or stale signoff</div>
+              <div class="exit-code"><strong>Exit 2</strong>Invalid input or target</div>
+              <div class="exit-code"><strong>Exit 3</strong>Identical redraft; no-op</div>
+              <div class="exit-code"><strong>Exit 4</strong>Actionable steps absent or unresolved</div>
+            </div>
+          </div>
+          <div class="ticket-slot" data-ticket-slot="DOCPR-2989,DOCPR-2992,DOCPR-3212"></div>
+        </article>
+
+        <div class="workflow-connector" aria-hidden="true"><span>recorded draft</span></div>
+
+        <article class="workflow-stage review-stage">
+          <header class="workflow-stage-head">
+            <span class="workflow-step">3</span>
+            <div>
+              <h3><code>dogen-review</code></h3>
+              <p>Surfaces provenance, optionally performs a structured findings review, and records one explicit human verdict.</p>
+            </div>
+            <span class="stage-kind">Skill - human verdict</span>
+          </header>
+
+          <div class="workflow-stage-grid">
+            <div class="stage-purpose">
+              <div class="review-modes">
+                <div class="review-mode"><strong>Record mode</strong>Present provenance and capture the reviewer's existing verdict.</div>
+                <div class="review-mode"><strong>Review mode</strong>Run the deterministic pre-pass, then assess and verify findings.</div>
+              </div>
+              <div class="dimension-list" aria-label="Five review dimensions">
+                <span class="dimension">Writing approach</span>
+                <span class="dimension">Source fidelity</span>
+                <span class="dimension">Completeness</span>
+                <span class="dimension">Structure fit</span>
+                <span class="dimension">Clarity</span>
+              </div>
+              <p class="slim-credit">Review-mode findings are numbered <code>F-1</code>, <code>F-2</code>, and so on, with must-fix, should-fix, or nit priority.</p>
+              <div class="ticket-slot" data-ticket-slot="DOCPR-2996,DOCPR-3005,DOCPR-3212"></div>
+            </div>
+
+            <div class="script-card">
+              <div class="script-call"><span>Every verdict calls</span><code>dogen-record-review.sh</code></div>
+              <dl class="script-facts">
+                <div><dt>Why</dt><dd>The verdict must live in the durable record, never only in conversation.</dd></div>
+                <div><dt>Accept</dt><dd>Append <code>## reviews</code> with <code>verdict: accept</code> and seal the current page SHA-256.</dd></div>
+                <div><dt>Fix / redraft</dt><dd>Require a note and append it to <code>## steering</code> before recording the verdict in <code>## reviews</code>.</dd></div>
+                <div><dt>Durable output</dt><dd>Every verdict creates one local review commit; accept seals the page, while correction verdicts also preserve their steering note.</dd></div>
+              </dl>
+            </div>
+          </div>
+
+          <div class="verdict-fork" aria-label="Review verdict routing">
+            <div class="verdict accept">
+              <span class="verdict-label">Accept</span>
+              <strong>The dogen loop ends.</strong>
+              <p>The page hash is sealed. A human owns the pull request, merge, and publishing decision.</p>
+            </div>
+            <div class="verdict rework">
+              <span class="verdict-label">Fix or redraft</span>
+              <strong>Return to <code>dogen-write</code>.</strong>
+              <p>The correction is already durable in steering before another drafting pass begins.</p>
+              <span class="loop-back"><span class="loop-arrow" aria-hidden="true">&uarr;</span>Loop back to step 2</span>
+            </div>
+          </div>
+        </article>
+
+        <div class="workflow-foundation">
+          <div class="foundation-name">
+            <span>Shared beneath all four recording scripts</span>
+            <code>dogen-common.sh</code>
+            <div class="foundation-scripts" aria-label="Scripts using dogen-common.sh">
+              <code>signoff</code>
+              <code>record-step</code>
+              <code>record-draft</code>
+              <code>record-review</code>
+            </div>
+          </div>
+          <div class="foundation-copy">
+            Validates unit IDs, targets, and ledger-safe text; computes SHA-256 values; reads,
+            appends, and replaces ledger rows; supplies timestamps, author, and HEAD provenance;
+            and provides the shared local-commit seam. Robert Kratky authored most of the
+            21-commit slim rework behind this foundation; the Python runtime below is still the
+            target.
+            <div class="ticket-slot" data-ticket-slot="DOCPR-2983,DOCPR-2990,DOCPR-2996,DOCPR-3212"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="architecture" aria-labelledby="architecture-title">
       <div class="section-head">
         <div>
@@ -1133,14 +1968,19 @@
 
         <div class="flow-arrow" aria-hidden="true">&darr;</div>
 
-        <p class="flow-label">3. The human-facing control panel</p>
+        <p class="flow-label">3. Planned v0.2 conversational surface</p>
+        <p class="target-surface-note">
+          The three skill names stay stable, while the target replaces the four current Bash
+          recording scripts with one deterministic Python CLI.
+          <a href="#current-slim-workflow">Compare the implemented slim flow above.</a>
+        </p>
         <div class="skill-flow">
           <article class="card skill" data-state="planned">
             <div class="card-topline">
               <h3>dogen-plan</h3>
-              <span class="state-tag planned">Target flow</span>
+              <span class="state-tag planned">Planned surface</span>
             </div>
-            <p>Turn a request into one signed documentation unit: title, intent, audience, targets, sources, and steering.</p>
+            <p>Guide Socratic intake, declare the unit, record signoff through the target CLI, and route by Diataxis intent.</p>
             <ul class="plain-list">
               <li>Infer safe defaults</li>
               <li>Ask only for missing decisions</li>
@@ -1155,9 +1995,9 @@
           <article class="card skill" data-state="planned">
             <div class="card-topline">
               <h3>dogen-write</h3>
-              <span class="state-tag planned">Target flow</span>
+              <span class="state-tag planned">Planned surface</span>
             </div>
-            <p>Read the signed plan and sources, walk actionable steps when required, then stage and draft every target. Robert Kratky's slim rework consolidated the direction-specific flows into this single writing skill.</p>
+            <p>Author reference and explanation from sources, or tutorial and how-to from recorded evidence, while one CLI enforces every lifecycle transition.</p>
             <ul class="plain-list">
               <li>Record evidence, not claims</li>
               <li>Refuse unsteered redrafts</li>
@@ -1171,9 +2011,9 @@
           <article class="card skill" data-state="planned">
             <div class="card-topline">
               <h3>dogen-review</h3>
-              <span class="state-tag planned">Target flow</span>
+              <span class="state-tag planned">Planned surface</span>
             </div>
-            <p>Show provenance and differences, record fixes or author edits, resolve requests, and accept only a current basis.</p>
+            <p>Present provenance and five-dimension findings, then record accept, fix, or redraft through the target CLI. Publishing remains human-owned.</p>
             <ul class="plain-list">
               <li>One explicit verdict</li>
               <li>Recorded request dispositions</li>
@@ -1195,8 +2035,8 @@
               </div>
               <p class="engine-subtitle">
                 A single Python file, standard library only, owns every state transition. Skills
-                guide the conversation; the executable enforces the contract. It replaces the
-                Bash enforcement layer developed mostly by Robert Kratky during the slim rework.
+                guide the conversation; the executable enforces the contract. It consolidates
+                the four-script current baseline summarized in the TL;DR above.
               </p>
               <button class="inspect" type="button" data-component-detail="core">Core details</button>
             </div>
@@ -1491,13 +2331,14 @@
         ]
       },
       skills: {
-        label: "Human-facing skill flow",
+        label: "Planned v0.2 skill surface",
         state: "Target interaction",
-        summary: "dogen-plan, dogen-write, and dogen-review form one routed loop over the deterministic executable.",
+        summary: "dogen-plan, dogen-write, and dogen-review remain the conversational surface while deterministic transitions move into one Python executable.",
         bullets: [
-          "Plan defines and signs a documentation unit.",
-          "Write gathers source material, records evidence, and drafts.",
-          "Review records author edits and verdicts, then either loops or hands off to publication."
+          "Plan keeps Socratic declaration, signoff, and Diataxis routing.",
+          "Write keeps the direct-source and evidence-walk branches.",
+          "Review keeps the five-dimension findings and durable verdict loop.",
+          "The current four-script Bash implementation is documented in the TL;DR above."
         ]
       },
       core: {
