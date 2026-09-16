@@ -41,7 +41,7 @@ valid signoff. You cannot bypass it.
 </quick_start>
 
 <pipeline>
-dogen-plan -> dogen-write -> dogen-review
+dogen-fetch -> dogen-plan -> dogen-write -> dogen-review
 
 This skill is the declare+signoff stage. It consumes the TA's answers and produces
 `unit.md` + `ledger.md` under `.dogen/units/<id>/`; the scripts' commit seam records

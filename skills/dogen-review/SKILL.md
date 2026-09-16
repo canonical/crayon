@@ -32,7 +32,7 @@ dogen-write.
 </quick_start>
 
 <pipeline>
-dogen-plan -> dogen-write -> dogen-review
+dogen-fetch -> dogen-plan -> dogen-write -> dogen-review
                             \-> back to dogen-write (fix/redraft)
 
 This skill is the review stage — the last in the loop. On accept, the loop stops.
