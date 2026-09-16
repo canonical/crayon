@@ -192,8 +192,8 @@
     }
 
     .workflow-tldr {
-      margin: 8px 0 34px;
-      padding: clamp(20px, 3vw, 34px);
+      margin: 8px 0 28px;
+      padding: clamp(18px, 2.2vw, 26px);
       border: 1px solid var(--line-strong);
       border-top: 6px solid var(--green);
       border-radius: 26px;
@@ -211,13 +211,13 @@
     .workflow-tldr-head {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 22px;
+      gap: 16px;
       align-items: start;
     }
 
     .workflow-kicker {
       display: block;
-      margin-bottom: 7px;
+      margin-bottom: 4px;
       color: var(--green);
       font-size: 0.72rem;
       font-weight: 900;
@@ -226,10 +226,10 @@
     }
 
     .workflow-tldr h2 {
-      max-width: 900px;
-      margin-bottom: 8px;
+      max-width: 780px;
+      margin-bottom: 5px;
       font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(2rem, 4vw, 3.65rem);
+      font-size: clamp(1.7rem, 3vw, 2.75rem);
       font-weight: 500;
       letter-spacing: -0.04em;
       line-height: 1;
@@ -239,7 +239,7 @@
       max-width: 850px;
       margin-bottom: 0;
       color: #435149;
-      font-size: 0.96rem;
+      font-size: 0.84rem;
     }
 
     .implementation-badge {
@@ -264,510 +264,240 @@
       background: var(--green);
     }
 
-    .workflow-principles {
+    .tldr-flow {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 18px;
+      grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr);
+      align-items: stretch;
+      margin-top: 14px;
     }
 
-    .workflow-principle {
-      padding: 10px 11px;
-      border: 1px solid rgba(174, 187, 177, 0.75);
-      border-radius: 11px;
-      background: rgba(255, 253, 248, 0.7);
-      color: var(--muted);
-      font-size: 0.75rem;
-    }
-
-    .workflow-principle strong {
-      display: block;
-      margin-bottom: 2px;
-      color: var(--ink);
-      font-size: 0.77rem;
-    }
-
-    .slim-credit {
-      margin: 10px 0 0;
-      color: var(--muted);
-      font-size: 0.75rem;
-    }
-
-    .workflow-stack {
-      margin-top: 22px;
-    }
-
-    .workflow-stage {
+    .tldr-stage {
       --stage-color: var(--green);
-      position: relative;
-      overflow: hidden;
-      padding: clamp(16px, 2.5vw, 24px);
+      min-width: 0;
+      padding: 13px;
       border: 1px solid var(--line);
-      border-radius: 20px;
-      background: rgba(255, 253, 248, 0.94);
-      box-shadow: 0 10px 30px rgba(25, 35, 31, 0.055);
+      border-top: 4px solid var(--stage-color);
+      border-radius: 14px;
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: 0 7px 22px rgba(25, 35, 31, 0.045);
     }
 
-    .workflow-stage::before {
-      content: "";
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 5px;
-      background: var(--stage-color);
-    }
-
-    .workflow-stage.write-stage {
+    .tldr-stage.write {
       --stage-color: var(--violet);
     }
 
-    .workflow-stage.review-stage {
+    .tldr-stage.review {
       --stage-color: var(--blue);
     }
 
-    .workflow-stage-head {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 13px;
+    .tldr-stage-head {
+      display: flex;
+      gap: 9px;
       align-items: start;
-      margin-bottom: 15px;
     }
 
-    .workflow-step {
+    .tldr-number {
       display: grid;
+      flex: 0 0 auto;
       place-items: center;
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
+      width: 27px;
+      height: 27px;
+      border-radius: 8px;
       background: var(--stage-color);
       color: white;
-      font-size: 0.8rem;
+      font-size: 0.69rem;
       font-weight: 900;
     }
 
-    .workflow-stage-head h3 {
-      margin-bottom: 3px;
+    .tldr-stage h3 {
+      margin: 0 0 2px;
       font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-      font-size: clamp(1.1rem, 2vw, 1.38rem);
+      font-size: 0.96rem;
     }
 
-    .workflow-stage-head p {
-      max-width: 860px;
-      margin-bottom: 0;
-      color: var(--muted);
-      font-size: 0.84rem;
-    }
-
-    .stage-kind {
-      padding: 6px 8px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      color: var(--muted);
-      font-size: 0.64rem;
-      font-weight: 900;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-
-    .workflow-stage-grid {
-      display: grid;
-      grid-template-columns: minmax(230px, 0.72fr) minmax(0, 1.28fr);
-      gap: 13px;
-    }
-
-    .stage-purpose,
-    .script-card,
-    .branch-card {
-      min-width: 0;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: #fafaf6;
-      padding: 14px;
-    }
-
-    .stage-purpose h4,
-    .branch-card h4 {
-      margin: 0 0 7px;
-      font-size: 0.9rem;
-    }
-
-    .stage-list {
+    .tldr-stage-head p {
       margin: 0;
+      color: var(--muted);
+      font-size: 0.7rem;
+      line-height: 1.35;
+    }
+
+    .tldr-script {
+      margin-top: 9px;
+      padding: 8px 9px;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--stage-color);
+      border-radius: 9px;
+      background: white;
+    }
+
+    .tldr-script > span {
+      display: block;
+      color: var(--stage-color);
+      font-size: 0.56rem;
+      font-weight: 900;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .tldr-script > code {
+      display: block;
+      margin-top: 1px;
+      font-size: 0.74rem;
+      font-weight: 900;
+    }
+
+    .tldr-script ul {
+      display: grid;
+      gap: 3px;
+      margin: 6px 0 0;
       padding: 0;
       list-style: none;
     }
 
-    .stage-list li {
-      position: relative;
-      margin-top: 6px;
-      padding-left: 14px;
-      color: #435149;
-      font-size: 0.76rem;
-    }
-
-    .stage-list li::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0.55em;
-      width: 6px;
-      height: 6px;
-      border-radius: 2px;
-      background: var(--stage-color);
-    }
-
-    .script-card {
-      border-left: 4px solid var(--stage-color);
-      background: white;
-    }
-
-    .script-card.compact {
-      margin-top: 11px;
-      border-left-color: var(--violet);
-      padding: 12px;
-    }
-
-    .script-call {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px 10px;
-      align-items: center;
-      margin-bottom: 11px;
-    }
-
-    .script-call span {
-      color: var(--muted);
-      font-size: 0.64rem;
-      font-weight: 900;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-    }
-
-    .script-call code {
-      color: var(--ink);
-      font-size: 0.9rem;
-      font-weight: 900;
-    }
-
-    .script-facts {
-      display: grid;
-      gap: 7px;
-      margin: 0;
-    }
-
-    .script-facts > div {
-      display: grid;
-      grid-template-columns: 82px minmax(0, 1fr);
-      gap: 9px;
-      align-items: start;
-      padding-top: 7px;
-      border-top: 1px solid #e4e7e1;
-    }
-
-    .script-facts dt {
-      color: var(--stage-color);
-      font-size: 0.63rem;
-      font-weight: 900;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .script-facts dd {
-      margin: 0;
-      color: #435149;
-      font-size: 0.76rem;
-    }
-
-    .script-law {
-      margin-top: 10px;
-      padding: 9px 10px;
-      border-radius: 10px;
-      background: var(--green-soft);
-      color: #1d5943;
-      font-size: 0.75rem;
-      font-weight: 800;
-    }
-
-    .workflow-connector {
-      position: relative;
-      display: grid;
-      place-items: center;
-      min-height: 60px;
+    .tldr-script li {
       color: var(--muted);
       font-size: 0.65rem;
-      font-weight: 900;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
+      line-height: 1.35;
     }
 
-    .workflow-connector::before {
-      content: "";
-      position: absolute;
-      top: 6px;
-      bottom: 7px;
-      left: 50%;
-      width: 2px;
-      background: var(--line-strong);
+    .tldr-script li strong {
+      color: var(--ink);
     }
 
-    .workflow-connector::after {
-      content: "";
-      position: absolute;
-      bottom: 5px;
-      left: calc(50% - 5px);
-      width: 8px;
-      height: 8px;
-      border-right: 2px solid var(--line-strong);
-      border-bottom: 2px solid var(--line-strong);
-      transform: rotate(45deg);
-    }
-
-    .workflow-connector span {
-      position: relative;
-      z-index: 1;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: var(--paper);
-    }
-
-    .write-branches {
+    .tldr-branches {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
+      gap: 6px;
+      margin-top: 9px;
     }
 
-    .branch-card {
-      border-top: 4px solid var(--blue);
-      background: rgba(231, 240, 247, 0.42);
+    .tldr-branches > div {
+      padding: 7px;
+      border-radius: 8px;
+      background: var(--violet-soft);
     }
 
-    .branch-card.actionable {
-      border-top-color: var(--violet);
-      background: rgba(238, 233, 247, 0.46);
+    .tldr-branches strong,
+    .tldr-branches span {
+      display: block;
     }
 
-    .branch-label {
-      display: inline-block;
-      margin-bottom: 8px;
-      color: var(--blue);
-      font-size: 0.65rem;
-      font-weight: 900;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-    }
-
-    .branch-card.actionable .branch-label {
+    .tldr-branches strong {
       color: var(--violet);
+      font-size: 0.62rem;
     }
 
-    .branch-card > p {
-      margin-bottom: 0;
+    .tldr-branches span {
+      margin-top: 2px;
       color: var(--muted);
-      font-size: 0.77rem;
+      font-size: 0.61rem;
+      line-height: 1.3;
     }
 
-    .branch-card .stage-list {
-      margin-top: 10px;
-    }
-
-    .branch-card:not(.actionable) .stage-list li::before {
-      background: var(--blue);
-    }
-
-    .convergence {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin: 13px 0;
-      color: var(--muted);
-      font-size: 0.66rem;
-      font-weight: 900;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      text-align: center;
-    }
-
-    .convergence::before,
-    .convergence::after {
-      content: "";
-      height: 1px;
-      flex: 1;
-      background: var(--line-strong);
-    }
-
-    .exit-codes {
+    .tldr-gates {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 6px;
-      margin-top: 10px;
+      gap: 3px;
+      margin-top: 6px;
     }
 
-    .exit-code {
-      padding: 7px;
+    .tldr-gates span {
+      padding: 4px;
       border: 1px solid var(--line);
-      border-radius: 9px;
-      background: var(--paper-strong);
+      border-radius: 6px;
       color: var(--muted);
-      font-size: 0.66rem;
-    }
-
-    .exit-code strong {
-      display: block;
-      color: var(--ink);
-      font-size: 0.72rem;
-    }
-
-    .review-modes {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin-bottom: 11px;
-    }
-
-    .review-mode {
-      padding: 9px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: white;
-      color: var(--muted);
-      font-size: 0.72rem;
-    }
-
-    .review-mode strong {
-      display: block;
-      margin-bottom: 2px;
-      color: var(--ink);
-    }
-
-    .dimension-list {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 5px;
-    }
-
-    .dimension {
-      padding: 7px 6px;
-      border-radius: 8px;
-      background: var(--blue-soft);
-      color: #244f6e;
-      font-size: 0.63rem;
-      font-weight: 800;
+      font-size: 0.56rem;
       text-align: center;
     }
 
-    .verdict-fork {
+    .tldr-gates b {
+      color: var(--ink);
+    }
+
+    .tldr-outcomes {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 14px;
-    }
-
-    .verdict {
-      padding: 13px;
-      border: 1px solid var(--line);
-      border-radius: 13px;
-      background: white;
-    }
-
-    .verdict.accept {
-      border-left: 5px solid var(--green);
-      background: rgba(228, 241, 233, 0.44);
-    }
-
-    .verdict.rework {
-      border-left: 5px solid var(--violet);
-      background: rgba(238, 233, 247, 0.48);
-    }
-
-    .verdict-label {
-      display: block;
-      margin-bottom: 3px;
-      color: var(--muted);
-      font-size: 0.63rem;
-      font-weight: 900;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .verdict strong {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 0.87rem;
-    }
-
-    .verdict p {
-      margin-bottom: 0;
-      color: var(--muted);
-      font-size: 0.74rem;
-    }
-
-    .loop-back {
-      display: inline-flex;
-      align-items: center;
       gap: 6px;
-      margin-top: 8px;
-      color: var(--violet);
-      font-size: 0.68rem;
-      font-weight: 900;
+      margin-top: 9px;
     }
 
-    .loop-arrow {
+    .tldr-outcomes > div {
+      padding: 7px;
+      border-radius: 8px;
+    }
+
+    .tldr-outcomes .accept {
+      background: var(--green-soft);
+    }
+
+    .tldr-outcomes .rework {
+      background: var(--violet-soft);
+    }
+
+    .tldr-outcomes strong,
+    .tldr-outcomes span {
+      display: block;
+    }
+
+    .tldr-outcomes strong {
+      font-size: 0.64rem;
+    }
+
+    .tldr-outcomes span {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 0.6rem;
+      line-height: 1.3;
+    }
+
+    .tldr-arrow {
       display: grid;
       place-items: center;
-      width: 19px;
-      height: 19px;
-      border: 1px solid #b9abd0;
-      border-radius: 50%;
-      background: white;
-      font-size: 0.78rem;
-      line-height: 1;
+      color: var(--line-strong);
+      font-size: 1.3rem;
+      font-weight: 900;
     }
 
-    .workflow-foundation {
+    .tldr-foundation {
       display: grid;
-      grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
-      gap: 18px;
+      grid-template-columns: minmax(190px, 0.55fr) minmax(0, 1.25fr) minmax(220px, 0.7fr);
+      gap: 12px;
       align-items: center;
-      margin-top: 16px;
-      padding: 17px;
-      border-radius: 16px;
+      margin-top: 11px;
+      padding: 10px 12px;
+      border-radius: 11px;
       background: var(--ink);
       color: white;
     }
 
-    .foundation-name span {
+    .tldr-foundation > div:first-child span {
       display: block;
-      margin-bottom: 3px;
       color: #b9c8c0;
-      font-size: 0.63rem;
+      font-size: 0.55rem;
       font-weight: 900;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
     }
 
-    .foundation-name code {
-      font-size: 1rem;
+    .tldr-foundation > div:first-child code {
+      font-size: 0.83rem;
       font-weight: 900;
     }
 
-    .foundation-copy {
+    .tldr-foundation p {
+      margin: 0;
       color: #d4ddd8;
-      font-size: 0.75rem;
+      font-size: 0.64rem;
+      line-height: 1.35;
     }
 
-    .foundation-scripts {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 8px;
+    .tldr-foundation .ticket-slot {
+      margin-top: 0;
     }
 
-    .foundation-scripts code {
-      padding: 4px 6px;
-      border: 1px solid #52645b;
-      border-radius: 7px;
-      color: white;
-      font-size: 0.62rem;
+    .tldr-foundation .ticket-key {
+      color: var(--ink);
     }
 
     .target-surface-note {
@@ -1500,16 +1230,6 @@
     }
 
     @media (max-width: 1080px) {
-      .workflow-principles,
-      .dimension-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .workflow-stage-grid,
-      .workflow-foundation {
-        grid-template-columns: 1fr;
-      }
-
       .prep-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -1546,18 +1266,17 @@
         justify-self: start;
       }
 
-      .workflow-stage-head {
-        grid-template-columns: auto minmax(0, 1fr);
-      }
-
-      .stage-kind {
-        grid-column: 2;
-        justify-self: start;
-      }
-
-      .write-branches,
-      .verdict-fork {
+      .tldr-flow {
         grid-template-columns: 1fr;
+      }
+
+      .tldr-foundation {
+        grid-template-columns: 1fr;
+      }
+
+      .tldr-arrow {
+        min-height: 28px;
+        transform: rotate(90deg);
       }
 
       .skill-flow {
@@ -1593,20 +1312,9 @@
         padding: 16px;
       }
 
-      .workflow-principles,
-      .dimension-list,
-      .review-modes,
-      .exit-codes {
+      .tldr-branches,
+      .tldr-outcomes {
         grid-template-columns: 1fr;
-      }
-
-      .workflow-stage {
-        padding: 15px 13px 15px 17px;
-      }
-
-      .script-facts > div {
-        grid-template-columns: 1fr;
-        gap: 3px;
       }
 
       .prep-grid {
@@ -1672,191 +1380,98 @@
       <div class="workflow-tldr-head">
         <div>
           <span class="workflow-kicker">TL;DR - current slim workflow in merged main</span>
-          <h2 id="current-workflow-title">Skills guide the work; Bash scripts enforce the durable gates.</h2>
+          <h2 id="current-workflow-title">Plan, write, review. Scripts make it durable.</h2>
           <p>
-            The author moves through three conversational skills. Four deterministic scripts
-            enforce signoff, evidence, draft ordering, and review recording in
-            <code>ledger.md</code>. The planned Python replacement appears later on this page.
+            Skills guide the conversation; scripts enforce transitions; <code>ledger.md</code>
+            remembers; the human publishes.
           </p>
         </div>
         <span class="implementation-badge">Implemented: skills + Bash</span>
       </div>
 
-      <div class="workflow-principles" aria-label="Current workflow responsibilities">
-        <div class="workflow-principle"><strong>Skills</strong>Guide the conversation and route by intent.</div>
-        <div class="workflow-principle"><strong>Scripts</strong>Validate and record state transitions.</div>
-        <div class="workflow-principle"><strong><code>ledger.md</code></strong>Keeps signoff, steps, generations, steering, and reviews inspectable.</div>
-        <div class="workflow-principle"><strong>Human</strong>Approves the plan, gives the verdict, and owns publishing.</div>
-      </div>
-
-      <div class="workflow-stack">
-        <article class="workflow-stage plan-stage">
-          <header class="workflow-stage-head">
-            <span class="workflow-step">1</span>
+      <div class="tldr-flow">
+        <article class="tldr-stage plan">
+          <header class="tldr-stage-head">
+            <span class="tldr-number">1</span>
             <div>
               <h3><code>dogen-plan</code></h3>
-              <p>Runs a one-question-at-a-time Socratic intake, declares one unit, and routes by the author's Diataxis intent.</p>
+              <p>Socratic intake declares the unit and Diataxis route.</p>
             </div>
-            <span class="stage-kind">Skill - conversation</span>
           </header>
-
-          <div class="workflow-stage-grid">
-            <div class="stage-purpose">
-              <h4>Declares an approved documentation unit</h4>
-              <ul class="stage-list">
-                <li>Grounds in existing docs and optional <code>.dogen/context/</code> first.</li>
-                <li>Draws out the reader problem and audience before mechanical fields.</li>
-                <li>Records audience, sources, targets, intent, and a reader-facing outline in <code>.dogen/units/&lt;id&gt;/unit.md</code>.</li>
-              </ul>
-              <div class="ticket-slot" data-ticket-slot="DOCPR-2982,DOCPR-2990,DOCPR-2993"></div>
-            </div>
-
-            <div class="script-card">
-              <div class="script-call"><span>Calls after explicit approval</span><code>dogen-signoff.sh</code></div>
-              <dl class="script-facts">
-                <div><dt>Why</dt><dd>Freeze the approved plan by recording the SHA-256 of <code>unit.md</code>, plus the current short Git HEAD as provenance.</dd></div>
-                <div><dt>Gate</dt><dd><code>dogen-record-draft.sh</code> later refuses when no signoff exists or the current plan hash no longer matches the signed hash.</dd></div>
-                <div><dt>Durable output</dt><dd>Create <code>.dogen/units/&lt;id&gt;/ledger.md</code> if absent, append the <code>## signoff</code> row, and create one local commit.</dd></div>
-              </dl>
-              <div class="script-law">Iron law: no draft can be recorded before a valid signoff.</div>
-            </div>
+          <div class="tldr-script">
+            <span>Calls</span>
+            <code>dogen-signoff.sh</code>
+            <ul>
+              <li><strong>Freeze:</strong> <code>unit.md</code> SHA-256 + current HEAD.</li>
+              <li><strong>Gate:</strong> no draft without a current signoff.</li>
+              <li><strong>Write:</strong> <code>## signoff</code> in <code>ledger.md</code> + commit.</li>
+            </ul>
           </div>
+          <div class="ticket-slot" data-ticket-slot="DOCPR-2982,DOCPR-2990"></div>
         </article>
 
-        <div class="workflow-connector" aria-hidden="true"><span>signed plan</span></div>
+        <div class="tldr-arrow" aria-hidden="true">&rarr;</div>
 
-        <article class="workflow-stage write-stage">
-          <header class="workflow-stage-head">
-            <span class="workflow-step">2</span>
+        <article class="tldr-stage write">
+          <header class="tldr-stage-head">
+            <span class="tldr-number">2</span>
             <div>
               <h3><code>dogen-write</code></h3>
-              <p>Drafts in the declared format and takes one of two evidence paths before every intent converges on the same recording gate.</p>
+              <p>Intent selects the evidence path; every path records one draft.</p>
             </div>
-            <span class="stage-kind">Skill - intent branch</span>
           </header>
-
-          <div class="write-branches">
-            <section class="branch-card">
-              <span class="branch-label">Reference / explanation</span>
-              <h4>Author directly from declared sources</h4>
-              <p>Both directions author from the signed unit and declared sources. No mechanical step-evidence walk applies.</p>
-              <ul class="stage-list">
-                <li>Reference organizes precise facts for lookup.</li>
-                <li>Explanation builds understanding around concepts and relationships.</li>
-                <li>Source fidelity still matters; only the executable-step gate is skipped.</li>
-              </ul>
-            </section>
-
-            <section class="branch-card actionable">
-              <span class="branch-label">Tutorial / how-to</span>
-              <h4>Walk the procedure before authoring</h4>
-              <p>Agree and commit an annotated step plan, then capture each step's actual output before writing from curated evidence.</p>
-              <div class="script-card compact">
-                <div class="script-call"><span>Once per step</span><code>dogen-record-step.sh</code></div>
-                <dl class="script-facts">
-                  <div><dt>Proof</dt><dd>Capture output bytes; record their SHA-256 with exit code, verdict, mode, command, and step-text SHA-256.</dd></div>
-                  <div><dt>Checks</dt><dd>Reject malformed evidence and stale evidence whose step-text hash no longer matches the plan.</dd></div>
-                  <div><dt>Result</dt><dd><code>pass</code>, <code>skipped</code>, and <code>deviated</code> resolve the step. <code>fail</code> is recorded but remains <code>unverified</code>, so drafting stays blocked.</dd></div>
-                  <div><dt>Durable output</dt><dd>Replace the matching <code>## steps</code> row and create one local commit for that step.</dd></div>
-                </dl>
-              </div>
-            </section>
+          <div class="tldr-branches">
+            <div><strong>Reference / explanation</strong><span>Draft from declared sources.</span></div>
+            <div><strong>Tutorial / how-to</strong><span><code>dogen-record-step.sh</code>: output SHA + exit + step hash; <code>fail</code> blocks.</span></div>
           </div>
-
-          <div class="convergence">Both branches stage the draft and converge here</div>
-
-          <div class="script-card">
-            <div class="script-call"><span>Final record for every intent</span><code>dogen-record-draft.sh</code></div>
-            <dl class="script-facts">
-              <div><dt>Why</dt><dd>Recheck signoff, enforce actionable evidence, suppress byte-identical redrafts, and preserve WR-03 ledger-before-page ordering.</dd></div>
-              <div><dt>Order</dt><dd>Append the <code>## generations</code> row first, then write <code>docs/&lt;target&gt;</code>, then create one local commit.</dd></div>
-              <div><dt>Durable output</dt><dd>A generation record, the drafted page, and a traceable <code>Dogen-Phase: draft</code> commit.</dd></div>
-            </dl>
-            <div class="exit-codes" aria-label="Draft recording exit codes">
-              <div class="exit-code"><strong>Exit 1</strong>Missing or stale signoff</div>
-              <div class="exit-code"><strong>Exit 2</strong>Invalid input or target</div>
-              <div class="exit-code"><strong>Exit 3</strong>Identical redraft; no-op</div>
-              <div class="exit-code"><strong>Exit 4</strong>Actionable steps absent or unresolved</div>
+          <div class="tldr-script">
+            <span>Converges on</span>
+            <code>dogen-record-draft.sh</code>
+            <ul>
+              <li><strong>Order:</strong> <code>## generations</code> before <code>docs/&lt;target&gt;</code> + commit.</li>
+            </ul>
+            <div class="tldr-gates" aria-label="Draft recording exit codes">
+              <span><b>1</b> signoff</span>
+              <span><b>2</b> input</span>
+              <span><b>3</b> identical</span>
+              <span><b>4</b> steps</span>
             </div>
           </div>
           <div class="ticket-slot" data-ticket-slot="DOCPR-2989,DOCPR-2992,DOCPR-3212"></div>
         </article>
 
-        <div class="workflow-connector" aria-hidden="true"><span>recorded draft</span></div>
+        <div class="tldr-arrow" aria-hidden="true">&rarr;</div>
 
-        <article class="workflow-stage review-stage">
-          <header class="workflow-stage-head">
-            <span class="workflow-step">3</span>
+        <article class="tldr-stage review">
+          <header class="tldr-stage-head">
+            <span class="tldr-number">3</span>
             <div>
               <h3><code>dogen-review</code></h3>
-              <p>Surfaces provenance, optionally performs a structured findings review, and records one explicit human verdict.</p>
+              <p><code>record</code> or <code>review</code>: approach · fidelity · completeness · fit · clarity.</p>
             </div>
-            <span class="stage-kind">Skill - human verdict</span>
           </header>
-
-          <div class="workflow-stage-grid">
-            <div class="stage-purpose">
-              <div class="review-modes">
-                <div class="review-mode"><strong>Record mode</strong>Present provenance and capture the reviewer's existing verdict.</div>
-                <div class="review-mode"><strong>Review mode</strong>Run the deterministic pre-pass, then assess and verify findings.</div>
-              </div>
-              <div class="dimension-list" aria-label="Five review dimensions">
-                <span class="dimension">Writing approach</span>
-                <span class="dimension">Source fidelity</span>
-                <span class="dimension">Completeness</span>
-                <span class="dimension">Structure fit</span>
-                <span class="dimension">Clarity</span>
-              </div>
-              <p class="slim-credit">Review-mode findings are numbered <code>F-1</code>, <code>F-2</code>, and so on, with must-fix, should-fix, or nit priority.</p>
-              <div class="ticket-slot" data-ticket-slot="DOCPR-2996,DOCPR-3005,DOCPR-3212"></div>
-            </div>
-
-            <div class="script-card">
-              <div class="script-call"><span>Every verdict calls</span><code>dogen-record-review.sh</code></div>
-              <dl class="script-facts">
-                <div><dt>Why</dt><dd>The verdict must live in the durable record, never only in conversation.</dd></div>
-                <div><dt>Accept</dt><dd>Append <code>## reviews</code> with <code>verdict: accept</code> and seal the current page SHA-256.</dd></div>
-                <div><dt>Fix / redraft</dt><dd>Require a note and append it to <code>## steering</code> before recording the verdict in <code>## reviews</code>.</dd></div>
-                <div><dt>Durable output</dt><dd>Every verdict creates one local review commit; accept seals the page, while correction verdicts also preserve their steering note.</dd></div>
-              </dl>
-            </div>
+          <div class="tldr-script">
+            <span>Every verdict calls</span>
+            <code>dogen-record-review.sh</code>
+            <ul>
+              <li><strong>Record:</strong> <code>## reviews</code> + one commit; findings use F-N and must/should/nit.</li>
+            </ul>
           </div>
-
-          <div class="verdict-fork" aria-label="Review verdict routing">
-            <div class="verdict accept">
-              <span class="verdict-label">Accept</span>
-              <strong>The dogen loop ends.</strong>
-              <p>The page hash is sealed. A human owns the pull request, merge, and publishing decision.</p>
-            </div>
-            <div class="verdict rework">
-              <span class="verdict-label">Fix or redraft</span>
-              <strong>Return to <code>dogen-write</code>.</strong>
-              <p>The correction is already durable in steering before another drafting pass begins.</p>
-              <span class="loop-back"><span class="loop-arrow" aria-hidden="true">&uarr;</span>Loop back to step 2</span>
-            </div>
+          <div class="tldr-outcomes">
+            <div class="accept"><strong>Accept</strong><span>Seal page SHA-256; human publishes.</span></div>
+            <div class="rework"><strong>Fix / redraft</strong><span>Write steering + review + commit; loop to <code>dogen-write</code>.</span></div>
           </div>
+          <div class="ticket-slot" data-ticket-slot="DOCPR-2996,DOCPR-3005"></div>
         </article>
+      </div>
 
-        <div class="workflow-foundation">
-          <div class="foundation-name">
-            <span>Shared beneath all four recording scripts</span>
-            <code>dogen-common.sh</code>
-            <div class="foundation-scripts" aria-label="Scripts using dogen-common.sh">
-              <code>signoff</code>
-              <code>record-step</code>
-              <code>record-draft</code>
-              <code>record-review</code>
-            </div>
-          </div>
-          <div class="foundation-copy">
-            Validates unit IDs, targets, and ledger-safe text; computes SHA-256 values; reads,
-            appends, and replaces ledger rows; supplies timestamps, author, and HEAD provenance;
-            and provides the shared local-commit seam. Robert Kratky authored most of the
-            21-commit slim rework behind this foundation; the Python runtime below is still the
-            target.
-            <div class="ticket-slot" data-ticket-slot="DOCPR-2983,DOCPR-2990,DOCPR-2996,DOCPR-3212"></div>
-          </div>
+      <div class="tldr-foundation">
+        <div>
+          <span>Shared under all four scripts</span>
+          <code>dogen-common.sh</code>
         </div>
+        <p>Validation · SHA-256 · ledger operations · timestamps/author/HEAD · commit seam. Robert Kratky led most of the 21-commit slim rework.</p>
+        <div class="ticket-slot" data-ticket-slot="DOCPR-2983,DOCPR-3212"></div>
       </div>
     </section>
 
