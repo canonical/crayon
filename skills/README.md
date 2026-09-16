@@ -21,8 +21,12 @@ at runtime is physically embedded in each `SKILL.md`.
 ## Pipeline
 
 ```
-dogen-plan -> dogen-write -> dogen-review
+dogen-fetch -> dogen-plan -> dogen-write -> dogen-review
 ```
+
+- **dogen-fetch** — prepares reusable style, terminology, structure, and
+  provenance artefacts from explicitly declared sources. Use it when the target
+  repository does not already have reliable `.dogen/context/` files.
 
 - **dogen-plan** — grounds itself in the repo's prior art (`.dogen/context/`
   artifacts and existing docs conventions), runs the Socratic intake, writes
