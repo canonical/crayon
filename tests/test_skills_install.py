@@ -32,19 +32,19 @@ def target(tmp_path, monkeypatch):
     return tmp_path
 
 
-def test_canonical_family_includes_the_full_skill_quartet():
-    """The four skills are the canonical family — dogen-record included (13-04).
+def test_canonical_family_includes_the_full_skill_set():
+    """The canonical family includes each supported skill.
 
-    dogen-record was authored as the fourth writer; if the installer's family
-    omits it, `/dogen-record` is undiscoverable in a staged harness while
-    `skills status` still reads green (record sits outside the drift set). Guard
-    the membership directly so a future family edit can't silently drop it.
+    If the installer's family omits a skill, it is undiscoverable in a staged
+    harness while `skills status` still reads green. Guard the membership
+    directly so a future family edit can't silently drop one.
     """
     assert set(_FAMILY_ENTRIES) == {
         "dogen-plan",
         "dogen-write",
         "dogen-review",
         "dogen-record",
+        "dogen-fetch",
         "README.md",
         "LICENSE",
     }
@@ -79,6 +79,7 @@ def test_install_stages_byte_identical_copies(target):
         "dogen-write/SKILL.md",
         "dogen-review/SKILL.md",
         "dogen-record/SKILL.md",
+        "dogen-fetch/SKILL.md",
         "dogen-write/references/provider-branch.md",
         "dogen-record/references/episode-taxonomy.md",
         "README.md",

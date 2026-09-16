@@ -41,6 +41,7 @@ _FAMILY_ENTRIES = (
     "dogen-write",
     "dogen-review",
     "dogen-record",
+    "dogen-fetch",
     "README.md",
     "LICENSE",
 )
