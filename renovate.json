@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "enabledManagers": [
+    "github-actions"
+  ],
+  "packageRules": [
+    {
+      "description": "Group the workflow's first-party action pins into one PR so a bump is reviewed as a single supply-chain change rather than one PR per job.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github actions",
+      "pinDigests": true
+    }
+  ]
+}
