@@ -120,9 +120,10 @@ the one unforgivable reviewer move.
 
 **Grounding rule (v1):** source-fidelity and completeness findings are verified
 against the sources themselves, not against the draft's internal coherence. Open
-the declared `sources` and the generation's `context_origins` (their commit stamps
-say which version the writer read) and check the draft's concrete claims there
-before flagging or clearing them.
+the signoff's declared `sources[]` and the generation's `origins[]` — what the
+drafter actually read — and check the draft's concrete claims there before flagging
+or clearing them. Only `sources[]` carries `{path, commit|null}`; `origins[]` is a
+list of plain strings, so it tells you WHAT was read and never which version.
 
 ### source-fidelity
 
@@ -130,10 +131,10 @@ Is every concrete claim grounded, does the narrative stay out of the code, and d
 it stay out of the writer's own research process? Three failure modes:
 
 - **Ungrounded claims.** Every concrete claim (behaviour, defaults, types, bounds,
-  signatures, availability) must be traceable to the declared `sources` or to what
-  the agent actually read (`context_origins`). Flag claims grounded in no recorded
-  read; flag the **declared-vs-read gap** when `context_origins` is thinner than
-  `sources` (the draft may assert more than was read).
+  signatures, availability) must be traceable to the signoff's declared `sources[]`
+  or to what the drafter actually read (the generation's `origins[]`). Flag claims
+  grounded in no recorded read; flag the **declared-vs-read gap** when `origins[]`
+  is thinner than `sources[]` (the draft may assert more than was read).
 - **Code-dumping.** The narrative must not surface implementation source — bodies,
   private internals, verbatim struct or function source — that violates the
   code-in-narrative boundary. Apply the **same per-block boundary the writer is
@@ -168,7 +169,7 @@ Two mandatory checks inside this dimension:
   inventory to a `:ref:` and self-accepted — an outline that says "per-module
   attribute inventory" is a read-and-materialize contract, `[must-fix]` if the
   page ships only a link).
-- **Read-but-not-converted.** Compare the generation's `context_origins`
+- **Read-but-not-converted.** Compare the generation's `origins[]`
   against the page: an inventory the writer READ (e.g. every per-module
   reference file) but did not surface is the highest-value completeness flag —
   the grounding existed and the page still omitted it.
@@ -222,9 +223,9 @@ Two mandatory checks inside this dimension:
   is not there is a `[must-fix]` — this is the build-breaking class of defect
   no review may wave through. Check the placement itself too: if the docs tree
   holds a waiting toctree slot or sibling convention this page's
-  location/basename/extension diverges from, flag it (the fix is a plan
-  edit on `unit.md` + `dogen-signoff.sh --force`, then a re-draft at the
-  corrected path).
+  location/basename/extension diverges from, flag it (the fix is
+  `dogen unit edit <id> --target <corrected path> --re-sign`, then a re-draft at
+  the corrected path).
 - **Cross-page consistency (multi-file units only).** A unit spanning several
   pages is one change: terminology stays consistent across the set, links
   between the set's pages resolve both ways, and a change applied to one page's
@@ -302,9 +303,9 @@ the verdict note can say "apply F-2 and F-5" instead of restating the findings.
 A clean dimension shows `(none)`; a skipped one shows
 `(not assessed — <reason>)`. The block is presented in the conversation and is
 **never written to a file** — only the reviewer's resulting verdict is recorded,
-via `dogen-record-review.sh --verdict --note` (a fix/redraft verdict's note lands
-in the steering stream automatically, so a finding phrased as a steering
-correction is directly actionable).
+via `dogen review <id> --verdict <accept|fix|redraft> --note "…"` (a fix/redraft
+verdict's note lands in the steering stream automatically, so a finding phrased as
+a steering correction is directly actionable).
 
 ```
 ## dogen-review — findings: <unit-id>

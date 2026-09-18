@@ -23,8 +23,12 @@ out of the prose and recorded as gaps — never hedged into the page.
 
 ## Markup
 
-Author in the unit's `format` (from the target extension in `unit.md`): MyST
-for `.md` targets (`colon_fence` directives, `{ref}` cross-references),
-reStructuredText for `.rst` targets (3-space directive indentation, one heading
-ladder). Never write one markup into the other's extension. A single top-level
-title, a clean heading ladder, no skipped levels — matching the page's siblings.
+Author in the markup the signed target's extension implies: MyST for `.md`
+targets (`colon_fence` directives, `{ref}` cross-references), reStructuredText
+for `.rst` targets (3-space directive indentation, one heading ladder). The
+markup is read off the extension and is not a field — `unit.md`'s frontmatter is
+the fixed six `title` / `intent` / `audience` / `targets` / `sources` / `notes`,
+and any other key is refused `unit_invalid`.
+
+Never write one markup into the other's extension. A single top-level title, a
+clean heading ladder, no skipped levels — matching the page's siblings.

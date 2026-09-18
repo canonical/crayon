@@ -61,7 +61,8 @@ enters prose, it passes three checks:
 
 1. **Locate.** Pin the claim to a `file:line` in the source you read — before
    writing the prose, not after. Cite locations in the context report
-   (`.dogen/staging/<id>/report.md`), never in the published page.
+   (`.dogen/staging/<id>/report.json`, which `draft --report` reads as JSON),
+   never in the published page.
 2. **Confirm.** Read the current source at that location — not the plan prose,
    not a prior draft's wording, not the page's own existing text. The source is
    the only truth; everything else is a pointer to it.
