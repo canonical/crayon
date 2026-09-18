@@ -10,3 +10,7 @@
 # a blanket .dogen/ ignore would hide the committed .dogen/units/<id>/unit.md.
 .dogen/staging/
 .worktrees/
+
+# Python bytecode from the stdlib test runners (no package, no venv).
+__pycache__/
+*.pyc
