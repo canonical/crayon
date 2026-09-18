@@ -77,7 +77,15 @@ Terminology settles during the dialogue, and catching it there is cheap:
   'attachment' — which should the page use?" — and use the settled term from
   then on.
 - When a genuinely new term crystallizes, fold it into the outline and the
-  synthesized steering note so the drafter inherits it (this skill writes the
-  note into `unit.md`'s `steering_notes`; the note is the carrier).
+  synthesized steering note so the drafter inherits it. This skill holds no
+  write-capable tool, so the note reaches disk through the tool: `--notes` on
+  `dogen unit new` / `dogen unit edit` for a plan-level note, and
+  `dogen steer <id> --note "…" --origin plan` for a note recorded after the plan
+  is signed off. `--origin` defaults to `manual`, so the flag is not optional
+  here: the origin is the field `dogen summary` reports and the review skill is
+  told to read, and a synthesized note filed as `manual` says a human asked for
+  it. `unit.md`'s frontmatter is the fixed subset
+  `title` / `intent` / `audience` / `targets` / `sources` / `notes` — any other
+  key is refused `unit_invalid`.
 - Sparingly: only terms the unit's page actually leans on. The glossary artifact
   itself is maintained outside this loop.

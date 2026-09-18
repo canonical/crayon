@@ -1,34 +1,58 @@
 ---
 name: dogen-review
-description: Surfaces a drafted documentation unit for human review through two modes — record (compact provenance summary + verdict) and review (additionally runs a five-dimension findings review). Records the verdict by calling dogen-record-review.sh for all verdicts — accept seals page SHA-256 hashes, fix/redraft append the note to the steering stream. Never edits the draft. Use when a TA is ready to review a drafted unit.
+description: Surfaces a drafted documentation unit for human review through two modes — record (compact provenance summary + verdict) and review (additionally runs a five-dimension findings review). Records the verdict by calling dogen review for all verdicts — accept seals the recorded basis, fix and redraft record the note as steering. Never edits the draft. Use when a TA is ready to review a drafted unit.
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
+metadata:
+  dogen_contract: 1
+  dogen_min_tool: "0.2.0"
 ---
-
 <objective>
 Surface a drafted documentation unit for human review and record the reviewer's
 structured verdict — without changing anything the reviewer will publish. The
-reviewer chooses one of two modes: **record** (present a compact provenance summary,
-then record the verdict) or **review** (additionally run a five-dimension findings
-review grounded by re-checking claims against the recorded sources).
+reviewer chooses one of two modes: **record** (present the provenance summary the
+tool produced, then record the verdict) or **review** (additionally run a
+five-dimension findings review grounded by re-checking claims against the recorded
+sources).
 
-- **accept** → call `dogen-record-review.sh --verdict accept` to seal the exact
-  draft text (SHA-256 lands on the review record).
-- **fix** / **redraft** → call `dogen-record-review.sh --verdict fix|redraft --note`
-  to append the note to the ledger's steering stream and record the verdict, so
-  it durably steers the next drafting pass.
-
-This skill never edits the draft or runs a build. Regeneration routes back to
-dogen-write.
+This skill also owns two flows that are not verdicts: adopting bytes the record has
+never seen, and presenting recovery after an interrupted run. It never edits a page,
+never edits the plan, and never runs a build. Regeneration routes back to dogen-write.
 </objective>
 
+<opening>
+The first two commands of every session — before anything is proposed, written or
+recorded:
+
+```bash
+dogen version --json                 # {"tool": "<version>", "contract": 1}
+dogen show "$UNIT_ID" --json         # the derived state, and the routed `next`
+```
+
+Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
+`tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
+never parsed, ordered or rounded as versions. Any other answer means the pairing is
+supported; continue.
+
+The second call is the only source of direction.
+**Read `references/routing.md` and act on the row for the emitted `next`.**
+Never re-derive the state, never infer the next step from the conversation, and never
+decide direction yourself: the tool derives state from the record, and the routing
+table is a rendering of the same preconditions the tool enforces. A refusal carries
+its own `next` in the JSON line — route on that the same way.
+
+**The ledger is never hand-edited.** `.dogen/units/<id>/ledger.jsonl` is hash-chained:
+every line's `prev` is the digest of the previous line's bytes, so editing any line
+invalidates every line after it. Nothing in this skill ever opens it in an editor —
+not to fix a typo, not to append a note, not to correct a field.
+</opening>
+
 <quick_start>
-1. Confirm the target unit id. Read `unit.md` and `ledger.md` for the plan,
-   signoff, generations, and steering.
-2. Read the drafted page(s) under `docs/`.
+1. Run the two-verb opening above and act on the routing row for `next`.
+2. Read the shown state and the drafted page(s) under `docs/`.
 3. Select the review mode with `AskUserQuestion`: **record** or **review**.
-4. Present the provenance summary (both modes).
+4. Present the provenance summary (both modes), quoting the tool's own lines.
 5. In review mode, run the five-dimension findings review.
-6. Elicit the verdict. Call `dogen-record-review.sh --verdict <accept|fix|redraft>` for all verdicts. Then STOP.
+6. Elicit the verdict, record it with `dogen review`, then STOP.
 </quick_start>
 
 <pipeline>
@@ -36,24 +60,31 @@ dogen-plan -> dogen-write -> dogen-review
                             \-> back to dogen-write (fix/redraft)
 
 This skill is the review stage — the last in the loop. On accept, the loop stops.
-On fix/redraft, it routes back to the draft-stage skill with the note landed in
-the steering stream.
+On fix/redraft, it routes back to the draft-stage skill with the note recorded as
+the author's request.
 </pipeline>
 
 <workflow>
-<step_1 name="Resolve the drafted unit">
-Confirm the unit id. Read:
+<step_1 name="Read the unit state from the tool">
+The opening already answered this. Read what it printed rather than re-deriving any
+of it:
 
-- `.dogen/units/<id>/unit.md` — for `sphinx_target`, `extra_targets`, `sources`,
-  intent, audience, and format.
-- `.dogen/units/<id>/ledger.md` — the `## signoff` section, the `## steering`
-  stream, and the `## generations` section (the latest generation's `file` and
-  `sha256` tell you what was drafted).
-- The drafted page(s) under `docs/<target>` (and `docs/<extra_target>` for a
-  multi-file unit).
+```bash
+dogen show "$UNIT_ID"
+dogen summary "$UNIT_ID"
+```
 
-If no generation exists in the ledger, the unit was never drafted — route the TA
-back to dogen-write.
+`dogen show` reports the title and intent, the state with a qualifier whenever the
+state alone would mislead, each basis path as `current` / `drifted` / `missing`,
+signed targets not yet in the basis, paths no longer signed, every recorded request
+since the last generation with its disposition, the step tally, reviewer edits, and
+`Next:`. `dogen summary` is the paste-ready version — `--md` for PR text.
+
+Then read the drafted page(s) under `docs/` at the paths the plan declares.
+
+If the routed `next` is `draft` or `walk`, the unit has no generation to review —
+route the TA to dogen-write. Every other token has a row in `references/routing.md`;
+act on it.
 </step_1>
 
 <step_2 name="Select the review mode">
@@ -69,23 +100,67 @@ reviewer asks.
 </step_2>
 
 <step_3 name="Present the provenance summary">
-Load `references/provenance-summary.md` now for the exact field map.
+Load `references/provenance-summary.md` now for the field map.
 
-Both modes. Present a human-readable summary from the ledger:
+Both modes. **The summary is the tool's, not yours.** Quote the lines
+`dogen summary <id>` printed — title, files changed, intent and audience, the
+recorded requests with their dispositions, reviewer edits with their notes, known
+gaps, the steps tally with its skipped reasons, model and origin, and the two-part
+provenance line for the record and the page. Add reading of your own around them if
+it helps the reviewer, but never recompose a number and never turn "recorded
+requests" into "steering applied": a recorded request is a request, and whether it
+was applied is not something the record knows.
 
-- **Signoff:** author, when, and whether the plan is still the one signed off
-  (compare `plan_hash` in the signoff row to `sha256(unit.md)` — if they differ,
-  the plan is stale).
-- **Latest generation:** model, provider, mode, the page file and its SHA-256.
-- **Declared sources vs. actually read:** the declared sources from `unit.md`
-  vs. the generation's recorded `context_origins` (if the context report exists
-  under `.dogen/staging/<id>/report.md`).
-- **Recorded gaps:** any gaps the writer declared.
-- **Steering stream:** N entries; quote the latest.
-- **Progress state:** derived from the ledger (pending → drafted → reviewed).
+Two lines deserve to be read out rather than skimmed past:
+
+- **`plan_stale`** — `unit.md` moved after the signature that froze it. The reviewer
+  may want the plan re-approved before judging the draft.
+- **a `drifted` or `missing` page** — the bytes under review are not the bytes the
+  record cites. Handle that before the verdict, in step 4 or step 6.
 </step_3>
 
-<step_4 name="Perform the findings review (review mode only)">
+<step_4 name="On record_edits — adopt the bytes before judging them">
+`record_edits` means a basis page on disk no longer holds the recorded bytes
+(`page_drift`), or a signed target already holds bytes the record has never seen
+(`target_exists` — a brownfield page). Neither is an error, and neither is undone.
+
+Show the reviewer what changed:
+
+```bash
+dogen show "$UNIT_ID" --diff
+```
+
+Then ask, in these words: "record these as your edits?" On yes:
+
+```bash
+dogen edits "$UNIT_ID" --note "<the author's own words>"
+```
+
+The note is the author's, in the author's phrasing. When a formatting hook produced
+the bytes rather than a person, say so in the note and name the hook — a formatter is
+not a reviewer, and the record should not read as though one reviewed the page.
+
+The recorded set is the complete basis: every path of the previous basis with its
+recorded digest unless it changed, plus any adopted target, minus paths that are
+missing from disk and no longer signed targets. An absent page alone is not an edit
+— `no_edits` (exit 3) says exactly that.
+
+**`dogen edits` records the bytes onto the record; it does not commit the page.**
+After it runs, `dogen show` reports that path `current`, because the recorded digest
+and the bytes on disk agree — that is all `current` has ever meant, and it is not a
+claim that the page is committed. A page the author hand-edited in the worktree can
+read `current` and still be listed by `git status`; say which of the two you are
+looking at rather than letting `current` answer both questions. dogen commits the
+ledger and the files its own verbs write; a page the author edited by hand is the
+author's to commit. Ask them to commit the target page before you record an accept,
+so the accepted basis and the committed tree name the same bytes. If they would
+rather not commit it yet, say so plainly and do not accept.
+
+**When the reviewer already authorised the accept in this same turn, accept in this
+same turn.** Adopting the bytes does not entitle you to ask for the verdict twice.
+</step_4>
+
+<step_5 name="Perform the findings review (review mode only)">
 Load `references/review-rubric.md` now for the pre-pass, dimensions, priority tags,
 and verification discipline.
 
@@ -116,96 +191,286 @@ Number findings `F-1`, `F-2`, … Each carries: page path, the verbatim offendin
 text, a concrete suggested action, and a priority tag (must-fix / should-fix / nit).
 Ground source-fidelity and completeness by re-checking claims against the recorded
 sources.
-</step_4>
+</step_5>
 
-<step_5 name="Elicit the verdict and record it">
+<step_6 name="Elicit the verdict and record it">
 Elicit the reviewer's verdict. In review mode, recommend a verdict from the tally:
 any must-fix → fix (or redraft if pervasive); should-fix only → TA's call; clean →
 accept. The recommendation is a default, never a decision.
 
-**On accept** — call the deterministic script:
+**On fix / redraft:**
 
 ```bash
-dogen-record-review.sh "$UNIT_ID" --verdict accept --note "$REVIEWER_NOTE"
+dogen review "$UNIT_ID" --verdict fix --note "<the reviewer's own words>"
 ```
 
-The script computes the SHA-256 of the drafted page, writes a review row with
-`verdict: accept` and `sealed: <path>:<hash>` to the ledger, and commits with
-`Dogen-Phase: review` / `Dogen-Verdict: accept` trailers. Exit 1 if no generation
-exists; exit 0 on success.
+The note is exactly what the next drafting pass will read — concrete, actionable, in
+the reviewer's own words, citing findings by number (`F-2`, `F-5`). It is recorded as
+the author's request, so the next draft is no longer refused `unsteered`.
 
-**On fix / redraft** — call the deterministic script (it appends the note to the
-steering stream AND records the verdict in one atomic commit):
+**On accept:**
 
 ```bash
-dogen-record-review.sh "$UNIT_ID" --verdict fix --note "$REVIEWER_NOTE"
+dogen review "$UNIT_ID" --verdict accept --note "<the reviewer's own words>"
 ```
 
-The script appends a steering row (origin: review) and a review row to the ledger,
-then commits with `Dogen-Phase: review` / `Dogen-Verdict: fix` trailers. The note
-is exactly what the next drafting pass will read — concrete, actionable, in the
-reviewer's own words. Findings are cited by number (`F-2`, `F-5`).
+Accept seals the basis, and it has two preconditions this skill must be ready for.
+
+**`unapplied_steering` (exit 1)** — requests are still pending, and the refusal's
+`detail` lists their seqs. Nothing is closed by silence: put each seq to the reviewer
+one at a time, take one disposition for each, and re-run accept carrying all of them:
+
+```bash
+dogen review "$UNIT_ID" --verdict accept --note "<note>" --resolves 7,9 --withdraw 12 "<why it no longer applies>"
+```
+
+`--resolves` is the reviewer's recorded judgment that a request is satisfied — not
+proof that any bytes changed. `--withdraw` repeats, once per seq, and every
+withdrawal carries a non-empty reason. The two sets are disjoint and every listed seq
+must be pending; otherwise the tool refuses `bad_resolution` (exit 2). Never guess a
+disposition, and never resolve a seq the reviewer did not speak to.
+
+**`target_missing` (exit 1)** — a signed target is absent from disk, or is not in the
+basis. See step 7. **Accept is never issued a second time.**
 
 Then route:
 - **accept** → `Next: accepted — the publishing commit is yours.` The loop stops.
-- **fix** → `Next: /dogen-write — apply the recorded fix.`
-- **redraft** → `Next: /dogen-write — re-draft against the recorded steering.`
+- **fix** → `Next: /dogen-write — apply the recorded request.`
+- **redraft** → `Next: /dogen-write — re-draft against the recorded request.`
 
-Quote the `git: committed <sha7>` line (on accept) or note that the steering note
-was appended (on fix/redraft). Then STOP: no build, no publish, no edits to the draft.
-</step_5>
+Echo the verb's own response line verbatim. Then STOP: no build, no publish, no edits
+to the page.
+</step_6>
+
+<step_7 name="On target_missing — the author's call, not yours">
+The signed plan still lists a target that is not on disk. **Accept is never issued a
+second time.** Re-running it cannot change the outcome, because absence is a
+precondition the tool checks, not a transient failure — a second accept only records
+that the skill did not read the first refusal.
+
+There are exactly two paths out, and they produce different documentation:
+
+**The author has already asked, explicitly, for the page to be restored.** Then the
+direction is given; record it with `dogen steer` without reconfirming it, and route
+to dogen-write. The next draft writes every signed target, which restores the page,
+and the accept follows after that.
+
+```bash
+dogen steer "$UNIT_ID" --note "<the author's own restoration request>"
+```
+
+**The author has said nothing about the missing page.** Then ask — once, plainly, and
+without proposing an answer: the signed plan still includes that target, so the
+unit cannot be accepted while it is absent.
+**Restore the page, or amend the plan so that path is no longer a target?**
+
+- **restore** → record that request as above, route to dogen-write, then accept.
+- **amend** → route to dogen-plan, which re-signs the plan without that target. The
+  old page is then reported once as an orphan and kept on disk; the generation that
+  answered the old plan becomes `generation_stale` and cannot be accepted, so the
+  unit drafts again before its verdict.
+
+Record only the direction the author actually gave.
+**The skill invents no steering note.**
+A restoration request the author never made is a line in a tamper-evident record
+saying they did, and no amount of helpfulness is worth that.
+</step_7>
+
+<step_8 name="On uncommitted_tail — resume, dry run first">
+An interrupted run left lines the commit never covered. Classify before writing:
+
+```bash
+dogen resume "$UNIT_ID" --dry-run
+```
+
+The dry run writes nothing — not the record, not a page, not the index — and prints
+how it classifies each file: `done` (disk already holds the intended bytes),
+`recoverable` (disk holds the pre-operation bytes, or the file is absent as
+recorded), or `unexpected` (anything else). Show that classification to the author,
+then read it yourself before issuing anything else. If any file is `unexpected`,
+use step 9's choices. Only with no `unexpected` files:
+
+```bash
+dogen resume "$UNIT_ID"
+```
+
+Never issue two write verbs without reading the first one's response. The dry run is
+how this skill reads the situation before it changes it.
+</step_8>
+
+<step_9 name="On resume_ambiguous — exactly two choices">
+Some file on disk differs from what the interrupted run intended. The tool wrote
+nothing: both the pages and the record are byte-identical to how it found them.
+
+Show its stdout verbatim, including the per-file diffs — that is what the author
+needs to decide, and paraphrasing a diff loses the decision. Then offer exactly the
+two choices the contract names, and no third:
+
+- **discard the on-disk bytes**, taking the interrupted run's intended bytes:
+  `dogen resume <id> --overwrite`
+- **keep the on-disk bytes**, recorded as a reviewer edit:
+  `dogen resume <id> --adopt --note "<the author's note>"`
+
+Recording a new adoption with `--adopt --note` is allowed only when the interrupted
+batch ends in a generation or a reviewer edit that is not itself an adoption,
+at least one file is `unexpected`,
+and every unexpected file's rewritten bytes are still on disk. A deleted file has
+no bytes to adopt: offer the discard alone there. A batch whose last event is
+already an adoption (`hook: true`) instead offers `dogen resume <id> --adopt`
+to retain the on-disk bytes while completing the existing batch, or
+`dogen resume <id> --overwrite` to restore that adoption's saved bytes.
+Repeated `--adopt` appends no event and records no note, so do not offer it as a
+way to amend the note. Bare `dogen resume <id>` is available only with no
+`unexpected` files. After completion, follow the emitted route: if the bytes still
+differ from that adoption, `record_edits` calls for `dogen edits <id> --note "…"`;
+a hook may have restored them during the commit. Remove what is refusing the
+transition before retrying either choice. For other ineligible batches the tool refuses
+`adopt_unsupported` (exit 6), and the two honest answers are the discard above
+or the printed expert recipe. Do not invent a
+third path, and do not recommend one of the two — the choice is whose bytes to keep,
+which is the author's to make.
+</step_9>
+
+<step_10 name="On recovery_unsupported — the honest limit">
+Show the tool's printed findings verbatim, then branch on the refusal's `detail`.
+There are two different situations under this one reason and they have opposite
+answers.
+
+**`detail: commit_rejected` or `detail: stage_rejected` — the write path's own limit.**
+Here the batch *was* appended to the record and the files *were* placed; git failed to
+complete the transition twice, so the tool stopped rather than re-placing the same bytes
+for a third attempt. Do not tell the author their work was not written — the ledger tail
+and the placed pages are both on disk, and `.dogen/staging/<id>/pending` holds the
+recovery material. Show the git output the refusal carries: that is what is actually
+blocking the transition.
+
+Read the two details apart, because they have different causes and you will be naming
+the wrong thing to look at otherwise. **`commit_rejected`** means git ran the commit and
+something refused it — a pre-commit hook, most often — so the answer is the repository's
+commit hooks. **`stage_rejected`** means `git add` failed and the commit was never
+attempted, so **no hook ran**: it is `git status` and the index — an unstageable
+pathspec, an index that will not lock, a read-only `.git`. The refusal's `step` field
+names which git call failed. Either way, offer the escape that always works: remove what
+is refusing the transition, then inspect `dogen resume <id> --dry-run`.
+Use bare `dogen resume <id>` only with no `unexpected` files; otherwise use step 9.
+
+`dogen resume <id> --adopt --note "<the author's note>"` is the OTHER escape, and it
+is conditional — offer it only when every condition below holds.
+`--adopt` needs the batch's last event to be a generation or a reviewer edit that
+is not itself an adoption (any other batch refuses `adopt_unsupported`, exit 6;
+an already-adopted batch uses step 9's repeated `--adopt` or `--overwrite`
+completion, with no new event or note), and it needs the hook to have
+REWRITTEN the placed bytes (with nothing on disk `unexpected` it degrades to a plain
+resume, which re-places the same bytes and is refused again, reproducing the very
+refusal it was offered against). Read `dogen resume <id> --dry-run` first: if no path
+is listed `unexpected`, `--adopt` is not the answer here. Every unexpected file's
+current bytes must also be still on disk; a deleted file refuses `adopt_unsupported`,
+so offer `--overwrite` after removing any remaining blocker. Do not route on the emitted
+`next` either: it is `resume`, and a plain `dogen resume <id>` under an unchanged hook
+is the command that just refused.
+
+**Every other detail — `no_material`, `material_invalid`, `event_invalid`,
+`tail_unknown` — is stage a's.** There the tool could not derive a safe completion and
+it wrote nothing; it printed what it found — the uncommitted seqs, which paths it could
+account for and against which bytes, and which it could not.
+Show the tool's printed findings verbatim and stop. Offer no
+recipe of your own. Restore nothing from git history; committed history is not the
+same as the pre-operation bytes. Suggest nothing that would commit the tail: a line
+the tool refused to derive state from does not become true by being committed. The
+unit directory and every file the tool could not attribute are preserved exactly as
+they are, which is the point of stopping.
+
+The stage-a answer also holds for `ledger_corrupt`, `ledger_diverged`,
+`ledger_version_unsupported` and `unit_id_mismatch`: show the refusal verbatim, and
+stop.
+</step_10>
 </workflow>
 
 <edge_cases>
-**Unit never drafted:** no `## generations` section in the ledger. Route the TA to
-dogen-write to draft first.
+**Unit never drafted:** the routed `next` is `draft` or `walk`. Route the TA to
+dogen-write.
 
-**Reviewer wants text edits:** this skill does not edit the draft. The ONE correction
-path is: record the change as a fix/redraft verdict (it lands in the steering stream)
-and route to dogen-write. Never offer to edit the draft yourself.
+**Reviewer wants text edits:** this skill does not edit the page. There are two
+recorded paths: the reviewer edits the file themselves and the change is adopted with
+`dogen edits <id> --note "…"`, or the change is recorded as a fix/redraft verdict and
+dogen-write applies it. Never offer to edit the page yourself.
 
-**Duplicate accept:** if the latest review row already has `verdict: accept` for the
-same draft hash, the unit is already sealed. Surface and stop — nothing needs redoing.
+**`already_accepted` (exit 3):** the unit is already sealed on this basis with
+nothing recorded since. Report the existing seq and commit from the payload — a
+second accept is neither needed nor recorded.
 
-**Reopening an accepted unit:** record a `fix` or `redraft` verdict (append to the
-`## reviews` section and the `## steering` section). This reopens the unit; the next
-dogen-write pass re-drafts it.
+**Reopening an accepted unit:** record a `fix` or `redraft` verdict. That reopens the
+unit, and the next dogen-write pass re-drafts it.
 
-**The plan is stale (unit.md changed after signoff):** surface it in the provenance
-summary. The reviewer may want the plan re-approved before judging the draft.
+**`generation_stale` (exit 1):** the plan was amended after the generation under
+review, so that draft answers a plan that has moved. It cannot be accepted; the unit
+drafts again first. Say that plainly rather than presenting it as an error.
+
+**A hook changed a page after the commit:** the transition stands — it is committed —
+and the tool warns and re-derives, routing to `record_edits`. Adopt the bytes with a
+note naming the hook.
+
+**`busy` (exit 5) or `git_busy` (exit 5):** another run holds the lock, or a git
+process is mid-write. Nothing was written. Wait, then re-run the same command
+unchanged.
 </edge_cases>
 
 <constraints>
 <must>
+- Open every session with `dogen version --json` then `dogen show <id> --json`, and
+  act on the routing row for `next`.
 - Offer two selectable modes up front (record vs review) via `AskUserQuestion`.
-- Present a human-readable provenance summary in both modes before eliciting a verdict.
+- Present the provenance summary in both modes, quoting the tool's own lines.
 - In review mode, run the deterministic pre-pass before judgment, then present
-  five-dimension findings grouped by dimension, numbered F-N with must-fix/should-fix/nit tags.
+  five-dimension findings grouped by dimension, numbered F-N with
+  must-fix/should-fix/nit tags.
 - Ground source-fidelity/completeness findings by re-checking claims against the
   recorded sources.
-- On accept, call `dogen-record-review.sh --verdict accept` to seal page hashes and commit.
-- On fix/redraft, call `dogen-record-review.sh --verdict fix|redraft --note` to append the
-  note to the steering stream and record the verdict in one atomic commit.
-- Record the verdict BEFORE any re-draft is invoked.
+- On `record_edits`, show `dogen show <id> --diff`, ask "record these as your edits?",
+  and record with `dogen edits <id> --note "…"` in the author's words.
+- Accept in the same turn when the reviewer already authorised it.
+- On `unapplied_steering`, take one disposition per pending seq and pass them as
+  `--resolves` and `--withdraw <seq> "<reason>"`, disjoint, every withdrawal with a
+  reason.
+- On `target_missing`, ask the restore-or-amend question unless the author has
+  already given the direction, and record only what they said.
+- On `uncommitted_tail`, run the dry run and read its classification before the real
+  resume.
+- On `resume_ambiguous`, show the tool's stdout verbatim and offer exactly the two
+  contract choices.
+- On `recovery_unsupported`, show the printed findings verbatim and stop.
 </must>
 <must_not>
 - Never run `sphinx-build` or any build — building and publishing are out of scope.
-- Never edit the draft, `unit.md`, or any file under `docs/` — the correction path
-  is a recorded verdict plus a drafting pass.
-- Never suggest the reviewer hand-edit the draft as the way to apply findings.
-- Never dump the raw page source into the conversation by default; offer only on request.
+- Never edit a page under `docs/`, the plan, or any file — the correction path is a
+  recorded verdict plus a drafting pass.
+- Never hand-edit the ledger, and never suggest that anyone else does.
+- Never retry accept after `target_missing`.
+- Never record a request the author did not make, and never resolve or withdraw a seq
+  the reviewer did not speak to.
+- Never offer a recovery step the tool did not print, and never suggest that
+  committing an interrupted tail makes the situation go away.
+- Never recompose or reword the tool's own summary and tally lines.
+- Never dump the raw page source into the conversation by default; offer only on
+  request.
 </must_not>
 </constraints>
 
 <success_criteria>
+- [ ] The session opened on `dogen version --json` and `dogen show <id> --json`.
 - [ ] The review mode (record or review) was selected up front.
-- [ ] A provenance summary was presented before the verdict.
+- [ ] The provenance summary was presented from the tool's own lines before the verdict.
 - [ ] In review mode, the pre-pass and five-dimension findings ran, grounded against
       the recorded sources; in record mode, findings were skipped.
-- [ ] On accept, `dogen-record-review.sh --verdict accept` was called and exited 0; the sealed hash was
-      quoted.
-- [ ] On fix/redraft, the note was appended to the ledger's steering section; the
-      routing line pointed to dogen-write.
-- [ ] No build was run, no file under `docs/` was edited, and hand-editing the draft
-      was never suggested.
+- [ ] `record_edits` showed the diff, asked "record these as your edits?", and
+      recorded the author's own words.
+- [ ] `unapplied_steering` was closed by one recorded disposition per pending seq.
+- [ ] `target_missing` never produced a second accept, and only the author's own
+      direction was recorded.
+- [ ] `uncommitted_tail` ran the dry run first and the real resume second.
+- [ ] `resume_ambiguous` showed the tool's stdout verbatim and offered exactly two
+      choices.
+- [ ] `recovery_unsupported` was shown verbatim and the skill stopped.
+- [ ] No build was run, no file under `docs/` was edited, and hand-editing was never
+      suggested.
 </success_criteria>
