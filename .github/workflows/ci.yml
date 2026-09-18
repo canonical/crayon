@@ -1,0 +1,219 @@
+# ci.yml — the repository's gate, one job per command that already runs locally
+# (D-02: every job body is the literal local command, so a red check is
+# reproducible with one copy-paste).
+#
+# Eight jobs, no `needs:` edge between any two of them (D-05). A dependency
+# graph would hide the second failure behind the first; independent jobs put
+# every verdict on the pull request's checks list at once, which is what makes
+# a red run diagnosable without re-running it.
+#
+# Supply chain (D-05, T-18-01): first-party actions only, pinned to a 40-hex
+# commit SHA with the human-readable tag in a trailing comment. Never a tag or
+# a branch — a moved tag is an unreviewed code change on a runner that can read
+# this repository.
+#
+# D-02: CI first runs on the release branch, with no chance to iterate under a
+# reviewer, so every job below was proven here first. The local dry-run that
+# proves each one, with the wall-clock time it took on the authoring machine:
+#
+#   job            local dry run                                        time
+#   -------------  ---------------------------------------------------  ------
+#   acceptance     bash tests/test_dogen_acceptance.sh                   0m20s
+#                  bash tests/test_dogen_lifecycle.sh                    2m44s
+#   unittest       bash tests/run_matrix.sh  (3.9 / 3.12 / 3.13)         0m27s
+#                  then each module of the job on each interpreter       0m32s
+#   shellcheck     shellcheck -S warning tests/*.sh validation/*.sh      0m04s
+#   skill-lint     python3 scripts/skill_lint.py                         0m01s
+#   docs-check     python3 tests/check_docs.py                           0m01s
+#   install-smoke  bash tests/install_smoke.sh                           0m01s
+#   validation     bash validation/fixtures.sh                           0m36s
+#   size-guard     python3 tests/size_guard.py                           0m01s
+#
+# Two divergences are known and named rather than left to be discovered on the
+# runner. The matrix takes its interpreters from a local fetcher here and from
+# the setup action there, so the COMMAND is identical and the SOURCE of the
+# interpreter is not. And the image ships shellcheck 0.9.0 while a developer
+# machine is likely newer, so attribute a version-only finding to the version
+# before attributing it to the code — in both directions.
+#
+# Not a job, deliberately: the anonymization lint over the planning tree. It
+# exits 2 when it scans nothing, and a release branch carries no planning tree,
+# so it would be red on every run of the branch it is meant to guard. It stays
+# a local gate command (AGENTS.md), and its own test module runs here — that
+# module skips itself where the tree is absent.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# D-05 / T-18-02: least-privilege. Every gate reads the repo and needs nothing
+# else. No secret is referenced anywhere in this file, and the fork-privileged
+# trigger variant is deliberately not used.
+permissions:
+  contents: read
+
+# WR-01 / REL-01: two cases, and only one of them may be cancelled.
+#
+# A superseded pull-request push should not keep paying for the suites, so a
+# pull request keys on its own number and the newest push cancels the older
+# one. A push to the default branch keys on its own run id instead, so each
+# merge is alone in its group and keeps its gate to completion: `github.ref` is
+# `refs/heads/main` for EVERY merge, so two merges landing inside one run's
+# wall clock (the `acceptance` job is ~3 minutes) shared a group and the first
+# was cancelled — and a cancelled run reports `cancelled`, not `failure`, so
+# nothing goes red and the commit simply has no completed gate behind it, on
+# the branch whose whole premise is that every gate command is green before a
+# commit lands.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # CI-01: the two bash suites. They share every prerequisite and there is
+  # nothing to gain from splitting them across two runners; the lifecycle suite
+  # is the long pole at roughly three minutes locally, so the timeout is
+  # generous rather than inherited (Pitfall 9, and assumption A7's 1.5-3x
+  # slowdown on a hosted runner is absorbed by it either way).
+  acceptance:
+    # Pitfall 1: pinned explicitly, never the floating "latest" runner label.
+    # That label is one GA promotion away from an image whose Python manifest
+    # has no 3.9 leg, which would redden the matrix on a run where nothing in
+    # this repository changed.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # T-18-02: no job in this workflow pushes, and every `run:` step
+          # after a checkout executes code authored in the branch under test —
+          # `bash tests/install_smoke.sh` extracts and executes shell out of
+          # `README.md`, `python3 tests/check_docs.py` imports `<root>/dogen`
+          # and runs it as a subprocess, and `bash validation/fixtures.sh` runs
+          # branch-authored bash. Never leave the job token in the workspace
+          # `.git/config` for any of them to read.
+          persist-credentials: false
+      # T-18-03: the body is the literal local command. No `${{ }}` expression
+      # is interpolated into any `run:` in this file — that is the canonical
+      # Actions script-injection vector.
+      - run: bash tests/test_dogen_acceptance.sh
+      - run: bash tests/test_dogen_lifecycle.sh
+
+  # CI-01 / 17 D-12: the supported interpreter range, from the runner's tool
+  # cache rather than from a fetcher. `tests/run_matrix.sh` is the same three
+  # legs locally; the commands below are identical to its, and only the source
+  # of the interpreter differs.
+  unittest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      # An interpreter leg that fails must not cancel the other two: which
+      # versions are affected is the finding.
+      fail-fast: false
+      matrix:
+        # Quoted as strings. An unquoted two-part number is a YAML float, and
+        # a future 3.10 leg would silently become 3.1.
+        python-version: ["3.9", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # T-18-02: see the first checkout in this file.
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          # The matrix value travels in `with:`, which is not a shell.
+          python-version: ${{ matrix.python-version }}
+      # Every module is named explicitly. Never the discovery runner: `tests/`
+      # carries no package marker, so discovery finds nothing and reports it
+      # as success.
+      - run: python3 -m unittest tests.test_dogen_unit
+      # CR-06: the SAME suite, script form. The two runners reported different
+      # counts once — a suite whole under one and truncated under the other
+      # reports `OK` either way — so both forms are gate commands and both run
+      # here.
+      - run: python3 tests/test_dogen_unit.py
+      - run: python3 -m unittest tests.test_skill_text
+      # Skips itself where the planning tree is absent, which is every release
+      # branch — a skip, not an error, and the module is in the tree either way.
+      - run: python3 -m unittest tests.test_planning_lint
+      - run: python3 -m unittest tests.test_check_docs
+
+  # CI-01: the shell suites at warning level. The binary is preinstalled on the
+  # image, so there is no install step and no third-party action. The file scope
+  # is identical to the local command, so the two cannot drift in scope even
+  # where they drift in version (Pitfall 16: the image ships 0.9.0, a developer
+  # machine is likely newer).
+  shellcheck:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # T-18-02: see the first checkout in this file.
+          persist-credentials: false
+      - run: shellcheck -S warning tests/*.sh validation/*.sh
+
+  # CI-01: the SKILL.md frontmatter gate.
+  skill-lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # T-18-02: see the first checkout in this file.
+          persist-credentials: false
+      - run: python3 scripts/skill_lint.py
+
+  # CI-01 / CI-03: the docs-accuracy checker. It calls the trace-table checker
+  # itself, so there is no second step for it here.
+  docs-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # T-18-02: see the first checkout in this file.
+          persist-credentials: false
+      - run: python3 tests/check_docs.py
+
+  # CI-02 / A-37: the stranger's install path — README's marked QUICKSTART
+  # region, extracted and executed from a temp PATH in a hermetic temp repo.
+  install-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # T-18-02: see the first checkout in this file.
+          persist-credentials: false
+      - run: bash tests/install_smoke.sh
+
+  # VAL-08 / V-01…V-04 (D-10): the validation kit's four corruption fixtures.
+  # Its own job, not a step inside `acceptance`: a kit failure is a failure of
+  # the evidence apparatus, not of the tool's acceptance suite, and naming it
+  # on its own line in the checks list is what keeps the two readable apart.
+  validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # T-18-02: see the first checkout in this file.
+          persist-credentials: false
+      - run: bash validation/fixtures.sh
+
+  # CI-01 / REL-01 (D-06, D-07): VERB-09's line budget. The script loads the
+  # thresholds AND the comparison out of the unit suite, so this job and the
+  # local guard are the same code. Its verdict is its exit code; the markdown
+  # table it appends to the job summary is a report, because a summary upload
+  # failure does not fail a job.
+  size-guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # T-18-02: see the first checkout in this file.
+          persist-credentials: false
+      - run: python3 tests/size_guard.py
