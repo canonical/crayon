@@ -88,7 +88,12 @@ harness sees the `SKILL.md` files in the docs repo and invokes the scripts (whic
 ### 2 — Add context files (recommended)
 
 Context files teach dogen your house style, vocabulary, and where facts live. They land in
-`.dogen/context/`:
+`.dogen/context/`. By default, the skills look for: `doc-style.md`, `glossary.md`, `structure.md`,
+`code-to-docs-map.md`, `doc-gaps.md`.
+
+The `dogen-onboard` skill produces three common context files, i.e., `doc-style.md`, `glossary.md`,
+and `structure.md` and adds them to the folder. You can also create the context files externally
+and add them to the folder:
 
 ```bash
 mkdir -p .dogen/context
@@ -96,8 +101,11 @@ cp path/to/your-style-guide.md .dogen/context/doc-style.md
 cp path/to/glossary.md .dogen/context/glossary.md
 ```
 
-Well-known names the skills look for: `doc-style.md`, `glossary.md`, `structure.md`,
-`code-to-docs-map.md`, `doc-gaps.md`.
+For a deterministic `code-to-docs-map.md` and a `doc-gaps.md` based on the same, use the
+[Code to docs mapper](https://code.launchpad.net/code-to-docs-mapper). This requires the code and
+docs exist in separate collections in a vector database. These can be created using
+[Wide scope RAG](https://code.launchpad.net/wide-scope-rag). Alternatively, the `dogen-plan` skill
+can perform a live crawl but with less repeatable results.
 
 ### 3 — Draft a documentation unit
 

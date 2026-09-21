@@ -4,7 +4,7 @@
 # Usage: bash tests/test_dogen_scripts.sh
 #
 # Tests: dogen-signoff.sh, dogen-record-draft.sh, dogen-record-review.sh,
-#        dogen-record-step.sh (plus dogen-common.sh helpers).
+#        dogen-record-step.sh, dogen-record-context.sh (plus dogen-common.sh helpers).
 # Each test runs in a SUBSHELL so cwd changes can't leak into the main repo.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -715,10 +715,113 @@ test_unresolved_steps_no_substring_false_positive() {
     cleanup
 }
 
+# --- Tests: dogen-record-context.sh (repo-level context recorder) ---
+
+stage_context() {
+    # Stage one or more recognized context artifacts with placeholder content.
+    mkdir -p .dogen/staging/context
+    local name
+    for name in "$@"; do
+        echo "# ${name}" >".dogen/staging/context/${name}"
+    done
+}
+
+test_record_context_happy_path() {
+    setup_repo
+    stage_context doc-style.md glossary.md structure.md
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging .dogen/staging/context --model "claude-opus-4" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record context exit code" "0" "$rc"
+    assert_file_contains "doc-style promoted" ".dogen/context/doc-style.md" "# doc-style.md"
+    assert_file_contains "glossary promoted" ".dogen/context/glossary.md" "# glossary.md"
+    assert_file_contains "structure promoted" ".dogen/context/structure.md" "# structure.md"
+    assert_file_contains "manifest has model" ".dogen/context/manifest.md" "model claude-opus-4"
+    assert_file_contains "manifest has sha256" ".dogen/context/manifest.md" "sha256:"
+    local log
+    log=$(git log --format="%B" -1)
+    assert_contains "context commit phase trailer" "$log" "Dogen-Phase: onboard"
+    assert_contains "context commit model trailer" "$log" "Dogen-Model: claude-opus-4"
+    cleanup
+}
+
+test_record_context_partial_restage_keeps_full_manifest() {
+    setup_repo
+    stage_context doc-style.md glossary.md structure.md
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging .dogen/staging/context --model "m" >/dev/null 2>&1
+    # Refresh only one artifact; the other two stay published under .dogen/context/.
+    rm -f .dogen/staging/context/glossary.md .dogen/staging/context/structure.md
+    echo "# doc-style.md changed" >.dogen/staging/context/doc-style.md
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging .dogen/staging/context --model "m" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "partial restage exit code" "0" "$rc"
+    # The manifest must still freeze the complete published set, not just the restaged file.
+    assert_file_contains "manifest keeps doc-style" ".dogen/context/manifest.md" "doc-style.md | sha256:"
+    assert_file_contains "manifest keeps glossary" ".dogen/context/manifest.md" "glossary.md | sha256:"
+    assert_file_contains "manifest keeps structure" ".dogen/context/manifest.md" "structure.md | sha256:"
+    cleanup
+}
+
+test_record_context_rejects_unknown_artifact() {
+    setup_repo
+    stage_context doc-style.md
+    echo "smuggled" >.dogen/staging/context/evil.md
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging .dogen/staging/context --model "m" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record context rejects unknown artifact (exit 2)" "2" "$rc"
+    assert_file_not_exists "no context dir written on refusal" ".dogen/context/doc-style.md"
+    cleanup
+}
+
+test_record_context_requires_model() {
+    setup_repo
+    stage_context doc-style.md
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging .dogen/staging/context >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record context requires model (exit 2)" "2" "$rc"
+    cleanup
+}
+
+test_record_context_empty_staging() {
+    setup_repo
+    mkdir -p .dogen/staging/context
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging .dogen/staging/context --model "m" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record context empty staging (exit 2)" "2" "$rc"
+    cleanup
+}
+
+test_record_context_noop() {
+    setup_repo
+    stage_context doc-style.md glossary.md
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging .dogen/staging/context --model "m" >/dev/null 2>&1
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging .dogen/staging/context --model "m" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record context identical re-record no-ops (exit 3)" "3" "$rc"
+    cleanup
+}
+
+test_record_context_staging_escape() {
+    setup_repo
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging /tmp --model "m" >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record context rejects staging outside repo (exit 2)" "2" "$rc"
+    cleanup
+}
+
+test_record_context_model_pipe_injection() {
+    setup_repo
+    stage_context doc-style.md
+    "$REPO_SCRIPTS/dogen-record-context.sh" --staging .dogen/staging/context \
+        --model 'm | sha256: deadbeef' >/dev/null 2>&1
+    local rc=$?
+    assert_eq "record context rejects pipe in model (exit 2)" "2" "$rc"
+    cleanup
+}
+
 # --- Runner ---
 
 main() {
-    echo "Running dogen script tests (4 scripts)..."
+    echo "Running dogen script tests (5 scripts)..."
     echo ""
 
     for test_fn in $(declare -F | awk '{print $3}' | grep '^test_'); do

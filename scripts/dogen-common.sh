@@ -225,3 +225,24 @@ dogen_commit() {
     sha=$(git rev-parse --short HEAD)
     echo "git: committed ${sha} — dogen: ${phase} ${unit_id}" >&2
 }
+
+# Commit a repo-level (non-unit) dogen phase. Stages only .dogen/ — repo-level
+# context has no unit, so this omits the Dogen-Unit trailer.
+# Usage: dogen_commit_repo <phase> [extra_trailer...]
+dogen_commit_repo() {
+    local phase="$1"
+    shift
+    local trailers=(--trailer "Dogen-Phase: ${phase}")
+    for t in "$@"; do
+        trailers+=(--trailer "$t")
+    done
+    git add .dogen/ 2>/dev/null || true
+    if git diff --cached --quiet -- .dogen/ 2>/dev/null; then
+        echo "warn: nothing to commit for phase ${phase}" >&2
+        return 0
+    fi
+    git commit -q -m "dogen: ${phase}" "${trailers[@]}" -- .dogen/
+    local sha
+    sha=$(git rev-parse --short HEAD)
+    echo "git: committed ${sha} — dogen: ${phase}" >&2
+}
