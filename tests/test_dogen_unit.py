@@ -5237,16 +5237,16 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
 #: Tracked on the planning branch, deliberately absent from the release tree,
 #: and therefore deliberately absent from ``AGENTS.md``'s tree block. Phase 18's
 #: checkpoint recorded decision (d) as "left out of the release tree" for
-#: ``docs/before-after.md`` and "removed in the retire-the-v1-layer commit" for
-#: ``project-timeline.html``; neither is linked from anywhere in the tree. They
-#: are named here rather than merely omitted, so that an absence from the
-#: listing is a statement somebody made and not a line somebody forgot.
+#: ``docs/before-after.md``; it is not linked from anywhere in the tree. It is
+#: named here rather than merely omitted, so that an absence from the listing
+#: is a statement somebody made and not a line somebody forgot. (The two v1-era
+#: ``.html`` records at the root are kept as they are on ``main``; the root
+#: block is outside the pin, so they need no entry here.)
 #:
-#: Neither path exists on a release checkout. Nothing below asserts that they
-#: do — the tuple's job is to say they are not listed, not that they are here.
+#: The path does not exist on a release checkout. Nothing below asserts that
+#: it does — the tuple's job is to say it is not listed, not that it is here.
 UNSHIPPED_PATHS = (
     "docs/before-after.md",
-    "project-timeline.html",
 )
 
 #: The tree-block sections that enumerate their files one per line, and so can
