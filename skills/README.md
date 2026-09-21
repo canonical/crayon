@@ -46,6 +46,17 @@ dogen-plan -> dogen-write -> dogen-review
   `dogen-record-review.sh`. Accept seals page SHA-256 hashes; fix/redraft append
   the note to the steering stream. Never edits the draft.
 
+### dogen-onboard (repo-level, occasional)
+
+- **dogen-onboard** — outside the per-unit pipeline. Walks the repo's documentation
+  surfaces and produces the three `.dogen/context/` artifacts (`doc-style.md`,
+  `glossary.md`, `structure.md`) that later ground `dogen-plan`. The
+  skill authors the three files under `.dogen/staging/context/`; the recorder
+  (`dogen-record-context.sh`) refuses any unrecognized artifact, promotes the staged
+  files into `.dogen/context/`, freezes a manifest (one SHA-256 per file), and
+  commits with `Dogen-Phase: onboard`. It is a context recorder, not one of the
+  four gates. Replaces the earlier standalone Python docs-scraper.
+
 ## The deterministic scripts
 
 | Script | Enforces | Called by |
