@@ -26,6 +26,7 @@
 #   shellcheck     shellcheck -S warning install.sh tests/*.sh validation/*.sh   0m04s
 #   skill-lint     python3 scripts/skill_lint.py                         0m01s
 #   docs-check     python3 tests/check_docs.py                           0m01s
+#                  python3 scripts/wiki_lint.py                          0m01s
 #   install-smoke  bash tests/install_smoke.sh                           0m01s
 #   validation     bash validation/fixtures.sh                           0m36s
 #   size-guard     python3 tests/size_guard.py                           0m01s
@@ -135,6 +136,7 @@ jobs:
       - run: python3 -m unittest tests.test_planning_lint
       - run: python3 scripts/planning_lint.py
       - run: python3 -m unittest tests.test_check_docs
+      - run: python3 -m unittest tests.test_wiki_lint
 
   # CI-01: the shell suites at warning level. The binary is preinstalled on the
   # image, so there is no install step and no third-party action. The file scope
@@ -173,6 +175,8 @@ jobs:
           # T-18-02: see the first checkout in this file.
           persist-credentials: false
       - run: python3 tests/check_docs.py
+      # The docs/ wiki and AGENTS.md: links resolve, pages reachable, notation reserved.
+      - run: python3 scripts/wiki_lint.py
 
   # CI-02 / A-37: the stranger's install path — docs/install.md's marked
   # INSTALL region (install.sh --yes), extracted and executed from a temp PATH

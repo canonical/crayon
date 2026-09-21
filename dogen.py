@@ -3882,7 +3882,7 @@ def guard_source_files(repo, sources, unit=""):
 
     WR-17: the declaring verbs applied only the STRING rules
     (:func:`validate_source`) while the filesystem ones lived in
-    :func:`sign_sources` alone, so ``unit new --source docs/never.md`` committed
+    :func:`sign_sources` alone, so ``unit new --source docs/absent.rst`` committed
     a plan ``signoff`` could never sign -- and `--source` REPLACES the list
     rather than clearing it, so the hint's own instruction ("remove it") named
     an action no verb performs. Asked in stage b, the refusal happens before

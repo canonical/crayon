@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tests/lib.sh — the single shared bash harness for dogen's two bash suites (D-10).
 #
-# `tests/test_dogen_acceptance.sh` (the reviewer's A-series) and
+# `tests/test_dogen_acceptance.sh` (the ported A-series) and
 # `tests/test_dogen_lifecycle.sh` (the N-series lifecycle / negative / recovery
 # suite) both source this file, and neither redefines any of it. Everything
 # below moved out of tests/test_dogen_acceptance.sh verbatim, comments included:
@@ -31,7 +31,7 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-DOGEN="$REPO_ROOT/dogen"
+DOGEN="$REPO_ROOT/dogen.py"
 
 PASS=0
 FAIL=0
@@ -423,7 +423,7 @@ HOOK
 # --- the shared fixtures both suites read state through (17-11) --------------
 #
 # These were defined in tests/test_dogen_acceptance.sh until plan 17-11 moved
-# the T-labelled bodies out of it. the reviewer's A-series and the migrated N-series
+# the T-labelled bodies out of it. the ported A-series and the migrated N-series
 # BOTH call them, so neither file can own them: a copy in each is precisely how
 # the two suites drift apart (D-10). They live here, once, like the rest of the
 # harness.

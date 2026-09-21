@@ -12,7 +12,7 @@
 # The boundary, stated once: this script writes into and runs git against ANOTHER repository —
 # the target documentation repo holding the unit under measurement — not against a hermetic
 # temp tree. It therefore does NOT source `tests/lib.sh`: that file pins
-# `DOGEN="$REPO_ROOT/dogen"` at the in-tree executable and its `setup_repo` exports
+# `DOGEN="$REPO_ROOT/dogen.py"` at the in-tree executable and its `setup_repo` exports
 # `DOGEN_TEST_HOOKS=1`, and either one would make a measurement of the target repo a
 # measurement of this one. The guards worth copying from `tests/lib.sh:191-199` — the
 # three-check `mktemp -d` and the pinned git config — are copied below; nothing else is.
@@ -38,7 +38,7 @@
 # object. They arrive as `--metric key=value` flags supplied by the AUTHOR at `end`, not by the
 # agent mid-run: three of the six — avoidable questions, help requests, and whether `resume`
 # needed the author — are judgements about the session rather than counters a script can read.
-# `docs/sessions/<date>-<leg>.md` and `validation/legs/<leg>.md` POINT at this file and do not
+# A session record and a leg's checklist POINT at this file and do not
 # restate the values; a second place where the numbers are typed is drift, not redundancy.
 #
 # The Sphinx diff is NOT computed here. This script records both builds' exit codes and their
@@ -80,14 +80,14 @@ export GIT_CONFIG_SYSTEM=/dev/null
 # (`_dogen_executable`): the environment, then this kit's in-tree file, then PATH.
 if [ -n "${DOGEN:-}" ]; then
     DOGEN_BIN="$DOGEN"
-elif [ -f "$REPO_ROOT/dogen" ]; then
-    DOGEN_BIN="$REPO_ROOT/dogen"
+elif [ -f "$REPO_ROOT/dogen.py" ]; then
+    DOGEN_BIN="$REPO_ROOT/dogen.py"
 else
     DOGEN_BIN="dogen"
 fi
 
 # The six rev8 3.2 metric keys, in the session template's own order
-# (docs/sessions/TEMPLATE.md:78-85). This tuple is the definition; nothing below re-types it.
+# This tuple is the definition; nothing below re-types it.
 METRIC_KEYS=(install time_to_usable_draft avoidable_questions
              manual_dogen_commands help_requests resume_invocations)
 

@@ -1,19 +1,22 @@
 # Installing dogen
 
-dogen is two things: one stdlib-only Python executable, `dogen`, and three portable Agent Skills
+<!-- provenance: moved from README.md (Install and first run, Installing the skills globally, Add context files) -->
+
+dogen is two things: one stdlib-only Python file, `dogen.py`, installed on your `PATH` as
+`dogen`, and three portable Agent Skills
 (`dogen-plan`, `dogen-write`, `dogen-review`) that your agent drives. Installing means putting
 the executable on your `PATH` and the skills where your agent discovers them. The script
 `install.sh` at the root of the checkout does both, asks you about every choice along the way,
 and verifies the result. This page explains each choice; if you are happy with the defaults, the
-[quickstart in the README](../README.md#quickstart-5-minutes) is all you need.
+quickstart in `README.md` is all you need.
 
 ## Requirements
 
 - Python 3.9 or newer on `PATH` as `python3`. Nothing else: no package, no venv, no dependency.
 - git, and a git identity in the repository you document (`user.name` and `user.email`), because
   every dogen transition is a local commit.
-- An agent that reads `SKILL.md` skills and can run `Bash`: Claude Code, GitHub Copilot CLI,
-  Codex, Cursor, or any other harness that discovers `.agents/skills/`.
+- Any coding agent that reads `SKILL.md` skills, discovers them under `.agents/skills/`, and
+  can run shell commands. Skills are invoked by name — `/dogen-plan` — in every such agent.
 
 ## Install with the script
 
@@ -23,16 +26,10 @@ cd ~/src/dogen
 ./install.sh
 ```
 
-The script walks through four decisions. Enter takes the default at every prompt, and
+The script walks through three decisions. Enter takes the default at every prompt, and
 `./install.sh --yes` takes every default without asking.
 
-### 1. Which agent you drive
-
-`claude-code` (default), `copilot`, `codex`, `cursor` or `other`. All of the named agents read
-the agent-compatible `.agents/skills/` discovery root, so the answer only changes the hint the
-script prints at the end. `other` asks you where your harness looks for skills.
-
-### 2. Where the skills go
+### 1. Where the skills go
 
 - **project** (default) copies the three skills into `<repo>/.agents/skills/`, so they travel
   with the docs repository and every collaborator gets the same version. The script asks for the
@@ -43,9 +40,10 @@ script prints at the end. `other` asks you where your harness looks for skills.
   discovers them. Choose this when you document many repositories alone and want one copy to
   upgrade.
 
-Flags: `--skills project|global`, `--repo DIR`, `--skills-root DIR`.
+Flags: `--skills project|global`, `--repo DIR`, and `--skills-root DIR` for an agent that
+discovers skills somewhere other than `.agents/skills/`.
 
-### 3. Where the executable goes
+### 2. Where the executable goes
 
 - `~/.local/bin` (default): a copy, no `sudo`, the usual place for a user's own tools. The script
   warns if that directory is not on your `PATH` and prints the line to add.
@@ -58,7 +56,7 @@ Flags: `--skills project|global`, `--repo DIR`, `--skills-root DIR`.
 
 Flags: `--tool-dir DIR`, `--link`.
 
-### 4. `.gitignore`
+### 3. `.gitignore`
 
 dogen stages drafts under `.dogen/staging/`, which is working space and belongs in the
 repository's `.gitignore`. With project-scoped skills the script offers to append that line;
@@ -86,7 +84,7 @@ existing install, which is the thing to run when a skill stops on a version chec
 
 The two fenced blocks below are the whole install, non-interactive, with every default. CI
 extracts them byte for byte from between the two markers in this file and runs them from a
-temporary `HOME` in a scratch repository ([`tests/install_smoke.sh`](../tests/install_smoke.sh)),
+temporary `HOME` in a scratch repository (`tests/install_smoke.sh`),
 so this section cannot rot. Run it in a repository you are prepared to install into.
 
 <!-- INSTALL:BEGIN -->
@@ -112,8 +110,8 @@ directories under `skills/`, and `cp -r skills/dogen-*` copies exactly those thr
 ```bash
 DOGEN_SRC=~/src/dogen
 
-# The executable, onto your PATH:
-mkdir -p "$HOME/.local/bin" && cp "$DOGEN_SRC/dogen" "$HOME/.local/bin/dogen" && chmod +x "$HOME/.local/bin/dogen"
+# The executable, onto your PATH, under its command name:
+mkdir -p "$HOME/.local/bin" && cp "$DOGEN_SRC/dogen.py" "$HOME/.local/bin/dogen" && chmod +x "$HOME/.local/bin/dogen"
 
 # The skills, project-scoped (run inside the docs repository):
 mkdir -p .agents/skills && cp -r "$DOGEN_SRC"/skills/dogen-* .agents/skills
@@ -151,3 +149,5 @@ rm -rf "$HOME/.agents/skills"/dogen-*           # global skills
 
 The record under `.dogen/units/` is yours and stays: it is committed history, not part of the
 install.
+
+Related: [[upgrade]], [[compatibility]], [[development]].

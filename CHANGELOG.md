@@ -11,20 +11,33 @@ significance still have one order a reader can predict.
 
 ### Added
 
-- `install.sh` — an interactive installer at the repository root. It walks through the four
-  decisions an install has (which agent, project or global skills, where the executable goes —
-  a copy or a symlink into the checkout — and `.gitignore`), takes every default under `--yes`,
+- `install.sh` — an interactive installer at the repository root. It walks through the three
+  decisions an install has (project or global skills, where the executable goes — a copy or a
+  symlink into the checkout — and `.gitignore`), takes every default under `--yes`,
   and ends by verifying the result: the executable on `PATH`, the contract number against every
   installed skill's frontmatter, the skill directories, stale discovery roots, the git identity.
   `--verify-only` runs the last part alone. It is in the shellcheck scope.
-- `docs/install.md`, `docs/compatibility.md`, `docs/hooks.md`, `docs/shellcheck.md` and
-  `docs/development.md` — one page each for what the README used to carry inline. The install
+- `docs/` is now a wiki in the lint-enforced shape: flat, one page per slug, addressed by slug
+  in double square brackets from `AGENTS.md` and between pages, every page with an H1, a
+  provenance comment and a `Related:` line, every page reachable from `AGENTS.md`.
+  `scripts/wiki_lint.py` (ten checks, exit 0/1/2, `--json`) and `tests/test_wiki_lint.py` are
+  gate commands; `AGENTS.md` is rewritten as the router the spec describes, with a topic index.
+- `docs/install.md`, `docs/compatibility.md`, `docs/hooks.md`, `docs/shellcheck.md`,
+  `docs/development.md`, `docs/architecture.md` and `docs/conventions.md` — one page each for
+  what the README and `AGENTS.md` used to carry inline. The install
   guide carries the marked `INSTALL` region `tests/install_smoke.sh` executes; the compatibility
   page carries the `COMPAT` region `tests/check_docs.py` checks; the development page is the
   gate's second pinned home.
 
 ### Changed
 
+- The source file is `dogen.py`; the installed command is still `dogen`. `install.sh` copies or
+  links it under that name, and every in-tree pin names `dogen.py`.
+- The surface is harness-agnostic: no agent harness is named, detected or preferred in the
+  README, the installer, the docs or `AGENTS.md`; skills are invoked as `/dogen-plan`,
+  `/dogen-write` and `/dogen-review` everywhere.
+- The README states that the output is Sphinx-publishable and that dogen knows nothing of any
+  Sphinx stack, theme or `conf.py`, and gains a top-level layout section.
 - `README.md` is agent-first: a five-minute quickstart (clone, `install.sh`, the three skills),
   a plain "how you use it", a section on keeping dogen on its own branch and shipping pages from
   a review branch popped off main, and a glossary that holds the vocabulary, the verb table and
@@ -42,6 +55,9 @@ significance still have one order a reader can predict.
 
 ### Removed
 
+- `docs/sessions/` and `validation/legs/` — the recorded session and leg records — and the unit
+  tests over them. They carried run-specific paths and identities; the kit's tooling stays.
+- Personal names in comments and prose are replaced by roles.
 - The README's "What is and is not proven" section and the `CLAIMS` observable in
   `tests/check_docs.py`, with the release-record prose that cross-referenced them below.
 - The README's credit section. The acceptance tests A-31 … A-35 keep the names they were ported
@@ -84,9 +100,9 @@ release series, the release plan is the final check that every entry below is tr
 - `validation/` — the validation kit, shipped as evidence apparatus rather than as product code:
   `validation/score.py` (the rubric scorer plus the four-oracle independent audit),
   `validation/fixtures.sh` (V-01…V-04, the four corruption fixtures and the oracle that catches
-  each), `validation/runmeta.sh` (a leg's RUN metadata), `validation/rubric.md` (the scoring bar)
-  and `validation/legs/` (the pre-registered per-leg checklists and their RUN files). It reports as
-  its own CI job and is a gate command.
+  each), `validation/runmeta.sh` (a leg's RUN metadata) and `validation/rubric.md` (the scoring
+  bar). Session records and per-leg RUN files are not shipped. It reports as its own CI job and is
+  a gate command.
 - Three skills — `dogen-plan`, `dogen-write`, `dogen-review` — that drive the loop through the
   verbs and never re-implement a gated, side-effecting action.
 - `.github/workflows/ci.yml`, `tests/install_smoke.sh` (the only test that reaches `dogen` through
@@ -96,8 +112,7 @@ release series, the release plan is the final check that every entry below is tr
   the local guard load both thresholds **and** the comparison out of `tests/test_dogen_unit.py`, so
   there is one authoring site for the pair and the job and the guard are the same code rather than
   merely the same constants.
-- [docs/upgrade.md](docs/upgrade.md) — the upgrade procedure, and `docs/sessions/` — the
-  install-session records and the template they instantiate.
+- [docs/upgrade.md](docs/upgrade.md) — the upgrade procedure.
 
 ### Changed
 
@@ -119,17 +134,11 @@ release series, the release plan is the final check that every entry below is tr
   the same offsets the previous recalibration used. The budget is a review trigger, not a design
   goal: behaviour is never deleted to fit it, and the pair has one authoring site in
   `tests/test_dogen_unit.py` that the job and the local guard both load.
-- Both install-session records now carry a **`Relationship to the team`** field between `Author`
-  and `Agent runtime`, reading `stand-in` and stating plainly that every metric in the record is
-  agent-reported. The field is not decoration: it moves the agent-reported-versus-human-observed
-  boundary from an inference a reader had to draw off the `Author:` line into a recorded fact. The
-  record shape itself is now mirrored from `docs/sessions/TEMPLATE.md` and asserted against it, so
-  the list of declared fields cannot outlive what it mirrors.
 
 ### Fixed
 
-- Carries forward the three code-enforced gate holes the reviewer found and closed on the slim
-  branch in his 2026-08-31 review: a `sphinx_target` path traversal (the target was joined into
+- Carries forward the three code-enforced gate holes a reviewer found and closed on the slim
+  branch in the v1 review: a `sphinx_target` path traversal (the target was joined into
   `docs/${target}` with no validation), a ledger row injection (an unescaped `|` or newline in a
   `--note` injected fake pipe-delimited fields, including a spoofed `verdict: accept`), and
   `unresolved_steps` matching `status: unverified` as a substring. Each is carried into v2.0 as an
@@ -140,7 +149,7 @@ release series, the release plan is the final check that every entry below is tr
   `unresolved_steps_no_substring_false_positive`.
 - To be plain about why the tree was swapped: the swap is justified by what a pipe-delimited ledger
   *cannot* do — support multi-line and `|` notes, persist step text, derive state after
-  accept-then-redraft, scope `git add` — **not** by those three holes. His regression tests are
+  accept-then-redraft, scope `git add` — **not** by those three holes. Their regression tests are
   carried by intent, and the fixes are credited here.
 - **The CI workflow had drifted from the gate it claims to run, and nothing noticed.** The unit
   suite now carries a mirror test that reads `.github/workflows/ci.yml` itself and asserts both

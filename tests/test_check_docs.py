@@ -190,7 +190,7 @@ def build_tree(
     (root / "tests").mkdir(parents=True, exist_ok=True)
     (root / "skills").mkdir(parents=True, exist_ok=True)
 
-    (root / "dogen").write_text(FIXTURE_TOOL, encoding="utf-8")
+    (root / "dogen.py").write_text(FIXTURE_TOOL, encoding="utf-8")
 
     if verb_rows is None:
         verb_rows = [(("`%s`" % verb), "does %s" % verb) for verb in FIXTURE_VERBS]

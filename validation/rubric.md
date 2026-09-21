@@ -1,12 +1,9 @@
-# Validation rubric — scoring dogen drafts against the reference reference bar
+# Validation rubric — scoring dogen drafts against a reference bar
 
-**Dev-time evaluation material only.** The reference docs —
-`docs/reference/definition-files/` inside the `reference-docs` checkout that
-sits under the same parent directory as the `dogen-mvp-1` and `docs-repo`
-checkouts (`~/Documents/` here; from the docs-repo primary checkout that is
-`../reference-docs/…`, from a validation worktree under `docs-worktrees/`
-it is `../../reference-docs/…`) — are the measuring stick, never an input: no
-drafting session, skill, or steering note may point at them. Score the accepted
+**Dev-time evaluation material only.** The reference docs — a hand-written
+reference set kept in a checkout outside the repository under test, pointed at by
+`$REFERENCE_DOCS` — are the measuring stick, never an input: no drafting session,
+skill, or steering note may point at them. Score the accepted
 draft of each leg after the run.
 
 Two layers: the mechanical scorecard (`score.py` — run it first) and the human
@@ -99,7 +96,7 @@ this; hand-check what greps can't.)
 - Single H1; unbroken heading ladder; tables for field inventories; `colon_fence`
   for admonitions; anchors/cross-refs resolve within the page.
 - Section ordering serves lookup (a reader can find one field without reading the
-  page top-to-bottom) — the reference ordering above is the proven shape.
+  page top-to-bottom) — the reference set's ordering above is the proven shape.
 
 ## 3b. Cross-page consistency (unit 2, the multi-file exercise)
 

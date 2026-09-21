@@ -3,7 +3,7 @@
 All prior-art identities are anonymized in committed artifacts (the reference
 skills family is ``ng``; the teardowns are ``els``/``c2d``/``gd``). This repo is
 the canonical org repo, so its GSD planning tree must never carry the original
-names. The v1.0 planning archive (TICKET) holds files that predate the rule;
+names. The v1.0 planning archive holds files that predate the rule;
 they were deliberately NOT migrated here — this lint keeps it that way.
 
 It mirrors :mod:`seam_check` / :mod:`skill_lint`: a single :func:`main` with a

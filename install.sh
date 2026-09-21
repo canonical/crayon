@@ -8,10 +8,9 @@
 #   ./install.sh --help          every flag
 #
 # Decisions, in order (each one is also a flag, so a script can answer it):
-#   1. which agent you drive     --agent claude-code|copilot|codex|cursor|other
-#   2. where the skills go       --skills project|global   [--repo DIR] [--skills-root DIR]
-#   3. where the tool goes       --tool-dir DIR | --link
-#   4. .gitignore                --no-gitignore
+#   1. where the skills go       --skills project|global   [--repo DIR] [--skills-root DIR]
+#   2. where the tool goes       --tool-dir DIR | --link
+#   3. .gitignore                --no-gitignore
 # Then the install is verified. Exit 0 when every check passed, 1 when one
 # failed, 2 when nothing could be checked. The script never runs git init, git
 # commit, sudo, or anything else that changes a repository's history.
@@ -20,7 +19,6 @@ set -u
 
 # --- defaults ----------------------------------------------------------------
 DOGEN_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AGENT=""
 SKILLS=""
 REPO=""
 SKILLS_ROOT=""
@@ -41,10 +39,9 @@ usage() {
 
 Flags:
   --yes                 answer every prompt with its default
-  --agent NAME          claude-code (default), copilot, codex, cursor or other
   --skills SCOPE        project (default) or global
   --repo DIR            the docs repository (project scope; default: the current directory)
-  --skills-root DIR     where the skills go, when the default discovery root is not right
+  --skills-root DIR     the discovery root, when your agent does not read .agents/skills/
   --tool-dir DIR        where the dogen executable is copied (default: ~/.local/bin)
   --link                symlink the executable into the checkout instead of copying it
   --no-gitignore        do not add .dogen/staging/ to the repository's .gitignore
@@ -63,7 +60,6 @@ die() {
 while [ $# -gt 0 ]; do
     case "$1" in
         --yes) YES=1 ;;
-        --agent) shift; AGENT="${1:-}" ;;
         --skills) shift; SKILLS="${1:-}" ;;
         --repo) shift; REPO="${1:-}" ;;
         --skills-root) shift; SKILLS_ROOT="${1:-}" ;;
@@ -78,7 +74,7 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-[ -f "$DOGEN_SRC/dogen" ] || die "no dogen executable at $DOGEN_SRC (pass --dogen-src)"
+[ -f "$DOGEN_SRC/dogen.py" ] || die "no dogen.py at $DOGEN_SRC (pass --dogen-src)"
 [ -d "$DOGEN_SRC/skills/dogen-plan" ] || die "no skills under $DOGEN_SRC/skills"
 
 # --- prompting ---------------------------------------------------------------
@@ -103,30 +99,10 @@ explain() {
     fi
 }
 
-# --- decision 1: the agent ---------------------------------------------------
-if [ -z "$AGENT" ]; then
-    default_agent="claude-code"
-    if [ -n "${COPILOT_CLI:-}" ] || [ -n "${GITHUB_COPILOT_CLI:-}" ]; then
-        default_agent="copilot"
-    elif [ -n "${CODEX_HOME:-}" ]; then
-        default_agent="codex"
-    fi
-    explain ""
-    explain "1/4  Which agent will drive the skills?"
-    explain "     claude-code · copilot · codex · cursor · other"
-    explain "     Every one of these reads the .agents/skills/ discovery root; the answer"
-    explain "     only changes the hint printed at the end (and 'other' asks for a root)."
-    ask AGENT "     agent" "$default_agent"
-fi
-case "$AGENT" in
-    claude-code|copilot|codex|cursor|other) ;;
-    *) die "--agent must be claude-code, copilot, codex, cursor or other (got '$AGENT')" ;;
-esac
-
-# --- decision 2: skills scope ------------------------------------------------
+# --- decision 1: skills scope ------------------------------------------------
 if [ -z "$SKILLS" ]; then
     explain ""
-    explain "2/4  Where should the skills be installed?"
+    explain "1/3  Where should the skills be installed?"
     explain "     project — into the docs repository's .agents/skills/, so they travel with it"
     explain "     global  — once, into ~/.agents/skills/, so every repository discovers them"
     ask SKILLS "     scope" "project"
@@ -145,11 +121,7 @@ if [ "$SKILLS" = "project" ]; then
         die "$REPO is not a git repository; dogen records into the repository it runs in — initialise one first (git init), then re-run"
     fi
     if [ -z "$SKILLS_ROOT" ]; then
-        if [ "$AGENT" = "other" ]; then
-            ask SKILLS_ROOT "     skills root inside the repository" ".agents/skills"
-        else
-            SKILLS_ROOT=".agents/skills"
-        fi
+        SKILLS_ROOT=".agents/skills"
     fi
     case "$SKILLS_ROOT" in
         /*) ;;
@@ -157,18 +129,14 @@ if [ "$SKILLS" = "project" ]; then
     esac
 else
     if [ -z "$SKILLS_ROOT" ]; then
-        if [ "$AGENT" = "other" ]; then
-            ask SKILLS_ROOT "     global skills root" "$GLOBAL_SKILLS_ROOT"
-        else
-            SKILLS_ROOT="$GLOBAL_SKILLS_ROOT"
-        fi
+        SKILLS_ROOT="$GLOBAL_SKILLS_ROOT"
     fi
 fi
 
-# --- decision 3: the tool ----------------------------------------------------
+# --- decision 2: the tool ----------------------------------------------------
 if [ "$LINK" -eq 0 ] && [ -z "$TOOL_DIR" ]; then
     explain ""
-    explain "3/4  Where should the dogen executable go?"
+    explain "2/3  Where should the dogen executable go?"
     explain "     $DEFAULT_TOOL_DIR   copy, no sudo, the usual place for user tools (default)"
     explain "     /usr/local/bin      copy, for every user; needs write access to that directory"
     explain "     link                a symlink into this checkout: git pull upgrades the tool"
@@ -186,11 +154,11 @@ case "$TOOL_DIR" in
     "~"*) TOOL_DIR="$HOME${TOOL_DIR#"~"}" ;;
 esac
 
-# --- decision 4: .gitignore --------------------------------------------------
+# --- decision 3: .gitignore --------------------------------------------------
 if [ "$SKILLS" = "project" ] && [ "$GITIGNORE" -eq 1 ] && [ "$VERIFY_ONLY" -eq 0 ]; then
     if ! grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
         explain ""
-        explain "4/4  dogen stages drafts under .dogen/staging/, which is working space."
+        explain "3/3  dogen stages drafts under .dogen/staging/, which is working space."
         ask answer "     add .dogen/staging/ to $REPO/.gitignore? (y/n)" "y"
         case "$answer" in
             y|Y|yes) ;;
@@ -207,12 +175,12 @@ if [ "$VERIFY_ONLY" -eq 0 ]; then
     [ -w "$TOOL_DIR" ] || die "$TOOL_DIR is not writable; pick another --tool-dir, or run the copy yourself with the access you have"
     rm -f "$TOOL_DIR/dogen"
     if [ "$LINK" -eq 1 ]; then
-        ln -s "$DOGEN_SRC/dogen" "$TOOL_DIR/dogen" || die "cannot link into $TOOL_DIR"
-        say "  linked  $TOOL_DIR/dogen -> $DOGEN_SRC/dogen"
+        ln -s "$DOGEN_SRC/dogen.py" "$TOOL_DIR/dogen" || die "cannot link into $TOOL_DIR"
+        say "  linked  $TOOL_DIR/dogen -> $DOGEN_SRC/dogen.py"
     else
-        cp "$DOGEN_SRC/dogen" "$TOOL_DIR/dogen" || die "cannot copy into $TOOL_DIR"
+        cp "$DOGEN_SRC/dogen.py" "$TOOL_DIR/dogen" || die "cannot copy into $TOOL_DIR"
         chmod +x "$TOOL_DIR/dogen"
-        say "  copied  $DOGEN_SRC/dogen -> $TOOL_DIR/dogen"
+        say "  copied  $DOGEN_SRC/dogen.py -> $TOOL_DIR/dogen"
     fi
 
     mkdir -p "$SKILLS_ROOT" || die "cannot create $SKILLS_ROOT"
@@ -343,10 +311,6 @@ if [ "$failures" -ne 0 ]; then
 fi
 say "install: every check passed, $warnings warning(s)"
 say ""
-say "Next: open your agent in ${REPO:-your docs repository} and start a unit."
-case "$AGENT" in
-    claude-code) say "  /dogen-plan" ;;
-    copilot|codex|cursor|other) say "  \"Use the dogen-plan skill to document …\"" ;;
-esac
-say "Then dogen-write drafts it and dogen-review records your verdict."
+say "Next: open your agent in ${REPO:-your docs repository} and invoke /dogen-plan."
+say "Then /dogen-write drafts the page and /dogen-review records your verdict."
 exit 0

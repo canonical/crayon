@@ -4,7 +4,7 @@
 # Usage: bash tests/test_dogen_lifecycle.sh   (run from the repository root)
 #
 # D-10 splits the bash coverage in two. `tests/test_dogen_acceptance.sh` is
-# the reviewer's A-01…A-35 — the suite he wrote, ported by intent, and must be able to
+# the reviewer's A-01…A-35 — the suite they wrote, ported by intent, and must be able to
 # open and recognise. THIS file is the N-series: the lifecycle walks, the
 # negative paths, the recovery situations and the contract's trace table T1–T34b.
 #
@@ -19,9 +19,9 @@
 # Two ids that are NOT N-series live here anyway, decided in plan 17-01:
 #
 #   A-36 — an A-id in the N file. D-10 makes tests/test_dogen_acceptance.sh
-#          the reviewer's A-01…A-35, the suite he wrote, so that he can open it and
+#          the reviewer's A-01…A-35, the suite they wrote, so that they can open it and
 #          recognise it. A-36 is new and has no counterpart there; putting it in
-#          his file would break that recognition for no gain. Plan 17-10 closed
+#          their file would break that recognition for no gain. Plan 17-10 closed
 #          this the way RESEARCH Pitfall 11 proposed: with A-01…A-35 ported and
 #          the whole A range enumerated, the contract's Mechanisms cell for
 #          `retire` now names N-40 below rather than reserving A-36, so no A-36
