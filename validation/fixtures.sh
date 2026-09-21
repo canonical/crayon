@@ -2079,7 +2079,7 @@ test_protocol_a_second_run_file_flags_naming_both() {
 # --- check 3: the compatibility numbers ------------------------------------------------------
 
 # `tool.contract` and `tool.min_tool` are compared against `dogen version --json` — the same
-# two numbers `tests/check_docs.py` already pins README's COMPAT region against, so this is a
+# two numbers `tests/check_docs.py` already pins docs/compatibility.md's COMPAT region against, so this is a
 # second reading of one source rather than a third opinion. A mismatch names BOTH sides.
 test_protocol_compatibility_numbers_name_both_sides_on_a_mismatch() {
     complete_run_file

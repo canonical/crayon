@@ -9,14 +9,50 @@ significance still have one order a reader can predict.
 
 ## [Unreleased]
 
-Nothing unreleased. This section is stated rather than omitted: an empty heading reads as an
-oversight, a stated one reads as a fact.
+### Added
+
+- `install.sh` — an interactive installer at the repository root. It walks through the four
+  decisions an install has (which agent, project or global skills, where the executable goes —
+  a copy or a symlink into the checkout — and `.gitignore`), takes every default under `--yes`,
+  and ends by verifying the result: the executable on `PATH`, the contract number against every
+  installed skill's frontmatter, the skill directories, stale discovery roots, the git identity.
+  `--verify-only` runs the last part alone. It is in the shellcheck scope.
+- `docs/install.md`, `docs/compatibility.md`, `docs/hooks.md`, `docs/shellcheck.md` and
+  `docs/development.md` — one page each for what the README used to carry inline. The install
+  guide carries the marked `INSTALL` region `tests/install_smoke.sh` executes; the compatibility
+  page carries the `COMPAT` region `tests/check_docs.py` checks; the development page is the
+  gate's second pinned home.
+
+### Changed
+
+- `README.md` is agent-first: a five-minute quickstart (clone, `install.sh`, the three skills),
+  a plain "how you use it", a section on keeping dogen on its own branch and shipping pages from
+  a review branch popped off main, and a glossary that holds the vocabulary, the verb table and
+  the exit codes. The exit codes are one compact table, a row per code with its reasons in the
+  last cell; `tests/check_docs.py` reads that shape on the README side and the per-reason shape
+  on the contract side, flattening both against the tool's `REASONS`.
+- `docs/upgrade.md` is a forward-looking procedure — upgrade the executable, re-copy the skills,
+  check the two numbers, what a contract bump does to existing records — rather than a
+  before-and-after of the previous release.
+- `tests/install_smoke.sh` runs the documented `install.sh --yes` out of `docs/install.md` and
+  then drives one unit through the installed tool itself; the walk is no longer reader-facing
+  shell in the README.
+- The shellcheck scope is `install.sh tests/*.sh validation/*.sh`, in CI, in `AGENTS.md` and in
+  the unit suite's CI mirror.
+
+### Removed
+
+- The README's "What is and is not proven" section and the `CLAIMS` observable in
+  `tests/check_docs.py`, with the release-record prose that cross-referenced them below.
+- The README's credit section. The acceptance tests A-31 … A-35 keep the names they were ported
+  under, and the *Fixed* entry below keeps the attribution.
 
 ## [0.2.0] - 2026-09-18
 
 One stdlib-only `dogen` executable over a hash-chained JSONL ledger replaces the five
 `scripts/dogen-*.sh` and the pipe-delimited `ledger.md`. Migration for anyone holding a record
-written by the old scripts is [docs/upgrade.md](docs/upgrade.md).
+written by the old scripts was archive-and-redeclare, the policy [docs/upgrade.md](docs/upgrade.md)
+still states for any record under another contract number.
 
 Entries describe the release as a whole. Where an entry names a file that lands later in the
 release series, the release plan is the final check that every entry below is true at the tag.
@@ -60,19 +96,21 @@ release series, the release plan is the final check that every entry below is tr
   the local guard load both thresholds **and** the comparison out of `tests/test_dogen_unit.py`, so
   there is one authoring site for the pair and the job and the guard are the same code rather than
   merely the same constants.
-- [docs/upgrade.md](docs/upgrade.md) — the migration page for a `slim@357c513` record, and
-  `docs/sessions/` — the install-session records and the template they instantiate.
+- [docs/upgrade.md](docs/upgrade.md) — the upgrade procedure, and `docs/sessions/` — the
+  install-session records and the template they instantiate.
 
 ### Changed
 
 - The ledger moved from a pipe-delimited `ledger.md` to a hash-chained, canonical `ledger.jsonl`.
-- Notes and reasons are now ordinary JSON text — a stated behaviour change from `slim@357c513`.
-  Detail: [docs/upgrade.md](docs/upgrade.md) §1.
-- There is no `run_id`; `seq` is an event's identity. Detail: [docs/upgrade.md](docs/upgrade.md) §2.
-- A legacy pipe-delimited unit is refused with an archive hint and is never migrated in place.
-  Detail: [docs/upgrade.md](docs/upgrade.md) §3.
+- Notes and reasons are now ordinary JSON text — a stated behaviour change from `slim@357c513`:
+  `|` and newlines are ordinary characters, and a note round-trips byte-identical
+  ([docs/contract.md](docs/contract.md) §5.2, §5.6).
+- There is no `run_id`; `seq` is an event's identity, and `prev` chains the lines.
+- A legacy pipe-delimited unit is refused with an archive hint (`legacy_unit`, exit 2) and is
+  never migrated in place; a directory holding both files is a JSONL unit.
 - Skills are discovered under `.agents/skills/` in the project, or `~/.agents/skills/` globally.
-  Detail: [docs/upgrade.md](docs/upgrade.md) §6.
+  Older roots (`.claude/skills/`, `.github/skills/`, `.opencode/skills/`) are found first by some
+  agents and must be removed.
 - VERB-09's line budget is recalibrated a third time, to **10,000 lines annotate / 12,000 fail**,
   from the 8,000 / 9,500 pair the earlier builds of this release carried. `dogen` measured 9,472
   lines, so the review trigger had fired on every run for 263 commits and 28 lines of headroom
@@ -103,7 +141,7 @@ release series, the release plan is the final check that every entry below is tr
 - To be plain about why the tree was swapped: the swap is justified by what a pipe-delimited ledger
   *cannot* do — support multi-line and `|` notes, persist step text, derive state after
   accept-then-redraft, scope `git add` — **not** by those three holes. His regression tests are
-  carried by intent, and the fixes are credited here and in the README.
+  carried by intent, and the fixes are credited here.
 - **The CI workflow had drifted from the gate it claims to run, and nothing noticed.** The unit
   suite now carries a mirror test that reads `.github/workflows/ci.yml` itself and asserts both
   directions — no gate command without a job, and no job the gate does not declare — with the two
@@ -174,103 +212,7 @@ That reading reverses an earlier one, which classified the same row as a contrac
 readings are recorded in `docs/contract.md`, and this revision goes to review with the pull request
 that lands the row.
 
-### Install evidence and claims boundary
-
-**No install session was run for this release.** Both legs REL-03 asks for fell back, on
-2026-09-16, to the wording declared before either of them could have run:
-
-- **no non-implementer session was run; supported configurations unproven**
-- **AC1 unproven**
-
-Those two sentences were fixed in advance, while stating them was still costless, precisely so
-this paragraph could not be drafted afterwards to suit whatever happened. They are reproduced
-verbatim, here and in `README.md`'s claims boundary; nothing softens them and nothing is
-substituted for them. No implementer ran either session instead, and no agent driven on someone's
-instruction is recorded as a reader — the earlier precedent, an agent CLI session recorded in
-place of two named readers, is deliberately not repeated.
-
-#### What the install evidence is, and what it is not
-
-The install evidence behind this release is the two **authoring** sessions under `docs/sessions/`
-— `2026-09-14-early.md` and `2026-09-15-full.md` — and nothing else. Read plainly, that is:
-
-- Both were driven by an agent CLI on the author's instruction, not by a reader meeting the
-  document for the first time. Every metric in them is agent-reported.
-- The two measurements REL-03 cares about most — avoidable questions, and help requests — have
-  therefore **never had a human-hands reading anywhere in this milestone**. An agent-reported zero
-  is a different claim from a human-observed zero, and this release has only the former.
-- Where those records write `not measured`, no number is reported for that metric here. An
-  unmeasured metric stays unmeasured in the release notes.
-- **Both legs ran against fixture hooks, not a repository's own configured hooks.** The hook
-  shapes were installed from the test fixtures because the repository's own `pre-commit` could not
-  run in that environment, so the hook routes are proven against the shapes and not against a real
-  project's hook configuration. Every hook row in those records carries that provenance
-  explicitly, which is what makes the distinction checkable rather than asserted.
-
-**Supported configurations are therefore unproven, and none is named** — a configuration no
-recorded session exercised is not listed as supported. That is stated rather than omitted: an
-absent section reads as an oversight, a stated one reads as a fact.
-
-#### The honest-claims boundary
-
-Carried here in full rather than cross-referenced. Two of the statements this section held were
-discharged by real authoring sessions, and each is replaced by the evidence rather than removed:
-
-- **Multi-file support is proved.** Validation unit `schema-section-consistency` recorded a
-  `generation` carrying two `files[]` entries — `reference/definition-files/sdk-definition.rst`
-  and `reference/definition-files/sdkcraft-definition.rst` — committed in the target repository at
-  `15bcba0073beadc372a9827405c1aca46bcf0025`. An oracle sharing no code with the tool agrees from
-  the other side: two sealed pages hashing to the digest the basis recorded, and two recorded
-  target paths in the basis vocabulary. The record is
-  `validation/legs/RUN-workshop-definition.codex-cli.json`.
-- **The evidence-gated step walk has been driven in a real session.** Validation unit
-  `validate-workshop-definition` planned four steps, recorded a resolution with tool-captured
-  evidence for each, and drafted and accepted a how-to; the draft is committed in the target
-  repository at `fd153bf` and the record is
-  `validation/legs/RUN-validate-workshop-definition.json`. **That session did not prove the loop
-  produces a how-to grounded in observed command behaviour, and this release does not claim it.**
-  Three of the four steps resolved `skipped` — `workshop` and `sdkcraft` are snaps and
-  snap-confine could not start in that environment — so the accepted page carries successful
-  command evidence for one step of four.
-
-Neither statement is a claim that the loop produces a usable draft. Of the three recorded
-validation walks, one met the pre-registered bar on every graded dimension and two did not. The
-scores stand as measured in `validation/legs/workshop-definition.md` and
-`validation/legs/validate-workshop-definition.md`; no walk was re-run to improve one, and no
-pre-registered expectation was edited after the session it graded.
-
-The three statements the boundary still carries are unchanged: the fixture-hooks reading above,
-the unnamed supported configurations above, and the grounding the actionable walk did not
-establish. `tests/check_docs.py`'s `REQUIRED_CLAIMS` is keyed on all three, so dropping one from
-`README.md` fails the `docs-check` job rather than passing quietly.
-
-#### The validation evidence, and what a reader can re-run
-
-The claims above rest on a kit that ships with the release, so a reader checks them rather than
-takes them:
-
-- `validation/fixtures.sh` re-runs the four corruption fixtures — a bypassed signoff gate, a
-  tampered ledger line, an unsteered redraft and an unevidenced step — and each must still be
-  caught.
-- `validation/score.py audit` re-scores a unit against a four-oracle implementation that shares no
-  code with `dogen`, so agreement between them is evidence and disagreement is reported as
-  `DISAGREE` rather than resolved in the tool's favour.
-- `validation/rubric.md` and the per-leg files under `validation/legs/` are the standard, and both
-  were committed before either session ran. A score below a leg's own baseline row is recorded as
-  measured; the leg is not re-run to improve it.
-- Each `validation/legs/RUN-<leg>.json` carries the skills tree digest, the `dogen` digest, the
-  baseline commit, the six session metrics, the Sphinx before/after evidence with an attribution
-  for every new item, and the transcript's sha256.
-
-**The session transcripts do not ship — only their shas, inside those RUN files.** That digest is a
-commitment rather than something a reader can verify: it lets the author prove later that a
-transcript produced on request is the one the record was written against. Nothing in this release
-lets a third party check it, and this section does not claim otherwise.
-
-The kit reports as its own CI job. A kit failure is never reported as a tool-suite failure, and a
-tool-suite failure is never hidden behind a green kit.
-
-#### Release-time evidence
+### Release-time evidence
 
 **No GitHub Actions execution of this workflow exists as of the date on the `## [0.2.0]` heading
 above.** That is the design rather than an omission: the workflow's first execution on a runner is
@@ -290,12 +232,11 @@ and the bypass actor survives the rule even once it is added.
 are facts that do not exist before the release lands. What this record states are the three facts
 it can state: that no run exists, why that is by design, and what "green" is evidence of.
 
-#### How this release is cut, and which build was abandoned
+### How this release is cut, and which build was abandoned
 
 A release branch for `v0.2.0` was built at `f83145a` and was locally green on the whole gate. It
 was deliberately **not** pushed, tagged or opened as a pull request, and it is **superseded**: it
-predates the validation kit under `validation/`, the eighth CI job that runs it, and the claims
-boundary as it now stands. Naming the abandoned build here is the point — a later reader can tell
+predates the validation kit under `validation/` and the eighth CI job that runs it. Naming the abandoned build here is the point — a later reader can tell
 which one was dropped and on what grounds, instead of inferring it from a gap in the history.
 
 The release branch is therefore re-carved **once**, from `main`, to include the kit, the eighth CI

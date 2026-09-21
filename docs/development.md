@@ -1,0 +1,195 @@
+# Developing dogen
+
+The tooling, the test suites and the checks that verify the tree, for someone changing dogen
+rather than using it. The operating rules — the non-negotiables, the tree, the conventions — are
+in [`AGENTS.md`](../AGENTS.md), and the behaviour of the tool is fixed by
+[`docs/contract.md`](contract.md), frozen at the git tag `contract-v1`. This page explains what
+each command in the gate proves and how the pieces pin one another, so that a red run names the
+thing that moved.
+
+## The shape
+
+One stdlib-only Python file, `dogen`, at the repository root: Python 3.9 syntax, no package, no
+venv, no dependency, no third-party test runner. One verb per transition over a hash-chained
+JSONL ledger. Three portable Agent Skills under `skills/` are the human-facing surface; two
+stdlib-only lint utilities under `scripts/` and a validation kit under `validation/` are the
+apparatus around it. Nothing in the product tree imports anything outside the standard library,
+and the unit suite asserts it.
+
+## The gate
+
+Every command below must be green before a commit lands. The list is pinned three ways: the
+`GATE_COMMANDS` tuple in `tests/test_dogen_unit.py` must equal it string for string, every
+command must appear in `AGENTS.md` and in this page, and every `run:` body in
+`.github/workflows/ci.yml` must be one of them.
+
+```bash
+python3 -m unittest tests.test_dogen_unit        # the unit suite
+python3 tests/test_dogen_unit.py                 # the SAME suite, script form
+python3 -m unittest tests.test_skill_text        # the skill-text contracts
+python3 -m unittest tests.test_planning_lint     # the anonymization lint's own tests
+python3 -m unittest tests.test_check_docs        # the docs-accuracy checker's own tests
+bash tests/test_dogen_lifecycle.sh               # the lifecycle / recovery suite
+bash tests/test_dogen_acceptance.sh              # the acceptance suite
+bash tests/install_smoke.sh                      # the stranger's install path, end to end
+bash validation/fixtures.sh                      # the validation kit's four corruption fixtures
+python3 scripts/skill_lint.py                    # the SKILL.md frontmatter gate
+python3 tests/check_traces.py                    # the trace-table checker
+python3 tests/check_docs.py                      # the docs-accuracy checker
+python3 scripts/planning_lint.py                 # the anonymization gate over .planning/
+python3 tests/size_guard.py                      # VERB-09's line budget, reported and enforced
+```
+
+Set `GIT_CONFIG_GLOBAL=/dev/null` for anything that shells out to git, so a developer's global
+identity or hooks can never mask a missing step in a fixture. Alongside the gate, and pinned to
+CI the same way, the shell files are kept clean with:
+
+```bash
+shellcheck -S warning install.sh tests/*.sh validation/*.sh
+```
+
+See [`docs/shellcheck.md`](shellcheck.md) for the version policy.
+
+### One exit contract for every checker
+
+Every script that checks something — the two lints, the three checkers, the install smoke, the
+bash harness, the validation kit — answers with the same three codes:
+
+| Exit | Meaning |
+|---|---|
+| `0` | clean: everything it looked for was checked and agreed |
+| `1` | violation: at least one named disagreement, one line each |
+| `2` | nothing was checked: the input it scans was absent or reshaped |
+
+The `2` arm is the vacuous-pass guard, and it is the reason the gate can be trusted: a checker
+whose region was renamed, whose table was reshaped or whose suite discovered no tests reports
+`2`, never a clean run. Each observable in a checker carries its own `2`, so a reshaped table
+cannot ride to green on the links that did parse.
+
+## The suites
+
+**`tests/test_dogen_unit.py`** — the unit suite, run twice on purpose. `python3 -m unittest`
+and the script form once reported different counts, and a suite whole under one runner and
+truncated under the other reports `OK` either way. Beyond the tool's own units it is the home
+of the repository's self-pins: the gate tuple, the tree block in `AGENTS.md` (pinned against
+the real `docs/`, `scripts/`, `tests/` and `validation/` in both directions), the CI mirror,
+the line budget's two thresholds, the Python 3.9 hazard scan and the no-dependency assertion.
+
+**`tests/test_skill_text.py`** — the skill-text contracts: the routing table authored once in
+`skills/README.md` between its sentinels is byte-identical in every skill's
+`references/routing.md`; every reason and every `next` token has exactly one row; the manual
+install lines in [`docs/install.md`](install.md) create the directory they copy into.
+
+**`tests/test_dogen_lifecycle.sh`** — the N-series: lifecycle walks, negative paths, recovery
+situations and the contract's trace table, each test driving the real executable in a hermetic
+temporary git repository. It is the long pole at roughly three minutes.
+
+**`tests/test_dogen_acceptance.sh`** — A-01 … A-35, the black-box acceptance suite ported by
+intent from the v1 bash layer, plus the tests that cannot live in the N file.
+
+Both bash suites source `tests/lib.sh`, the one definition site for the temp-repo fixture, the
+assertion set, the hook fixtures, the vacuous-test guard and the TAP runner. Never add a second
+copy of any of those.
+
+**`tests/install_smoke.sh`** — the only test that reaches `dogen` through `PATH` rather than the
+in-tree file. It extracts the fenced shell between the `INSTALL:BEGIN` / `INSTALL:END` markers in
+[`docs/install.md`](install.md) byte for byte, runs it from a temporary `HOME` in a temporary
+repository, then drives one unit to a written page and one refusal from that vantage point. It
+is what keeps the documented install from rotting.
+
+**`validation/fixtures.sh`** — V-01 … V-04: a bypassed signoff gate, a tampered ledger line, an
+unsteered redraft and an unresolved pending request, each reached from a valid unit built by the
+real verbs and each caught by `validation/score.py audit`, an oracle that shares no code with the
+tool. The kit is evidence apparatus, not product code; it reports as its own CI job.
+
+## The checkers and lints
+
+**`tests/check_docs.py`** — the docs-accuracy checker. It compares observables, never prose:
+the `VERBS` region in `README.md` against `dogen --help`'s subcommand list; the compact
+`REASONS` table in `README.md` and the reason table in `docs/contract.md` §5.7 against the
+tool's `REASONS` dict, name and exit code; the `COMPAT` region (wherever in the documented set it
+sits, exactly once) and contract §5.10 against the two numbers the tool reports; every in-repo
+link and anchor across the documented set; the changelog's topmost release heading, which must
+be dated and carry no placeholder. It calls `check_traces.py` itself.
+
+**`tests/check_traces.py`** — every row of the contract's trace table and every Mechanisms row
+that names a suite file must have a test whose function name carries the row's id. It says a
+test exists, and nothing about what the test asserts.
+
+**`scripts/skill_lint.py`** — agentskills.io frontmatter invariants for each `SKILL.md`: the
+name matches the directory, the description parses, the compatibility numbers are the contract's
+as literal strings, and only `dogen-write` may hold a write-capable tool. The single-writer rule
+is fail-closed.
+
+**`scripts/planning_lint.py`** — no unscrubbed prior-art identity in `.planning/`. A missing
+planning tree is a clean scan; on a release branch it checks nothing and says so.
+
+**`tests/size_guard.py`** — VERB-09's line budget over `dogen`, a review trigger rather than a
+design goal. Above the reporting threshold it reports and stays green; at the failing threshold
+it fails. It loads both thresholds and the comparison out of the unit suite, so the CI job and
+the local guard are the same code.
+
+## What pins what
+
+| This | is pinned to | by |
+|---|---|---|
+| `GATE_COMMANDS` | `AGENTS.md`, this page, `ci.yml` `run:` bodies, every `tests/test_*.py` | the unit suite |
+| `AGENTS.md`'s tree block | the real `docs/`, `scripts/`, `tests/`, `validation/` | the unit suite |
+| The routing table | each skill's `references/routing.md` | `test_skill_text.py` |
+| `README.md`'s verb rows | `dogen --help` | `check_docs.py` |
+| The two reason tables | `dogen.REASONS` | `check_docs.py` and the unit suite |
+| The compatibility numbers | `dogen version --json` | `check_docs.py`, `skill_lint.py`, `install.sh` |
+| The install region | an install that reaches a page | `install_smoke.sh` |
+| The trace table | test function names | `check_traces.py` |
+
+When one side moves, the other goes red until it catches up. That is the intended failure mode;
+never make a pin pass by loosening it.
+
+## CI
+
+Eight independent jobs in `.github/workflows/ci.yml`, no `needs:` edge between any two, so every
+verdict lands on the checks list at once. Each job body is the literal local command, so a red
+check reproduces with one paste. First-party actions only, pinned to commit SHAs. The unit
+matrix runs 3.9 / 3.12 / 3.13 from the runner's tool cache; `tests/run_matrix.sh` is the local
+equivalent, fetching interpreters with `uv` as a fetcher only — it never installs a package.
+
+## Driving the verbs by hand
+
+The skills are the surface, but every guarantee is in the tool, and the fastest way to reproduce
+a report is to drive the verbs directly in a scratch repository:
+
+```bash
+mkdir -p /tmp/dogen-try && cd /tmp/dogen-try
+git init -q -b main . && git config user.name "Anne Example" && git config user.email "anne@example.com"
+printf '.dogen/staging/\n' > .gitignore
+printf '# Widget API\n\nCreate and delete widgets.\n' > source.md
+mkdir -p docs && printf '# Docs\n' > docs/index.md
+git add -A && git commit -q -m "seed"
+
+printf '# Plan\n\nOutline the widget API reference.\n' \
+  | dogen unit new widget-api --intent reference \
+      --audience "developers integrating the widget API" \
+      --title "Widget API" --target reference/widget-api.md \
+      --source source.md --body-file -
+dogen signoff widget-api
+dogen steer widget-api --note "Lead with the create call."
+mkdir -p .dogen/staging/widget-api/draft
+printf '# Widget API\n\n## create\n\nCreates a widget.\n' > .dogen/staging/widget-api/draft/widget-api.md
+dogen draft widget-api .dogen/staging/widget-api/draft/widget-api.md
+dogen verify widget-api
+dogen show widget-api
+```
+
+`steer` is load-bearing: without a steering record since the last generation, `draft` refuses
+with `unsteered`. Every refusal is one JSON line with `error`, `unit`, `detail`, `hint` and
+`next`; branch on `error`. `git log --grep 'Dogen-Unit: widget-api'` replays the unit's path.
+
+## Changing the documented surface
+
+- A new verb or reason: change `dogen`, then the contract, then `README.md`'s region and the
+  routing table in `skills/README.md`, then re-copy the routing mirrors. `check_docs.py` and
+  `test_skill_text.py` name whichever side is behind.
+- A new file under `docs/`, `scripts/`, `tests/` or `validation/`: list it in `AGENTS.md`'s tree
+  block, or name it in the unit suite's `UNSHIPPED_PATHS` if it is deliberately not released.
+- A new test module: add it to `GATE_COMMANDS`, `AGENTS.md`, this page and `ci.yml` together.
+- A new shell file: add it to the shellcheck command in all three places.

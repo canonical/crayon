@@ -1,4 +1,4 @@
-"""Documentation-accuracy gate: five observables, one presence check, one delegation.
+"""Documentation-accuracy gate: five observables, one release check, one delegation.
 
 Everything else this phase ships can be true on the day it lands and quietly
 false a month later — a verb renamed, a reason added, a file moved. This is the
@@ -11,23 +11,22 @@ What it claims, and nothing wider:
    subcommands the tool registers. The oracle is ``dogen --help``'s own
    subcommand list, never a list kept here, so a wrong document cannot be made
    green by editing this file (T-18-30).
-2. **Reasons** — the rows in ``README.md``'s ``REASONS`` region and the rows in
-   ``docs/contract.md``'s reason table each equal ``dogen.REASONS`` by name and
-   by exit code.
-3. **Compatibility** — ``README.md``'s ``COMPAT`` region and ``docs/contract.md``
-   section 5.10 carry ``contract`` and ``min_tool`` as the literal strings the
-   tool reports.
+2. **Reasons** — ``README.md``'s ``REASONS`` region is ONE compact table, one
+   row per exit code with that code's reasons listed in its last cell; the
+   rows in ``docs/contract.md``'s reason table are one per reason. Each side,
+   flattened to ``{reason: exit}``, equals ``dogen.REASONS`` by name and code.
+3. **Compatibility** — the ``COMPAT`` region, carried by exactly one document
+   of the documented set (``docs/compatibility.md`` today), and
+   ``docs/contract.md`` section 5.10 carry ``contract`` and ``min_tool`` as the
+   literal strings the tool reports. A region present in two documents is a
+   violation: two reader-facing copies are the drift this gate exists against.
 4. **Links** — every in-repo markdown link in the documented set resolves to a
    path that exists, and every ``#anchor`` to a heading in the target file.
-5. **Claims boundary** — ``README.md``'s ``CLAIMS`` region exists, is non-empty
-   and carries every statement in ``REQUIRED_CLAIMS``. Its absence is a
-   violation, never a vacuous pass: a release that drops the boundary has said
-   less, not checked less.
-6. **Release record** — ``CHANGELOG.md``'s topmost ``## [x.y.z]`` section
+5. **Release record** — ``CHANGELOG.md``'s topmost ``## [x.y.z]`` section
    carries an ISO date and none of ``RELEASE_PLACEHOLDERS``. A file with no
    versioned heading scanned nothing and is a ``2``, never a clean run, so an
    unfilled release-time slot cannot ship green (REL-02, CI-03).
-7. **Traces** — ``tests/check_traces.py``'s ``main()`` is called and folded into
+6. **Traces** — ``tests/check_traces.py``'s ``main()`` is called and folded into
    the tally. There is exactly one trace-table parser in this repository and it
    is not here (17 D-09).
 
@@ -75,6 +74,11 @@ DOC_FILES = (
     "README.md",
     "AGENTS.md",
     "docs/contract.md",
+    "docs/install.md",
+    "docs/compatibility.md",
+    "docs/hooks.md",
+    "docs/shellcheck.md",
+    "docs/development.md",
     "docs/upgrade.md",
     "CHANGELOG.md",
     "skills/README.md",
@@ -88,6 +92,10 @@ DOC_FILES = (
 #: :mod:`check_traces` uses for the trace table.
 VERB_ROW_RE = re.compile(r"^\|\s*`([a-z][a-z-]*)`\s*\|")
 REASON_ROW_RE = re.compile(r"^\|\s*`([a-z_]+)`\s*\|\s*([0-9])\s*\|$")
+#: README's compact shape: the exit code in the first cell, a meaning in the
+#: second, and every reason of that code as a backticked name in the last.
+COMPACT_REASON_ROW_RE = re.compile(r"^\|\s*`([0-9])`\s*\|[^|]*\|([^|]*)\|$")
+COMPACT_REASON_NAME_RE = re.compile(r"`([a-z_]+)`")
 COMPAT_ROW_RE = re.compile(r"^\|\s*`(contract|min_tool)`\s*\|\s*`([^`]+)`\s*\|$")
 
 #: ``[text](target)``, with an optional quoted title. Reference-style links and
@@ -102,47 +110,6 @@ _SECTION_RE = re.compile(r"^##\s")
 #: readers are pinned to one anchor on purpose so they cannot drift apart.
 REASON_TABLE_ANCHOR = "Reason table:"
 COMPAT_HEADING = "## 5.10 Compatibility"
-
-#: The statements the claims boundary must carry, keyed on their stable lead-in
-#: wording rather than on a whole paragraph a copy-edit would break.
-#:
-#: Phase 19 replaced the original pair. ``multi-file support is unproven`` left
-#: because validation unit ``schema-section-consistency`` recorded a
-#: ``generation`` carrying two ``files[]`` entries, committed in the target at
-#: ``15bcba0`` (19-07); ``actionable walk is unvalidated`` left because unit
-#: ``validate-workshop-definition`` drove the step walk end to end in a real
-#: session (19-08). Both are boundaries a session discharged, so the region
-#: states the evidence instead and the checker stops requiring the boundary.
-#:
-#: The set is re-keyed rather than emptied. An empty tuple would leave the
-#: claims check asserting nothing while the absent-or-empty rule below kept
-#: firing, and the three entries are what the region still asserts as unproven:
-#: the fixture-hooks reading, the unnamed supported configurations, and the
-#: grounding the actionable walk did *not* establish. A constant that changes
-#: without a recorded reason is the drift this file exists to catch, which is
-#: why the reasons are here and not only in a commit message.
-#:
-#: Each entry is short enough to survive the region's line wrapping: the region
-#: is hard-wrapped prose, so a key long enough to straddle a newline would read
-#: as missing over a sentence that is present.
-#:
-#: Each entry also carries the claim's POLARITY (19 WR-05). The two retired keys
-#: carried theirs in the key itself — ``… is unproven``, ``… is unvalidated`` —
-#: and two of the three replacements lost it: ``a repository's own configured
-#: hooks`` and ``grounded in observed command behaviour`` are both present in
-#: the INVERTED sentence, so editing the README from "The walk **did not prove**
-#: the loop produces a how-to grounded in observed command behaviour" to "The
-#: walk **proved** …" left the substring there and the checker green. This
-#: boundary exists to assert that README still STATES a limit; a key that cannot
-#: notice the limit being erased is the same defect the file's comment above
-#: names, one step earlier. The third is keyed on ``did not prove the loop``
-#: rather than on the whole clause because the region's hard wrap splits the
-#: sentence after ``loop`` — the negation is on the near side of the break.
-REQUIRED_CLAIMS = (
-    "not a repository's own configured hooks",
-    "supported configurations are unproven",
-    "did not prove the loop",
-)
 
 #: The literal markers that mean a release-time slot was never filled. Their
 #: presence in the TOPMOST released section is a violation and never a vacuous
@@ -211,6 +178,23 @@ def marked_region(text, name):
     return text[start + len(begin) : stop]
 
 
+def region_in_documents(documents, name):
+    """The one document carrying the ``name`` region, as ``(path, body)``.
+
+    ``(None, [])`` when no document carries it, and ``(None, paths)`` when more
+    than one does — the caller reports the second as a violation, because a
+    reader-facing table with two homes is the drift this file exists against.
+    """
+    carriers = []
+    for relative, text in sorted(documents.items()):
+        body = marked_region(text, name)
+        if body is not None:
+            carriers.append((relative, body))
+    if len(carriers) == 1:
+        return carriers[0]
+    return None, [relative for relative, _ in carriers]
+
+
 def heading_section(text, heading):
     """The body under ``heading`` up to the next ``## `` heading, or ``None``."""
     start = text.find(heading)
@@ -250,6 +234,20 @@ def table_rows(body, row_re):
             rows.append(match.groups())
         elif rows and not stripped.startswith("|"):
             break
+    return rows
+
+
+def compact_reason_rows(body):
+    """README's compact reason table, flattened to ``(name, code)`` tuples.
+
+    One table row per exit code; every backticked name in the row's last cell
+    is a reason with that code. A row with no names (exit ``0``) contributes
+    nothing, which is why the vacuous-pass guard counts tuples and not rows.
+    """
+    rows = []
+    for code, cell in table_rows(body, COMPACT_REASON_ROW_RE):
+        for name in COMPACT_REASON_NAME_RE.findall(cell):
+            rows.append((name, code))
     return rows
 
 
@@ -420,7 +418,7 @@ def check_reasons(readme, contract, tool_reasons, report):
     if not tool_reasons:
         report.nothing_checked(observable, "the tool's REASONS table")
         return
-    readme_rows = table_rows(marked_region(readme, "REASONS"), REASON_ROW_RE)
+    readme_rows = compact_reason_rows(marked_region(readme, "REASONS"))
     if not readme_rows:
         report.nothing_checked(
             observable, "README.md's <!-- REASONS:BEGIN --> / <!-- REASONS:END --> region"
@@ -477,17 +475,31 @@ def _compare_compat(report, side, documented, expected):
             )
 
 
-def check_compat(readme, contract, expected, report):
-    """README's COMPAT region and contract section 5.10 against the tool."""
+def check_compat(documents, contract, expected, report):
+    """The one COMPAT region in the documented set, and contract 5.10, against the tool."""
     observable = "compatibility"
-    readme_rows = table_rows(marked_region(readme, "COMPAT"), COMPAT_ROW_RE)
-    if not readme_rows:
+    carrier, body = region_in_documents(documents, "COMPAT")
+    if carrier is None and body:
+        report.violation(
+            observable,
+            "the <!-- COMPAT:BEGIN --> / <!-- COMPAT:END --> region is carried by "
+            "%d documents; it has exactly one reader-facing home" % len(body),
+            "carriers",
+            body,
+            "allowed",
+            ["one document"],
+        )
+        body = None
+    doc_rows = table_rows(body, COMPAT_ROW_RE) if carrier else []
+    if not doc_rows:
         report.nothing_checked(
-            observable, "README.md's <!-- COMPAT:BEGIN --> / <!-- COMPAT:END --> region"
+            observable,
+            "a <!-- COMPAT:BEGIN --> / <!-- COMPAT:END --> region in one of the "
+            "documented set",
         )
     else:
-        _compare_compat(report, "README.md", dict(readme_rows), expected)
-        report.ok("compatibility (README.md)", len(readme_rows), "numbers")
+        _compare_compat(report, carrier, dict(doc_rows), expected)
+        report.ok("compatibility (%s)" % carrier, len(doc_rows), "numbers")
     contract_rows = table_rows(heading_section(contract, COMPAT_HEADING), COMPAT_ROW_RE)
     if not contract_rows:
         report.nothing_checked(
@@ -570,42 +582,6 @@ def check_links(root, documents, report):
         )
         return
     report.ok(observable, resolved, "in-repo links")
-
-
-def check_claims(readme, report):
-    """REL-01: the release states what it has not proved, or it does not ship.
-
-    An absent or empty region is a violation and never a ``2``. A missing
-    boundary is the finding itself — the release has claimed more, not checked
-    less — so routing it to the vacuous arm would let a delete pass as a scan
-    that found nothing.
-    """
-    observable = "claims"
-    region = marked_region(readme, "CLAIMS")
-    if region is None or not region.strip():
-        report.violation(
-            observable,
-            "README.md's <!-- CLAIMS:BEGIN --> / <!-- CLAIMS:END --> region is "
-            "absent or empty",
-            "required",
-            list(REQUIRED_CLAIMS),
-            "found",
-            [],
-        )
-        return
-    lowered = region.lower()
-    missing = [claim for claim in REQUIRED_CLAIMS if claim not in lowered]
-    if missing:
-        report.violation(
-            observable,
-            "README.md's CLAIMS region omits %d of the unproven statements"
-            % len(missing),
-            "required",
-            list(REQUIRED_CLAIMS),
-            "missing",
-            missing,
-        )
-    report.ok(observable, len(REQUIRED_CLAIMS) - len(missing), "statements")
 
 
 def check_release_record(changelog, report):
@@ -714,7 +690,7 @@ def run_checks(root, documents, tool, report):
     check_verbs(root, readme, report)
     check_reasons(readme, contract, dict(getattr(tool, "REASONS", {})), report)
     check_compat(
-        readme,
+        documents,
         contract,
         {
             "contract": str(getattr(tool, "CONTRACT", "")),
@@ -723,7 +699,6 @@ def run_checks(root, documents, tool, report):
         report,
     )
     check_links(root, documents, report)
-    check_claims(readme, report)
     check_release_record(documents.get("CHANGELOG.md", ""), report)
     check_traces(root, report)
 

@@ -37,13 +37,15 @@ once (CR-06), and a suite that is whole under one runner and truncated under the
 `OK` either way.
 
 `bash tests/install_smoke.sh` is the only command here that reaches `dogen` through `PATH`
-rather than through the in-tree file, and the only one that executes `README.md`'s marked
-`QUICKSTART` region as written. It is what keeps the documented install from rotting.
+rather than through the in-tree file, and the only one that executes `docs/install.md`'s marked
+`INSTALL` region — the scripted `install.sh --yes` — as written. It is what keeps the documented
+install from rotting.
 
 This list is pinned by `tests/test_dogen_unit.py`'s `GATE_COMMANDS` tuple: every string above
-appears there verbatim, every `tests/test_*.py` module in the tree appears in it, and no command
-in it may name a `tests/`, `scripts/` or `validation/` path that does not exist. Change one side
-and the suite goes red until the other catches up.
+appears there verbatim and in [`docs/development.md`](docs/development.md), every
+`tests/test_*.py` module in the tree appears in it, and no command in it may name a `tests/`,
+`scripts/` or `validation/` path that does not exist. Change one side and the suite goes red
+until the others catch up.
 
 `bash validation/fixtures.sh` proves what nothing else in the gate does: that each of the four
 named corruptions — a bypassed signoff gate, a tampered ledger line, an unsteered redraft, an
@@ -54,10 +56,10 @@ kit's oracle catches it independently of the tool's own suites.
 unit suite on 3.9 / 3.12 / 3.13 through a local interpreter fetcher. CI gets its interpreters
 from the runner's tool cache instead.
 
-The bash suites, the install smoke and the validation kit are kept clean at
-`shellcheck -S warning tests/*.sh validation/*.sh` — that exact command, with that exact file
-scope, is what CI's `shellcheck` job runs, so the two cannot drift in scope even where they drift
-in version. CI runs the runner image's preinstalled shellcheck 0.9.0; a developer machine is
+The installer, the bash suites, the install smoke and the validation kit are kept clean at
+`shellcheck -S warning install.sh tests/*.sh validation/*.sh` — that exact command, with that
+exact file scope, is what CI's `shellcheck` job runs, so the two cannot drift in scope even where
+they drift in version. CI runs the runner image's preinstalled shellcheck 0.9.0; a developer machine is
 likely newer, so reproduce any CI-only finding against 0.9.0 before changing code — and the
 mirror image holds too, so reproduce a local-only finding against 0.9.0 before changing code
 for it.
@@ -130,8 +132,11 @@ than reconstructing the history from this file.
 
 ```
 dogen                              ← the gate: one stdlib-only Python file (contract-v1)
-README.md                          ← the reader's entry point; carries the marked QUICKSTART,
-                                     VERBS, REASONS, COMPAT and CLAIMS regions
+install.sh                         ← the interactive installer; --yes takes every default,
+                                     --verify-only checks an existing install
+README.md                          ← the reader's entry point: quickstart, usage, branch
+                                     practice, glossary; carries the marked VERBS and
+                                     REASONS regions
 AGENTS.md                          ← this file: the gate, the rules, the tree
 CHANGELOG.md                       ← the release record
 LICENSE                            ← LGPL-3.0-only, the tool
@@ -139,7 +144,15 @@ LICENSE                            ← LGPL-3.0-only, the tool
 
 docs/
 ├── contract.md                    ← NORMATIVE. Frozen at tag `contract-v1`
-├── upgrade.md                     ← behaviour changes from the previous release
+├── install.md                     ← the install guide; carries the marked INSTALL region
+│                                     tests/install_smoke.sh executes
+├── compatibility.md               ← the contract number and min_tool; carries the marked
+│                                     COMPAT region
+├── hooks.md                       ← what a formatting hook on a target page leads to
+├── shellcheck.md                  ← the shellcheck version policy
+├── development.md                 ← tooling, testing and verification for contributors;
+│                                     the gate's second pinned home
+├── upgrade.md                     ← upgrading the tool, the skills and existing records
 └── sessions/
     ├── TEMPLATE.md                ← the fixed shape an authoring-session record must fill
     ├── NOTES-2026-09.md           ← cross-session notes
@@ -190,10 +203,11 @@ tests/
 ├── test_dogen_lifecycle.sh        ← the lifecycle / recovery suite (hermetic temp git repos)
 ├── test_dogen_acceptance.sh       ← the acceptance suite, A-01 … A-35
 ├── lib.sh                         ← the fixtures both bash suites share; ONE definition site
-├── install_smoke.sh               ← CI-02 / A-37: install from PATH, run README's QUICKSTART
+├── install_smoke.sh               ← CI-02 / A-37: run docs/install.md's INSTALL region, then
+│                                     one unit through the installed tool
 ├── check_traces.py                ← the contract trace-table checker
 ├── check_docs.py                  ← the docs-accuracy checker: links, verbs, reasons, compat
-│                                     and claims, across the nine documents it names
+│                                     and the release record, across the documents it names
 ├── size_guard.py                  ← VERB-09's line budget over `dogen`, reported and enforced
 └── run_matrix.sh                  ← local-only: the unit suite on 3.9 / 3.12 / 3.13
 ```
@@ -212,9 +226,12 @@ contents are summarised inside the `←` comment rather than listed one per line
 ### Verbs, exit codes and refusals
 
 Not restated here. The verb table and the reason/exit table each live in exactly one
-reader-facing place — [`README.md`](README.md)'s `VERBS` and `REASONS` marked regions — and in
-exactly one normative place, [`docs/contract.md`](docs/contract.md) §6 and §5.7. The
-authoritative machine list is the `REASONS` dict inside `dogen`.
+reader-facing place — [`README.md`](README.md)'s `VERBS` and `REASONS` marked regions, under its
+Glossary — and in exactly one normative place, [`docs/contract.md`](docs/contract.md) §6 and
+§5.7. The README's reason table is one compact row per exit code; the contract's is one row per
+reason; `tests/check_docs.py` flattens both against the authoritative machine list, the
+`REASONS` dict inside `dogen`. The compatibility pair has the same shape of home:
+[`docs/compatibility.md`](docs/compatibility.md)'s `COMPAT` region and contract §5.10.
 
 What an agent needs to know about them here: every non-zero exit prints **exactly one JSON
 line** with the five keys `error` / `unit` / `detail` / `hint` / `next` (stderr; stdout under
