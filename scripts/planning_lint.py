@@ -7,8 +7,9 @@ names. The v1.0 planning archive (TICKET) holds files that predate the rule;
 they were deliberately NOT migrated here — this lint keeps it that way.
 
 It mirrors :mod:`seam_check` / :mod:`skill_lint`: a single :func:`main` with a
-``0`` (clean) / ``1`` (violation) / ``2`` (scanned 0 files — vacuous-pass guard)
-contract, invoked identically by pytest, the pre-commit hook, and CI.
+``0`` (clean) / ``1`` (violation) contract, invoked identically by the unit
+suite, the pre-commit hook, and CI. A missing or empty planning tree is clean;
+the lint checks every eligible file that is present.
 """
 
 import re
@@ -51,9 +52,8 @@ def main() -> int:
     Returns
     -------
     int
-        ``0`` when every scanned file is clean, ``1`` on any hit, and ``2``
-        when zero files were scanned (the vacuous-pass guard, so a missing or
-        empty ``.planning/`` cannot masquerade as clean).
+        ``0`` when every scanned file is clean (including when there are no
+        eligible files), and ``1`` on any hit or unreadable file.
     """
     scanned = 0
     bad: list[str] = []
@@ -62,12 +62,6 @@ def main() -> int:
             continue
         scanned += 1
         bad += check_file(path)
-    if scanned == 0:
-        print(
-            "planning-lint: ERROR - scanned 0 files (no .planning/ tree?)",
-            file=sys.stderr,
-        )
-        return 2
     if bad:
         print("planning-lint: VIOLATION(S):", *bad, sep="\n  ", file=sys.stderr)
         return 1

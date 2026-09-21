@@ -4615,6 +4615,14 @@ test_a_non_utf8_input_file_is_refused_with_its_own_flag() {
         --target reference/s.rst --body-file - <bin.md >/dev/null 2>err2.txt
     assert_eq "a non-UTF-8 stdin body exits 2" "2" "$?"
     assert_json_error "non-UTF-8 stdin body" "err2.txt" "unit_invalid"
+    assert_json_detail "the stdin refusal names the fault" "err2.txt" \
+        "the body read from stdin is not UTF-8 text"
+    assert_eq "the stdin refusal names the unit" "stdin-unit" \
+        "$(json_field unit <err2.txt)"
+    assert_contains "the stdin hint says what to do" \
+        "$(json_field hint <err2.txt)" "pass a UTF-8 body"
+    assert_file_not_exists "the stdin refusal declares nothing" \
+        ".dogen/units/stdin-unit"
 
     dogen_unit_new note-unit "reference/n.rst" >/dev/null 2>&1
     "$DOGEN" signoff note-unit >/dev/null 2>&1

@@ -3484,7 +3484,7 @@ class TestD176TheAnalyzerStopRuleIsStated(unittest.TestCase):
                 self.assertIn(marker, window)
 
     def test_the_register_states_the_same_sentence(self):
-        """Skipped where the register is absent, as `test_planning_lint` skips.
+        """Skipped where the optional planning register is absent.
 
         The deferred-items register lives under `.planning/`, which is on the
         planning branch only: the release branch and every CI checkout carry

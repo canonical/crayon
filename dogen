@@ -4012,7 +4012,10 @@ def read_body(spec, unit=""):
     """``--body-file -`` reads stdin; anything else is a path."""
     if spec == "-":
         try:
-            text = sys.stdin.read()
+            # Read bytes and decode explicitly: Python's stdin text wrapper can
+            # use ``surrogateescape`` for invalid bytes, so ``read()`` need not
+            # raise the UnicodeDecodeError this refusal is meant to catch.
+            text = sys.stdin.buffer.read().decode("utf-8", errors="strict")
         except UnicodeDecodeError:
             raise Refusal(
                 "unit_invalid",
