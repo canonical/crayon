@@ -171,9 +171,10 @@ tests/
 
 The `docs/`, `scripts/`, `tests/` and `validation/` sections are pinned against the real tree
 in both directions by `tests/test_dogen_unit.py`; a file that ships and is not listed goes red,
-and so does a listed name that does not exist. Two tracked-elsewhere files are deliberately
-absent and named in that suite's `UNSHIPPED_PATHS`: `before-after.md` under `docs/` and
-`project-timeline.html` at the root. The `skills/` section and the root block are outside the pin.
+and so does a listed name that does not exist. One tracked-elsewhere file is deliberately absent
+and named in that suite's `UNSHIPPED_PATHS`: `before-after.md` under `docs/`. The `skills/`
+section and the root block are outside the pin; the two `.html` files at the root are v1-era
+records kept as they are on `main`.
 
 ## Key files
 
