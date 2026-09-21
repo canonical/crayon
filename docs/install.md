@@ -28,14 +28,17 @@ cd ~/src/dogen
 ./install.sh
 ```
 
-The script walks through three decisions. Enter takes the default at every prompt, and
-`./install.sh --yes` takes every default without asking.
+The script walks through three decisions as numbered menus: type the number, or the option's
+word. Enter takes the default at every prompt, and `./install.sh --yes` takes every default
+without asking.
 
 ### 1. Where the skills go
 
 - **project** (default) copies the three skills into `<repo>/.agents/skills/`, so they travel
   with the docs repository and every collaborator gets the same version, and links each one
-  from `<repo>/.claude/skills/` for the agents that read only that root (commit the links too). The script asks for the
+  from `<repo>/.claude/skills/` for the agents that read only that root (commit the links too).
+  The links are relative and computed between physical paths, so they resolve even when `.claude`
+  is itself a symlink into a dotfiles checkout. The script asks for the
   repository (default: the current directory) and requires it to be a git repository already; it
   never runs `git init` for you. Re-run the install in each repository you document, and again
   after upgrading dogen.
