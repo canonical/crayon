@@ -172,6 +172,10 @@ assert_eq "a37: no ambient dogen is reachable before the install step runs" \
         && git commit -q -m "seed the docs repo"
 ) || exit 1
 
+# `.claude` is often a symlink into a dotfiles checkout; the compat links the
+# installer writes under it must resolve from where they physically live.
+mkdir -p "$SMOKE_HOME/dotfiles/claude" && ln -s "$SMOKE_HOME/dotfiles/claude" "$SMOKE_REPO/.claude"
+
 # --- run the region exactly as written --------------------------------------
 # The two guide defaults are overridden from the environment, never in the
 # bytes. HOME is redirected into the temp tree so the region's documented

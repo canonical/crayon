@@ -97,6 +97,46 @@ ask() {
 
 say() { printf '%s\n' "$*"; }
 
+# choose VAR "question" DEFAULT_INDEX "value|description"...: a numbered menu.
+# The reply may be the option's number, its value word, or (when the last
+# option's value is "other") any other text, taken verbatim. With --yes, or
+# with no terminal, the default option's value.
+choose() {
+    local var="$1" question="$2" default="$3" reply="" i=1 opt value
+    shift 3
+    local -a values=() descs=()
+    for opt in "$@"; do
+        values+=("${opt%%|*}"); descs+=("${opt#*|}")
+    done
+    if [ "$YES" -eq 1 ] || [ ! -t 0 ]; then
+        printf -v "$var" '%s' "${values[$((default - 1))]}"
+        return 0
+    fi
+    printf '\n%s\n' "$question"
+    for value in "${values[@]}"; do
+        printf '  %d) %-16s %s\n' "$i" "$value" "${descs[$((i - 1))]}"
+        i=$((i + 1))
+    done
+    printf '  choice [%d]: ' "$default"
+    IFS= read -r reply
+    reply="${reply:-$default}"
+    if [[ "$reply" =~ ^[0-9]+$ ]] && [ "$reply" -ge 1 ] && [ "$reply" -le "${#values[@]}" ]; then
+        printf -v "$var" '%s' "${values[$((reply - 1))]}"
+        return 0
+    fi
+    for value in "${values[@]}"; do
+        if [ "$reply" = "$value" ]; then
+            printf -v "$var" '%s' "$value"
+            return 0
+        fi
+    done
+    if [ "${values[$((${#values[@]} - 1))]}" = "other" ]; then
+        printf -v "$var" '%s' "$reply"
+        return 0
+    fi
+    die "no such option: $reply"
+}
+
 # Prompt text is shown only when a prompt will follow it.
 explain() {
     if [ "$YES" -eq 0 ] && [ -t 0 ]; then
@@ -106,11 +146,9 @@ explain() {
 
 # --- decision 1: skills scope ------------------------------------------------
 if [ -z "$SKILLS" ]; then
-    explain ""
-    explain "1/3  Where should the skills be installed?"
-    explain "     project — into the docs repository's .agents/skills/, so they travel with it"
-    explain "     global  — once, into ~/.agents/skills/, so every repository discovers them"
-    ask SKILLS "     scope" "project"
+    choose SKILLS "1/3  Where should the skills be installed?" 1 \
+        "project|into the docs repository's .agents/skills/, so they travel with it" \
+        "global|once, into ~/.agents/skills/, so every repository discovers them"
 fi
 case "$SKILLS" in
     project|global) ;;
@@ -140,16 +178,16 @@ fi
 
 # --- decision 2: the tool ----------------------------------------------------
 if [ "$LINK" -eq 0 ] && [ -z "$TOOL_DIR" ]; then
-    explain ""
-    explain "2/3  Where should the dogen executable go?"
-    explain "     $DEFAULT_TOOL_DIR   copy, no sudo, the usual place for user tools (default)"
-    explain "     /usr/local/bin      copy, for every user; needs write access to that directory"
-    explain "     link                a symlink into this checkout: git pull upgrades the tool"
-    explain "     any other path      a directory of your own"
-    ask TOOL_DIR "     directory" "$DEFAULT_TOOL_DIR"
+    choose TOOL_DIR "2/3  Where should the dogen executable go?" 1 \
+        "$DEFAULT_TOOL_DIR|a copy; no sudo, the usual place for user tools" \
+        "/usr/local/bin|a copy for every user; needs write access to that directory" \
+        "link|a symlink into this checkout: git pull upgrades the tool" \
+        "other|a directory of your own (or type the path directly)"
     if [ "$TOOL_DIR" = "link" ]; then
         LINK=1
         TOOL_DIR=""
+    elif [ "$TOOL_DIR" = "other" ]; then
+        ask TOOL_DIR "  directory" "$DEFAULT_TOOL_DIR"
     fi
 fi
 if [ "$LINK" -eq 1 ] && [ -z "$TOOL_DIR" ]; then
@@ -162,13 +200,10 @@ esac
 # --- decision 3: .gitignore --------------------------------------------------
 if [ "$SKILLS" = "project" ] && [ "$GITIGNORE" -eq 1 ] && [ "$VERIFY_ONLY" -eq 0 ]; then
     if ! grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
-        explain ""
-        explain "3/3  dogen stages drafts under .dogen/staging/, which is working space."
-        ask answer "     add .dogen/staging/ to $REPO/.gitignore? (y/n)" "y"
-        case "$answer" in
-            y|Y|yes) ;;
-            *) GITIGNORE=0 ;;
-        esac
+        choose answer "3/3  dogen stages drafts under .dogen/staging/, which is working space. Add it to $REPO/.gitignore?" 1 \
+            "yes|append the line" \
+            "no|leave .gitignore alone (dogen verify will warn, V17)"
+        [ "$answer" = "yes" ] || GITIGNORE=0
     fi
 fi
 
@@ -199,12 +234,15 @@ if [ "$VERIFY_ONLY" -eq 0 ]; then
     say "  copied  $SKILL_NAMES -> $SKILLS_ROOT/"
 
     # Some agents read only .claude/skills/. A relative symlink per skill keeps
-    # one copy on disk and every discovery root pointing at it.
+    # one copy on disk and every discovery root pointing at it. The relative
+    # path is computed between PHYSICAL directories: a relative link resolves
+    # from where the link really lives, and `.claude` is often itself a symlink
+    # into a dotfiles checkout.
     if [ "$COMPAT_LINKS" -eq 1 ]; then
         compat_dir="$compat_base/.claude/skills"
         mkdir -p "$compat_dir" || die "cannot create $compat_dir"
         for skill in $SKILL_NAMES; do
-            rel="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$SKILLS_ROOT/$skill" "$compat_dir")"
+            rel="$(python3 -c 'import os,sys; print(os.path.relpath(os.path.realpath(sys.argv[1]), os.path.realpath(sys.argv[2])))' "$SKILLS_ROOT/$skill" "$compat_dir")"
             rm -rf "${compat_dir:?}/$skill"
             ln -s "$rel" "$compat_dir/$skill" || die "cannot link $compat_dir/$skill"
         done
