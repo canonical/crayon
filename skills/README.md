@@ -148,22 +148,14 @@ precondition — the preconditions live in §5.7 and nowhere else.
 
 ## Installation
 
-Point a `DOGEN` variable at your dogen checkout, then install the tool and the skills:
+`install.sh` at the root of the checkout installs the tool and the three skills, project-scoped
+into a docs repository's `.agents/skills/` or globally into `~/.agents/skills/`, and verifies the
+result; [`docs/install.md`](../docs/install.md) explains every choice and the manual equivalent.
+By hand, the skills are one copy:
 
 ```bash
 DOGEN=/path/to/dogen-mvp-1
-
-# The tool — onto your PATH (once, so it works from any repo):
-sudo cp "$DOGEN"/dogen /usr/local/bin/
-#   or, without sudo:
-mkdir -p ~/.local/bin && cp "$DOGEN"/dogen ~/.local/bin/
-
-# Skills — into the agent-compatible discovery root, project-scoped or global:
-# Project-scoped (recommended) — copy into each docs repo:
-cd /path/to/your-docs-repo
-cp -r "$DOGEN"/skills/dogen-* .agents/skills/
-# Global — copy once, so every repo discovers them:
-mkdir -p ~/.agents/skills && cp -r "$DOGEN"/skills/dogen-* ~/.agents/skills/
+mkdir -p .agents/skills && cp -r "$DOGEN"/skills/dogen-* .agents/skills
 ```
 
 `cp -r skills/dogen-*` copies the three skill directories and nothing else: this file

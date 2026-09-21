@@ -90,27 +90,6 @@ if __name__ == "__main__":
     raise SystemExit(main())
 '''
 
-#: The claims the CLAIMS region must carry, mirroring the three statements
-#: ``check_docs.REQUIRED_CLAIMS`` still requires after phase 19 — the
-#: fixture-hooks reading, the unnamed supported configurations, and the
-#: grounding the actionable walk did not establish — worded as the real README
-#: words them. The two originals left when real sessions discharged them; the
-#: checker's own comment records why, and this fixture follows it rather than
-#: keeping a region the checker no longer accepts.
-#:
-#: Each sentence carries its own NEGATION (19 WR-05), which is what the keys are
-#: matched on: ``not a repository's own configured hooks``, ``are unproven``,
-#: ``did not prove the loop``. The inversion cases below flip exactly one of
-#: them and assert the checker notices, which is the whole job of this boundary.
-FIXTURE_CLAIMS = (
-    "- **They ran against fixture hooks, not a repository's own configured "
-    "hooks.** The hook shapes came from the test fixtures.\n"
-    "- **Supported configurations are unproven, and none is listed.** No "
-    "install session was run for this release.\n"
-    "- **The walk did not prove the loop produces a how-to grounded in observed "
-    "command behaviour.** Three of its four steps resolved skipped.\n"
-)
-
 #: The Mechanisms rows the fixture tree's contract carries (19 D-12). Their
 #: signal cells use the real table's ``id (`suite file`)`` shape, because that
 #: parenthetical is exactly what scopes the delegate's widened scan. There are
@@ -170,12 +149,30 @@ def _region(name, body):
     return "<!-- %s:BEGIN -->\n\n%s\n<!-- %s:END -->\n" % (name, body, name)
 
 
+def _compact_reason_table(reason_rows):
+    """README's one-table shape: a row per exit code, its reasons in the last cell.
+
+    Built from the same ``(`name`, code)`` tuples the contract-side table takes,
+    so a case mutates one tuple and both shapes follow.
+    """
+    if not reason_rows:
+        return ""
+    by_code = {}
+    for name, code in reason_rows:
+        by_code.setdefault(code, []).append(name)
+    rows = [
+        ("`%s`" % code, "fixture band %s" % code, ", ".join(by_code[code]))
+        for code in sorted(by_code)
+    ]
+    return _table(("Exit", "Meaning", "Reasons"), rows)
+
+
 def build_tree(
     root,
     verb_rows=None,
     reason_rows=None,
     compat=None,
-    claims=True,
+    compat_in=("docs/compatibility.md",),
     links=DEFAULT_LINKS,
     contract_reason_rows=None,
     contract_compat=None,
@@ -216,22 +213,21 @@ def build_tree(
     readme = [
         "# Fixture\n",
         _region("VERBS", verbs_body),
-        _region("REASONS", _table(("Reason", "Exit"), reason_rows)),
-        _region("COMPAT", compat_body),
+        _region("REASONS", _compact_reason_table(reason_rows)),
     ]
-    # `claims` is False (omit the region), True (the honest fixture text) or a
-    # string body of the caller's own — the last is how an INVERTED claim is
-    # spelled without restating the other two.
-    if claims:
-        readme.append(
-            _region(
-                "CLAIMS", claims if isinstance(claims, str) else FIXTURE_CLAIMS
-            )
-        )
     readme.append(
         "".join("See [%s](%s).\n" % (text, target) for text, target in links)
     )
     (root / "README.md").write_text("\n".join(readme), encoding="utf-8")
+    # The COMPAT region has exactly one reader-facing home. `compat_in` names
+    # the fixture document(s) that carry it: one by default, none or two for
+    # the cases that exercise the vacuous and the two-homes arms.
+    for relative in compat_in:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            "# Compatibility\n\n" + _region("COMPAT", compat_body), encoding="utf-8"
+        )
 
     contract = [
         "# Fixture contract\n",
@@ -271,7 +267,9 @@ def build_tree(
     (root / "CHANGELOG.md").write_text(
         DEFAULT_CHANGELOG if changelog is None else changelog, encoding="utf-8"
     )
-    (root / "docs" / "upgrade.md").write_text("# Upgrade\n", encoding="utf-8")
+    if not (root / "docs" / "upgrade.md").exists():
+        # `compat_in` may have written this one already, as a second carrier.
+        (root / "docs" / "upgrade.md").write_text("# Upgrade\n", encoding="utf-8")
     (root / "skills" / "README.md").write_text("# Skills\n", encoding="utf-8")
     for skill in ("dogen-plan", "dogen-review", "dogen-write"):
         (root / "skills" / skill).mkdir(parents=True, exist_ok=True)
@@ -386,6 +384,22 @@ class TestReasons(CheckDocsCase):
         self.assertEqual(code, 2, output)
         self.assertIn("REASONS:BEGIN", output)
 
+    def test_a_reason_absent_from_every_compact_cell_is_a_violation(self):
+        """The compact table lists reasons inside a cell, so a dropped name is
+        a missing row on the README side and must be reported as one."""
+        rows = [("`alpha_gate`", "1"), ("`beta_bad`", "2")]
+        code, output = self.run_checker(self.tree(reason_rows=rows))
+        self.assertEqual(code, 1, output)
+        self.assertIn("gamma_busy", output)
+        self.assertIn("README.md", output)
+
+    def test_the_compact_table_is_read_by_exit_code_not_by_row_order(self):
+        """The same tuples in another order build the same table and pass."""
+        rows = [("`gamma_busy`", "5"), ("`beta_bad`", "2"), ("`alpha_gate`", "1")]
+        code, output = self.run_checker(self.tree(reason_rows=rows))
+        self.assertEqual(code, 0, output)
+        self.assertIn("reasons (README.md) (3 rows)", output)
+
 
 class TestCompatibility(CheckDocsCase):
     """Contract section 5.10: literal strings, never parsed as versions."""
@@ -408,6 +422,20 @@ class TestCompatibility(CheckDocsCase):
         code, output = self.run_checker(self.tree(compat=(FIXTURE_CONTRACT, "9.9")))
         self.assertEqual(code, 1, output)
         self.assertIn("min_tool", output)
+
+    def test_a_compat_region_carried_by_two_documents_is_a_violation(self):
+        """One reader-facing home: a second copy is drift, not redundancy."""
+        code, output = self.run_checker(
+            self.tree(compat_in=("docs/compatibility.md", "docs/upgrade.md"))
+        )
+        self.assertEqual(code, 1, output)
+        self.assertIn("2 documents", output)
+        self.assertIn("docs/upgrade.md", output)
+
+    def test_no_compat_region_anywhere_is_a_two(self):
+        code, output = self.run_checker(self.tree(compat_in=()))
+        self.assertEqual(code, 2, output)
+        self.assertIn("COMPAT:BEGIN", output)
 
     def test_a_contract_side_compat_mismatch_is_a_violation(self):
         code, output = self.run_checker(
@@ -438,58 +466,6 @@ class TestLinks(CheckDocsCase):
         code, output = self.run_checker(self.tree(links=()))
         self.assertEqual(code, 2, output)
         self.assertIn("links", output)
-
-
-class TestClaimsBoundary(CheckDocsCase):
-    """REL-01: the release states what it has not proved, or it does not ship."""
-
-    def test_an_absent_claims_region_is_a_violation_not_a_two(self):
-        """The region's absence is the finding, so it is 1 and never 2."""
-        code, output = self.run_checker(self.tree(claims=False))
-        self.assertEqual(code, 1, output)
-        self.assertIn("CLAIMS", output)
-
-    def test_inverting_the_hooks_boundary_is_caught(self):
-        """19 WR-05: the key has to carry the claim's POLARITY.
-
-        ``a repository's own configured hooks`` is present in the inverted
-        sentence as well as in the honest one, so the boundary could be erased
-        by the exact edit this check exists to notice. The fixture performs that
-        edit — "not a repository's own configured hooks" becomes "a repository's
-        own configured hooks" — and changes nothing else.
-        """
-        inverted = FIXTURE_CLAIMS.replace(
-            "fixture hooks, not a repository's own configured hooks",
-            "a repository's own configured hooks",
-        )
-        self.assertNotEqual(inverted, FIXTURE_CLAIMS)
-        code, output = self.run_checker(self.tree(claims=inverted))
-        self.assertEqual(code, 1, output)
-        self.assertIn("not a repository's own configured hooks", output)
-
-    def test_inverting_the_actionable_walk_boundary_is_caught(self):
-        """The same, for the grounding the walk did NOT establish.
-
-        ``grounded in observed command behaviour`` survives "The walk **proved**
-        the loop produces a how-to grounded in observed command behaviour",
-        which is the release claiming the opposite of the boundary. The key is
-        ``did not prove the loop``, which does not.
-        """
-        inverted = FIXTURE_CLAIMS.replace(
-            "The walk did not prove the loop produces",
-            "The walk proved the loop produces",
-        )
-        self.assertNotEqual(inverted, FIXTURE_CLAIMS)
-        code, output = self.run_checker(self.tree(claims=inverted))
-        self.assertEqual(code, 1, output)
-        self.assertIn("did not prove the loop", output)
-
-    def test_the_honest_region_still_clears_all_three(self):
-        """The other direction, so the two cases above cannot pass by refusing
-        every region: the unedited fixture text satisfies all three keys."""
-        code, output = self.run_checker(self.tree())
-        self.assertEqual(code, 0, output)
-        self.assertIn("claims (3 statements)", output)
 
 
 class TestReleaseRecord(CheckDocsCase):
@@ -669,7 +645,7 @@ class TestScopeDiscipline(CheckDocsCase):
         trees = (
             self.tree(),
             build_tree(self.tmp / "b", verb_rows=[]),
-            build_tree(self.tmp / "c", claims=False),
+            build_tree(self.tmp / "c", compat_in=()),
             build_tree(self.tmp / "d", links=DEFAULT_LINKS + (("x", "docs/no.md"),)),
         )
         for tree in trees:

@@ -4922,7 +4922,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
     #: green" shape the rest of this phase's infrastructure exists against.
     #: `bash tests/install_smoke.sh` proves what no other command here does:
     #: that the tool is reachable through `PATH` after the documented install,
-    #: and that README.md's marked QUICKSTART region is runnable as written.
+    #: and that docs/install.md's marked INSTALL region is runnable as written.
     GATE_COMMANDS = (
         "python3 -m unittest tests.test_dogen_unit",
         "python3 tests/test_dogen_unit.py",
@@ -4956,7 +4956,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
     #: scope, is what CI's `shellcheck` job runs") rather than as a tuple
     #: entry, because the binary is preinstalled on the image and the command
     #: is not one a developer runs as part of the fourteen.
-    CI_EXTRA = {"shellcheck -S warning tests/*.sh validation/*.sh"}
+    CI_EXTRA = {"shellcheck -S warning install.sh tests/*.sh validation/*.sh"}
 
     def test_ci_runs_every_gate_command(self):
         """CR-01 — `ci.yml` is a hand copy of the gate unless something pins it.
@@ -5002,13 +5002,19 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
             "CI runs commands the gate does not declare: %s" % sorted(unpinned),
         )
 
+    #: The gate's two reader-facing homes. `AGENTS.md` is the operating
+    #: contract; `docs/development.md` explains each command. Both carry every
+    #: string of the tuple verbatim, so neither is a hand copy that can drift.
+    GATE_DOCS = ("AGENTS.md", "docs/development.md")
+
     def test_the_tombstone_states_the_real_gate(self):
         # A tombstone that says "these are gone" and leaves the reader without
         # a gate to run has moved the problem rather than answered it.
-        text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-        for command in self.GATE_COMMANDS:
-            with self.subTest(command=command):
-                self.assertIn(command, text)
+        for relative in self.GATE_DOCS:
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            for command in self.GATE_COMMANDS:
+                with self.subTest(document=relative, command=command):
+                    self.assertIn(command, text)
 
     def test_every_test_module_in_tests_is_in_the_gate(self):
         """WR-08 — a test module no command runs is worse than no module.
@@ -5042,7 +5048,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
 
         `tests/install_smoke.sh` is the only gate command that reaches `dogen`
         through `PATH` rather than through the in-tree file, and the only one
-        that executes `README.md`'s marked QUICKSTART region. A gate that omits
+        that executes `docs/install.md`'s marked INSTALL region. A gate that omits
         it is green on a tree whose documented install does not work, which is
         the one failure this suite's tombstone machinery exists to make loud.
         """

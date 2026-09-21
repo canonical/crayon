@@ -23,7 +23,7 @@
 #   unittest       bash tests/run_matrix.sh  (3.9 / 3.12 / 3.13)         0m27s
 #                  then each module of the job on each interpreter       0m32s
 #                  python3 scripts/planning_lint.py                      0m01s
-#   shellcheck     shellcheck -S warning tests/*.sh validation/*.sh      0m04s
+#   shellcheck     shellcheck -S warning install.sh tests/*.sh validation/*.sh   0m04s
 #   skill-lint     python3 scripts/skill_lint.py                         0m01s
 #   docs-check     python3 tests/check_docs.py                           0m01s
 #   install-smoke  bash tests/install_smoke.sh                           0m01s
@@ -85,7 +85,7 @@ jobs:
           # T-18-02: no job in this workflow pushes, and every `run:` step
           # after a checkout executes code authored in the branch under test —
           # `bash tests/install_smoke.sh` extracts and executes shell out of
-          # `README.md`, `python3 tests/check_docs.py` imports `<root>/dogen`
+          # `docs/install.md`, `python3 tests/check_docs.py` imports `<root>/dogen`
           # and runs it as a subprocess, and `bash validation/fixtures.sh` runs
           # branch-authored bash. Never leave the job token in the workspace
           # `.git/config` for any of them to read.
@@ -149,7 +149,7 @@ jobs:
         with:
           # T-18-02: see the first checkout in this file.
           persist-credentials: false
-      - run: shellcheck -S warning tests/*.sh validation/*.sh
+      - run: shellcheck -S warning install.sh tests/*.sh validation/*.sh
 
   # CI-01: the SKILL.md frontmatter gate.
   skill-lint:
@@ -174,8 +174,9 @@ jobs:
           persist-credentials: false
       - run: python3 tests/check_docs.py
 
-  # CI-02 / A-37: the stranger's install path — README's marked QUICKSTART
-  # region, extracted and executed from a temp PATH in a hermetic temp repo.
+  # CI-02 / A-37: the stranger's install path — docs/install.md's marked
+  # INSTALL region (install.sh --yes), extracted and executed from a temp PATH
+  # in a hermetic temp repo, then one unit driven through the installed tool.
   install-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

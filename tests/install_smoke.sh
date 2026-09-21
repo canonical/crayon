@@ -11,13 +11,16 @@
 # `tests/lib.sh:176-198` — the three-check `mktemp -d` and the pinned git config
 # — are copied below; nothing else is.
 #
-# What it proves (D-09, D-10): the shell inside README.md's
-# `<!-- QUICKSTART:BEGIN -->` / `<!-- QUICKSTART:END -->` region is extracted
-# BYTE-IDENTICALLY — never sed'd, never templated — and executed from a temp
-# HOME with a temp PATH in a hermetic temp repo, ending in a written page that
-# `verify` and `show` both agree exists, and in a refusal that still carries the
-# contract's five-key JSON shape. The README's own `${DOGEN_SRC:-…}` and
-# `${REPO:-$PWD}` defaults are what make that an override rather than a rewrite.
+# What it proves (D-09, D-10): the shell inside docs/install.md's
+# `<!-- INSTALL:BEGIN -->` / `<!-- INSTALL:END -->` region — the documented
+# scripted install, `install.sh --yes` — is extracted BYTE-IDENTICALLY — never
+# sed'd, never templated — and executed from a temp HOME with a temp PATH in a
+# hermetic temp repo. The smoke then drives one unit through the installed tool
+# to a written page that `verify` and `show` both agree exists, and to a refusal
+# that still carries the contract's five-key JSON shape. The guide's own
+# `${DOGEN_SRC:-…}` and `${REPO:-$PWD}` defaults are what make that an override
+# rather than a rewrite. The repository seed (git init, identity, a source and a
+# docs root) is the smoke's own: the installer never initialises a repository.
 #
 # Exit codes follow the project's 0/1/2 lint contract (scripts/planning_lint.py):
 #   0  the walk reached a page and every assertion passed
@@ -32,9 +35,9 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-README="$REPO_ROOT/README.md"
-BEGIN_MARKER='<!-- QUICKSTART:BEGIN -->'
-END_MARKER='<!-- QUICKSTART:END -->'
+README="$REPO_ROOT/docs/install.md"
+BEGIN_MARKER='<!-- INSTALL:BEGIN -->'
+END_MARKER='<!-- INSTALL:END -->'
 UNIT="widget-api"
 
 # Pitfall 6 / assumption A2: pinned OUTSIDE the extracted region, so a
@@ -101,10 +104,10 @@ awk -v begin_marker="$BEGIN_MARKER" -v end_marker="$END_MARKER" '
     region != 1             { next }
     fence == 1 && /^```/    { fence = 0; next }
     fence == 1              { print; next }
-    /^```bash *$/           { n += 1; print "# --- quickstart fence " n " ---"; fence = 1 }
+    /^```bash *$/           { n += 1; print "# --- install fence " n " ---"; fence = 1 }
 ' "$README" >"$EXTRACTED"
 
-FENCES=$(grep -c '^# --- quickstart fence ' "$EXTRACTED" 2>/dev/null) || FENCES=0
+FENCES=$(grep -c '^# --- install fence ' "$EXTRACTED" 2>/dev/null) || FENCES=0
 
 # The `2` arm, half one: nothing was extracted, so nothing can be run. Name
 # what was searched — the same courtesy `run_matrix.sh` and `planning_lint.py`
@@ -152,19 +155,36 @@ done
 assert_eq "a37: no ambient dogen is reachable before the install step runs" \
     "" "$ambient"
 
+# --- seed the stranger's repository ------------------------------------------
+# The installer requires a git repository and refuses to create one, so the
+# smoke seeds it: a repo-local identity (the global one is /dev/null above), a
+# source file and a docs root, committed, and NO .gitignore — the installer's
+# own gitignore step is asserted below.
+(
+    cd "$SMOKE_REPO" \
+        && git init -q -b main . \
+        && git config user.name "Anne Example" \
+        && git config user.email "anne@example.com" \
+        && printf '# Widget API\n\nCreate and delete widgets.\n' >source.md \
+        && mkdir -p docs \
+        && printf '# Docs\n' >docs/index.md \
+        && git add -A \
+        && git commit -q -m "seed the docs repo"
+) || exit 1
+
 # --- run the region exactly as written --------------------------------------
-# The two README defaults are overridden from the environment, never in the
+# The two guide defaults are overridden from the environment, never in the
 # bytes. HOME is redirected into the temp tree so the region's documented
 # `~/.local/bin` install lands inside this smoke and nowhere else.
-echo "── running $FENCES fenced block(s) from the QUICKSTART region ──"
+echo "── running $FENCES fenced block(s) from the INSTALL region ──"
 if HOME="$SMOKE_HOME" DOGEN_SRC="$REPO_ROOT" REPO="$SMOKE_REPO" \
         bash -euo pipefail "$EXTRACTED"; then
-    pass "a37: the QUICKSTART region ran end to end under set -euo pipefail"
+    pass "a37: the INSTALL region ran end to end under set -euo pipefail"
 else
-    fail "a37: the QUICKSTART region exited non-zero"
+    fail "a37: the INSTALL region exited non-zero"
 fi
 
-# The region put the tool in its own HOME; reach it the same way it did.
+# The installer put the tool in its own HOME; reach it the same way it did.
 SMOKE_BIN="$SMOKE_HOME/.local/bin"
 export PATH="$SMOKE_BIN:$PATH"
 
@@ -179,6 +199,55 @@ case "$resolved_dogen" in
         pass "a37: the resolved dogen is outside the dogen checkout"
         ;;
 esac
+
+# --- what the installer placed -----------------------------------------------
+for skill in dogen-plan dogen-write dogen-review; do
+    if [ -f "$SMOKE_REPO/.agents/skills/$skill/SKILL.md" ] \
+        && [ -f "$SMOKE_REPO/.agents/skills/$skill/references/routing.md" ]; then
+        pass "a37: the installer placed $skill under the repo's .agents/skills/"
+    else
+        fail "a37: $skill is missing or incomplete under $SMOKE_REPO/.agents/skills/"
+    fi
+done
+if [ -f "$SMOKE_REPO/.agents/skills/README.md" ]; then
+    fail "a37: the installer copied skills/README.md, which is not a skill"
+else
+    pass "a37: the installer copied the three skills and nothing else"
+fi
+if grep -qxF '.dogen/staging/' "$SMOKE_REPO/.gitignore" 2>/dev/null; then
+    pass "a37: the installer added .dogen/staging/ to .gitignore"
+else
+    fail "a37: .dogen/staging/ is not in $SMOKE_REPO/.gitignore"
+fi
+verify_only_exit=0
+HOME="$SMOKE_HOME" bash "$REPO_ROOT/install.sh" --verify-only --yes \
+    --repo "$SMOKE_REPO" --tool-dir "$SMOKE_BIN" >/dev/null 2>&1 || verify_only_exit=$?
+assert_eq "a37: install.sh --verify-only passes over the installed tree" \
+    "0" "$verify_only_exit"
+
+# --- one unit through the installed tool -------------------------------------
+# The walk the guide used to carry; it lives here now so the guide stays what a
+# reader runs. `steer` is load-bearing: without it, `draft` refuses `unsteered`.
+walk_exit=0
+(
+    cd "$SMOKE_REPO" \
+        && printf '# Plan\n\nOutline the widget API reference.\n' \
+            | dogen unit new "$UNIT" \
+                --intent reference \
+                --audience "developers integrating the widget API" \
+                --title "Widget API" \
+                --target "reference/$UNIT.md" \
+                --source source.md \
+                --body-file - \
+        && dogen signoff "$UNIT" \
+        && dogen steer "$UNIT" --note "Lead with the create call." \
+        && mkdir -p ".dogen/staging/$UNIT/draft" \
+        && printf '# Widget API\n\n## create\n\nCreates a widget.\n' \
+            >".dogen/staging/$UNIT/draft/$UNIT.md" \
+        && dogen draft "$UNIT" ".dogen/staging/$UNIT/draft/$UNIT.md"
+) >/dev/null 2>&1 || walk_exit=$?
+assert_eq "a37: declare, signoff, steer and draft run through the installed dogen" \
+    "0" "$walk_exit"
 
 # --- assert from the stranger's vantage point -------------------------------
 PAGE="$SMOKE_REPO/docs/reference/$UNIT.md"

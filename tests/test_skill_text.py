@@ -306,10 +306,10 @@ class TestProjectReadmeInstallCommands(unittest.TestCase):
     because the defect was that they named different paths.
     """
 
-    PROJECT_README = ROOT / "README.md"
+    PROJECT_README = ROOT / "docs" / "install.md"
 
     def install_lines(self):
-        """Every `mkdir … && cp -r …` line in the project README."""
+        """Every `mkdir … && cp -r …` line in the install guide's manual section."""
         text = self.PROJECT_README.read_text(encoding="utf-8")
         return [
             line.strip()
