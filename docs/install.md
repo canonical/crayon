@@ -15,8 +15,10 @@ quickstart in `README.md` is all you need.
 - Python 3.9 or newer on `PATH` as `python3`. Nothing else: no package, no venv, no dependency.
 - git, and a git identity in the repository you document (`user.name` and `user.email`), because
   every dogen transition is a local commit.
-- Any coding agent that reads `SKILL.md` skills, discovers them under `.agents/skills/`, and
-  can run shell commands. Skills are invoked by name — `/dogen-plan` — in every such agent.
+- Any coding agent that reads `SKILL.md` skills and can run shell commands. Most discover
+  them under `.agents/skills/`; the one common agent that reads only `.claude/skills/` is served
+  by the symlinks the installer adds there. Skills are invoked by name — `/dogen-plan` — in every
+  such agent.
 
 ## Install with the script
 
@@ -32,16 +34,17 @@ The script walks through three decisions. Enter takes the default at every promp
 ### 1. Where the skills go
 
 - **project** (default) copies the three skills into `<repo>/.agents/skills/`, so they travel
-  with the docs repository and every collaborator gets the same version. The script asks for the
+  with the docs repository and every collaborator gets the same version, and links each one
+  from `<repo>/.claude/skills/` for the agents that read only that root (commit the links too). The script asks for the
   repository (default: the current directory) and requires it to be a git repository already; it
   never runs `git init` for you. Re-run the install in each repository you document, and again
   after upgrading dogen.
-- **global** copies them once into `~/.agents/skills/`, so every repository on this machine
-  discovers them. Choose this when you document many repositories alone and want one copy to
+- **global** copies them once into `~/.agents/skills/`, linked from `~/.claude/skills/`, so
+  every repository on this machine discovers them. Choose this when you document many repositories alone and want one copy to
   upgrade.
 
-Flags: `--skills project|global`, `--repo DIR`, and `--skills-root DIR` for an agent that
-discovers skills somewhere other than `.agents/skills/`.
+Flags: `--skills project|global`, `--repo DIR`, `--skills-root DIR` for an agent that discovers
+skills somewhere else, and `--no-compat-links` to skip the `.claude/skills/` links.
 
 ### 2. Where the executable goes
 
@@ -73,7 +76,8 @@ The script always ends by checking the install and prints one line per check:
 - `dogen version --json` answers, and its `contract` number is the one each installed skill was
   written against (`metadata.dogen_contract` in its `SKILL.md`), compared as literal strings;
 - each skill directory holds a `SKILL.md` and its `references/routing.md`;
-- no stale copy of a skill sits in an older discovery root (`.claude/skills/`,
+- each `.claude/skills/` link resolves to the installed skill;
+- no stale real copy of a skill sits in another discovery root (`.claude/skills/`,
   `.github/skills/`, `.opencode/skills/`), which an agent may find first;
 - the repository has a git identity, and `.dogen/staging/` is ignored.
 
@@ -118,6 +122,9 @@ mkdir -p .agents/skills && cp -r "$DOGEN_SRC"/skills/dogen-* .agents/skills
 
 # ... or global:
 mkdir -p "$HOME/.agents/skills" && cp -r "$DOGEN_SRC"/skills/dogen-* "$HOME/.agents/skills"
+
+# For agents that read only .claude/skills/ (project form shown; use ~ for global):
+mkdir -p .claude/skills && for s in dogen-plan dogen-write dogen-review; do ln -sfn "../../.agents/skills/$s" ".claude/skills/$s"; done
 
 # Keep staging out of the record:
 grep -qxF '.dogen/staging/' .gitignore 2>/dev/null || printf '.dogen/staging/\n' >> .gitignore

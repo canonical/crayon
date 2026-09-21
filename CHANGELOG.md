@@ -16,7 +16,9 @@ significance still have one order a reader can predict.
   symlink into the checkout — and `.gitignore`), takes every default under `--yes`,
   and ends by verifying the result: the executable on `PATH`, the contract number against every
   installed skill's frontmatter, the skill directories, stale discovery roots, the git identity.
-  `--verify-only` runs the last part alone. It is in the shellcheck scope.
+  `--verify-only` runs the last part alone. It is in the shellcheck scope. Skills are installed
+  once under `.agents/skills/` and linked from `.claude/skills/`, the one discovery root some
+  agents read instead; `--no-compat-links` skips the links.
 - `docs/` is now a wiki in the lint-enforced shape: flat, one page per slug, addressed by slug
   in double square brackets from `AGENTS.md` and between pages, every page with an H1, a
   provenance comment and a `Related:` line, every page reachable from `AGENTS.md`.
