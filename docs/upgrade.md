@@ -28,8 +28,8 @@ The skills are copied, not linked, so an upgrade must reach every place they wer
   new copy so collaborators get it too;
 - **global** — `./install.sh --skills global` once.
 
-Remove any stale copy under an older discovery root — `.claude/skills/`, `.github/skills/`,
-`.opencode/skills/` — because an agent may find it first and silently run old prose against the
+Remove any stale real copy under another discovery root — `.claude/skills/` (the installer's
+own symlinks there are fine), `.github/skills/`, `.opencode/skills/` — because an agent may find it first and silently run old prose against the
 new tool. The installer's verification warns when it sees one.
 
 ## 3. Check the two numbers

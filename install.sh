@@ -11,6 +11,8 @@
 #   1. where the skills go       --skills project|global   [--repo DIR] [--skills-root DIR]
 #   2. where the tool goes       --tool-dir DIR | --link
 #   3. .gitignore                --no-gitignore
+# The skills are also linked from .claude/skills/, the one discovery root some
+# agents read instead of .agents/skills/; --no-compat-links skips that.
 # Then the install is verified. Exit 0 when every check passed, 1 when one
 # failed, 2 when nothing could be checked. The script never runs git init, git
 # commit, sudo, or anything else that changes a repository's history.
@@ -25,6 +27,7 @@ SKILLS_ROOT=""
 TOOL_DIR=""
 LINK=0
 GITIGNORE=1
+COMPAT_LINKS=1
 YES=0
 VERIFY_ONLY=0
 answer=""
@@ -45,6 +48,7 @@ Flags:
   --tool-dir DIR        where the dogen executable is copied (default: ~/.local/bin)
   --link                symlink the executable into the checkout instead of copying it
   --no-gitignore        do not add .dogen/staging/ to the repository's .gitignore
+  --no-compat-links     do not link the skills from .claude/skills/ as well
   --dogen-src DIR       the dogen checkout to install from (default: this script's directory)
   --verify-only         change nothing; verify an existing install and report
   --help                this text
@@ -66,6 +70,7 @@ while [ $# -gt 0 ]; do
         --tool-dir) shift; TOOL_DIR="${1:-}" ;;
         --link) LINK=1 ;;
         --no-gitignore) GITIGNORE=0 ;;
+        --no-compat-links) COMPAT_LINKS=0 ;;
         --dogen-src) shift; DOGEN_SRC="${1:-}" ;;
         --verify-only) VERIFY_ONLY=1 ;;
         -h|--help) usage; exit 0 ;;
@@ -167,6 +172,9 @@ if [ "$SKILLS" = "project" ] && [ "$GITIGNORE" -eq 1 ] && [ "$VERIFY_ONLY" -eq 0
     fi
 fi
 
+compat_base="$HOME"
+[ "$SKILLS" = "project" ] && compat_base="$REPO"
+
 # --- install -----------------------------------------------------------------
 if [ "$VERIFY_ONLY" -eq 0 ]; then
     explain ""
@@ -189,6 +197,19 @@ if [ "$VERIFY_ONLY" -eq 0 ]; then
         cp -r "$DOGEN_SRC/skills/$skill" "$SKILLS_ROOT/$skill" || die "cannot copy $skill"
     done
     say "  copied  $SKILL_NAMES -> $SKILLS_ROOT/"
+
+    # Some agents read only .claude/skills/. A relative symlink per skill keeps
+    # one copy on disk and every discovery root pointing at it.
+    if [ "$COMPAT_LINKS" -eq 1 ]; then
+        compat_dir="$compat_base/.claude/skills"
+        mkdir -p "$compat_dir" || die "cannot create $compat_dir"
+        for skill in $SKILL_NAMES; do
+            rel="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$SKILLS_ROOT/$skill" "$compat_dir")"
+            rm -rf "${compat_dir:?}/$skill"
+            ln -s "$rel" "$compat_dir/$skill" || die "cannot link $compat_dir/$skill"
+        done
+        say "  linked  $SKILL_NAMES from $compat_dir/"
+    fi
 
     if [ "$SKILLS" = "project" ] && [ "$GITIGNORE" -eq 1 ]; then
         if ! grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
@@ -274,14 +295,30 @@ for skill in $SKILL_NAMES; do
     fi
 done
 
-# stale discovery roots, which an agent may pick up before the right one
-stale_base="$HOME"
-[ "$SKILLS" = "project" ] && stale_base="$REPO"
+# the .claude/skills/ links, for the agents that read only that root
+if [ "$COMPAT_LINKS" -eq 1 ]; then
+    for skill in $SKILL_NAMES; do
+        link="$compat_base/.claude/skills/$skill"
+        if [ -L "$link" ] && [ -f "$link/SKILL.md" ] \
+            && [ "$(cd "$link" && pwd -P)" = "$(cd "$SKILLS_ROOT/$skill" && pwd -P)" ]; then
+            pass "$link links to the installed $skill"
+        else
+            fail "$link is not a link to $SKILLS_ROOT/$skill (agents that read only .claude/skills/ will miss it)"
+        fi
+    done
+fi
+
+# stale discovery roots: a real copy (not the installer's link) an agent may pick up first
+stale_base="$compat_base"
 for root in .claude/skills .github/skills .opencode/skills; do
     for skill in $SKILL_NAMES; do
-        if [ -e "$stale_base/$root/$skill" ] && [ "$stale_base/$root" != "$SKILLS_ROOT" ]; then
-            warn "a stale copy of $skill sits at $stale_base/$root/ and may be discovered first; remove it"
+        candidate="$stale_base/$root/$skill"
+        [ -e "$candidate" ] || continue
+        [ "$stale_base/$root" = "$SKILLS_ROOT" ] && continue
+        if [ -L "$candidate" ] && [ "$(cd "$candidate" 2>/dev/null && pwd -P)" = "$(cd "$SKILLS_ROOT/$skill" && pwd -P)" ]; then
+            continue
         fi
+        warn "a stale copy of $skill sits at $stale_base/$root/ and may be discovered first; remove it"
     done
 done
 

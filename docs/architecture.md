@@ -51,8 +51,9 @@ only its own staging files, never the canonical `docs/` page, never the ledger.
 
 - **Stdlib-only.** No third-party dependency anywhere in the product tree, enforced by the
   suite. The lints under `scripts/` are standalone stdlib utilities, not a second core.
-- **Harness-agnostic.** Any agent that reads `SKILL.md`, discovers `.agents/skills/` and can run
-  shell commands works. No harness is named, preferred or detected anywhere on the surface.
+- **Harness-agnostic.** Any agent that reads `SKILL.md` and can run shell commands works; the
+  installer serves both discovery roots in use, `.agents/skills/` and `.claude/skills/`. No
+  harness is named, preferred or detected anywhere on the surface.
 - **Sphinx-oriented, stack-agnostic.** Output is Sphinx-publishable MyST Markdown (or rST where
   siblings are rST), Diátaxis-structured. dogen carries no knowledge of any Sphinx stack, theme,
   extension set or `conf.py`, never runs a build, and learns house conventions only through the

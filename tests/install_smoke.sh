@@ -209,6 +209,14 @@ for skill in dogen-plan dogen-write dogen-review; do
         fail "a37: $skill is missing or incomplete under $SMOKE_REPO/.agents/skills/"
     fi
 done
+for skill in dogen-plan dogen-write dogen-review; do
+    link="$SMOKE_REPO/.claude/skills/$skill"
+    if [ -L "$link" ] && [ -f "$link/SKILL.md" ]; then
+        pass "a37: the installer linked $skill from .claude/skills/"
+    else
+        fail "a37: $link is not a symlink to the installed skill"
+    fi
+done
 if [ -f "$SMOKE_REPO/.agents/skills/README.md" ]; then
     fail "a37: the installer copied skills/README.md, which is not a skill"
 else
