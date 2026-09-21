@@ -733,7 +733,7 @@ def _dogen_executable() -> str | None:
     from_env = os.environ.get("DOGEN")
     if from_env:
         return str(Path(from_env).resolve())
-    in_kit = ROOT / "dogen"
+    in_kit = ROOT / "dogen.py"
     if in_kit.is_file():
         return str(in_kit)
     found = shutil.which("dogen")
@@ -1760,7 +1760,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
         violation |= not _flag(False, "compat",
                                "no `dogen version --json` reading to compare against: DOGEN "
                                "unset, %s absent, and none on PATH. The tree the RUN file sits "
-                               "in is deliberately not searched (CR-01)" % (ROOT / "dogen",))
+                               "in is deliberately not searched (CR-01)" % (ROOT / "dogen.py",))
     elif not isinstance(tool_record, dict):
         violation |= not _flag(False, "compat",
                                "the RUN file records tool as %r, expected an object carrying "

@@ -1,8 +1,10 @@
 # Upgrading dogen
 
+<!-- provenance: rewritten as a forward-looking procedure; the previous page was a before/after of one release -->
+
 How to move a machine, a repository and its records from one dogen release to the next. The
-normative rules are in [`docs/contract.md`](contract.md); what changed in a given release is in
-[`CHANGELOG.md`](../CHANGELOG.md). This page is the procedure.
+normative rules are in [[contract]]; what changed in a given release is in `CHANGELOG.md`. This
+page is the procedure.
 
 ## 1. Upgrade the executable
 
@@ -22,7 +24,7 @@ If you installed with `--link`, the symlink already points at the pulled file; r
 The skills are copied, not linked, so an upgrade must reach every place they were installed:
 
 - **project-scoped** — re-run `./install.sh --repo <docs-repo>` in every repository you document
-  (or the manual `cp -r` line from [`docs/install.md`](install.md#manual-install)), and commit the
+  (or the manual `cp -r` line in [[install]]), and commit the
   new copy so collaborators get it too;
 - **global** — `./install.sh --skills global` once.
 
@@ -35,13 +37,13 @@ new tool. The installer's verification warns when it sees one.
 `dogen version --json` answers `{"tool", "contract"}`. Each skill declares `dogen_contract` and
 `dogen_min_tool` in its frontmatter. A skill stops only when the contract numbers differ or the
 tool is older than `min_tool`; both are compared as literal strings. `./install.sh --verify-only`
-makes the comparison for you. The current values are in [`docs/compatibility.md`](compatibility.md).
+makes the comparison for you. The current values are in [[compatibility]].
 
 ## 4. What a contract bump means for existing records
 
 Within one `contract` number, a newer tool reads every record an older one wrote: new event
 kinds are ignored for derivation with one warning, and nothing state-affecting is added without
-a new contract number (contract §5.10).
+a new contract number ([[contract]] §5.10).
 
 When the contract number changes, records written under the old one are **refused on every
 verb, read-only ones included** (`ledger_version_unsupported`, exit 6), with a hint naming both
@@ -63,3 +65,5 @@ exists to keep. The policy is:
 - **The gate.** `signoff` freezes the sha256 of `unit.md`, and a draft with no current signoff or
   against a stale plan hash is refused.
 - **The install shape.** A file on `PATH`, no package, no venv, no dependencies.
+
+Related: [[install]], [[compatibility]], [[contract]].

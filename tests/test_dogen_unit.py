@@ -44,7 +44,7 @@ import unittest
 from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-DOGEN_PATH = ROOT / "dogen"
+DOGEN_PATH = ROOT / "dogen.py"
 
 
 def _load_dogen():
@@ -3946,7 +3946,7 @@ class TestSummaryGolden(TempRepoTestCase):
 # VERB-09 carries the same two numbers and is checked against them below, so the
 # guard and the requirement phase-18 CI reads cannot drift apart.
 #
-# Recalibrated again at 17-08 (the maintainer, 2026-09-15, blocking-human checkpoint),
+# Recalibrated again at 17-08 (maintainer checkpoint, 2026-09-15),
 # which supersedes the 2026-09-14 temporary lift of the failing threshold. The
 # measurement: after plans 17-01/05/06/07 landed, ``dogen`` was 7,445 lines —
 # already 745 past the 6,700 the 16-07 pair set, so returning to it meant
@@ -3958,7 +3958,7 @@ class TestSummaryGolden(TempRepoTestCase):
 # projected v2.0 ceiling of ~8,600, review-fix allowance included, stays below
 # the failing threshold.
 #
-# Recalibrated a third time at 18-13 (the maintainer, 2026-09-18, blocking-human
+# Recalibrated a third time at 18-13 (maintainer checkpoint, 2026-09-18,
 # checkpoint), raised by WR-07 in ``18-REVIEW.md``. The measurement: ``dogen``
 # is 9,472 lines against the 8,000 / 9,500 pair, so the trigger has fired on
 # every run for 263 commits — the same information-free state the 17-08 note
@@ -4883,11 +4883,11 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                     "fixture is stale" % relative,
                 )
 
-    def test_scripts_holds_only_the_two_stdlib_utilities(self):
+    def test_scripts_holds_only_the_stdlib_utilities(self):
         # The vacuous-pass guard for the assertion above: a mis-rooted ROOT
         # would make every `exists()` false.
         found = sorted(p.name for p in (ROOT / "scripts").glob("*.py"))
-        self.assertEqual(found, ["planning_lint.py", "skill_lint.py"])
+        self.assertEqual(found, ["planning_lint.py", "skill_lint.py", "wiki_lint.py"])
         self.assertEqual(sorted((ROOT / "scripts").glob("*.sh")), [])
 
     def test_a_document_that_still_names_one_carries_the_tombstone(self):
@@ -4938,6 +4938,8 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "python3 tests/check_docs.py",
         "python3 scripts/planning_lint.py",
         "python3 tests/size_guard.py",
+        "python3 -m unittest tests.test_wiki_lint",
+        "python3 scripts/wiki_lint.py",
     )
 
     #: CR-01 — the gate command that deliberately has no separate CI step,
@@ -5062,8 +5064,8 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         # suite, which is CI's `validation` job's local dry-run command under
         # that same D-02 rule — and a kit the local gate does not run is exactly
         # the WR-08 orphan defect this tuple exists against — so it is fourteen.
-        self.assertEqual(len(self.GATE_COMMANDS), 14)
-        self.assertEqual(len(set(self.GATE_COMMANDS)), 14)
+        self.assertEqual(len(self.GATE_COMMANDS), 16)
+        self.assertEqual(len(set(self.GATE_COMMANDS)), 16)
 
     def test_no_gate_command_names_a_path_the_tree_does_not_have(self):
         """T-18-25 — the declared gate may never outrun the tree.
@@ -5131,94 +5133,6 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                     "%s imports %s, which this branch does not have"
                     % (path.name, sorted(imported & third_party)),
                 )
-
-    #: WR-08 — the six fields ``docs/sessions/TEMPLATE.md`` declares, in the
-    #: template's own order. ``Relationship to the team`` is the one phase 18
-    #: added, and the whole reason this list exists: the template says outright
-    #: that "an agent-reported zero is a different claim from a human-observed
-    #: zero, and only this line tells the two apart" — and the two records
-    #: ``CHANGELOG.md`` names as "the install evidence behind this release …
-    #: and nothing else" carried every other field and not that one. The fact
-    #: was recoverable from their ``Author:`` lines; the template's own
-    #: argument is that a recorded field, not an inference from a neighbouring
-    #: one, is what makes a leg's evidentiary status checkable.
-    SESSION_FIELDS = (
-        "**Date:**",
-        "**Leg:**",
-        "**Author:**",
-        "**Relationship to the team:**",
-        "**Agent runtime:**",
-        "**Skills install root:**",
-    )
-
-    #: The two files under ``docs/sessions/`` that are not a leg's record, and
-    #: are therefore not held to the record's shape.
-    SESSION_NON_RECORDS = {
-        # The shape itself. It DECLARES the fields rather than filling them,
-        # and is asserted against separately (the template must still declare
-        # every field this tuple names).
-        "TEMPLATE.md",
-        # Cross-session working notes, parked here by plan 17-12 (WR-10)
-        # rather than inherited by every future record. No session produced
-        # it and no metric is recorded in it, so it is not a leg's record.
-        "NOTES-2026-09.md",
-    }
-
-    def test_every_session_record_fills_the_template_fields(self):
-        """WR-08 — the template is a contract only if something pins it.
-
-        ``AGENTS.md`` calls ``docs/sessions/TEMPLATE.md`` "the fixed shape an
-        authoring-session record must fill", and nothing in the gate compared a
-        record against it. Both directions matter here. A record that drops a
-        field goes red, which is the case WR-08 found. A *template* that stops
-        declaring a field this tuple names also goes red, so the list cannot
-        silently outlive the shape it mirrors.
-        """
-        template = (SESSIONS_ROOT / "TEMPLATE.md").read_text(encoding="utf-8")
-        for field in self.SESSION_FIELDS:
-            with self.subTest(declared=field):
-                self.assertIn(
-                    field,
-                    template,
-                    "TEMPLATE.md no longer declares %s; this tuple mirrors the "
-                    "template and may not outlive it" % field,
-                )
-        records = sorted(
-            path
-            for path in SESSIONS_ROOT.glob("*.md")
-            if path.name not in self.SESSION_NON_RECORDS
-        )
-        # Vacuous-pass guard: a glob that matched nothing would agree with
-        # every field by construction and read as the loudest possible green.
-        self.assertGreaterEqual(
-            len(records),
-            5,
-            "found %r under %s; the scan must see the records before it can "
-            "assert anything about them"
-            % ([path.name for path in records], SESSIONS_ROOT),
-        )
-        # Single definition site: ``session_records()`` selects the same set by
-        # a different predicate (a leading digit). Pinned against each other
-        # rather than hand-copied, so the two cannot drift into disagreeing
-        # about which files under docs/sessions/ are a leg's record.
-        self.assertEqual(
-            records,
-            session_records(),
-            "SESSION_NON_RECORDS and session_records() disagree about which "
-            "files under %s are leg records" % SESSIONS_ROOT,
-        )
-        for record in records:
-            text = record.read_text(encoding="utf-8")
-            for field in self.SESSION_FIELDS:
-                with self.subTest(record=record.name, field=field):
-                    self.assertIn(
-                        field,
-                        text,
-                        "%s does not fill the template's %s field; a leg's "
-                        "evidentiary status must be read off the record, not "
-                        "inferred from its Author: line"
-                        % (record.name, field),
-                    )
 
     #: WR-03 / T-18-76 — the home-directory prefixes that are legitimately in
     #: the shipped tree, each with the reason it is there. Widening this tuple
@@ -5363,8 +5277,7 @@ def _declared_tree_paths():
     """Every path ``AGENTS.md``'s tree block names under a pinned section.
 
     Directories keep their trailing slash, so a declared-but-not-enumerated
-    directory (``validation/legs/``) is distinguishable from an enumerated one
-    (``docs/sessions/``).
+    directory is distinguishable from an enumerated one.
     """
     declared = set()
     stack = []
@@ -5431,10 +5344,9 @@ class TestTheTreeBlockIsPinnedToTheTree(unittest.TestCase):
     def _enumerated_directories(self, declared):
         """Directories the block lists the *contents* of, not merely the name.
 
-        ``validation/legs/`` is named and its contents are described in prose,
-        so its children are not pinned. ``docs/sessions/`` is named and its
-        children are listed, so they are. The difference is visible in the
-        parse, which is why it is read from the parse rather than declared.
+        A directory named without children is not pinned; one whose children
+        are listed is. The difference is visible in the parse, which is why it
+        is read from the parse rather than declared.
         """
         directories = set(PINNED_TREE_SECTIONS)
         for path in declared:
@@ -5508,7 +5420,7 @@ class TestTheTreeBlockIsPinnedToTheTree(unittest.TestCase):
         ``declared`` makes ``names_nothing_the_tree_lacks`` pass over nothing
         while ``lists_every_shipped_file`` reports every file in four
         directories at once. The count is the cheap way to tell those apart.
-        Precedent: ``test_scripts_holds_only_the_two_stdlib_utilities``.
+        Precedent: ``test_scripts_holds_only_the_stdlib_utilities``.
         """
         declared = _declared_tree_paths()
         self.assertGreaterEqual(
@@ -5522,190 +5434,11 @@ class TestTheTreeBlockIsPinnedToTheTree(unittest.TestCase):
         # whose comment wraps onto a line that must not be read as an entry.
         for landmark in (
             "scripts/skill_lint.py",
-            "docs/sessions/TEMPLATE.md",
+            "docs/install.md",
             "tests/lib.sh",
         ):
             self.assertIn(landmark, declared)
 
-
-
-#: The three boxes ``TEMPLATE.md``'s ``## Prerequisites`` names, and which it
-#: calls load-bearing: "an unrecorded prerequisite invalidates the leg's
-#: evidence". Both legs' records must answer all three or the two legs are not
-#: comparable on the one section the shape says matters.
-PREREQUISITE_BOXES = (
-    "**Skill install roots.**",
-    "**Hooks.**",
-    "**Tool install.**",
-)
-
-SESSIONS_ROOT = ROOT / "docs" / "sessions"
-
-#: Five records today — the two phase-17 authoring legs, phase 19's reference leg
-#: (``2026-09-17-reference-leg.md``), its actionable leg, and the reference leg's
-#: SECOND run on Claude Code (``2026-09-17-reference-leg-claude-code.md``), which
-#: is a separate record because it is a separate session with its own metrics and
-#: its own RUN file. A glob that stopped matching would make the scan vacuous, so
-#: the count is raised deliberately per added record.
-EXPECTED_SESSION_RECORDS = 5
-
-
-def session_records():
-    """Every instantiated session record — the dated files, not the shape.
-
-    ``TEMPLATE.md`` is the shape and ``NOTES-*.md`` is parked working notes;
-    neither is a leg's record, so neither is held to the record's contract.
-    """
-    return sorted(
-        path
-        for path in SESSIONS_ROOT.glob("*.md")
-        if path.name[0].isdigit()
-    )
-
-
-class TestSessionRecordsInstantiateTheShape(unittest.TestCase):
-    """The two legs' records are comparable on the section the template calls
-    load-bearing (WR-11).
-
-    ``TEMPLATE.md`` mandates ``## Prerequisites`` with three named boxes and
-    states that an unrecorded prerequisite invalidates the leg's evidence.
-    ``2026-09-14-early.md`` carried ``## Preconditions`` as five prose bullets
-    with no *Hooks* prerequisite at all, ``2026-09-15-full.md`` followed the
-    template, and nothing gated the difference — so the one section the shape
-    calls load-bearing was the one the two legs could not be compared on.
-    """
-
-    def test_the_scan_sees_both_legs(self):
-        found = session_records()
-        self.assertEqual(
-            len(found),
-            EXPECTED_SESSION_RECORDS,
-            "found %d session record(s) under %s; update the count deliberately "
-            "when a leg is added: %r"
-            % (len(found), SESSIONS_ROOT, [p.name for p in found]),
-        )
-
-    def test_every_record_carries_the_prerequisites_section(self):
-        for path in session_records():
-            text = path.read_text(encoding="utf-8")
-            with self.subTest(record=path.name):
-                self.assertIn(
-                    "\n## Prerequisites\n",
-                    text,
-                    "%s does not instantiate the template's `## Prerequisites` "
-                    "shape" % path.name,
-                )
-                self.assertNotIn(
-                    "\n## Preconditions\n",
-                    text,
-                    "%s still uses the pre-17-12 heading" % path.name,
-                )
-
-    def test_every_record_answers_all_three_boxes(self):
-        for path in session_records():
-            text = path.read_text(encoding="utf-8")
-            for box in PREREQUISITE_BOXES:
-                with self.subTest(record=path.name, box=box):
-                    self.assertIn(
-                        box,
-                        text,
-                        "%s records no %s prerequisite; the template calls an "
-                        "unrecorded one a leg-invalidating gap" % (path.name, box),
-                    )
-
-    def test_every_box_is_answered_and_not_merely_named(self):
-        """WR-07 — naming a box is not filling it.
-
-        The assertion above is a substring check on the literal ``**Hooks.**``,
-        so an unfilled ``- [ ] **Hooks.** <hooks installed, mechanism, install
-        path…>`` copied straight out of ``TEMPLATE.md`` passes it. Two things
-        make a box answered: it says something of its own after the label, and
-        a box that carries ``[x]`` claims a MEASUREMENT — so an unmeasured
-        prerequisite must be `not measured` and unticked, which is the
-        template's own opening rule ("a metric with no measurement is written
-        `not measured`, never left blank and never estimated").
-        """
-        for path in session_records():
-            lines = path.read_text(encoding="utf-8").splitlines()
-            for box in PREREQUISITE_BOXES:
-                head = next(
-                    (line for line in lines if box in line and line.startswith("- [")),
-                    None,
-                )
-                with self.subTest(record=path.name, box=box):
-                    self.assertIsNotNone(
-                        head, "%s carries no checkbox line for %s" % (path.name, box)
-                    )
-                    answer = head.split(box, 1)[1].strip()
-                    self.assertNotEqual(
-                        answer, "", "%s leaves %s blank" % (path.name, box)
-                    )
-                    if head.startswith("- [x]"):
-                        self.assertNotIn(
-                            "not measured",
-                            answer,
-                            "%s ticks %s while calling it `not measured`; a "
-                            "ticked box claims the prerequisite was done AND "
-                            "recorded before journey 1" % (path.name, box),
-                        )
-                    else:
-                        self.assertIn(
-                            "not measured",
-                            " ".join(
-                                lines[lines.index(head) : lines.index(head) + 8]
-                            ),
-                            "%s leaves %s unticked without saying `not "
-                            "measured`; the template forbids a blank metric"
-                            % (path.name, box),
-                        )
-
-    def test_no_template_placeholder_survives_in_a_dated_record(self):
-        """WR-07 — the placeholders are the template's, and only the template's.
-
-        A record that copied a box across and never filled it would satisfy
-        every substring check above. The fixture is derived from ``TEMPLATE.md``
-        rather than hand-listed, so a new placeholder is covered the day it is
-        written. Angle brackets in general are legitimate in a record — the
-        tool's own ``dogen edits <id>`` appears in both — so only the
-        template's own placeholder strings are forbidden.
-        """
-        placeholders = set(
-            re.findall(
-                r"<[^<>\n]{1,60}>",
-                (SESSIONS_ROOT / "TEMPLATE.md").read_text(encoding="utf-8"),
-            )
-        )
-        self.assertGreater(
-            len(placeholders),
-            10,
-            "found %d placeholder(s) in TEMPLATE.md; this assertion would be "
-            "vacuous" % len(placeholders),
-        )
-        for path in session_records():
-            text = path.read_text(encoding="utf-8")
-            for placeholder in sorted(placeholders):
-                with self.subTest(record=path.name, placeholder=placeholder):
-                    self.assertNotIn(
-                        placeholder,
-                        text,
-                        "%s still carries TEMPLATE.md's %r — the box was copied "
-                        "across, not answered" % (path.name, placeholder),
-                    )
-
-    def test_the_template_names_the_same_three_boxes(self):
-        # The fixture is pinned to the shape, not the other way round: if the
-        # template grows a fourth box, this goes red rather than silently
-        # holding the records to a stale list.
-        text = (SESSIONS_ROOT / "TEMPLATE.md").read_text(encoding="utf-8")
-        for box in PREREQUISITE_BOXES:
-            with self.subTest(box=box):
-                self.assertIn(box, text)
-        self.assertEqual(
-            text.count("\n- [ ] **"),
-            len(PREREQUISITE_BOXES),
-            "TEMPLATE.md's prerequisite list and this fixture disagree on how "
-            "many boxes there are",
-        )
 
 
 class TestProgressRecordReads(unittest.TestCase):

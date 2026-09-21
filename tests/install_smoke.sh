@@ -5,7 +5,7 @@
 #
 # The boundary, stated once: this script is the ONLY test that reaches `dogen`
 # through PATH rather than through the in-tree `./dogen` file. It therefore does
-# NOT source `tests/lib.sh` — that file pins `DOGEN="$REPO_ROOT/dogen"` and its
+# NOT source `tests/lib.sh` — that file pins `DOGEN="$REPO_ROOT/dogen.py"` and its
 # `setup_repo` exports `DOGEN_TEST_HOOKS=1`, and either one would let a broken
 # install pass as green (RESEARCH Pitfall 4). The guards worth copying from
 # `tests/lib.sh:176-198` — the three-check `mktemp -d` and the pinned git config

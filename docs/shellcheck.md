@@ -1,5 +1,7 @@
 # Shellcheck policy
 
+<!-- provenance: moved from README.md (Shellcheck policy) -->
+
 `install.sh`, the bash suites and the validation kit are kept clean at `shellcheck -S warning`:
 
 ```bash
@@ -18,3 +20,5 @@ The rule when that happens: **reproduce the CI-only finding against the pinned 0
 changing any code.** A fix written against a newer analyzer's model of the same script is a
 guess, and a guess committed to silence a gate is how a gate stops meaning anything. The mirror
 image holds too: reproduce a local-only finding against 0.9.0 before changing code for it.
+
+Related: [[development]], [[conventions]].

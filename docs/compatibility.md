@@ -1,7 +1,9 @@
 # Compatibility
 
-Two numbers decide whether a skill and a tool may work together. Their home is
-[`docs/contract.md`](contract.md#510-compatibility) §5.10; this page states them for a reader and
+<!-- provenance: moved from README.md (Compatibility); the numbers are contract 5.10 -->
+
+Two numbers decide whether a skill and a tool may work together. Their home is [[contract]]
+§5.10; this page states them for a reader and
 is checked against the tool by `tests/check_docs.py`.
 
 <!-- COMPAT:BEGIN -->
@@ -26,4 +28,6 @@ same comparison at the end of an install, so a mismatch is reported before a ski
 
 A ledger whose header event carries a different `contract` is never half-read: every verb
 refuses it, read-only ones included (`ledger_version_unsupported`, exit 6). Records are archived,
-never migrated in place — see [`docs/upgrade.md`](upgrade.md).
+never migrated in place — see [[upgrade]].
+
+Related: [[upgrade]], [[contract]], [[install]].

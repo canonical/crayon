@@ -79,6 +79,8 @@ DOC_FILES = (
     "docs/hooks.md",
     "docs/shellcheck.md",
     "docs/development.md",
+    "docs/architecture.md",
+    "docs/conventions.md",
     "docs/upgrade.md",
     "CHANGELOG.md",
     "skills/README.md",
@@ -288,7 +290,7 @@ def registered_verbs(root):
     is widened so the group is not wrapped, and the whitespace is stripped
     anyway so a wrapped group would still parse.
     """
-    tool = root / "dogen"
+    tool = root / "dogen.py"
     if not tool.is_file():
         return []
     env = dict(os.environ)
@@ -759,11 +761,11 @@ def main(argv=None):
     documents = read_documents(root)
 
     try:
-        tool = load_module("dogen", root / "dogen")
+        tool = load_module("dogen", root / "dogen.py")
     except Exception as bad:  # noqa: BLE001 - reported, never swallowed
         print(
             "check-docs: ERROR - the tool at %s could not be read (%s)"
-            % (root / "dogen", type(bad).__name__),
+            % (root / "dogen.py", type(bad).__name__),
             file=sys.stderr,
         )
         return 2

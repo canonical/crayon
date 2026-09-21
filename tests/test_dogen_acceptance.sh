@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_dogen_acceptance.sh — the reviewer's acceptance suite, A-01 … A-35 (D-10).
+# test_dogen_acceptance.sh — the ported acceptance suite, A-01 … A-35 (D-10).
 #
 # Usage: bash tests/test_dogen_acceptance.sh
 #
@@ -26,12 +26,12 @@ set -u
 # used to sit above the A-series moved, unchanged, into
 # tests/test_dogen_lifecycle.sh under their N-ids, and the fixtures both suites
 # read state through (`derived`, `stage_draft`, `setup_drafted_unit`, …) moved
-# into the shared harness with them. What is left below is the reviewer's suite and
-# nothing else, which is the whole point: he opens this file and recognises it.
+# into the shared harness with them. What is left below is the original reviewer's suite
+# and nothing else, which is the whole point: its author opens this file and recognises it.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/lib.sh"
 
-# --- A-01 … A-35: the reviewer's suite, ported by intent (D-10, TEST-01) -----------
+# --- A-01 … A-35: the reviewer's suite, ported by intent (D-10, TEST-01) ------
 #
 # The port source is `git show 357c513:tests/test_dogen_scripts.sh` — the
 # thirty-two test functions of the v1.x bash layer, frozen in git history so the
@@ -915,7 +915,7 @@ test_a30_git_add_isolation() {
 
 # --- A-31 … A-35: the five Aug-31 regression tests ---------------------------
 #
-# These five are the tests the reviewer added on 31 August 2025 for the three holes he
+# These five are the tests the reviewer added in the v1 review for the three holes they
 # closed in the v1.x bash layer — two path-traversal cases in record-draft, one
 # in record-review accept, the ledger note delimiter, and the `unresolved_steps`
 # substring false positive. The README credits those fixes, so each function

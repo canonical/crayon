@@ -601,7 +601,7 @@ def assert_omits(case, haystack, needle, what):
 
 def tool_flags():
     """Every ``--flag`` the tool registers, read from ``dogen``'s source text."""
-    text = (ROOT / "dogen").read_text(encoding="utf-8")
+    text = (ROOT / "dogen.py").read_text(encoding="utf-8")
     flags = set(_TOOL_FLAG_RE.findall(text))
     flags.add("--help")
     return flags
@@ -655,7 +655,7 @@ def walk_verb_flags():
     be empty: an unrecognised parser shape is a walk that needs updating, not a
     flag that belongs everywhere.
     """
-    tree = ast.parse((ROOT / "dogen").read_text(encoding="utf-8"))
+    tree = ast.parse((ROOT / "dogen.py").read_text(encoding="utf-8"))
     builder = next(
         node
         for node in tree.body
@@ -1353,7 +1353,7 @@ def unit_frontmatter_keys():
     Read from ``dogen``'s source text, like every other fact this suite pins
     about the tool.
     """
-    text = (ROOT / "dogen").read_text(encoding="utf-8")
+    text = (ROOT / "dogen.py").read_text(encoding="utf-8")
     match = re.search(r"^_UNIT_KEY_ORDER = \(([^)]*)\)", text, re.MULTILINE)
     if match is None:
         return set()
@@ -1381,7 +1381,7 @@ _BACKTICKED_RE = re.compile(r"`([a-z][a-z_]*)`")
 def payload_keys(payload):
     """The keys of one derived-state payload, scraped from ``dogen``'s source."""
     start, open_line, close_line = PAYLOAD_ANCHORS[payload]
-    lines = (ROOT / "dogen").read_text(encoding="utf-8").splitlines()
+    lines = (ROOT / "dogen.py").read_text(encoding="utf-8").splitlines()
     try:
         head = next(i for i, ln in enumerate(lines) if ln.startswith(start))
         begin = next(i for i in range(head, len(lines)) if lines[i] == open_line)
@@ -1574,7 +1574,7 @@ _RAISE_RE = re.compile(r"^(\s*)raise Refusal\($")
 def module_prose_constants(source=None):
     """S-11 needs the strings-only view of the shared module resolver."""
     if source is None:
-        source = (ROOT / "dogen").read_text(encoding="utf-8")
+        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
     return _module_string_constants(ast.parse(source)).text
 
 
@@ -1587,7 +1587,7 @@ def refusal_blocks(source=None):
     argument.
     """
     if source is None:
-        source = (ROOT / "dogen").read_text(encoding="utf-8")
+        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
     lines = source.splitlines()
     constants = module_prose_constants(source)
     blocks = {}
@@ -2575,7 +2575,7 @@ def refusal_sites(source=None):
     expression pair and enclosing function. Unknown shapes never disappear.
     """
     if source is None:
-        source = (ROOT / "dogen").read_text(encoding="utf-8")
+        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
     constants = _module_string_constants(tree)
     parents = {child: parent for parent in ast.walk(tree)
@@ -2827,7 +2827,7 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
         caller's remedy survives every return, and the escape is in every
         string the helper can emit.
         """
-        source = (ROOT / "dogen").read_text(encoding="utf-8")
+        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
         tree = ast.parse(source)
         found = [
             node
@@ -3022,7 +3022,7 @@ class TestS13WalkControls(unittest.TestCase):
                 self.assertEqual([s[2] for s in sites], ["adopt_unsupported"])
 
     def test_computed_hints_cannot_hide_at_any_depth(self):
-        source = (ROOT / "dogen").read_text(encoding="utf-8")
+        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
         helper = source.split("def escape_hint(", 1)[1].split(
             "def refuse_transition(", 1
         )[0]

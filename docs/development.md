@@ -1,15 +1,16 @@
 # Developing dogen
 
+<!-- provenance: moved from README.md (Develop dogen itself) and AGENTS.md (The gate), expanded -->
+
 The tooling, the test suites and the checks that verify the tree, for someone changing dogen
-rather than using it. The operating rules — the non-negotiables, the tree, the conventions — are
-in [`AGENTS.md`](../AGENTS.md), and the behaviour of the tool is fixed by
-[`docs/contract.md`](contract.md), frozen at the git tag `contract-v1`. This page explains what
+rather than using it. The operating rules are in [[architecture]] and [[conventions]], and the behaviour of the
+tool is fixed by [[contract]], frozen at the git tag `contract-v1`. This page explains what
 each command in the gate proves and how the pieces pin one another, so that a red run names the
 thing that moved.
 
 ## The shape
 
-One stdlib-only Python file, `dogen`, at the repository root: Python 3.9 syntax, no package, no
+One stdlib-only Python file, `dogen.py`, at the repository root, installed as `dogen`: Python 3.9 syntax, no package, no
 venv, no dependency, no third-party test runner. One verb per transition over a hash-chained
 JSONL ledger. Three portable Agent Skills under `skills/` are the human-facing surface; two
 stdlib-only lint utilities under `scripts/` and a validation kit under `validation/` are the
@@ -38,6 +39,8 @@ python3 tests/check_traces.py                    # the trace-table checker
 python3 tests/check_docs.py                      # the docs-accuracy checker
 python3 scripts/planning_lint.py                 # the anonymization gate over .planning/
 python3 tests/size_guard.py                      # VERB-09's line budget, reported and enforced
+python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
+python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
 ```
 
 Set `GIT_CONFIG_GLOBAL=/dev/null` for anything that shells out to git, so a developer's global
@@ -48,7 +51,7 @@ CI the same way, the shell files are kept clean with:
 shellcheck -S warning install.sh tests/*.sh validation/*.sh
 ```
 
-See [`docs/shellcheck.md`](shellcheck.md) for the version policy.
+See [[shellcheck]] for the version policy.
 
 ### One exit contract for every checker
 
@@ -78,7 +81,7 @@ the line budget's two thresholds, the Python 3.9 hazard scan and the no-dependen
 **`tests/test_skill_text.py`** — the skill-text contracts: the routing table authored once in
 `skills/README.md` between its sentinels is byte-identical in every skill's
 `references/routing.md`; every reason and every `next` token has exactly one row; the manual
-install lines in [`docs/install.md`](install.md) create the directory they copy into.
+install lines in [[install]] create the directory they copy into.
 
 **`tests/test_dogen_lifecycle.sh`** — the N-series: lifecycle walks, negative paths, recovery
 situations and the contract's trace table, each test driving the real executable in a hermetic
@@ -93,7 +96,7 @@ copy of any of those.
 
 **`tests/install_smoke.sh`** — the only test that reaches `dogen` through `PATH` rather than the
 in-tree file. It extracts the fenced shell between the `INSTALL:BEGIN` / `INSTALL:END` markers in
-[`docs/install.md`](install.md) byte for byte, runs it from a temporary `HOME` in a temporary
+[[install]] byte for byte, runs it from a temporary `HOME` in a temporary
 repository, then drives one unit to a written page and one refusal from that vantage point. It
 is what keeps the documented install from rotting.
 
@@ -124,6 +127,13 @@ is fail-closed.
 **`scripts/planning_lint.py`** — no unscrubbed prior-art identity in `.planning/`. A missing
 planning tree is a clean scan; on a release branch it checks nothing and says so.
 
+**`scripts/wiki_lint.py`** — the shape of the `docs/` wiki and its entry point `AGENTS.md`:
+every bracketed link resolves, every page is reachable from `AGENTS.md`, slugs are unique, pages
+start with an H1, carry a provenance comment and end with a `Related:` line, the bracket
+notation appears nowhere outside the wiki, and every `docs/<slug>.md` path cited from outside
+exists. The live tree is its fixture; `tests/test_wiki_lint.py` mutates a two-page tree once
+per check.
+
 **`tests/size_guard.py`** — VERB-09's line budget over `dogen`, a review trigger rather than a
 design goal. Above the reporting threshold it reports and stays green; at the failing threshold
 it fails. It loads both thresholds and the comparison out of the unit suite, so the CI job and
@@ -134,6 +144,7 @@ the local guard are the same code.
 | This | is pinned to | by |
 |---|---|---|
 | `GATE_COMMANDS` | `AGENTS.md`, this page, `ci.yml` `run:` bodies, every `tests/test_*.py` | the unit suite |
+| Bracketed links and the wiki shape | `docs/*.md` and `AGENTS.md` | `wiki_lint.py` |
 | `AGENTS.md`'s tree block | the real `docs/`, `scripts/`, `tests/`, `validation/` | the unit suite |
 | The routing table | each skill's `references/routing.md` | `test_skill_text.py` |
 | `README.md`'s verb rows | `dogen --help` | `check_docs.py` |
@@ -192,4 +203,8 @@ with `unsteered`. Every refusal is one JSON line with `error`, `unit`, `detail`,
 - A new file under `docs/`, `scripts/`, `tests/` or `validation/`: list it in `AGENTS.md`'s tree
   block, or name it in the unit suite's `UNSHIPPED_PATHS` if it is deliberately not released.
 - A new test module: add it to `GATE_COMMANDS`, `AGENTS.md`, this page and `ci.yml` together.
+- A new page under `docs/`: H1, provenance comment on line 3, `Related:` last line, and a
+  bracketed link from `AGENTS.md` or from a page it reaches; the wiki lint names what is missing.
 - A new shell file: add it to the shellcheck command in all three places.
+
+Related: [[architecture]], [[conventions]], [[shellcheck]], [[install]].

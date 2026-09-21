@@ -1,5 +1,7 @@
 # Formatting hooks on target pages
 
+<!-- provenance: moved from README.md (Formatting hooks on target pages); the routes are contract 5.8 -->
+
 If a `pre-commit` hook reformats the pages dogen writes, the supported behaviour is
 **adoption**, and the routes say so:
 
@@ -19,6 +21,7 @@ What is **not** supported is a hook that *deletes* the placed file. There are no
 to adopt, so `--adopt` refuses. A formatter is not a reviewer; adoption always records a note
 saying a hook changed the bytes and the author retained them.
 
-The normative statement of both routes is [`docs/contract.md`](contract.md#58-write-protocol-and-resume)
-§5.8; the skills follow the routing rows for `uncommitted_tail`, `resume_ambiguous` and
-`recovery_unsupported` in [`skills/README.md`](../skills/README.md#routing).
+The normative statement of both routes is [[contract]] §5.8; the skills follow the routing rows
+for `uncommitted_tail`, `resume_ambiguous` and `recovery_unsupported` in `skills/README.md`.
+
+Related: [[contract]], [[conventions]].

@@ -43,7 +43,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 #: The tool the budget is about.
-DOGEN_PATH = ROOT / "dogen"
+DOGEN_PATH = ROOT / "dogen.py"
 
 #: The single authoring site for the thresholds AND for the comparison. U-10
 #: cross-checks the pair against ``.planning/REQUIREMENTS.md`` VERB-09 wherever

@@ -20,8 +20,8 @@ cd /path/to/your-docs-repo
 Every choice the script makes, and the manual equivalent, is in
 [`docs/install.md`](docs/install.md).
 
-**2. Plan.** Open your agent in the docs repository and start the first skill — `/dogen-plan` in
-Claude Code, or "use the dogen-plan skill to document …" elsewhere. Tell it what page you need.
+**2. Plan.** Open your coding agent in the docs repository and invoke `/dogen-plan`. Tell it
+what page you need.
 It asks one question at a time about the audience, the sources and the shape, reads the plan
 back to you, and records your **signoff** when you say go.
 
@@ -37,8 +37,9 @@ gives you paste-ready pull-request text. dogen never pushes; you own the PR.
 
 ## How you use it
 
-You talk to your agent. The agent runs the skills; the skills call the tool. You never type a
-`dogen` command yourself unless you want to.
+You talk to your coding agent — any agent that reads `SKILL.md` skills and can run shell
+commands; dogen names none and needs none in particular. The agent runs the skills; the skills
+call the tool. You never type a `dogen` command yourself unless you want to.
 
 1. **`dogen-plan`** declares one page: what it is, who it is for, where the facts come from, and
    where it lands. It ends with your signoff, which is the gate — nothing substantial can be
@@ -90,6 +91,16 @@ is provenance, not product, so keep it off your main line:
   is refused until your signoff is on record.
 - It does **not** label the output. There is no "AI-generated" disclaimer, because the humans who
   review and merge it stand behind what ships. Provenance is internal observability.
+
+## What dogen knows about Sphinx
+
+The page dogen writes is Sphinx-publishable: MyST Markdown or reStructuredText, the target's
+extension deciding which, shaped to one Diátaxis direction. That is the whole of it. dogen has
+no knowledge of any Sphinx stack, theme, extension set or `conf.py`; a starter kit such as
+[canonical/sphinx-stack](https://github.com/canonical/sphinx-stack) is a fine host for the
+output, and dogen neither depends on it nor understands it. It never runs `sphinx-build`. Your
+house style, vocabulary and structure reach it only through the context files described in
+[`docs/install.md`](docs/install.md#add-context-files-recommended).
 
 ## Glossary
 
@@ -166,13 +177,27 @@ code, which several reasons share.
 The authoritative list is the tool's own `REASONS` table and
 [`docs/contract.md`](docs/contract.md) §5.7; the table above is checked against both.
 
+## Repository layout
+
+- `dogen.py` — the tool, one stdlib-only Python file; installed on your `PATH` as `dogen`.
+- `install.sh` — the installer.
+- `skills/` — the three Agent Skills your agent drives, and their family contract.
+- `docs/` — the wiki: the normative contract and the guides linked below.
+- `AGENTS.md` — the guide a coding agent working *on* dogen reads first.
+- `scripts/` — stdlib lints that gate the skills, the planning tree and the wiki.
+- `tests/` — the test suites and checkers; `validation/` — the evidence kit. Both are described
+  in [`docs/development.md`](docs/development.md).
+- `CHANGELOG.md`, `LICENSE` (LGPL-3.0-only for the tool; `skills/LICENSE` is Apache-2.0).
+
 ## Further reading
 
 - [`docs/install.md`](docs/install.md) — every install choice, the manual install, context files.
 - [`docs/upgrade.md`](docs/upgrade.md) — upgrading the tool, the skills and existing records.
 - [`docs/compatibility.md`](docs/compatibility.md) — the contract number and the minimum tool.
 - [`docs/hooks.md`](docs/hooks.md) — what happens when a formatting hook rewrites a page.
-- [`docs/contract.md`](docs/contract.md) — the normative specification, frozen at `contract-v1`.
+- [`docs/contract.md`](docs/contract.md) — the normative specification, frozen at `contract-v1`;
+  [`docs/architecture.md`](docs/architecture.md) and [`docs/conventions.md`](docs/conventions.md)
+  — the shape and the working rules behind it.
 - [`skills/README.md`](skills/README.md) — the skill family contract and the routing table.
 - [`docs/development.md`](docs/development.md) — tooling, testing and verification for
   contributors; [`docs/shellcheck.md`](docs/shellcheck.md) — the shell lint policy.

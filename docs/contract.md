@@ -1,5 +1,7 @@
 # dogen contract v1
 
+<!-- provenance: frozen at tag contract-v1; the internal_error reason row was added after the freeze -->
+
 The normative contract for the `dogen` tool: what it writes, what it refuses, and what the
 record it leaves behind does and does not prove. This document is frozen at git tag
 `contract-v1`; where it and any plan, skill or README disagree, this document wins.
@@ -23,7 +25,7 @@ simplest adequate mechanism; how we know it helped.*
 | Signoff/plan-hash/stale/amended gates | AC5; v1.1 | no substantial draft lands without a recorded signoff, and editing the plan after signing invalidates it rather than passing silently | sha256(unit.md); `gen.signoff_seq == so.seq` | A-08/09, N-19 |
 | Unsteered refusal | AC5 | re-drafting without recording what changed is refused, not quietly repeated | seq comparison over H | N-09 |
 | Pending requests closed by recorded, disjoint dispositions | round-2 f.1, round-3 f.8 | accept names which requests it satisfies and which it withdraws; nothing is closed by silence | `resolves`/`withdraws` on accept | N-20/21/25/32 |
-| Drift over basis paths + `edits` (complete set; brownfield adoption) | a colleague's case; committed edit; existing page; target change | a hand edit is adopted into the record rather than overwritten, and an existing page is adopted rather than clobbered | disk digests vs basis paths | N-10, N-26, N-33/34 |
+| Drift over basis paths + `edits` (complete set; brownfield adoption) | a reviewer's hand-edit case; committed edit; existing page; target change | a hand edit is adopted into the record rather than overwritten, and an existing page is adopted rather than clobbered | disk digests vs basis paths | N-10, N-26, N-33/34 |
 | Step evidence, tool-computed; conservative reuse | audit §5.1 | a tutorial or how-to step counts as resolved only with captured bytes and a real exit code; reuse carries forward only along an unchanged prefix | `--steps-seq`; `--keep-evidence --note` | N-18, N-27 |
 | Manifest write protocol; two-pass `resume`; bounded `--adopt`; honest limit | J6; partial writes; hooks; lost material | a crash or a rewriting hook never loses the author's work; recovery either completes or stops and says exactly what it cannot do | pending/{before,after,manifest}; classify then write | N-13…N-17, N-28…N-31, N-35…N-38 |
 | Repo-wide lock | concurrent invocations | a second invocation refuses with `busy` instead of interleaving two transitions | `fcntl.flock` | N-16 |
@@ -444,7 +446,7 @@ after `edits` (the no-op rule compares against the destination, which now holds 
 bytes, so it is not suppressed; `edits` is not steering, so the redraft needs a recorded `steer`
 first), which the hook will rewrite again: the supported behaviour with a formatting hook on
 target paths is "adopt", and the README says so. Both hook shapes are fixtures (N-15, N-36) and
-are tried on docs-repo's real hooks in the full session.
+are tried on a real repository's hooks in a full session.
 
 ## 5.9 What dogen verify reports
 
@@ -666,3 +668,5 @@ moved. No cell is ever blank.
 | T33 | §5.8 stage-a write boundary (dry-run) | N-41 |
 | T34a | §5.5 routing 8b · §5.4 (restoration request via `steer`) | S-09 |
 | T34b | §5.7 c (`target_missing`) · §5.4 target changes | S-09 |
+
+Related: [[architecture]], [[hooks]], [[compatibility]].
