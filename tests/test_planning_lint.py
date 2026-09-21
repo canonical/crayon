@@ -1,8 +1,8 @@
 """Anonymization-lint tests, single-sourcing the CI/pre-commit check.
 
 Mirrors the skill-lint keystone set: a positive gate on the real ``.planning/``
-tree, a negative keystone against fixture files (a hit MUST be detected), and
-the vacuous-pass guard (an empty root cannot masquerade as clean).
+tree, negative keystones against forbidden and unreadable content, and explicit
+coverage that a missing or empty optional planning tree is clean.
 
 WR-08 (iteration 3): this module was pytest-based, and this branch has no
 pyproject, no pytest and no uv — so it errored under ``python3 -m unittest
@@ -43,7 +43,7 @@ planning_lint = _load_planning_lint()
 
 
 class TestPlanningLint(unittest.TestCase):
-    """The ``0`` clean / ``1`` violation / ``2`` vacuous contract, both directions."""
+    """The ``0`` clean / ``1`` violation contract, in both directions."""
 
     def setUp(self):
         self._root = planning_lint.PLANNING_ROOT
@@ -56,13 +56,9 @@ class TestPlanningLint(unittest.TestCase):
     def test_real_planning_tree_is_clean(self):
         """The committed ``.planning/`` tree carries no unscrubbed prior-art names.
 
-        Skipped where the tree is absent: ``.planning/`` lives on the planning
-        branch and is gitignored on ``main``, and "the lint found nothing to
-        scan" is `main()`'s exit 2, not a violation. The negative keystones
-        below still run, so this skip cannot make the suite vacuous.
+        ``.planning/`` lives on the planning branch and is gitignored on
+        ``main``. Its absence is a clean result because the tree is optional.
         """
-        if not planning_lint.PLANNING_ROOT.is_dir():
-            self.skipTest("no .planning/ tree in this checkout")
         self.assertEqual(planning_lint.main(), 0)
 
     def test_forbidden_name_is_detected(self):
@@ -86,14 +82,31 @@ class TestPlanningLint(unittest.TestCase):
         )
         self.assertEqual(planning_lint.check_file(ok), [])
 
-    def test_main_returns_2_on_empty_root(self):
-        """``main()`` returns 2 when ``PLANNING_ROOT`` has no text files."""
+    def test_main_returns_0_on_missing_root(self):
+        """A missing optional planning root is clean."""
+        planning_lint.PLANNING_ROOT = self.tmp / "missing"
+        self.assertEqual(planning_lint.main(), 0)
+
+    def test_main_returns_0_on_empty_root(self):
+        """An empty optional planning root is clean."""
         planning_lint.PLANNING_ROOT = self.tmp
-        self.assertEqual(planning_lint.main(), 2)
+        self.assertEqual(planning_lint.main(), 0)
+
+    def test_main_returns_0_on_clean_file(self):
+        """Eligible clean files are still scanned successfully."""
+        self.tmp.joinpath("STATE.md").write_text("the ng family\n", encoding="utf-8")
+        planning_lint.PLANNING_ROOT = self.tmp
+        self.assertEqual(planning_lint.main(), 0)
 
     def test_main_returns_1_on_violation(self):
         """``main()`` returns 1 when any scanned planning file carries a hit."""
         self.tmp.joinpath("STATE.md").write_text("angie was here\n", encoding="utf-8")
+        planning_lint.PLANNING_ROOT = self.tmp
+        self.assertEqual(planning_lint.main(), 1)
+
+    def test_main_returns_1_on_unreadable_content(self):
+        """A file that is not UTF-8 is an unreadable-file violation."""
+        self.tmp.joinpath("STATE.md").write_bytes(b"\xff\xfebinary\n")
         planning_lint.PLANNING_ROOT = self.tmp
         self.assertEqual(planning_lint.main(), 1)
 

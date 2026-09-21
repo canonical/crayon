@@ -22,6 +22,7 @@
 #                  bash tests/test_dogen_lifecycle.sh                    2m44s
 #   unittest       bash tests/run_matrix.sh  (3.9 / 3.12 / 3.13)         0m27s
 #                  then each module of the job on each interpreter       0m32s
+#                  python3 scripts/planning_lint.py                      0m01s
 #   shellcheck     shellcheck -S warning tests/*.sh validation/*.sh      0m04s
 #   skill-lint     python3 scripts/skill_lint.py                         0m01s
 #   docs-check     python3 tests/check_docs.py                           0m01s
@@ -36,11 +37,6 @@
 # machine is likely newer, so attribute a version-only finding to the version
 # before attributing it to the code — in both directions.
 #
-# Not a job, deliberately: the anonymization lint over the planning tree. It
-# exits 2 when it scans nothing, and a release branch carries no planning tree,
-# so it would be red on every run of the branch it is meant to guard. It stays
-# a local gate command (AGENTS.md), and its own test module runs here — that
-# module skips itself where the tree is absent.
 name: ci
 
 on:
@@ -134,9 +130,10 @@ jobs:
       # here.
       - run: python3 tests/test_dogen_unit.py
       - run: python3 -m unittest tests.test_skill_text
-      # Skips itself where the planning tree is absent, which is every release
-      # branch — a skip, not an error, and the module is in the tree either way.
+      # The planning tree is optional on release branches; both the tests and
+      # standalone lint treat zero eligible files as a clean scan.
       - run: python3 -m unittest tests.test_planning_lint
+      - run: python3 scripts/planning_lint.py
       - run: python3 -m unittest tests.test_check_docs
 
   # CI-01: the shell suites at warning level. The binary is preinstalled on the

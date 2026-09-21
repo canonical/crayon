@@ -4940,15 +4940,11 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "python3 tests/size_guard.py",
     )
 
-    #: CR-01 — gate commands that deliberately have no CI job, each carrying
-    #: the reason `.github/workflows/ci.yml` already states for it. An
+    #: CR-01 — the gate command that deliberately has no separate CI step,
+    #: carrying the reason `.github/workflows/ci.yml` states for it. An
     #: exemption is data here rather than prose in a review report, so a
     #: future reader meets it where the assertion is.
     CI_EXEMPT = {
-        # ci.yml's header block: `planning_lint` exits 2 when it scans
-        # nothing, and no release branch carries `.planning/`, so a job for it
-        # would be red on every run of the branch it exists to guard.
-        "python3 scripts/planning_lint.py",
         # The `docs-check` job's comment: `tests/check_docs.py` calls
         # `check_traces.main()` itself, so that job already runs the trace
         # checker and a second step for it would run it twice.
