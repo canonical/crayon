@@ -77,6 +77,7 @@ recorded human signoff.
 ```
 skills/                         ← the human-facing surface (SKILL.md + references/)
 ├── dogen-fetch/                 ← prepare reusable source and provenance artefacts
+├── dogen-onboard/              ← build repo-level context artifacts from an agent walk over the docs (grounds dogen-plan)
 ├── dogen-plan/                 ← declare + HITL signoff (Socratic intake, routes on Diátaxis)
 ├── dogen-write/                ← draft reference/explanation from sources; draft tutorial/how-to from an evidence-gated step walk
 └── dogen-review/               ← review + record the verdict (accept/fix/redraft)
@@ -87,6 +88,7 @@ scripts/                        ← the deterministic enforcement layer
 ├── dogen-record-draft.sh       ← write gate: inline signoff check, WR-03 ordering, identical-redraft; refuses actionable units with unresolved steps (exit 4)
 ├── dogen-record-review.sh      ← verdict gate: accept seals hashes / fix|redraft appends steering
 ├── dogen-record-step.sh        ← evidence micro-gate: proves a step; fail stays unverified
+├── dogen-record-context.sh     ← repo-level context recorder (non-gating): promotes staged artifacts, freezes a manifest, commits
 └── skill_lint.py               ← SKILL.md frontmatter gate (standalone, stdlib-only)
 
 tests/test_dogen_scripts.sh     ← the test suite (bash; no pytest)
@@ -103,8 +105,13 @@ trailers (plus `Dogen-Draft:` / `Dogen-Verdict:` / `Dogen-Step:` where relevant)
 | `0`  | success |
 | `1`  | gate refusal — no signoff, stale plan, or evidence incomplete |
 | `2`  | bad input — unknown unit/step, missing file, path traversal, unknown flag |
-| `3`  | no-op — identical redraft, or stale step evidence |
+| `3`  | no-op — identical redraft, stale step evidence, or unchanged context artifacts |
 | `4`  | evidence incomplete — unresolved steps for an actionable unit (`dogen-record-draft.sh`) |
+
+`dogen-record-context.sh` is a repo-level recorder, not one of the four gates: it
+seeds the shared `.dogen/context/` artifacts that ground `dogen-plan`. It emits a
+commit with a `Dogen-Phase: onboard` trailer (no `Dogen-Unit:`, since context is not
+per-unit) and uses exit `0`/`2`/`3` only.
 
 `git log --grep 'Dogen-Unit: <id>'` replays a unit's whole path.
 
