@@ -4944,6 +4944,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "python3 tests/size_guard.py",
         "python3 -m unittest tests.test_wiki_lint",
         "python3 scripts/wiki_lint.py",
+        "python3 -m unittest tests.test_evals",
     )
 
     #: CR-01 — the gate command that deliberately has no separate CI step,
@@ -5068,8 +5069,10 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         # suite, which is CI's `validation` job's local dry-run command under
         # that same D-02 rule — and a kit the local gate does not run is exactly
         # the WR-08 orphan defect this tuple exists against — so it is fourteen.
-        self.assertEqual(len(self.GATE_COMMANDS), 16)
-        self.assertEqual(len(set(self.GATE_COMMANDS)), 16)
+        # The model-eval kit's offline self-tests make it seventeen: a module in
+        # tests/ is a gate command by the rule above, and they need no key.
+        self.assertEqual(len(self.GATE_COMMANDS), 17)
+        self.assertEqual(len(set(self.GATE_COMMANDS)), 17)
 
     def test_no_gate_command_names_a_path_the_tree_does_not_have(self):
         """T-18-25 — the declared gate may never outrun the tree.
