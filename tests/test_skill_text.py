@@ -92,10 +92,26 @@ README = SKILLS_ROOT / "README.md"
 CONTRACT = ROOT / "docs" / "contract.md"
 SKILL_LINT_PATH = ROOT / "scripts" / "skill_lint.py"
 
-#: The three skills the family ships. Hardcoded on purpose: it is the quantity
+#: The five skills the family ships. Hardcoded on purpose: it is the quantity
 #: the vacuous-pass guard below compares the discovered set against, so a
 #: mis-rooted scan cannot make S-01 and S-02 pass over an empty set.
-EXPECTED_SKILLS = ("dogen-plan", "dogen-review", "dogen-write")
+EXPECTED_SKILLS = (
+    "dogen-fetch",
+    "dogen-onboard",
+    "dogen-plan",
+    "dogen-review",
+    "dogen-write",
+)
+
+#: The skills that act on the repository's context rather than on a unit. They
+#: open on `dogen context show` where the unit skills open on `dogen show`, and
+#: they hand every artefact to `dogen context stage` — none of them writes.
+CONTEXT_SKILLS = ("dogen-fetch", "dogen-onboard")
+
+#: The stance references are authored ONCE, in `dogen-onboard`, and mirrored
+#: byte-identically into `dogen-fetch` — the routing table's own rule, applied
+#: to the three files both skills load before authoring an artefact.
+STANCE_REFERENCES = ("glossary-stance.md", "structure-stance.md", "style-stance.md")
 
 #: contract.md 5.5's ordered routing table, rows 1-10 including 8b, then the
 #: context routing rows C1-C3 in their own order.
@@ -230,7 +246,7 @@ def contract_reasons():
 class TestSuiteIsNotVacuous(unittest.TestCase):
     """Vacuous-pass guard — an empty or mis-rooted scan must fail loudly."""
 
-    def test_exactly_the_three_skill_directories_are_found(self):
+    def test_exactly_the_five_skill_directories_are_found(self):
         found = tuple(d.name for d in skill_dirs())
         self.assertEqual(
             len(found),
@@ -751,7 +767,8 @@ class TestS04TheCommonOpening(unittest.TestCase):
     def test_s04_the_first_two_verb_invocations_are_version_then_show(self):
         # SKILL-05 - D-14, probe 33: nothing is proposed, written or recorded
         # before the tool has answered "which tool is this" and "where is this
-        # unit". Both answers are read as JSON, so no skill parses prose.
+        # unit" — or, for a context skill, "what context is there". Both
+        # answers are read as JSON, so no skill parses prose.
         for skill_dir in skill_dirs():
             with self.subTest(skill=skill_dir.name):
                 found = verb_invocations(body_of(skill_dir))
@@ -760,13 +777,21 @@ class TestS04TheCommonOpening(unittest.TestCase):
                     2,
                     "%s names fewer than two verbs in its body" % skill_dir.name,
                 )
+                state_verb = "context" if skill_dir.name in CONTEXT_SKILLS else "show"
                 self.assertEqual(
                     [verb for verb, _ in found[:2]],
-                    ["version", "show"],
-                    "%s must open on `dogen version` then `dogen show`; its first "
+                    ["version", state_verb],
+                    "%s must open on `dogen version` then `dogen %s`; its first "
                     "two verb invocations are %r"
-                    % (skill_dir.name, [text for _, text in found[:2]]),
+                    % (skill_dir.name, state_verb, [text for _, text in found[:2]]),
                 )
+                if state_verb == "context":
+                    self.assertIn(
+                        "show",
+                        found[1][1],
+                        "%s must open on `dogen context show`, not another "
+                        "context verb: %r" % (skill_dir.name, found[1][1]),
+                    )
                 for verb, text in found[:2]:
                     self.assertIn(
                         "--json",
@@ -797,6 +822,64 @@ class TestS04TheCommonOpening(unittest.TestCase):
                 assert_omits(
                     self, body_of(skill_dir), FORCE_FLAG, skill_dir.name
                 )
+
+
+class TestS14ContextSkillsThroughVerbs(unittest.TestCase):
+    """S-14 — the context skills hand every artefact to the tool and write nothing.
+
+    The single-writer rule (S-02) says only `dogen-write` holds a write tool; the
+    two context skills produce files nonetheless, so the path those files take
+    is the assertion: `dogen context stage … --body-file -` for each artefact,
+    `dogen context record` for the set, and no write tool named anywhere.
+    """
+
+    def test_s14_each_context_skill_stages_and_records_through_the_tool(self):
+        for name in CONTEXT_SKILLS:
+            body = body_of(SKILLS_ROOT / name)
+            with self.subTest(skill=name):
+                assert_contains(self, body, "dogen context stage", name)
+                assert_contains(self, body, "--body-file -", name)
+                assert_contains(self, body, "dogen context record", name)
+                for tool in ("`Write`", "`Edit`", "`MultiEdit`"):
+                    self.assertFalse(
+                        tool in body, "%s must not name %s; it does not hold it" % (name, tool)
+                    )
+
+    def test_s14_every_flag_is_on_a_verb_that_takes_it(self):
+        for name in CONTEXT_SKILLS:
+            assert_verb_scoped_flags(self, body_of(SKILLS_ROOT / name), name)
+
+    def test_s14_the_two_context_skills_hand_off_to_each_other(self):
+        # onboard walks the repository; fetch takes declared external sources.
+        # Each names the other for the case it does not serve, so an author is
+        # never told "not this skill" without being told which one.
+        assert_contains(self, body_of(SKILLS_ROOT / "dogen-onboard"), "/dogen-fetch", "dogen-onboard")
+        assert_contains(self, body_of(SKILLS_ROOT / "dogen-fetch"), "/dogen-onboard", "dogen-fetch")
+
+    def test_s14_the_stance_references_are_mirrored_byte_for_byte(self):
+        for name in STANCE_REFERENCES:
+            source = SKILLS_ROOT / "dogen-onboard" / "references" / name
+            mirror = SKILLS_ROOT / "dogen-fetch" / "references" / name
+            with self.subTest(reference=name):
+                self.assertTrue(source.exists(), "%s is missing" % source)
+                self.assertTrue(mirror.exists(), "%s is missing" % mirror)
+                self.assertEqual(
+                    mirror.read_bytes(),
+                    source.read_bytes(),
+                    "%s has drifted from %s; re-copy the bytes rather than "
+                    "hand-editing the mirror" % (mirror, source),
+                )
+
+    def test_s14_the_context_skills_name_the_five_artefacts(self):
+        names = ("doc-style.md", "glossary.md", "structure.md", "code-to-docs-map.md", "doc-gaps.md")
+        fetch = body_of(SKILLS_ROOT / "dogen-fetch")
+        for name in names:
+            with self.subTest(artefact=name):
+                assert_contains(self, fetch, name, "dogen-fetch")
+        onboard = body_of(SKILLS_ROOT / "dogen-onboard")
+        for name in names[:3]:
+            with self.subTest(artefact=name):
+                assert_contains(self, onboard, name, "dogen-onboard")
 
 
 class TestS05PlanThroughVerbs(unittest.TestCase):
@@ -1330,10 +1413,10 @@ LEGACY_TOKENS = (
     "context_origins",
 )
 
-#: The vacuous-pass guard for this section: the three skills ship this many
-#: reference files between them, and a mis-rooted glob must not pass by
-#: scanning nothing.
-EXPECTED_REFERENCE_COUNT = 16
+#: The vacuous-pass guard for this section: the five skills ship this many
+#: reference files between them (5 plan, 8 write, 3 review, 4 onboard, 5 fetch),
+#: and a mis-rooted glob must not pass by scanning nothing.
+EXPECTED_REFERENCE_COUNT = 25
 
 
 def reference_files():

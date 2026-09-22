@@ -11,9 +11,10 @@ changing the tool reads this before touching anything; the one-line versions liv
 One stdlib-only Python file, `dogen.py`, at the repository root, installed on `PATH` as
 `dogen`. Python 3.9 floor, no package, no venv, no dependencies, no third-party test runner.
 One verb per transition over a hash-chained JSONL ledger; behaviour fixed by [[contract]],
-frozen at the git tag `contract-v1`. The human-facing surface is three portable Agent Skills
-under `skills/`, to the agentskills.io spec, split into `dogen-plan`, `dogen-write` and
-`dogen-review`.
+frozen at the git tag `contract-v1`. The human-facing surface is five portable Agent Skills
+under `skills/`, to the agentskills.io spec: `dogen-onboard` and `dogen-fetch` record the
+repository's context, and `dogen-plan`, `dogen-write` and `dogen-review` carry one unit through
+the loop.
 
 **Core value.** A Technical Author points dogen at sources for one documentation unit, steers
 it on intent and audience, and gets a review-ready, Sphinx-publishable draft — produced through
@@ -42,10 +43,12 @@ hash-chained JSONL, append-only, one canonical line per event, each line's `prev
 the previous line's bytes ([[contract]] §5.2). Never invent a second record of truth: state is
 *derived* by reading the ledger, and nothing is stored.
 
-**Skills are the surface; the tool is the tool layer.** Technical Authors drive the three
+**Skills are the surface; the tool is the tool layer.** Technical Authors drive the five
 skills; the skills invoke the deterministic tool through shell commands. `dogen-write` is the
 sole writer, enforced by a fail-closed allowlist in `scripts/skill_lint.py` — a skill may write
-only its own staging files, never the canonical `docs/` page, never the ledger.
+only its own staging files, never the canonical `docs/` page, never the ledger. The context
+skills write nothing at all: each artefact reaches `.dogen/context/` through `dogen context
+stage` and `dogen context record`, which digest and commit it ([[context]]).
 
 ## Constraints
 
@@ -57,7 +60,7 @@ only its own staging files, never the canonical `docs/` page, never the ledger.
 - **Sphinx-oriented, stack-agnostic.** Output is Sphinx-publishable MyST Markdown (or rST where
   siblings are rST), Diátaxis-structured. dogen carries no knowledge of any Sphinx stack, theme,
   extension set or `conf.py`, never runs a build, and learns house conventions only through the
-  context files described in [[install]].
+  context files described in [[context]].
 - **Licensing.** The tool is LGPL-3.0-only; the skills are Apache-2.0.
 - **HITL and provenance.** Provenance is internal observability, not a published "AI-generated"
   disclaimer.
@@ -76,4 +79,4 @@ Every non-zero exit prints exactly one JSON line with the five keys `error`, `un
 `hint` and `next` (stderr; stdout under `--json`). Branch on `error`, never on the exit code —
 several reasons share one. `git log --grep 'Dogen-Unit: <id>'` replays a unit's whole path.
 
-Related: [[contract]], [[conventions]], [[development]].
+Related: [[contract]], [[context]], [[conventions]], [[development]].
