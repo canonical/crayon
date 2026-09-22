@@ -1125,5 +1125,34 @@ test_a35_unresolved_steps_no_substring_false_positive() {
 }
 
 
+# A-38 — the `context` verbs, end to end through the executable. New in this
+# series (A-36 is retired, A-37 is the install smoke): a skill that holds no
+# write tool hands the tool each artefact's text through `context stage`, and
+# `context record` is the one repo-level transition — one commit, no unit.
+test_a38_context_verbs_stage_record_and_show_end_to_end() {
+    setup_repo
+    local rc
+    printf '# Style\n' | "$DOGEN" context stage doc-style.md --body-file - >/dev/null 2>&1
+    printf '# Glossary\n' | "$DOGEN" context stage glossary.md --body-file - >/dev/null 2>&1
+    printf '# Structure\n' | "$DOGEN" context stage structure.md --body-file - >/dev/null 2>&1
+    "$DOGEN" context record --model m --model-origin skill >out.txt 2>err.txt
+    rc=$?
+    assert_eq "context record exits 0" "0" "$rc"
+    assert_contains "the response routes plan" "$(cat out.txt)" "Next: plan"
+    assert_file_exists "doc-style.md is published" ".dogen/context/doc-style.md"
+    assert_file_exists "the manifest is published" ".dogen/context/manifest.json"
+    assert_contains "the commit carries the context phase" \
+        "$(git log -1 --format=%B)" "Dogen-Phase: context-recorded"
+    assert_not_contains "the commit names no unit" "$(git log -1 --format=%B)" "Dogen-Unit"
+    "$DOGEN" context record >/dev/null 2>err.txt
+    rc=$?
+    assert_eq "a second record with nothing staged exits 2" "2" "$rc"
+    assert_json_error "the refusal is bad_target" "err.txt" "bad_target"
+    assert_contains "show reports the three as present" \
+        "$("$DOGEN" context show 2>&1)" "3 of 5 artefact(s) present"
+    cleanup
+}
+
+
 main "$@"
 

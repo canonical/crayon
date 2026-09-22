@@ -97,7 +97,8 @@ SKILL_LINT_PATH = ROOT / "scripts" / "skill_lint.py"
 #: mis-rooted scan cannot make S-01 and S-02 pass over an empty set.
 EXPECTED_SKILLS = ("dogen-plan", "dogen-review", "dogen-write")
 
-#: contract.md 5.5's ordered routing table, rows 1-10 including 8b.
+#: contract.md 5.5's ordered routing table, rows 1-10 including 8b, then the
+#: context routing rows C1-C3 in their own order.
 NEXT_TOKENS = (
     "resume",
     "retired",
@@ -109,6 +110,9 @@ NEXT_TOKENS = (
     "publish",
     "steer",
     "review",
+    "record",
+    "onboard",
+    "plan",
 )
 
 #: contract.md 5.7's reason table has 48 rows (47 before D-14 added
@@ -473,6 +477,7 @@ class TestS03RoutingCopies(unittest.TestCase):
 #: mistaken for one because the separator here is a space, not a hyphen.
 VERBS = (
     "unit",
+    "context",
     "signoff",
     "steer",
     "plan-steps",

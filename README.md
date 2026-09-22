@@ -136,6 +136,7 @@ verb's preconditions, no-ops and gates is [`docs/contract.md`](docs/contract.md)
 | Verb | What it records | Key args |
 |---|---|---|
 | `unit` | Declares (`new`), amends (`edit`) or retires (`retire`) a unit. `edit --re-sign` amends and re-signs in one act; `retire` releases the unit's claim on its targets. | `new <id> --intent --audience --title --target [--also-target]… [--source]… [--notes] --body-file -\|F` · `edit <id> [flags] [--body-file -] [--re-sign]` · `retire <id> --note` |
+| `context` | The repository's context artefacts, outside any unit: `stage` hands the tool one artefact's text (a skill holds no write tool), `record` promotes the staged set into `.dogen/context/`, freezes a manifest of tool-computed digests and commits, `show` reports what is present, staged, unrecorded or drifted. No ledger event; one commit with no `Dogen-Unit`. | `stage <name> --body-file -\|F [--source]…` · `record [--model --model-origin] [--note]` · `show [--json]` |
 | `signoff` | The human gate. Freezes `sha256(unit.md)` as the plan hash the later verbs are checked against. | `<id>` |
 | `steer` | One steering request, in the author's words. Without one since the last generation, `draft` refuses `unsteered`. | `<id> --note\|--note-file - [--origin]` |
 | `plan-steps` | The step plan of an actionable unit (`tutorial` or `how-to`). Supersedes any earlier plan. | `<id> --steps-file -\|F [--keep-evidence --note]` |

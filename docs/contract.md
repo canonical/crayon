@@ -1,6 +1,6 @@
 # dogen contract v1
 
-<!-- provenance: frozen at tag contract-v1; the internal_error reason row was added after the freeze -->
+<!-- provenance: frozen at tag contract-v1; the internal_error reason row and the context verbs (§5.1, §5.5, §5.7, §6) were added after the freeze -->
 
 The normative contract for the `dogen` tool: what it writes, what it refuses, and what the
 record it leaves behind does and does not prove. This document is frozen at git tag
@@ -31,6 +31,7 @@ simplest adequate mechanism; how we know it helped.*
 | Repo-wide lock | concurrent invocations | a second invocation refuses with `busy` instead of interleaving two transitions | `fcntl.flock` | N-16 |
 | `verify` (read-only) | N1; scorer oracle | one read-only command answers "is this unit's record internally valid" without changing anything | V1–V19 | V-01…V-04 (`validation/fixtures.sh`) |
 | `retire` | abandoned unit blocks a target | an abandoned unit's target can be claimed again, by one recorded act | one event | N-40 (`tests/test_dogen_lifecycle.sh`) — J7 |
+| `context record` (repo-level) | house style, vocabulary and structure reach the skills only as loose files nobody recorded | the context artefacts a skill drafted land in `.dogen/context/` through the tool, digested and committed, so `dogen-plan` grounds itself in a record rather than in whatever is on disk | a fixed set of five names; one manifest; one commit with no unit | N-47 (`tests/test_dogen_lifecycle.sh`) |
 | `contract` + `min_tool` | skills drift from tool | a skill paired with an incompatible tool stops with a version message instead of misbehaving | two numbers | A-37 (`tests/install_smoke.sh`) — install smoke |
 
 **Closure rule:** a rule is specified only when each trace in §5.11 follows from the *same*
@@ -57,6 +58,9 @@ present, never produced, no behaviour.
 | `.dogen/staging/<id>/{draft,report.json,scratch/evidence}` | skill or TA | skill | inputs only, gitignored |
 | `.dogen/staging/<id>/pending/{before,after,manifest.json}`, `.dogen/staging/lock` | tool | — | gitignored, transient |
 | commit trailers | tool via git | rebase/squash (visible) | WARN-level corroboration |
+| `.dogen/context/<name>`, `<name>` one of the five context artefacts (§5.6) | tool on `context record`; TA by hand | as stated | `context show`: `drifted` (bytes differ from the manifest), `unrecorded` (present, never recorded) — reported, never refused |
+| `.dogen/context/manifest.json` | tool only (`context record`) | nobody | `context show` and `context record` read it; a damaged one refuses 2 `bad_target` |
+| `.dogen/staging/_context/{<name>,<name>.sources.json}` | tool (`context stage`) | — | gitignored, transient; cleared by `context record` |
 
 **Guarantee (single wording):** the ledger lets `verify` check that each recorded transition was
 valid against the events before it, and lets `show` compare recorded digests with current bytes.
@@ -105,6 +109,12 @@ Twelve kinds; `void` reserved.
 Commit per transition: subject `dogen: <phase> <id>`; body = collapsed note ≤ 400 chars;
 trailers `Dogen-Unit`, `Dogen-Phase`, `Dogen-Seq: n[-m]`, `Dogen-Head: <16 hex>`, and
 `Dogen-Verdict` on review. Pathspecs explicit; never a directory.
+
+`context record` is the one repo-level transition. It writes no event and touches no unit
+ledger; its commit is subject `dogen: context recorded`, body = collapsed note ≤ 400 chars,
+trailers `Dogen-Phase: context-recorded`, `Dogen-Head: <16 hex>` and, when a model is claimed,
+`Dogen-Model` — no `Dogen-Unit`, no `Dogen-Seq`, because the context belongs to the repository
+and not to a unit (§5.1). Pathspecs are the promoted artefacts and the manifest, explicitly.
 
 ## 5.4 Derivation
 
@@ -183,6 +193,18 @@ One ordered table; first match wins.
 `page_missing` never routes on its own: `show` marks the path `missing` and the draft route
 restores it. `show` distinguishes `missing` (absent) from `drifted` (changed bytes).
 
+**Context routing.** The `context` verbs route on the repository's context artefacts, not on a
+unit; one ordered table, first match wins.
+
+| # | Condition | `next` |
+|---|---|---|
+| C1 | an artefact is staged under `.dogen/staging/_context/` | `record` |
+| C2 | any of `doc-style.md`, `glossary.md`, `structure.md` is absent from `.dogen/context/` | `onboard` |
+| C3 | otherwise | `plan` |
+
+`code-to-docs-map.md` and `doc-gaps.md` never route on their own: they come from tooling outside
+dogen, when the author has it, and their absence is not a missing context.
+
 ## 5.6 Validation rules
 
 | Input | Rule |
@@ -199,6 +221,9 @@ restores it. `show` distinguishes `missing` (absent) from `drifted` (changed byt
 | evidence file | JSON `{verdict, exit_code, mode, command, reason}`; digests never typed |
 | `--output-file` (`step`) | `realpath` inside `.dogen/staging/<id>/scratch/`; anything else → 2 `bad_write_path`. Not merely "inside the repository": up to 4096 bytes of it are excerpted **verbatim** into the committed ledger and the excerpt is control-character-stripped, never credential-stripped, so an in-repo `.env.local` or `.git/config` would be published by the next transition. `.dogen/staging/<id>/` and `.dogen/staging/<id>/scratch/` are `islink`-checked by name FIRST: `realpath` resolves both operands, so a containment test anchored on a symlinked directory resolves through the link and passes for every target |
 | `unit.md` | the exact subset below |
+| context artefact name | one of `doc-style.md`, `glossary.md`, `structure.md`, `code-to-docs-map.md`, `doc-gaps.md`; anything else → 2 `bad_target` |
+| context body (`context stage --body-file`) | UTF-8, non-empty; recorded byte for byte, never re-encoded |
+| context source (`context stage --source`, repeatable) | one line, non-empty, ≤ 1024 bytes, ≤ 500 per artefact; a locator the skill declares (a path, a URL, a tool-result id), recorded verbatim and never digested — the tool cannot see behind a URL |
 
 `unit.md` frontmatter subset (not YAML; the tool always writes this shape):
 
@@ -244,6 +269,8 @@ only**; the routing table is a rendering of them.
 | `unit new` | unit_exists (2) · claim policy | — | — |
 | `unit retire` | unit_not_found (2) | `already_retired` | — |
 | `resume` | exempt from `retired`; see §5.8 | `nothing_to_resume` (no tail, no pending — also the result of calling `resume` again after a successful completion) | — |
+| `context stage` | artefact name (2 `bad_target`) · body · sources | — | — |
+| `context record` | at least one artefact staged (2 `bad_target`) | `noop_unchanged`: HEAD already holds every staged artefact's bytes at its published path — disk alone is never consulted, so a record whose commit was refused is retried, not no-op'd; the staged copies are discarded | — |
 
 Reason table:
 
@@ -518,6 +545,17 @@ event refusing 6 `ledger_version_unsupported` on every verb until its unit is ar
 migration this contract explicitly does not offer. The reading above is what this revision ships
 on, and it goes to review with the pull request that lands the row.
 
+**Revision (context verbs).** §6 gains `context stage`, `context record` and `context show`; §5.1
+gains the three artefact rows they own; §5.5 gains the context routing table and its three
+tokens (`record`, `onboard`, `plan`); §5.7 gains their precondition rows. The addition is
+additive under `contract: 1` by the same reading as the row above: no event kind is added,
+renamed or removed — `context record` writes no event and never opens a unit ledger — no
+existing member of any enum changes meaning, and no reason is added to the reason table. A
+ledger written before this revision derives exactly as it did; a tool from before it simply
+does not know the verbs, which `dogen --help` and `tests/check_docs.py` make visible rather
+than silent. The two numbers above are unchanged, and so are every SKILL.md's
+`metadata.dogen_contract` and `metadata.dogen_min_tool`.
+
 ## 6 Verb table
 
 | Verb | Key args | Events |
@@ -533,6 +571,9 @@ on, and it goes to review with the pull request that lands the row.
 | `edits <id> --note\|--note-file -` | complete basis set; brownfield adoption | `reviewer-edit` |
 | `review <id> --verdict accept\|fix\|redraft --note\|--note-file - [--resolves a,b] [--withdraw <seq> "<reason>"]…` | | `review` |
 | `resume <id> [--dry-run\|--overwrite\|--adopt --note]` | two-pass | batch completion (+ `reviewer-edit`) |
+| `context stage <name> --body-file -\|F [--source]…` | repo-level; tool-owned staging | — |
+| `context record [--model --model-origin] [--note]` | repo-level; one commit, no unit | — (manifest) |
+| `context show [--json]` | read-only | — |
 | `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json]`, `version [--json]` | read-only | — |
 
 ## 5.11 Traces
@@ -593,6 +634,10 @@ Normative; each is a test; outcomes follow from §5.4–5.8.
 | T32 | `resume` after a successful completion, or with nothing pending | 3 `nothing_to_resume` |
 | T33 | `resume --dry-run` with (a) `pending/` without a manifest, (b) a completed batch awaiting cleanup, (c) a stray `adopt/`, (d) a resumable tail | prints the classification and what write mode would delete; ledger, pages, `pending/` and index byte-identical before and after; the next write-mode verb performs the cleanup |
 | T34a | drafted unit, author deletes a current target, explicitly asks to restore it | accept never retried; the review skill records the request via `steer` without reconfirming and routes to `/dogen-write`; draft 0, page restored → review |
+| T35 | `context stage` three artefacts → `context record` | one commit, subject `dogen: context recorded`, pathspecs = the three files + `manifest.json`, trailers `Dogen-Phase`/`Dogen-Head` and no `Dogen-Unit`; every manifest digest equals the committed bytes; staging cleared; `Next: plan` |
+| T35b | `context stage profile.md`; a stray file in `_context/` at record time | 2 `bad_target` naming the five artefacts; 2 `bad_target` naming the stray file; nothing promoted |
+| T35c | record → stage the same bytes → record; then stage one changed artefact → record | 3 `noop_unchanged` with the last commit, staged copies discarded; then one commit promoting the changed artefact while the manifest keeps every other published row |
+| T36 | recorded artefact hand-edited on disk → `context show`; `context record` with nothing staged | `drifted` named, exit 0, nothing refused; 2 `bad_target` (nothing staged), `next` per context routing |
 | T34b | drafted unit, author deletes a current target, asks to accept without explaining | accept 1 `target_missing`; the skill explains that the signed plan still lists the target and asks restore-or-amend; no `steering` event is recorded until the author answers; "amend" → `--re-sign` without the target (old page reported as orphan, kept) → `generation_stale`, the old generation cannot be accepted → draft → review |
 
 ## Trace table
@@ -668,5 +713,9 @@ moved. No cell is ever blank.
 | T33 | §5.8 stage-a write boundary (dry-run) | N-41 |
 | T34a | §5.5 routing 8b · §5.4 (restoration request via `steer`) | S-09 |
 | T34b | §5.7 c (`target_missing`) · §5.4 target changes | S-09 |
+| T35 | §5.3 (repo-level commit) · §5.1 (`manifest.json`) · §5.5 C3 | N-47 |
+| T35b | §5.6 (context artefact name) | N-47 |
+| T35c | §5.7 d (`noop_unchanged` against HEAD) · §5.1 (partial re-stage keeps the set) | N-47 |
+| T36 | §5.1 (`drifted`, reported never refused) · §5.5 C1–C3 | N-47 |
 
 Related: [[architecture]], [[hooks]], [[compatibility]].

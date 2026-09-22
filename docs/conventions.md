@@ -22,8 +22,9 @@ never an edit to the event that planned it. Never hand-edit the file; the rules 
 ## The commit seam
 
 The tool owns its commits. Never run a competing `git add -A` or `git commit` in a skill for a
-gated transition. Every transition commits explicit pathspecs under `.dogen/` and `docs/` with
-`Dogen-*` trailers ([[architecture]]).
+gated transition or for a context record. Every transition commits explicit pathspecs under
+`.dogen/` and `docs/` with `Dogen-*` trailers; the one repo-level transition, `context record`,
+commits `.dogen/context/` the same way with no `Dogen-Unit` ([[architecture]]).
 
 ## Single definition site
 

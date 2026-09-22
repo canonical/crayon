@@ -11,6 +11,16 @@ significance still have one order a reader can predict.
 
 ### Added
 
+- `dogen context stage`, `dogen context record` and `dogen context show` — the repository's
+  context artefacts (`doc-style.md`, `glossary.md`, `structure.md`, `code-to-docs-map.md`,
+  `doc-gaps.md`) now reach `.dogen/context/` through the tool. `stage` takes one artefact's text
+  from a file or stdin, so a skill that holds no write tool can hand it over; `record` promotes
+  the staged set, freezes `manifest.json` with tool-computed digests and the declared sources,
+  and makes one commit with `Dogen-Phase: context-recorded` and no `Dogen-Unit`; `show` derives
+  what is present, staged, unrecorded or drifted and routes `record`, `onboard` or `plan`. No
+  event kind and no reason is added: the change is additive under contract 1, recorded in
+  `docs/contract.md` §5.10 beside the `internal_error` revision. N-47 in the lifecycle suite,
+  A-38 in the acceptance suite and a unit class cover it.
 - `install.sh` — an interactive installer at the repository root. It walks through the three
   decisions an install has (project or global skills, where the executable goes — a copy or a
   symlink into the checkout — and `.gitignore`), takes every default under `--yes`,
