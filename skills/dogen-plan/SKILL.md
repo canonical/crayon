@@ -33,6 +33,8 @@ valid signoff. You cannot bypass it.
 2. Ground yourself before questioning: check `.dogen/context/` for landed artifacts
    (`doc-gaps.md`, `structure.md`, `doc-style.md`, `glossary.md`), skim the repo's
    existing docs for conventions, and read whatever change or feature the TA points at.
+   If context artifacts are missing, ask the TA once whether they will add them or
+   want dogen to source context dynamically (an ephemeral in-memory crawl) — see step 1.
 3. Open the Socratic intake with the Why. Ask exactly one question per turn.
 4. Draw out the judgment fields first (reader's problem, then audience), then collect
    the mechanical fields directly (unit id, title, source paths, target placement).
@@ -62,6 +64,23 @@ in the prior art with the read-only tools:
 - Skim the repo's existing documentation for conventions and the nearest
   neighbouring pages to the proposed unit.
 - Read any change, feature description, or source files the TA points at.
+
+**Context bootstrap (when the artifacts are absent).** Probe `.dogen/context/` for
+the well-known files (`doc-style.md`, `glossary.md`, `structure.md`,
+`code-to-docs-map.md`, `doc-gaps.md`, and any product/user profile). When one or
+more are missing, surface it ONCE with `AskUserQuestion`, offering two answers:
+
+- **I'll add them** — the TA will supply the missing files themselves. Pause the
+  bootstrap and let them create `.dogen/context/*` out of band, then re-read.
+- **Source dynamically** — dogen crawls the code and docs IN MEMORY for this
+  planning session to stand in for the missing artifacts. Load
+  `references/context-bootstrap.md` and follow it. The crawl is ephemeral: nothing
+  is written to `.dogen/context/` or committed — it grounds only this intake and is
+  gone when the session ends.
+
+dogen never creates or persists a context artifact. Its only bootstrap action is the
+in-memory crawl; persistence, if the TA wants it, is their own manual step. When the
+artifacts are already present, skip the ask and ground from them directly.
 
 Do not start the dialogue until you have looked at what they want to document.
 
@@ -222,6 +241,8 @@ re-run `dogen-signoff.sh "$UNIT_ID" --force`. Steering notes append freely to th
 <must>
 - Ground yourself first: check `.dogen/context/` artifacts and the repo's existing
   docs conventions before the intake.
+- When context artifacts are missing, offer the TA the bootstrap choice (supply them
+  or source dynamically); a dynamic crawl is in-memory only and persists nothing.
 - Ask exactly one question per turn during the Socratic intake.
 - Draw out the judgment fields (reader problem, audience) before recording anything.
 - Ground the `sphinx_target` placement in the docs tree (siblings, toctree slots);
@@ -238,11 +259,15 @@ re-run `dogen-signoff.sh "$UNIT_ID" --force`. Steering notes append freely to th
   only the TA's actual answers.
 - Never invoke dogen-write before `dogen-signoff.sh` exits 0.
 - Never draft, review, push, or build — those belong to dogen-write/dogen-review.
+- Never write or persist a `.dogen/context/` artifact — the dynamic crawl is
+  in-memory only and must not outlast the session.
 </must_not>
 </constraints>
 
 <success_criteria>
 - [ ] Prior art was consulted first (`.dogen/context/` artifacts + existing docs).
+- [ ] When artifacts were missing, the TA was offered the bootstrap choice, and any
+      dynamic crawl stayed in-memory (nothing persisted).
 - [ ] The intake ran one question at a time, drawing out intent and audience first.
 - [ ] `unit.md` was written with verified sources and a docs-tree-grounded target.
 - [ ] `dogen-signoff.sh` was called and exited 0.
