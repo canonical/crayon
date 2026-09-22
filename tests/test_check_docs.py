@@ -271,7 +271,8 @@ def build_tree(
         # `compat_in` may have written this one already, as a second carrier.
         (root / "docs" / "upgrade.md").write_text("# Upgrade\n", encoding="utf-8")
     (root / "skills" / "README.md").write_text("# Skills\n", encoding="utf-8")
-    for skill in ("dogen-plan", "dogen-review", "dogen-write"):
+    (root / "docs" / "context.md").write_text("# Context\n", encoding="utf-8")
+    for skill in ("dogen-fetch", "dogen-onboard", "dogen-plan", "dogen-review", "dogen-write"):
         (root / "skills" / skill).mkdir(parents=True, exist_ok=True)
         (root / "skills" / skill / "SKILL.md").write_text(
             "# %s\n" % skill, encoding="utf-8"

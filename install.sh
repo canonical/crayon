@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh — install dogen and its three skills, then verify the install.
+# install.sh — install dogen and its five skills, then verify the install.
 #
 # Usage:
 #   ./install.sh                 walk through every decision; Enter takes the default
@@ -34,7 +34,7 @@ answer=""
 
 DEFAULT_TOOL_DIR="$HOME/.local/bin"
 GLOBAL_SKILLS_ROOT="$HOME/.agents/skills"
-SKILL_NAMES="dogen-plan dogen-write dogen-review"
+SKILL_NAMES="dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review"
 
 usage() {
     sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -386,6 +386,7 @@ if [ "$failures" -ne 0 ]; then
 fi
 say "install: every check passed, $warnings warning(s)"
 say ""
-say "Next: open your agent in ${REPO:-your docs repository} and invoke /dogen-plan."
-say "Then /dogen-write drafts the page and /dogen-review records your verdict."
+say "Next: open your agent in ${REPO:-your docs repository} and invoke /dogen-onboard once to"
+say "record the context, then /dogen-plan. /dogen-write drafts the page and /dogen-review"
+say "records your verdict."
 exit 0

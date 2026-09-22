@@ -3,8 +3,9 @@
 <!-- provenance: moved from README.md (Install and first run, Installing the skills globally, Add context files) -->
 
 dogen is two things: one stdlib-only Python file, `dogen.py`, installed on your `PATH` as
-`dogen`, and three portable Agent Skills
-(`dogen-plan`, `dogen-write`, `dogen-review`) that your agent drives. Installing means putting
+`dogen`, and five portable Agent Skills
+(`dogen-onboard`, `dogen-fetch`, `dogen-plan`, `dogen-write`, `dogen-review`) that your agent
+drives. Installing means putting
 the executable on your `PATH` and the skills where your agent discovers them. The script
 `install.sh` at the root of the checkout does both, asks you about every choice along the way,
 and verifies the result. This page explains each choice; if you are happy with the defaults, the
@@ -34,7 +35,7 @@ without asking.
 
 ### 1. Where the skills go
 
-- **project** (default) copies the three skills into `<repo>/.agents/skills/`, so they travel
+- **project** (default) copies the five skills into `<repo>/.agents/skills/`, so they travel
   with the docs repository and every collaborator gets the same version, and links each one
   from `<repo>/.claude/skills/` for the agents that read only that root (commit the links too).
   The links are relative and computed between physical paths, so they resolve even when `.claude`
@@ -110,8 +111,8 @@ bash "$DOGEN_SRC/install.sh" --yes --repo "$REPO" --tool-dir "$HOME/.local/bin"
 
 ## Manual install
 
-The script does nothing you cannot do by hand. The executable is one file; the skills are three
-directories under `skills/`, and `cp -r skills/dogen-*` copies exactly those three and never
+The script does nothing you cannot do by hand. The executable is one file; the skills are five
+directories under `skills/`, and `cp -r skills/dogen-*` copies exactly those five and never
 `skills/README.md`.
 
 ```bash
@@ -127,7 +128,7 @@ mkdir -p .agents/skills && cp -r "$DOGEN_SRC"/skills/dogen-* .agents/skills
 mkdir -p "$HOME/.agents/skills" && cp -r "$DOGEN_SRC"/skills/dogen-* "$HOME/.agents/skills"
 
 # For agents that read only .claude/skills/ (project form shown; use ~ for global):
-mkdir -p .claude/skills && for s in dogen-plan dogen-write dogen-review; do ln -sfn "../../.agents/skills/$s" ".claude/skills/$s"; done
+mkdir -p .claude/skills && for s in dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review; do ln -sfn "../../.agents/skills/$s" ".claude/skills/$s"; done
 
 # Keep staging out of the record:
 grep -qxF '.dogen/staging/' .gitignore 2>/dev/null || printf '.dogen/staging/\n' >> .gitignore
@@ -138,16 +139,19 @@ Then `./install.sh --verify-only` in the checkout, or `dogen version --json` by 
 ## Add context files (recommended)
 
 Context files teach the skills your house style, vocabulary and where facts live. They are read
-from `.dogen/context/` in the docs repository:
+from `.dogen/context/` in the docs repository, and they reach it through the tool, which digests
+and commits them. The quickest start is `/dogen-onboard` in your agent, which walks the docs you
+already have and records `doc-style.md`, `glossary.md` and `structure.md`. A style guide or
+glossary you already trust is recorded by hand in two commands:
 
 ```bash
-mkdir -p .dogen/context
-cp path/to/your-style-guide.md .dogen/context/doc-style.md
-cp path/to/glossary.md .dogen/context/glossary.md
+dogen context stage doc-style.md --body-file path/to/your-style-guide.md
+dogen context stage glossary.md --body-file path/to/glossary.md
+dogen context record --note "house style and glossary, supplied by hand"
 ```
 
-The well-known names the skills look for: `doc-style.md`, `glossary.md`, `structure.md`,
-`code-to-docs-map.md`, `doc-gaps.md`. Commit them; they are part of the repository's record.
+The five names, who produces each, `/dogen-fetch` for material outside the repository, and what
+`/dogen-plan` does when the files are missing are all in [[context]].
 
 ## Uninstall
 
@@ -160,4 +164,4 @@ rm -rf "$HOME/.agents/skills"/dogen-*           # global skills
 The record under `.dogen/units/` is yours and stays: it is committed history, not part of the
 install.
 
-Related: [[upgrade]], [[compatibility]], [[development]].
+Related: [[context]], [[upgrade]], [[compatibility]], [[development]].

@@ -12,7 +12,7 @@ fences. Everywhere else a page is cited by its path. After editing this file or 
 dogen drafts review-ready, Sphinx-publishable documentation (MyST or rST, Diátaxis-structured)
 from human-pointed sources, with a recorded human signoff before any substantial draft, and
 stops at one traceable local commit. It is one stdlib-only Python file, `dogen.py`, driven by
-three portable Agent Skills. Its behaviour is fixed by [[contract]], frozen at the git tag
+five portable Agent Skills. Its behaviour is fixed by [[contract]], frozen at the git tag
 `contract-v1`; where the contract and any other document disagree, the contract wins.
 
 ## Core rules (always apply)
@@ -26,17 +26,19 @@ three portable Agent Skills. Its behaviour is fixed by [[contract]], frozen at t
 - The ledger is the record of truth, append-only and hash-chained; no line is ever edited, not
   even a step's status, and state is derived, never stored ([[conventions]]).
 - `dogen-write` is the sole writer, enforced by the fail-closed allowlist in
-  `scripts/skill_lint.py`; no skill writes the canonical page or the ledger ([[architecture]]).
+  `scripts/skill_lint.py`; no skill writes the canonical page, the ledger or `.dogen/context/`
+  — context artefacts reach disk through `dogen context stage` and `record` ([[context]]).
 - The tool owns its commits: never run a competing `git add` or `git commit` for a gated
   transition ([[conventions]]).
 - A fixture, a routing row, a threshold or a gate command has one definition site and is
   mirrored mechanically; a hand copy is drift ([[development]]).
 - Stdlib only, Python 3.9 syntax, no package, no venv, no third-party runner ([[architecture]]).
 - Harness-agnostic: no agent harness is named, detected or preferred on any surface; skills are
-  invoked as `/dogen-plan`, `/dogen-write`, `/dogen-review` everywhere ([[install]]).
+  invoked as `/dogen-onboard`, `/dogen-fetch`, `/dogen-plan`, `/dogen-write`, `/dogen-review`
+  everywhere ([[install]]).
 - Sphinx-oriented, stack-agnostic: the output is Sphinx-publishable, but dogen knows no theme,
   extension, `conf.py` or stack and never builds; house conventions arrive only through
-  `.dogen/context/` ([[install]]).
+  `.dogen/context/` ([[context]]).
 - Formatting hooks are adopted, never fought ([[hooks]]).
 - Every non-zero exit is one JSON line with `error`, `unit`, `detail`, `hint`, `next`; branch on
   `error`, never on the exit code ([[architecture]]).
@@ -76,16 +78,18 @@ command proves, and what pins what, is in [[development]].
 
 ## Skills
 
-Three portable skills under `skills/`, to the agentskills.io spec: `dogen-plan` (declare and
-sign off), `dogen-write` (the sole writer; drafts from sources, or from an evidence-gated step
-walk for tutorials and how-tos) and `dogen-review` (record the verdict). The family contract and
+Five portable skills under `skills/`, to the agentskills.io spec: `dogen-onboard` (walk the
+repository's docs and record the context artefacts through the tool), `dogen-fetch` (the same
+from declared external sources, with provenance), `dogen-plan` (declare and sign off),
+`dogen-write` (the sole writer; drafts from sources, or from an evidence-gated step walk for
+tutorials and how-tos) and `dogen-review` (record the verdict). The family contract and
 the routing table are in `skills/README.md`; the table is mirrored byte-identically into each
 skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copies are equal.
 
 ## Topic index
 
-- **Using**: [[install]] the installer, every choice, context files . [[upgrade]] tool, skills,
-  records across releases . [[compatibility]] contract number and min_tool . [[hooks]] what a
+- **Using**: [[install]] the installer, every choice . [[context]] the five context files, who
+  produces them, how the tool records them . [[upgrade]] tool, skills, records across releases . [[compatibility]] contract number and min_tool . [[hooks]] what a
   formatting hook leads to
 - **Contract**: [[contract]] the normative specification, frozen . [[architecture]] the shape,
   the non-negotiables, the constraints . [[conventions]] markup, ledger, commit seam, documents
@@ -119,11 +123,20 @@ docs/                              ← the wiki: flat, one page per slug, bracke
 ├── shellcheck.md                  ← the shellcheck version policy
 ├── development.md                 ← tooling, testing and verification for contributors;
 │                                     the gate's second pinned home
-└── upgrade.md                     ← upgrading the tool, the skills and existing records
+├── upgrade.md                     ← upgrading the tool, the skills and existing records
+└── context.md                     ← the five context files, who produces them, the two verbs
 
 skills/                            ← the human-facing surface
 ├── README.md                      ← verb table, routing table (the authoring site), install
 ├── LICENSE                        ← Apache-2.0, the skills only
+├── dogen-onboard/
+│   ├── SKILL.md                   ← repo walk → doc-style, glossary, structure, through the tool
+│   └── references/                ← glossary-stance.md, routing.md, structure-stance.md,
+│                                     style-stance.md (the stance authoring site)
+├── dogen-fetch/
+│   ├── SKILL.md                   ← declared external sources → the same artefacts, provenance
+│   └── references/                ← glossary-stance.md, routing.md, source-contract.md,
+│                                     structure-stance.md, style-stance.md (stances mirrored)
 ├── dogen-plan/
 │   ├── SKILL.md                   ← declare + HITL signoff; Socratic intake, routes on Diátaxis
 │   └── references/                ← actionable-intake.md, explanation-intake.md,

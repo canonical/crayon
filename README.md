@@ -2,7 +2,7 @@
 
 **dogen** drafts review-ready, **Sphinx-publishable** documentation (MyST Markdown or
 reStructuredText, Diátaxis-structured) from sources you point it at, with you in the loop, and
-stops at one traceable local commit. You drive it from your coding agent through three skills;
+stops at one traceable local commit. You drive it from your coding agent through five skills;
 one stdlib-only executable underneath enforces the guarantees — no substantial draft without
 your recorded signoff, and a hash-chained record of every step.
 
@@ -20,17 +20,22 @@ cd /path/to/your-docs-repo
 Every choice the script makes, and the manual equivalent, is in
 [`docs/install.md`](docs/install.md).
 
-**2. Plan.** Open your coding agent in the docs repository and invoke `/dogen-plan`. Tell it
-what page you need.
+**2. Onboard (optional, once).** Open your coding agent in the docs repository and invoke
+`/dogen-onboard`. It reads the docs you already have and records your house style, vocabulary
+and structure as context files the later skills read. `/dogen-fetch` does the same from
+material outside the repository, such as a style guide at a URL. Skip this and `/dogen-plan`
+will ask you what to do instead.
+
+**3. Plan.** Invoke `/dogen-plan`. Tell it what page you need.
 It asks one question at a time about the audience, the sources and the shape, reads the plan
 back to you, and records your **signoff** when you say go.
 
-**3. Write.** `/dogen-write`. It drafts the page from the plan and its sources — or, for a
+**4. Write.** `/dogen-write`. It drafts the page from the plan and its sources — or, for a
 tutorial or how-to, by actually running the steps and writing from what happened — and records
 the draft as a local commit.
 
-**4. Review.** `/dogen-review`. Read the draft; say **accept**, or say what to **fix**, or ask
-for a **redraft**. Fixes and redrafts go back to step 3 with your words on the record.
+**5. Review.** `/dogen-review`. Read the draft; say **accept**, or say what to **fix**, or ask
+for a **redraft**. Fixes and redrafts go back to step 4 with your words on the record.
 
 You now have the page under `docs/`, one local commit per step, and `dogen summary <id> --md`
 gives you paste-ready pull-request text. dogen never pushes; you own the PR.
@@ -41,11 +46,17 @@ You talk to your coding agent — any agent that reads `SKILL.md` skills and can
 commands; dogen names none and needs none in particular. The agent runs the skills; the skills
 call the tool. You never type a `dogen` command yourself unless you want to.
 
-1. **`dogen-plan`** declares one page: what it is, who it is for, where the facts come from, and
+1. **`dogen-onboard`** (once, then occasionally) walks the docs you already have and records
+   your house style, vocabulary and structure as context files, so every later page matches
+   them. It hands the text to the tool, which digests and commits it.
+2. **`dogen-fetch`** (occasionally) records the same context files from material outside the
+   repository — a style guide at a URL, an exported docs set — with each source's origin on the
+   record and an unreachable source reported rather than guessed.
+3. **`dogen-plan`** declares one page: what it is, who it is for, where the facts come from, and
    where it lands. It ends with your signoff, which is the gate — nothing substantial can be
    recorded against the page until you have given it.
-2. **`dogen-write`** produces the draft. It is the only skill allowed to write files.
-3. **`dogen-review`** records your verdict. Accept seals the page; fix and redraft record your
+4. **`dogen-write`** produces the draft. It is the only skill allowed to write files.
+5. **`dogen-review`** records your verdict. Accept seals the page; fix and redraft record your
    steering and send it back to the writer.
 
 If you close the conversation at any point, start the same skill again: it reads the record,
@@ -100,7 +111,7 @@ no knowledge of any Sphinx stack, theme, extension set or `conf.py`; a starter k
 [canonical/sphinx-stack](https://github.com/canonical/sphinx-stack) is a fine host for the
 output, and dogen neither depends on it nor understands it. It never runs `sphinx-build`. Your
 house style, vocabulary and structure reach it only through the context files described in
-[`docs/install.md`](docs/install.md#add-context-files-recommended).
+[`docs/context.md`](docs/context.md).
 
 ## Glossary
 
@@ -123,8 +134,10 @@ house style, vocabulary and structure reach it only through the context files de
 - **ledger** — the record of truth at `.dogen/units/<id>/ledger.jsonl`: hash-chained JSON lines,
   append-only. State is derived by reading it; never edit it by hand.
 - **staging** — `.dogen/staging/`, the writer's working space; ignored by git.
-- **context files** — `.dogen/context/`: your style guide, glossary and structure notes, read by
-  every skill. See [`docs/install.md`](docs/install.md#add-context-files-recommended).
+- **context files** — `.dogen/context/`: `doc-style.md`, `glossary.md`, `structure.md`, and the
+  optional `code-to-docs-map.md` and `doc-gaps.md`, read by the plan and write skills. Recorded
+  through `dogen context stage` and `dogen context record`, which freeze their digests in
+  `manifest.json`. See [`docs/context.md`](docs/context.md).
 
 ### The verbs, if you ever need them
 
@@ -182,7 +195,7 @@ The authoritative list is the tool's own `REASONS` table and
 
 - `dogen.py` — the tool, one stdlib-only Python file; installed on your `PATH` as `dogen`.
 - `install.sh` — the installer.
-- `skills/` — the three Agent Skills your agent drives, and their family contract.
+- `skills/` — the five Agent Skills your agent drives, and their family contract.
 - `docs/` — the wiki: the normative contract and the guides linked below.
 - `AGENTS.md` — the guide a coding agent working *on* dogen reads first.
 - `scripts/` — stdlib lints that gate the skills, the planning tree and the wiki.
@@ -192,7 +205,9 @@ The authoritative list is the tool's own `REASONS` table and
 
 ## Further reading
 
-- [`docs/install.md`](docs/install.md) — every install choice, the manual install, context files.
+- [`docs/install.md`](docs/install.md) — every install choice, the manual install.
+- [`docs/context.md`](docs/context.md) — the context files: the five names, onboarding, fetching,
+  and what the plan skill does when they are missing.
 - [`docs/upgrade.md`](docs/upgrade.md) — upgrading the tool, the skills and existing records.
 - [`docs/compatibility.md`](docs/compatibility.md) — the contract number and the minimum tool.
 - [`docs/hooks.md`](docs/hooks.md) — what happens when a formatting hook rewrites a page.

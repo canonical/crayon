@@ -18,12 +18,29 @@ skill must execute at runtime is physically embedded in each skill directory.
 ## Pipeline
 
 ```
-dogen-plan -> dogen-write -> dogen-review
+dogen-onboard (repo walk, occasional) ─┐
+dogen-fetch (declared sources, occasional) ─┴─> .dogen/context/ ─> dogen-plan -> dogen-write -> dogen-review
 ```
 
+- **dogen-onboard** — outside the per-unit loop, run once and then occasionally. Walks the
+  repository's own documentation surfaces and cross-reads the product surface, then authors
+  the three context artefacts (`doc-style.md`, `glossary.md`, `structure.md`) that later
+  ground `dogen-plan`. It writes nothing itself: each artefact reaches the tool through
+  `dogen context stage <name> --body-file -`, and `dogen context record` promotes the set
+  into `.dogen/context/`, freezes a digest manifest and commits with no `Dogen-Unit`.
+  Routes a non-standard source to dogen-fetch.
+
+- **dogen-fetch** — the same artefacts from sources the author declares that live outside
+  the repository: a local export, another checkout, a URL, a result the harness already
+  holds. Every source is declared before retrieval and recorded with its origin, method,
+  revision and preservation status; an unreachable one is reported as failed, never
+  substituted. Each artefact is staged with its `--source` locators and recorded through
+  the same two verbs.
+
 - **dogen-plan** — grounds itself in the repo's prior art (`.dogen/context/`
-  artifacts and existing docs conventions), runs the Socratic intake, and ends with
-  the gate act. It writes nothing itself: the plan reaches disk through
+  artefacts, read through `dogen context show --json`, and existing docs conventions),
+  offers the bootstrap choice once when the context is missing, runs the Socratic
+  intake, and ends with the gate act. It writes nothing itself: the plan reaches disk through
   `dogen unit new <id> … --body-file -`, and the gate act through `dogen signoff <id>`.
   Also serves advise-only triage asks ("does this need docs?") with a grounded Triage
   Recommendation, declaring nothing until the TA says go. Routes on the declared
@@ -156,7 +173,7 @@ precondition — the preconditions live in §5.7 and nowhere else.
 
 ## Installation
 
-`install.sh` at the root of the checkout installs the tool and the three skills, project-scoped
+`install.sh` at the root of the checkout installs the tool and the five skills, project-scoped
 into a docs repository's `.agents/skills/` or globally into `~/.agents/skills/`, and verifies the
 result; [`docs/install.md`](../docs/install.md) explains every choice and the manual equivalent.
 By hand, the skills are one copy:
@@ -166,7 +183,7 @@ DOGEN=/path/to/dogen-mvp-1
 mkdir -p .agents/skills && cp -r "$DOGEN"/skills/dogen-* .agents/skills
 ```
 
-`cp -r skills/dogen-*` copies the three skill directories and nothing else: this file
+`cp -r skills/dogen-*` copies the five skill directories and nothing else: this file
 is **not** installed. That is why each skill carries its own
 `references/routing.md` — the routing table has to travel inside the skill directory
 to be readable at runtime.

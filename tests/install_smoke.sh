@@ -205,7 +205,7 @@ case "$resolved_dogen" in
 esac
 
 # --- what the installer placed -----------------------------------------------
-for skill in dogen-plan dogen-write dogen-review; do
+for skill in dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review; do
     if [ -f "$SMOKE_REPO/.agents/skills/$skill/SKILL.md" ] \
         && [ -f "$SMOKE_REPO/.agents/skills/$skill/references/routing.md" ]; then
         pass "a37: the installer placed $skill under the repo's .agents/skills/"
@@ -213,7 +213,7 @@ for skill in dogen-plan dogen-write dogen-review; do
         fail "a37: $skill is missing or incomplete under $SMOKE_REPO/.agents/skills/"
     fi
 done
-for skill in dogen-plan dogen-write dogen-review; do
+for skill in dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review; do
     link="$SMOKE_REPO/.claude/skills/$skill"
     if [ -L "$link" ] && [ -f "$link/SKILL.md" ]; then
         pass "a37: the installer linked $skill from .claude/skills/"
@@ -224,7 +224,7 @@ done
 if [ -f "$SMOKE_REPO/.agents/skills/README.md" ]; then
     fail "a37: the installer copied skills/README.md, which is not a skill"
 else
-    pass "a37: the installer copied the three skills and nothing else"
+    pass "a37: the installer copied the five skills and nothing else"
 fi
 if grep -qxF '.dogen/staging/' "$SMOKE_REPO/.gitignore" 2>/dev/null; then
     pass "a37: the installer added .dogen/staging/ to .gitignore"
@@ -260,6 +260,25 @@ walk_exit=0
 ) >/dev/null 2>&1 || walk_exit=$?
 assert_eq "a37: declare, signoff, steer and draft run through the installed dogen" \
     "0" "$walk_exit"
+
+# --- the context verbs through the installed tool ----------------------------
+# What /dogen-onboard and /dogen-fetch do: hand the tool an artefact's text, then
+# record the set. Repo-level, no unit, one commit.
+context_exit=0
+(
+    cd "$SMOKE_REPO" \
+        && printf '# Style\n\nImperative mood.\n' \
+            | dogen context stage doc-style.md --body-file - --source source.md \
+        && dogen context record --note "smoke: one artefact"
+) >/dev/null 2>&1 || context_exit=$?
+assert_eq "a37: context stage and record run through the installed dogen" \
+    "0" "$context_exit"
+if [ -s "$SMOKE_REPO/.dogen/context/doc-style.md" ] \
+    && [ -s "$SMOKE_REPO/.dogen/context/manifest.json" ]; then
+    pass "a37: the record placed the artefact and its manifest under .dogen/context/"
+else
+    fail "a37: .dogen/context/ lacks the artefact or the manifest after the record"
+fi
 
 # --- assert from the stranger's vantage point -------------------------------
 PAGE="$SMOKE_REPO/docs/reference/$UNIT.md"

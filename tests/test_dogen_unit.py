@@ -7650,6 +7650,19 @@ class TestContextVerbs(DogenCliTestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(json.loads(proc.stdout)["verdict"], "ok")
 
+    def test_the_five_names_are_documented_where_the_skills_read_them(self):
+        # One definition site (`CONTEXT_ARTIFACTS`), mirrored by hand into the
+        # page that explains them and the two skills that read and write them.
+        for relative in ("docs/context.md", "skills/dogen-plan/SKILL.md", "skills/dogen-fetch/SKILL.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            for name in dogen.CONTEXT_ARTIFACTS:
+                with self.subTest(file=relative, name=name):
+                    self.assertIn("`%s`" % name, text)
+        onboard = (ROOT / "skills" / "dogen-onboard" / "SKILL.md").read_text(encoding="utf-8")
+        for name in dogen.CONTEXT_ONBOARD_SET:
+            with self.subTest(file="skills/dogen-onboard/SKILL.md", name=name):
+                self.assertIn("`%s`" % name, onboard)
+
     def test_every_context_verb_answers_one_line_and_never_a_traceback(self):
         for argv in (["context", "show"], ["context", "record"], ["context", "stage", "x", "--body-file", "-"]):
             with self.subTest(argv=argv):
@@ -7676,7 +7689,7 @@ class TestContextVerbs(DogenCliTestCase):
 #: being fully defined (an early ``sys.exit``, a syntax error swallowed by a
 #: conditional import, a truncated file), not that tests were removed — removing
 #: tests is an edit to this constant in the same commit.
-EXPECTED_MIN_TESTS = 508
+EXPECTED_MIN_TESTS = 509
 
 
 

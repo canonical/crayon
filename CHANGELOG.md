@@ -21,6 +21,18 @@ significance still have one order a reader can predict.
   event kind and no reason is added: the change is additive under contract 1, recorded in
   `docs/contract.md` §5.10 beside the `internal_error` revision. N-47 in the lifecycle suite,
   A-38 in the acceptance suite and a unit class cover it.
+- `dogen-onboard` and `dogen-fetch` — two portable skills that produce the context artefacts,
+  outside the per-unit loop. `dogen-onboard` walks the repository's own docs and cross-reads
+  the product surface for `[CODE↔DOCS GAP]` findings; `dogen-fetch` takes sources the author
+  declares — a local export, another checkout, a URL, a harness result — retrieves each
+  through the declared method, records its origin, revision and preservation status, and
+  reports an unreachable one as failed rather than substituting. Neither holds a write tool:
+  each artefact is handed to `dogen context stage` and the set to `dogen context record`, so
+  the single-writer rule is unchanged. The three stance references are authored in
+  `dogen-onboard` and mirrored byte-identically into `dogen-fetch`; the family is five skills
+  wherever it was three — `install.sh`, the install smoke, the skill-text suite, the docs.
+- `docs/context.md` — the one home for the five context files: what each carries, who
+  produces it, how the two verbs record it, and what `dogen-plan` does when they are missing.
 - `install.sh` — an interactive installer at the repository root. It walks through the three
   decisions an install has (project or global skills, where the executable goes — a copy or a
   symlink into the checkout — and `.gitignore`), takes every default under `--yes`,

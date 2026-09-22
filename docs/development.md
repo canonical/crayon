@@ -12,7 +12,7 @@ thing that moved.
 
 One stdlib-only Python file, `dogen.py`, at the repository root, installed as `dogen`: Python 3.9 syntax, no package, no
 venv, no dependency, no third-party test runner. One verb per transition over a hash-chained
-JSONL ledger. Three portable Agent Skills under `skills/` are the human-facing surface; two
+JSONL ledger. Five portable Agent Skills under `skills/` are the human-facing surface; two
 stdlib-only lint utilities under `scripts/` and a validation kit under `validation/` are the
 apparatus around it. Nothing in the product tree imports anything outside the standard library,
 and the unit suite asserts it.
@@ -148,6 +148,8 @@ the local guard are the same code.
 | Bracketed links and the wiki shape | `docs/*.md` and `AGENTS.md` | `wiki_lint.py` |
 | `AGENTS.md`'s tree block | the real `docs/`, `scripts/`, `tests/`, `validation/` | the unit suite |
 | The routing table | each skill's `references/routing.md` | `test_skill_text.py` |
+| The three stance references | `dogen-fetch`'s copies of `dogen-onboard`'s | `test_skill_text.py` |
+| The five context artefact names | `docs/context.md`, the plan and onboard skills | the unit suite |
 | `README.md`'s verb rows | `dogen --help` | `check_docs.py` |
 | The two reason tables | `dogen.REASONS` | `check_docs.py` and the unit suite |
 | The compatibility numbers | `dogen version --json` | `check_docs.py`, `skill_lint.py`, `install.sh` |
