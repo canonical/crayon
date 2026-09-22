@@ -41,6 +41,7 @@ python3 scripts/planning_lint.py                 # the anonymization gate over .
 python3 tests/size_guard.py                      # VERB-09's line budget, reported and enforced
 python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
 python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
+python3 -m unittest tests.test_evals             # the model-eval kit's offline self-tests
 ```
 
 Set `GIT_CONFIG_GLOBAL=/dev/null` for anything that shells out to git, so a developer's global
@@ -105,6 +106,18 @@ is what keeps the documented install from rotting.
 unsteered redraft and an unresolved pending request, each reached from a valid unit built by the
 real verbs and each caught by `validation/score.py audit`, an oracle that shares no code with the
 tool. The kit is evidence apparatus, not product code; it reports as its own CI job.
+
+**`tests/test_evals.py`** — the offline half of the model evals under `validation/evals/`. The
+evals measure a model driving the skills, not the tool: every model gets the same skill text
+through the same neutral loop, and OpenRouter serves each one. Paid runs are started by hand
+with `OPENROUTER_API_KEY` set, and never run in the gate or in CI. What this module holds the
+kit to is everything that needs no model:
+- the transport's request shape, retries, cache and spend cap, against a fake opener;
+- every assertion kind, against hand-built turns;
+- every case file, against its own known-good reply;
+- the rule that no prompt or kit file names an agent harness.
+
+`validation/evals/README.md` says how to run a lane, where results land and how to add a case.
 
 ## The checkers and lints
 

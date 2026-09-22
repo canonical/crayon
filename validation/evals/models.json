@@ -1,0 +1,61 @@
+{
+  "_comment": "The eval roster. Every model is pinned to one first-party backend (provider.order + allow_fallbacks:false) so a score is a model's, not a router's. price_per_mtok is [input, output] USD per million tokens for THAT backend, read from OpenRouter's endpoints API on 2026-09-22; it is only the fallback when a response carries no usage.cost.",
+  "caps": {
+    "sweep_usd": 25.0,
+    "per_model_usd": 3.0
+  },
+  "gate": "z-ai/glm-5.3",
+  "judge": "openai/gpt-6-sol",
+  "author": "google/gemini-3.8-flash",
+  "models": [
+    {
+      "id": "z-ai/glm-5.3",
+      "role": "candidate",
+      "max_tokens": 4096,
+      "provider": {"order": ["z-ai"], "allow_fallbacks": false},
+      "price_per_mtok": [1.40, 4.40]
+    },
+    {
+      "id": "openai/gpt-6-luna",
+      "role": "candidate",
+      "max_tokens": 4096,
+      "provider": {"order": ["openai"], "allow_fallbacks": false},
+      "price_per_mtok": [0.10, 0.50]
+    },
+    {
+      "id": "qwen/qwen3.8-flash",
+      "role": "candidate",
+      "max_tokens": 4096,
+      "provider": {"order": ["alibaba"], "allow_fallbacks": false},
+      "price_per_mtok": [0.15, 0.47]
+    },
+    {
+      "id": "deepseek/deepseek-v4.1-flash",
+      "role": "candidate",
+      "max_tokens": 4096,
+      "provider": {"order": ["deepseek"], "allow_fallbacks": false},
+      "price_per_mtok": [0.15, 0.60]
+    },
+    {
+      "id": "minimax/minimax-m3",
+      "role": "candidate",
+      "max_tokens": 4096,
+      "provider": {"order": ["minimax"], "allow_fallbacks": false},
+      "price_per_mtok": [0.30, 1.20]
+    },
+    {
+      "id": "openai/gpt-6-sol",
+      "role": "judge",
+      "max_tokens": 2048,
+      "provider": {"order": ["openai"], "allow_fallbacks": false},
+      "price_per_mtok": [2.00, 10.00]
+    },
+    {
+      "id": "google/gemini-3.8-flash",
+      "role": "author",
+      "max_tokens": 1024,
+      "provider": {"order": ["google-ai-studio"], "allow_fallbacks": false},
+      "price_per_mtok": [0.75, 3.75]
+    }
+  ]
+}

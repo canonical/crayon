@@ -14,3 +14,9 @@
 # Python bytecode from the stdlib test runners (no package, no venv).
 __pycache__/
 *.pyc
+
+# The model-eval kit's local outputs: partial, dry and errored runs, full turn
+# logs, and the response cache. Clean summaries in validation/evals/results/
+# are committed; these never are.
+validation/evals/results/raw/
+validation/evals/.cache/
