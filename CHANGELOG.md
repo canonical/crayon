@@ -33,6 +33,11 @@ significance still have one order a reader can predict.
   wherever it was three — `install.sh`, the install smoke, the skill-text suite, the docs.
 - `docs/context.md` — the one home for the five context files: what each carries, who
   produces it, how the two verbs record it, and what `dogen-plan` does when they are missing.
+- `dogen-plan` grounds itself through `dogen context show --json` and, when the three
+  onboarding artefacts are missing, offers the author one three-way choice: supply the files,
+  run `/dogen-onboard` first, or ground this one intake from an ephemeral in-memory read
+  (`references/context-bootstrap.md`) that persists nothing. The skill never authors
+  `.dogen/context/` itself.
 - `install.sh` — an interactive installer at the repository root. It walks through the three
   decisions an install has (project or global skills, where the executable goes — a copy or a
   symlink into the checkout — and `.gitignore`), takes every default under `--yes`,
