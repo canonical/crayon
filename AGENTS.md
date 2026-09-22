@@ -26,7 +26,7 @@ touch anything.
 - **The ledger is the provenance.** The on-disk audit trail is `.dogen/units/<id>/ledger.md`
   (plain markdown). Never invent a second record-of-truth; state is *derived* by reading it.
 - **Skills are the surface; the scripts are the tool layer.** Technical Authors drive the
-  `dogen-plan` / `dogen-write` / `dogen-review` skills; those skills invoke the
+  `dogen-fetch` / `dogen-plan` / `dogen-write` / `dogen-review` skills; those skills invoke the
   deterministic scripts via `Bash`. Skills may `Write` only their staging files — never the
   canonical `docs/` page, never the ledger's gated sections directly.
 - **`main` stays green.** `bash tests/test_dogen_scripts.sh` and `python3 scripts/skill_lint.py`
@@ -62,7 +62,7 @@ recorded human signoff.
 - **No Python core.** dogen is bash scripts + `SKILL.md` files. `scripts/skill_lint.py` is a
   standalone stdlib-only lint utility (kept for the frontmatter gate); it is not a "core."
 - **Surface**: portable Agent Skills (`SKILL.md`) to the **agentskills.io** spec, split into
-  `dogen-plan` / `dogen-write` / `dogen-review`; validated on Claude Code and
+  `dogen-fetch` / `dogen-plan` / `dogen-write` / `dogen-review`; validated on Claude Code and
   Copilot CLI.
 - **Licensing**: scripts LGPL-3.0-only (single root `LICENSE`); skills Apache-2.0 (`skills/LICENSE`).
 - **Agnosticism**: platform-agnostic — any harness that reads `SKILL.md` and exposes `Bash` +
@@ -76,6 +76,7 @@ recorded human signoff.
 
 ```
 skills/                         ← the human-facing surface (SKILL.md + references/)
+├── dogen-fetch/                 ← prepare reusable source and provenance artefacts
 ├── dogen-onboard/              ← build repo-level context artifacts from an agent walk over the docs (grounds dogen-plan)
 ├── dogen-plan/                 ← declare + HITL signoff (Socratic intake, routes on Diátaxis)
 ├── dogen-write/                ← draft reference/explanation from sources; draft tutorial/how-to from an evidence-gated step walk
@@ -126,8 +127,8 @@ body) holds the plan: `unit_id`, `intent`, `audience`, `title`, `sources`, `sphi
 ## Develop dogen itself
 
 ```bash
-bash tests/test_dogen_scripts.sh     # 74 assertions across the script suite
-python3 scripts/skill_lint.py        # 3 skills, frontmatter invariants
+bash tests/test_dogen_scripts.sh     # 93 assertions across the script suite
+python3 scripts/skill_lint.py        # 5 skills, frontmatter and package invariants
 shellcheck scripts/dogen-*.sh        # if shellcheck is installed
 ```
 

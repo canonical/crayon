@@ -10,7 +10,8 @@ surface a Technical Author drives, backed by a thin layer of deterministic bash 
 enforce the load-bearing guarantees (HITL gate, provenance ordering, evidence verification,
 accept sealing). No Python, no CLI, no venv — just skills + scripts.
 
-- **Skills-first surface** — the portable `dogen-plan` / `dogen-write` / `dogen-review`
+- **Skills-first surface** — the portable `dogen-fetch` / `dogen-plan` / `dogen-write` /
+  `dogen-review`
   skill family is the primary, harness-agnostic human interface.
 - **Deterministic gates** — 4 bash scripts enforce the HITL gate, write ordering,
   identical-redraft suppression, evidence verification, and structured review
@@ -111,9 +112,11 @@ can perform a live crawl but with less repeatable results.
 Drive the skills in order from your agent. They call the deterministic scripts and enforce
 the human-in-the-loop gate at each step.
 
-1. **`dogen-plan`** — declare a unit and its sources, shape the outline, record your intent
+1. **`dogen-fetch` (optional)** — prepare project-specific style, terminology, structure, and
+  provenance artefacts in `.dogen/context/` when the repository lacks reliable context.
+2. **`dogen-plan`** — declare a unit and its sources, shape the outline, record your intent
    and audience, and **sign the plan off** (calls `dogen-signoff.sh` — the HITL gate).
-2. **Draft — by direction:** all four directions route to **`dogen-write`**, the sole
+3. **Draft — by direction:** all four directions route to **`dogen-write`**, the sole
    drafting skill. It branches on the declared `intent`:
    - **reference / explanation** — the host agent drafts the page from the signed-off
      plan, stages it, and calls `dogen-record-draft.sh` to record it.
@@ -121,7 +124,7 @@ the human-in-the-loop gate at each step.
      captures verbatim proof (output bytes, exit code, SHA-256) via
      `dogen-record-step.sh`, then authors the page from what actually ran (also
      recorded via `dogen-record-draft.sh`).
-3. **`dogen-review`** — review the draft alongside its provenance and record a verdict
+4. **`dogen-review`** — review the draft alongside its provenance and record a verdict
    (**accept** / **fix** / **redraft**) via `dogen-record-review.sh`. Accept seals
    page SHA-256 hashes; fix/redraft append the note to the steering stream.
 
@@ -211,6 +214,7 @@ python scripts/skill_lint.py
 
 ```
 skills/                          ← the human-facing surface (SKILL.md)
+├── dogen-fetch/SKILL.md
 ├── dogen-plan/SKILL.md
 ├── dogen-write/SKILL.md
 └── dogen-review/SKILL.md

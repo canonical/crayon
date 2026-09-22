@@ -58,7 +58,7 @@ skip the walk for an actionable unit.
 </quick_start>
 
 <pipeline>
-dogen-plan -> dogen-write -> dogen-review
+dogen-fetch -> dogen-plan -> dogen-write -> dogen-review
 
 This skill is the sole drafting stage. It consumes a declared+signed-off unit and
 produces a recorded draft (via `dogen-record-draft.sh`, advancing the ledger's
