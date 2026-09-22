@@ -1,0 +1,20 @@
+{
+  "manifest_version": 1,
+  "generated_at": "2026-09-08T00:00:00Z",
+  "sources": [
+    {
+      "source_id": "source-1",
+      "source_type": "repository-path",
+      "status": "accepted",
+      "origin": "/path/to/source",
+      "retrieval_method": "local filesystem + git",
+      "retrieved_at": "2026-09-08T00:00:00Z",
+      "revision": "unknown",
+      "content_preserved": false,
+      "preserved_location": "none",
+      "limitations": [],
+      "failure_reason": null,
+      "next_action": null
+    }
+  ]
+}
