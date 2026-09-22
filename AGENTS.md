@@ -158,7 +158,7 @@ tests/
 ├── test_check_docs.py             ← the docs-accuracy checker's own tests
 ├── test_wiki_lint.py              ← the wiki lint's own tests
 ├── test_dogen_lifecycle.sh        ← the lifecycle / recovery suite (hermetic temp git repos)
-├── test_dogen_acceptance.sh       ← the acceptance suite, A-01 … A-35
+├── test_dogen_acceptance.sh       ← the acceptance suite, A-01 … A-38
 ├── lib.sh                         ← the fixtures both bash suites share; ONE definition site
 ├── install_smoke.sh               ← CI-02 / A-37: run docs/install.md's INSTALL region, then
 │                                     one unit through the installed tool

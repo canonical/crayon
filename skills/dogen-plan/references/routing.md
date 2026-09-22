@@ -11,7 +11,7 @@
 | `no_generation` | A verdict was asked for on a unit that has no draft yet. Draft first. | `dogen draft <id> <staging file\|dir>` |
 | `target_claimed` | Name the holding unit from the refusal's `detail`, tell the author the target is still listed in that unit's current signoff, and offer to release it. Retire only on an explicit yes — it is another unit's record. Then retry the declaration unchanged. | `dogen unit retire <holder> --note "…"`, then re-run the refused command |
 | `retired` | The unit is retired and every mutating verb refuses on it. STOP — a retired unit is never reopened; offer a fresh declaration for the same target instead. | `dogen unit new <new-id> …` |
-| `bad_target` | The target breaks the path rules; the refusal names the offending value. Read it back to the author and re-run with a docs-relative `.md` or `.rst` path. | re-run the refused command with a corrected `--target` |
+| `bad_target` | The target, identifier or context artefact name breaks the input rules; the refusal names the offending value. Read it back to the author and re-run with a corrected value — a docs-relative `.md` or `.rst` path for a target, one of the five context artefact names for `context stage`. | re-run the refused command with the corrected value |
 | `bad_write_path` | A write destination resolved outside the repo. STOP and report the path from `detail` verbatim — this is a repo-layout problem, not something to retry. | none — report and stop |
 | `bad_draft_path` | The staging path is not inside the unit's own draft directory, or a directory does not hold exactly the signed targets. Re-stage and re-run. | `dogen draft <id> .dogen/staging/<id>/draft/…` |
 | `bad_resolution` | `--resolves` / `--withdraw` named a seq that is not pending, repeated one, crossed the two sets, or left a withdrawal without a reason. Read the pending seqs back and re-run accept with a corrected set. | `dogen review <id> --verdict accept --note "…" --resolves a,b [--withdraw <seq> "<reason>"]…` |
@@ -30,7 +30,7 @@
 | `already_recorded` | This step evidence is already on the record, field for field. Report the existing seq and commit and move to the next step. | `dogen step <id> <next-step-id> --steps-seq N --evidence-file F --output-file F` |
 | `already_retired` | The unit was already retired. Report the existing seq and commit; there is nothing further to record on it. | none — report and stop |
 | `no_edits` | No basis file changed and nothing is adoptable, so there is nothing to record. Say so and act on the `next` the payload carries. | act on the payload's `next` |
-| `noop_unchanged` | The edit left the frontmatter and the body unchanged. Say so and act on the `next` the payload carries. | act on the payload's `next` |
+| `noop_unchanged` | The edit left the frontmatter and the body unchanged, or every staged context artefact already holds its recorded bytes (the staged copies are discarded). Say so and act on the `next` the payload carries. | act on the payload's `next` |
 | `nothing_to_resume` | There is no tail and no pending batch — the record is whole. Say so and act on the `next` the payload carries. | act on the payload's `next` |
 | `steps_unresolved` | An actionable unit was drafted with steps still unresolved; the refusal lists them. Run each one and record its evidence before drafting. | `dogen step <id> <step-id> --steps-seq N --evidence-file F --output-file F` |
 | `steps_missing` | The unit is actionable and has no step plan at all. Agree the steps with the author, record the plan, then walk it. | `dogen plan-steps <id> --steps-file -` |
@@ -58,3 +58,6 @@
 | `publish` | The unit is accepted and its pages are current. STOP — dogen stops here; the author owns the PR, the build and the publish. | none — report and stop |
 | `steer` | Record the author's request on the record before drafting again. | `dogen steer <id> --note "…"` |
 | `review` | A generation or a reviewer edit is the tip. Surface it for review and record the verdict the reviewer gives. | `dogen review <id> --verdict accept\|fix\|redraft --note "…"` |
+| `record` | Context artefacts are staged and not yet recorded. Record them — one commit, no unit — and echo the tool's line. | `dogen context record [--model … --model-origin …] [--note "…"]` |
+| `onboard` | No context is recorded yet: at least one of `doc-style.md`, `glossary.md`, `structure.md` is absent. STOP and offer the author the bootstrap choice — supply the files, run `/dogen-onboard`, or ground this intake ephemerally; never author `.dogen/context/` yourself. | none — route to `/dogen-onboard` (a skill), or continue on the author's choice |
+| `plan` | The context artefacts are recorded and current. STOP — context is done; the next act is a unit declaration. | none — route to `/dogen-plan` (a skill) |

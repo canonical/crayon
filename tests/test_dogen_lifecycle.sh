@@ -8444,6 +8444,154 @@ test_summary_on_an_unknown_unit_is_refused() {
     cleanup
 }
 
+# --- N-47: the `context` verbs (repo-level) — T35 record, T35b names, T35c no-op, T36 drift ---
+
+stage_context() {
+    # stage_context <name> <content> [--source …]: one artefact through the tool.
+    local name="$1" content="$2"
+    shift 2
+    printf '%b' "$content" | "$DOGEN" context stage "$name" --body-file - "$@"
+}
+
+test_n47_t35_context_record_commits_the_staged_set_without_a_unit() {
+    setup_repo
+    # The documented install ignores `.dogen/staging/`; this repo does the same
+    # so "the tree is clean" is a statement about the record, not the fixture.
+    printf '.dogen/staging/\n' >.gitignore
+    git add .gitignore && git commit -q -m "ignore staging"
+    local head_before rc
+    head_before=$(git rev-parse HEAD)
+
+    assert_contains "an empty repo routes onboard" \
+        "$("$DOGEN" context show 2>&1)" "Next: onboard"
+
+    stage_context doc-style.md "# Style\n\nImperative.\n" --source docs/index.md >out.txt 2>err.txt
+    assert_eq "stage exits 0" "0" "$?"
+    assert_contains "stage routes record" "$(cat out.txt)" "Next: record"
+    assert_file_exists "the staged artefact is under the tool's own staging dir" \
+        ".dogen/staging/_context/doc-style.md"
+    stage_context glossary.md "# Glossary\n" >/dev/null 2>&1
+    stage_context structure.md "# Structure\n" >/dev/null 2>&1
+    assert_eq "staging is gitignored" "" "$(git status --porcelain -- .dogen)"
+
+    "$DOGEN" context record --model m1 --model-origin skill --note "first walk" >out.txt 2>err.txt
+    rc=$?
+    assert_eq "record exits 0" "0" "$rc"
+    assert_contains "record routes plan" "$(cat out.txt)" "Next: plan"
+    assert_contains "record reports the commit on stderr" "$(cat err.txt)" "git: committed"
+    assert_not_eq "record made one commit" "$head_before" "$(git rev-parse HEAD)"
+    assert_eq "the commit subject is the repo-level phase" "dogen: context recorded" \
+        "$(git log -1 --format=%s)"
+    assert_eq "the pathspecs are the three artefacts and the manifest, explicitly" \
+        ".dogen/context/doc-style.md .dogen/context/glossary.md .dogen/context/manifest.json .dogen/context/structure.md" \
+        "$(git show --name-only --format= HEAD | sort | tr '\n' ' ' | sed 's/ $//')"
+    local trailers
+    trailers=$(git log -1 --format='%(trailers)')
+    assert_contains "Dogen-Phase names the context record" "$trailers" "Dogen-Phase: context-recorded"
+    assert_contains "Dogen-Head is the head before" "$trailers" "Dogen-Head: ${head_before:0:16}"
+    assert_contains "Dogen-Model carries the claim" "$trailers" "Dogen-Model: m1"
+    assert_not_contains "no Dogen-Unit: the context belongs to the repo" "$trailers" "Dogen-Unit"
+    assert_not_contains "no Dogen-Seq: no event was written" "$trailers" "Dogen-Seq"
+    assert_file_not_exists "no unit ledger appeared" ".dogen/units"
+
+    # Every manifest digest is the digest of the committed bytes.
+    local ok
+    ok=$(python3 -c '
+import hashlib, json, sys
+m = json.load(open(".dogen/context/manifest.json"))
+bad = [n for n, e in m["artifacts"].items()
+       if e["sha256"] != hashlib.sha256(open(".dogen/context/" + n, "rb").read()).hexdigest()]
+print("ok" if not bad and sorted(m["artifacts"]) == ["doc-style.md", "glossary.md", "structure.md"]
+      and m["artifacts"]["doc-style.md"]["sources"] == ["docs/index.md"] and m["commit"] == sys.argv[1]
+      else "bad %r" % bad)' "$head_before")
+    assert_eq "the manifest freezes tool-computed digests and the declared sources" "ok" "$ok"
+    assert_file_not_exists "staging is cleared after the record" ".dogen/staging/_context"
+    assert_eq "the tree is clean after the record" "" "$(git status --porcelain -- .dogen)"
+    assert_contains "show now routes plan" "$("$DOGEN" context show 2>&1)" "Next: plan"
+    cleanup
+}
+
+test_n47_t35b_an_unrecognised_artefact_name_and_a_stray_staged_file_are_refused() {
+    setup_repo
+    local rc
+    stage_context profile.md "# P\n" >/dev/null 2>err.txt
+    rc=$?
+    assert_eq "an unknown name exits 2" "2" "$rc"
+    assert_json_error "the refusal is bad_target" "err.txt" "bad_target"
+    assert_file_contains "the hint names the five artefacts" "err.txt" "doc-gaps.md"
+    assert_file_not_exists "nothing was staged" ".dogen/staging/_context"
+
+    stage_context doc-style.md "# S\n" >/dev/null 2>&1
+    echo smuggled >.dogen/staging/_context/evil.md
+    "$DOGEN" context record >/dev/null 2>err.txt
+    rc=$?
+    assert_eq "a stray staged file exits 2" "2" "$rc"
+    assert_json_error "the refusal is bad_target" "err.txt" "bad_target"
+    assert_file_contains "the detail names the stray file" "err.txt" "evil.md"
+    assert_file_not_exists "nothing was promoted" ".dogen/context"
+    cleanup
+}
+
+test_n47_t35c_a_recorded_set_restaged_is_a_noop_and_a_partial_restage_keeps_the_rest() {
+    setup_repo
+    stage_context doc-style.md "# S\n" --source docs/index.md >/dev/null 2>&1
+    stage_context glossary.md "# G\n" >/dev/null 2>&1
+    "$DOGEN" context record >/dev/null 2>&1
+    local head rc
+    head=$(git rev-parse HEAD)
+
+    stage_context glossary.md "# G\n" >/dev/null 2>&1
+    "$DOGEN" context record --json >out.txt 2>err.txt
+    rc=$?
+    assert_eq "the same bytes no-op with exit 3" "3" "$rc"
+    assert_contains "the refusal is noop_unchanged" "$(cat out.txt)" '"error": "noop_unchanged"'
+    assert_contains "the payload carries the commit the record was made against" \
+        "$(cat out.txt)" "$(python3 -c 'import json;print(json.load(open(".dogen/context/manifest.json"))["commit"])')"
+    assert_eq "no commit was made" "$head" "$(git rev-parse HEAD)"
+    assert_file_not_exists "the staged copies are discarded on the no-op" ".dogen/staging/_context"
+
+    stage_context glossary.md "# G v2\n" >/dev/null 2>&1
+    stage_context doc-gaps.md "# Gaps\n" >/dev/null 2>&1
+    "$DOGEN" context record >/dev/null 2>&1
+    rc=$?
+    assert_eq "changed bytes record with exit 0" "0" "$rc"
+    assert_eq "only the restaged artefacts and the manifest are in the commit" \
+        ".dogen/context/doc-gaps.md .dogen/context/glossary.md .dogen/context/manifest.json" \
+        "$(git show --name-only --format= HEAD | sort | tr '\n' ' ' | sed 's/ $//')"
+    assert_eq "the manifest keeps every published row" "doc-gaps.md doc-style.md glossary.md" \
+        "$(python3 -c 'import json;print(" ".join(sorted(json.load(open(".dogen/context/manifest.json"))["artifacts"])))')"
+    assert_eq "an untouched row keeps its sources" "docs/index.md" \
+        "$(python3 -c 'import json;print(" ".join(json.load(open(".dogen/context/manifest.json"))["artifacts"]["doc-style.md"]["sources"]))')"
+    cleanup
+}
+
+test_n47_t36_a_hand_edit_after_the_record_is_reported_never_refused() {
+    setup_repo
+    stage_context doc-style.md "# S\n" >/dev/null 2>&1
+    stage_context glossary.md "# G\n" >/dev/null 2>&1
+    stage_context structure.md "# T\n" >/dev/null 2>&1
+    "$DOGEN" context record >/dev/null 2>&1
+    echo "edited by hand" >>.dogen/context/glossary.md
+    echo "# by hand" >.dogen/context/code-to-docs-map.md
+
+    local out rc
+    out=$("$DOGEN" context show 2>err.txt)
+    rc=$?
+    assert_eq "show exits 0 over drift" "0" "$rc"
+    assert_eq "show writes nothing to stderr" "0" "$(wc -c <err.txt | tr -d ' ')"
+    assert_contains "the drifted artefact is named" "$out" "drifted: glossary.md"
+    assert_contains "a hand-placed artefact is unrecorded, not drifted" "$out" \
+        "unrecorded: code-to-docs-map.md"
+    assert_contains "the three onboarding artefacts present route plan" "$out" "Next: plan"
+
+    "$DOGEN" context record >/dev/null 2>err.txt
+    rc=$?
+    assert_eq "record with nothing staged exits 2" "2" "$rc"
+    assert_json_error "the refusal is bad_target" "err.txt" "bad_target"
+    assert_eq "the refusal routes per the context table" "plan" "$(refusal_next err.txt)"
+    cleanup
+}
+
 # --- VERB-01 / VERB-08 / D-16: the whole verb surface, version, legacy units --
 
 # Every phase-17 stub refuses identically: one JSON line, the transitional

@@ -87,8 +87,9 @@ install lines in [[install]] create the directory they copy into.
 situations and the contract's trace table, each test driving the real executable in a hermetic
 temporary git repository. It is the long pole at roughly three minutes.
 
-**`tests/test_dogen_acceptance.sh`** — A-01 … A-35, the black-box acceptance suite ported by
-intent from the v1 bash layer, plus the tests that cannot live in the N file.
+**`tests/test_dogen_acceptance.sh`** — A-01 … A-38: the black-box acceptance suite ported by
+intent from the v1 bash layer, the tests that cannot live in the N file, and A-38, the `context`
+verbs driven end to end through the executable.
 
 Both bash suites source `tests/lib.sh`, the one definition site for the temp-repo fixture, the
 assertion set, the hook fixtures, the vacuous-test guard and the TAP runner. Never add a second

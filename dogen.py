@@ -9040,6 +9040,507 @@ class _Parser(argparse.ArgumentParser):
         )
 
 
+# --- context (contract 5.1, repo-level) -------------------------------------
+
+#: The well-known context artefacts, contract 5.1: the ONE definition site.
+#: ``dogen-plan`` grounds itself in these; `dogen-onboard` authors the first
+#: three from a walk over the repository's own docs; `dogen-fetch` authors any
+#: of them from declared external sources; an external code-to-docs mapper's
+#: output reaches the record through the same two verbs. A staged name outside
+#: this tuple is refused, so no skill can smuggle an arbitrary write into
+#: ``.dogen/context/`` through the staging directory.
+CONTEXT_ARTIFACTS = (
+    "doc-style.md",
+    "glossary.md",
+    "structure.md",
+    "code-to-docs-map.md",
+    "doc-gaps.md",
+)
+
+#: The subset `dogen-onboard` produces. `context show` routes ``onboard`` while
+#: any of these is absent; the other two are optional and never route on their
+#: own — they come from tooling outside dogen, when the author has it.
+CONTEXT_ONBOARD_SET = CONTEXT_ARTIFACTS[:3]
+
+CONTEXT_MANIFEST = "manifest.json"
+CONTEXT_PHASE = "context-recorded"
+
+#: ``.dogen/staging/_context``: the underscore is outside the unit-id alphabet
+#: (5.6), so this directory can never collide with a unit's own staging.
+CONTEXT_STAGING_NAME = "_context"
+
+#: The sidecar `context stage --source` writes beside a staged artefact.
+_CONTEXT_SOURCES_SUFFIX = ".sources.json"
+
+
+def context_dir(repo):
+    """``<repo>/.dogen/context`` — the published, committed artefacts."""
+    return os.path.join(os.fspath(repo), ".dogen", "context")
+
+
+def context_staging(repo):
+    """``<repo>/.dogen/staging/_context`` — tool-owned, gitignored, transient."""
+    return staging_dir(repo, CONTEXT_STAGING_NAME)
+
+
+def context_manifest_path(repo):
+    """``<repo>/.dogen/context/manifest.json``."""
+    return os.path.join(context_dir(repo), CONTEXT_MANIFEST)
+
+
+def validate_context_name(name):
+    """Contract 5.1: a context artefact is one of :data:`CONTEXT_ARTIFACTS`.
+
+    The reason table names no dedicated code for an unrecognised artefact, so
+    the ``bad_*`` input family's ``bad_target`` carries it (the rule
+    ``validate_unit_id`` already applies).
+    """
+    if not isinstance(name, str) or name not in CONTEXT_ARTIFACTS:
+        raise Refusal(
+            "bad_target",
+            detail="%r is not a context artefact" % name,
+            hint="stage one of: %s" % ", ".join(CONTEXT_ARTIFACTS),
+        )
+    return name
+
+
+def read_context_body(spec):
+    """``--body-file -`` reads stdin; anything else is a path. UTF-8 bytes, kept raw.
+
+    The artefact's bytes are what the manifest digests, so they are read as
+    bytes and only CHECKED to be UTF-8 — never re-encoded, so the digest is of
+    what the author handed over.
+    """
+    if spec == "-":
+        data = sys.stdin.buffer.read()
+        label = "stdin"
+    else:
+        try:
+            with open(spec, "rb") as handle:
+                data = handle.read()
+        except OSError as bad:
+            raise Refusal(
+                "bad_target",
+                detail="--body-file %s cannot be read (%s)" % (spec, type(bad).__name__),
+                hint="pass an existing readable file, or - to read the body from stdin",
+            )
+        label = "--body-file %s" % spec
+    try:
+        data.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        raise Refusal(
+            "bad_target",
+            detail="the body read from %s is not UTF-8 text" % label,
+            hint="pass a UTF-8 body, or --body-file F naming a UTF-8 file",
+        )
+    if not data.strip():
+        raise Refusal(
+            "bad_target",
+            detail="the body read from %s is empty" % label,
+            hint="a context artefact carries prose; stage nothing for an empty one",
+        )
+    return data
+
+
+def validate_context_sources(sources):
+    """``--source`` locators: one line each, non-empty, capped at MAX_ORIGINS.
+
+    A locator is a CLAIM the skill records — a path, a URL, a tool-result id.
+    The tool digests nothing behind it (a URL is not on this filesystem), which
+    is why it is recorded verbatim in the manifest rather than as a digest.
+    """
+    cleaned = []
+    for source in sources:
+        if not isinstance(source, str) or "\n" in source or "\r" in source:
+            raise Refusal(
+                "bad_target",
+                detail="a --source locator must be a single line",
+                hint="pass one --source per origin: a path, a URL or a tool-result id",
+            )
+        text = source.strip()
+        if not text:
+            raise Refusal(
+                "bad_target",
+                detail="a --source locator is empty",
+                hint="pass one --source per origin: a path, a URL or a tool-result id",
+            )
+        cleaned.append(check_byte_cap("source", text, 1024))
+    if len(cleaned) > MAX_ORIGINS:
+        raise Refusal(
+            "bad_target",
+            detail="%d sources exceed the cap of %d" % (len(cleaned), MAX_ORIGINS),
+            hint="declare the origins that matter, not every file you looked at",
+        )
+    return cleaned
+
+
+def context_sidecar_path(repo, name):
+    """The staged sources sidecar for ``name``."""
+    return os.path.join(context_staging(repo), name + _CONTEXT_SOURCES_SUFFIX)
+
+
+def staged_context(repo):
+    """``{name: bytes}`` of every recognised artefact staged under ``_context/``.
+
+    A file in the staging directory that is neither a recognised artefact nor
+    one's sources sidecar is refused by name: the tool owns this directory, so
+    anything else there was put there by hand, and promoting around it would
+    silently drop the author's intent.
+    """
+    staging = context_staging(repo)
+    if not os.path.isdir(staging):
+        return {}
+    staged = {}
+    for entry in sorted(os.listdir(staging)):
+        path = os.path.join(staging, entry)
+        if not os.path.isfile(path):
+            continue
+        if entry in CONTEXT_ARTIFACTS:
+            with open(path, "rb") as handle:
+                staged[entry] = handle.read()
+            continue
+        if entry.endswith(_CONTEXT_SOURCES_SUFFIX) and (
+            entry[: -len(_CONTEXT_SOURCES_SUFFIX)] in CONTEXT_ARTIFACTS
+        ):
+            continue
+        raise Refusal(
+            "bad_target",
+            detail="%s is staged under .dogen/staging/%s/ and is not a context artefact"
+            % (entry, CONTEXT_STAGING_NAME),
+            hint="remove it; a context artefact is staged with dogen context stage",
+        )
+    return staged
+
+
+def staged_context_sources(repo, name):
+    """The declared sources of a staged artefact, ``[]`` when none were declared."""
+    path = context_sidecar_path(repo, name)
+    if not os.path.isfile(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            sources = json.load(handle)
+    except (OSError, ValueError):
+        raise Refusal(
+            "bad_target",
+            detail="the staged sources of %s cannot be read" % name,
+            hint="re-run dogen context stage %s to restage it" % name,
+        )
+    if not isinstance(sources, list) or not all(isinstance(s, str) for s in sources):
+        raise Refusal(
+            "bad_target",
+            detail="the staged sources of %s are not a list of locators" % name,
+            hint="re-run dogen context stage %s to restage it" % name,
+        )
+    return sources
+
+
+def read_context_manifest(repo):
+    """The published manifest, or ``None`` when no context was ever recorded."""
+    path = context_manifest_path(repo)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            manifest = json.load(handle)
+    except (OSError, ValueError) as bad:
+        raise Refusal(
+            "bad_target",
+            detail=".dogen/context/%s is not a readable JSON document (%s)"
+            % (CONTEXT_MANIFEST, type(bad).__name__),
+            hint="restore it from git, or re-record the artefacts with dogen context record",
+        )
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("artifacts"), dict):
+        raise Refusal(
+            "bad_target",
+            detail=".dogen/context/%s does not carry an artifacts map" % CONTEXT_MANIFEST,
+            hint="restore it from git, or re-record the artefacts with dogen context record",
+        )
+    return manifest
+
+
+def context_state(repo):
+    """The derived state of every context artefact — computed, never stored.
+
+    Per name: ``present`` (a file is on disk), ``recorded`` (the manifest names
+    it), ``sha256`` (the current bytes, ``None`` when absent) and ``drifted``
+    (present and recorded, and the bytes are not the recorded ones — a hand
+    edit after the record; reported, never refused, per 5.1's guarantee).
+    """
+    manifest = read_context_manifest(repo)
+    recorded = manifest["artifacts"] if manifest else {}
+    artifacts = {}
+    for name in CONTEXT_ARTIFACTS:
+        current = digest_file(os.path.join(context_dir(repo), name))
+        entry = recorded.get(name) if isinstance(recorded.get(name), dict) else None
+        artifacts[name] = {
+            "present": current is not None,
+            "recorded": entry is not None,
+            "sha256": current,
+            "drifted": bool(
+                entry is not None and current is not None and entry.get("sha256") != current
+            ),
+        }
+    return {
+        "artifacts": artifacts,
+        "staged": sorted(staged_context(repo)),
+        "manifest": (
+            {
+                "recorded_at": manifest.get("recorded_at"),
+                "commit": manifest.get("commit"),
+                "model": manifest.get("model"),
+                "model_origin": manifest.get("model_origin"),
+            }
+            if manifest
+            else None
+        ),
+    }
+
+
+def context_next(repo, state=None):
+    """Contract 5.5's context routing: ``record`` → ``onboard`` → ``plan``.
+
+    Something staged and not yet recorded comes first — finish the act that
+    was begun — then the absence of any onboarding artefact, then the plan.
+    """
+    state = state or context_state(repo)
+    if state["staged"]:
+        return "record"
+    for name in CONTEXT_ONBOARD_SET:
+        if not state["artifacts"][name]["present"]:
+            return "onboard"
+    return "plan"
+
+
+def render_context_manifest(manifest):
+    """The manifest's bytes: canonical JSON, the ledger writer's own shape (5.2)."""
+    return (
+        json.dumps(
+            manifest,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+        + "\n"
+    ).encode("utf-8")
+
+
+def cmd_context_stage(args):
+    """``context stage`` — one artefact into the tool-owned staging directory.
+
+    Nothing is recorded and nothing is committed: this is how a skill that
+    holds no write-capable tool hands the tool a body, exactly as ``unit new
+    --body-file -`` hands it a plan. ``context record`` is the act.
+    """
+    as_json = bool(getattr(args, "json", False))
+    repo = git_root()
+    root = os.fspath(repo)
+    name = validate_context_name(args.name)
+    sources = validate_context_sources(list(args.source or []))
+    data = read_context_body(args.body_file)
+    with unit_lock(repo):
+        staging = context_staging(repo)
+        os.makedirs(staging, exist_ok=True)
+        publish_atomic(os.path.join(staging, name), data)
+        sidecar = context_sidecar_path(repo, name)
+        if sources:
+            publish_atomic(
+                sidecar,
+                (json.dumps(sources, ensure_ascii=False) + "\n").encode("utf-8"),
+            )
+        elif os.path.exists(sidecar):
+            os.remove(sidecar)
+    segments = [
+        "staged %s" % name,
+        os.path.relpath(os.path.join(staging, name), root),
+        "%d source(s) declared" % len(sources) if sources else "no source declared",
+    ]
+    return respond(segments, context_next(repo), as_json)
+
+
+def cmd_context_record(args):
+    """``context record`` — promote the staged artefacts and commit them.
+
+    Stages a–f in contract 5.7's shape for a repo-level verb: **a** lock and
+    ``.git/index.lock`` (there is no unit ledger, so no chain to classify);
+    **b** the model claim, the note, the staged set, the identity; **c** at
+    least one artefact staged; **d** ``noop_unchanged`` when every staged
+    artefact already holds these bytes in HEAD; **f** place, freeze the
+    manifest, one commit with explicit pathspecs and no ``Dogen-Unit`` — the
+    context belongs to the repository, not to a unit.
+    """
+    as_json = bool(getattr(args, "json", False))
+    repo = git_root()
+    root = os.fspath(repo)
+
+    with unit_lock(repo):
+        # --- a: lock, .git/index.lock ------------------------------------------
+        git_busy_guard(repo)
+
+        # --- b: input validation ----------------------------------------------
+        model = validate_model(args.model, args.model_origin)
+        note = validate_note(args.note) if args.note is not None else ""
+        staged = staged_context(repo)
+        identity = git_identity(repo)
+        manifest_before = read_context_manifest(repo)
+
+        # --- c: per-verb preconditions ----------------------------------------
+        if not staged:
+            raise Refusal(
+                "bad_target",
+                detail="nothing is staged under .dogen/staging/%s/" % CONTEXT_STAGING_NAME,
+                hint="dogen context stage <name> --body-file - stages one artefact; then record",
+                next_token=context_next(repo),
+            )
+
+        # --- d: no-op recognition ---------------------------------------------
+        # A staged artefact is unchanged only when HEAD already holds these
+        # bytes at the published path: a record whose commit failed leaves the
+        # placed file on disk and the manifest beside it, and comparing against
+        # disk alone would call the retry a no-op and never commit.
+        relative_dir = os.path.relpath(context_dir(repo), root)
+        unchanged = manifest_before is not None
+        for name, data in staged.items():
+            blob = git_show_blob(repo, "HEAD", os.path.join(relative_dir, name))
+            if blob is None or sha256_bytes(blob) != sha256_bytes(data):
+                unchanged = False
+                break
+        if unchanged:
+            # The staged copies are redundant with the record, so they are
+            # discarded here: left in place they would route `show` at `record`
+            # for an act that can never do anything.
+            shutil.rmtree(context_staging(repo), ignore_errors=True)
+            raise Refusal(
+                "noop_unchanged",
+                detail="every staged artefact (%s) already holds the recorded bytes"
+                % ", ".join(sorted(staged)),
+                hint="the record already says this; the staged copies are discarded",
+                next_token=context_next(repo),
+                extra={"commit": manifest_before.get("commit")},
+            )
+
+        # --- f: write -----------------------------------------------------------
+        head = git_head(repo)
+        recorded = manifest_before["artifacts"] if manifest_before else {}
+        artifacts = {}
+        for name in CONTEXT_ARTIFACTS:
+            if name in staged:
+                artifacts[name] = {
+                    "sha256": sha256_bytes(staged[name]),
+                    "sources": staged_context_sources(repo, name),
+                }
+                continue
+            current = digest_file(os.path.join(context_dir(repo), name))
+            if current is None:
+                continue
+            # A published artefact this act does not touch keeps its row; its
+            # digest is re-read from disk so the frozen set is what is there.
+            previous = recorded.get(name) if isinstance(recorded.get(name), dict) else {}
+            artifacts[name] = {
+                "sha256": current,
+                "sources": list(previous.get("sources") or []),
+            }
+        manifest = {
+            "actor": identity,
+            "artifacts": artifacts,
+            "commit": head,
+            "contract": CONTRACT,
+            "model": model,
+            "model_origin": args.model_origin,
+            "note": note,
+            "recorded_at": utc_now(),
+            "tool_version": __version__,
+        }
+        files = [
+            (os.path.join(relative_dir, name), data) for name, data in sorted(staged.items())
+        ]
+        files.append((os.path.join(relative_dir, CONTEXT_MANIFEST), render_context_manifest(manifest)))
+        guard_write_paths(repo, "", files)
+        guard_placeable_paths(repo, "", files)
+        pathspecs = [path for path, _ in files]
+        guard_ignored_paths(repo, "", pathspecs)
+
+        before_index = index_snapshot(repo)
+        for path, data in files:
+            publish_atomic(os.path.join(root, path), data)
+        entries = [{"path": path, "after_sha": sha256_bytes(data)} for path, data in files]
+
+        added = git_add(repo, pathspecs)
+        if added.returncode != 0:
+            raise Refusal(
+                "bad_write_path",
+                detail="git add refused the context artefacts: %s"
+                % (added.stderr.strip().splitlines() or ["(no message)"])[0],
+                hint="fix what git reports; the staged artefacts are kept, re-run dogen context record",
+                next_token="record",
+            )
+        trailers = [
+            ("Dogen-Phase", CONTEXT_PHASE),
+            ("Dogen-Head", (head or "0" * 40)[:16]),
+        ]
+        if model:
+            trailers.append(("Dogen-Model", model))
+        committed = git_commit(
+            repo,
+            "dogen: %s" % CONTEXT_PHASE.replace("-", " "),
+            collapse_note(note) if note else "",
+            trailers,
+            pathspecs,
+        )
+        if committed.returncode != 0:
+            raise Refusal(
+                "bad_write_path",
+                detail="git commit refused the context artefacts: %s"
+                % (committed.stderr.strip().splitlines() or ["(no message)"])[0],
+                hint="fix what git reports; the staged artefacts are kept, re-run dogen context record",
+                next_token="record",
+            )
+        diagnostic(
+            "git: committed %s — dogen: %s"
+            % (git(["rev-parse", "--short", "HEAD"], repo).stdout.strip(), CONTEXT_PHASE.replace("-", " "))
+        )
+        changed, extra = post_commit_check(repo, entries, pathspecs, before_index)
+        report_hook_changes({"changed": changed, "extra": extra}, repo)
+        shutil.rmtree(context_staging(repo), ignore_errors=True)
+
+    segments = [
+        "recorded %d context artefact(s): %s" % (len(staged), ", ".join(sorted(staged))),
+        relative_dir + os.sep,
+        "%d artefact(s) frozen in %s" % (len(artifacts), CONTEXT_MANIFEST),
+    ]
+    return respond(segments, context_next(repo), as_json)
+
+
+def cmd_context_show(args):
+    """``context show`` — read-only: what is published, staged, drifted; and ``Next:``."""
+    as_json = bool(getattr(args, "json", False))
+    repo = git_root()
+    state = context_state(repo)
+    next_token = context_next(repo, state)
+    artifacts = state["artifacts"]
+    present = [n for n in CONTEXT_ARTIFACTS if artifacts[n]["present"]]
+    missing = [n for n in CONTEXT_ARTIFACTS if not artifacts[n]["present"]]
+    drifted = [n for n in CONTEXT_ARTIFACTS if artifacts[n]["drifted"]]
+    unrecorded = [n for n in present if not artifacts[n]["recorded"]]
+    segments = [
+        "context: %d of %d artefact(s) present%s"
+        % (
+            len(present),
+            len(CONTEXT_ARTIFACTS),
+            " (%s)" % ", ".join(present) if present else "",
+        ),
+        "missing: %s" % (", ".join(missing) if missing else "none"),
+        "drifted: %s" % (", ".join(drifted) if drifted else "none"),
+        "unrecorded: %s" % (", ".join(unrecorded) if unrecorded else "none"),
+        "staged: %s" % (", ".join(state["staged"]) if state["staged"] else "none"),
+    ]
+    return respond(segments, next_token, as_json, state)
+
+
+# --- argparse (the §6 verb table) -----------------------------------------
+
+
 def build_parser():
     """The contract's §6 verb table, complete — every verb, every argument.
 
@@ -9116,6 +9617,47 @@ def build_parser():
     retire.add_argument("unit", help="unit id")
     retire.add_argument("--note", required=True, help="why the unit is retired")
     retire.set_defaults(func=cmd_unit_retire)
+
+    context = verbs.add_parser(
+        "context", help="stage, record or show the repository's context artefacts"
+    )
+    context_verbs = context.add_subparsers(dest="context_verb")
+
+    stage = context_verbs.add_parser(
+        "stage", parents=[common], help="stage one context artefact from a body"
+    )
+    stage.add_argument("name", help="one of: %s" % ", ".join(CONTEXT_ARTIFACTS))
+    stage.add_argument(
+        "--body-file", required=True, help="the artefact's text: a file, or - for stdin"
+    )
+    stage.add_argument(
+        "--source",
+        action="append",
+        default=[],
+        help="a declared origin of this artefact: a path, a URL or a tool-result id",
+    )
+    stage.set_defaults(func=cmd_context_stage)
+
+    record = context_verbs.add_parser(
+        "record",
+        parents=[common],
+        help="promote the staged artefacts into .dogen/context/ and commit them",
+    )
+    record.add_argument(
+        "--model", default="", help="the model that produced the artefacts (a claim)"
+    )
+    record.add_argument(
+        "--model-origin",
+        default="unknown",
+        help="where the model claim came from (default: unknown, the honest default)",
+    )
+    record.add_argument("--note", help="what this record is about; the commit body")
+    record.set_defaults(func=cmd_context_record)
+
+    context_show = context_verbs.add_parser(
+        "show", parents=[common], help="read-only: the published, staged and drifted artefacts"
+    )
+    context_show.set_defaults(func=cmd_context_show)
 
     sign = verbs.add_parser(
         "signoff",

@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import ast
 import errno
+import fcntl
 import hashlib
 import io
 import importlib.machinery
@@ -2709,6 +2710,9 @@ class TestVerbTable(unittest.TestCase):
         self.assertEqual(
             sorted(self.contract),
             [
+                "context record",
+                "context show",
+                "context stage",
                 "draft",
                 "edits",
                 "plan-steps",
@@ -7349,6 +7353,312 @@ class TestPhase17In05HashInequalityIsNotContainment(unittest.TestCase):
 
 # --- the runner, and the guard that proves it loaded the whole module --------
 #
+class TestContextVerbs(DogenCliTestCase):
+    """N-47 / T35–T36 in the unit suite — the repo-level `context` verbs.
+
+    `context stage` hands the tool one artefact's bytes (a skill holds no
+    write tool); `context record` promotes the staged set into
+    `.dogen/context/`, freezes a manifest of tool-computed digests and makes
+    ONE commit with no `Dogen-Unit`; `context show` derives, never stores. The
+    suite drives the executable: the one-line response and the one-JSON-line
+    refusal are properties of the process.
+    """
+
+    STYLE = "# Style\n\nImperative mood; second person.\n"
+
+    def setUp(self):
+        super().setUp()
+        # The documented install ignores `.dogen/staging/`; the fixture repo
+        # does the same so "the tree is clean" can be asserted after a record.
+        (self.repo / ".gitignore").write_text(".dogen/staging/\n", encoding="utf-8")
+        self.git("add", ".gitignore")
+        self.git("commit", "-q", "-m", "ignore staging")
+
+    def stage(self, name, body, *extra):
+        return self.dogen_cli("context", "stage", name, "--body-file", "-", *extra, stdin=body)
+
+    def manifest(self):
+        path = self.repo / ".dogen" / "context" / "manifest.json"
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def head_trailers(self):
+        proc = self.git("log", "-1", "--format=%(trailers)")
+        return dict(
+            line.split(": ", 1) for line in proc.stdout.splitlines() if ": " in line
+        )
+
+    def test_the_artefact_set_is_the_five_well_known_names_in_one_place(self):
+        self.assertEqual(
+            dogen.CONTEXT_ARTIFACTS,
+            ("doc-style.md", "glossary.md", "structure.md", "code-to-docs-map.md", "doc-gaps.md"),
+        )
+        self.assertEqual(dogen.CONTEXT_ONBOARD_SET, dogen.CONTEXT_ARTIFACTS[:3])
+        # The staging name is outside the unit-id alphabet, so it can never be a unit.
+        self.assertIsNone(dogen._UNIT_ID_RE.match(dogen.CONTEXT_STAGING_NAME))
+
+    def test_show_on_an_empty_repo_routes_onboard_and_names_every_absence(self):
+        proc = self.dogen_cli("context", "show", "--json")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["next"], "onboard")
+        self.assertIsNone(payload["manifest"])
+        self.assertEqual(payload["staged"], [])
+        for name in dogen.CONTEXT_ARTIFACTS:
+            self.assertEqual(
+                payload["artifacts"][name],
+                {"present": False, "recorded": False, "sha256": None, "drifted": False},
+            )
+
+    def test_stage_refuses_a_name_outside_the_set_and_names_the_set(self):
+        proc = self.stage("profile.md", self.STYLE)
+        self.assertEqual(proc.returncode, 2)
+        refusal = self.one_refusal(proc)
+        self.assertEqual(refusal["error"], "bad_target")
+        for name in dogen.CONTEXT_ARTIFACTS:
+            self.assertIn(name, refusal["hint"])
+        self.assertFalse((self.repo / ".dogen" / "staging" / "_context").exists())
+
+    def test_stage_refuses_an_empty_or_non_utf8_body(self):
+        proc = self.stage("doc-style.md", "   \n")
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(self.one_refusal(proc)["error"], "bad_target")
+        bad = self.repo / "bad.bin"
+        bad.write_bytes(b"\xff\xfe\x00")
+        proc = self.dogen_cli("context", "stage", "doc-style.md", "--body-file", str(bad))
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(self.one_refusal(proc)["error"], "bad_target")
+
+    def test_stage_writes_the_bytes_verbatim_and_the_sources_sidecar_and_routes_record(self):
+        proc = self.stage(
+            "doc-style.md", self.STYLE, "--source", "docs/index.md", "--source", "https://x/y"
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertTrue(proc.stdout.rstrip().endswith("Next: record"), proc.stdout)
+        staged = self.repo / ".dogen" / "staging" / "_context"
+        self.assertEqual((staged / "doc-style.md").read_bytes(), self.STYLE.encode("utf-8"))
+        self.assertEqual(
+            json.loads((staged / "doc-style.md.sources.json").read_text(encoding="utf-8")),
+            ["docs/index.md", "https://x/y"],
+        )
+        # Re-staging without sources drops the sidecar rather than keeping a stale claim.
+        self.stage("doc-style.md", self.STYLE)
+        self.assertFalse((staged / "doc-style.md.sources.json").exists())
+        # Staging is gitignored, as every `.dogen/staging/` path is.
+        self.assertEqual(self.git("status", "--porcelain").stdout.strip(), "")
+
+    def test_stage_refuses_a_multi_line_source_locator(self):
+        proc = self.stage("glossary.md", "# G\n", "--source", "a\nb")
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(self.one_refusal(proc)["error"], "bad_target")
+
+    def test_record_refuses_with_nothing_staged_and_routes_per_context(self):
+        proc = self.dogen_cli("context", "record")
+        self.assertEqual(proc.returncode, 2)
+        refusal = self.one_refusal(proc)
+        self.assertEqual(refusal["error"], "bad_target")
+        self.assertIn("dogen context stage", refusal["hint"])
+        self.assertEqual(refusal["next"], "onboard")
+
+    def test_record_promotes_freezes_the_manifest_and_commits_without_a_unit(self):
+        head_before = self.git("rev-parse", "HEAD").stdout.strip()
+        self.stage("doc-style.md", self.STYLE, "--source", "docs/index.md")
+        self.stage("glossary.md", "# Glossary\n")
+        self.stage("structure.md", "# Structure\n")
+        proc = self.dogen_cli(
+            "context", "record", "--model", "m1", "--model-origin", "skill", "--note", "first  walk"
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertTrue(proc.stdout.rstrip().endswith("Next: plan"), proc.stdout)
+        self.assertIn("git: committed", proc.stderr)
+        # One commit, explicit pathspecs: the three artefacts and the manifest, nothing else.
+        self.assertNotEqual(self.git("rev-parse", "HEAD").stdout.strip(), head_before)
+        names = sorted(self.git("show", "--name-only", "--format=", "HEAD").stdout.split())
+        self.assertEqual(
+            names,
+            [
+                ".dogen/context/doc-style.md",
+                ".dogen/context/glossary.md",
+                ".dogen/context/manifest.json",
+                ".dogen/context/structure.md",
+            ],
+        )
+        subject = self.git("log", "-1", "--format=%s").stdout.strip()
+        self.assertEqual(subject, "dogen: context recorded")
+        self.assertEqual(self.git("log", "-1", "--format=%b").stdout.split("\n")[0], "first walk")
+        trailers = self.head_trailers()
+        self.assertEqual(trailers["Dogen-Phase"], "context-recorded")
+        self.assertEqual(trailers["Dogen-Head"], head_before[:16])
+        self.assertEqual(trailers["Dogen-Model"], "m1")
+        self.assertNotIn("Dogen-Unit", trailers)
+        self.assertNotIn("Dogen-Seq", trailers)
+        # The manifest: canonical JSON, digests computed by the tool over the placed bytes.
+        manifest = self.manifest()
+        self.assertEqual(sorted(manifest["artifacts"]), ["doc-style.md", "glossary.md", "structure.md"])
+        for name, entry in manifest["artifacts"].items():
+            on_disk = (self.repo / ".dogen" / "context" / name).read_bytes()
+            self.assertEqual(entry["sha256"], hashlib.sha256(on_disk).hexdigest())
+        self.assertEqual(manifest["artifacts"]["doc-style.md"]["sources"], ["docs/index.md"])
+        self.assertEqual(manifest["commit"], head_before)
+        self.assertEqual(manifest["model"], "m1")
+        self.assertEqual(manifest["model_origin"], "skill")
+        self.assertEqual(manifest["contract"], dogen.CONTRACT)
+        self.assertEqual(manifest["tool_version"], dogen.__version__)
+        self.assertEqual(manifest["actor"], {"name": "Test Author", "email": "test@example.com"})
+        raw = (self.repo / ".dogen" / "context" / "manifest.json").read_bytes()
+        self.assertEqual(raw, dogen.render_context_manifest(manifest))
+        # Staging is cleared; show now routes `plan` and reports nothing drifted.
+        self.assertFalse((self.repo / ".dogen" / "staging" / "_context").exists())
+        payload = json.loads(self.dogen_cli("context", "show", "--json").stdout)
+        self.assertEqual(payload["next"], "plan")
+        self.assertEqual(payload["manifest"]["commit"], head_before)
+        self.assertTrue(all(not a["drifted"] for a in payload["artifacts"].values()))
+        self.assertEqual(self.git("status", "--porcelain").stdout.strip(), "")
+
+    def test_record_without_a_model_records_the_honest_default(self):
+        self.stage("doc-style.md", self.STYLE)
+        proc = self.dogen_cli("context", "record")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        manifest = self.manifest()
+        self.assertEqual((manifest["model"], manifest["model_origin"]), ("", "unknown"))
+        self.assertNotIn("Dogen-Model", self.head_trailers())
+        # The model rule binds both ways, as it does for `draft`.
+        self.stage("glossary.md", "# G\n")
+        proc = self.dogen_cli("context", "record", "--model", "m", "--model-origin", "unknown")
+        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(self.one_refusal(proc)["error"], "bad_target")
+
+    def test_record_of_the_recorded_bytes_is_a_noop_that_discards_the_staged_copies(self):
+        self.stage("doc-style.md", self.STYLE)
+        self.dogen_cli("context", "record")
+        head = self.git("rev-parse", "HEAD").stdout.strip()
+        commit_before = self.manifest()["commit"]
+        self.stage("doc-style.md", self.STYLE)
+        proc = self.dogen_cli("context", "record", "--json")
+        self.assertEqual(proc.returncode, 3)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["error"], "noop_unchanged")
+        self.assertEqual(payload["commit"], commit_before)
+        self.assertEqual(payload["next"], "onboard")  # glossary and structure still absent
+        self.assertEqual(self.git("rev-parse", "HEAD").stdout.strip(), head)
+        self.assertFalse((self.repo / ".dogen" / "staging" / "_context").exists())
+
+    def test_a_partial_restage_keeps_every_published_row_in_the_manifest(self):
+        self.stage("doc-style.md", self.STYLE, "--source", "docs/index.md")
+        self.stage("glossary.md", "# G\n")
+        self.dogen_cli("context", "record")
+        self.stage("glossary.md", "# G v2\n")
+        self.stage("doc-gaps.md", "# Gaps\n")
+        proc = self.dogen_cli("context", "record")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        names = sorted(self.git("show", "--name-only", "--format=", "HEAD").stdout.split())
+        self.assertEqual(
+            names,
+            [".dogen/context/doc-gaps.md", ".dogen/context/glossary.md", ".dogen/context/manifest.json"],
+        )
+        manifest = self.manifest()
+        self.assertEqual(sorted(manifest["artifacts"]), ["doc-gaps.md", "doc-style.md", "glossary.md"])
+        self.assertEqual(manifest["artifacts"]["doc-style.md"]["sources"], ["docs/index.md"])
+        self.assertEqual(
+            manifest["artifacts"]["glossary.md"]["sha256"], hashlib.sha256(b"# G v2\n").hexdigest()
+        )
+
+    def test_a_hand_edit_after_the_record_is_reported_as_drift_never_refused(self):
+        self.stage("doc-style.md", self.STYLE)
+        self.stage("glossary.md", "# G\n")
+        self.stage("structure.md", "# S\n")
+        self.dogen_cli("context", "record")
+        (self.repo / ".dogen" / "context" / "glossary.md").write_text("# G edited\n", encoding="utf-8")
+        (self.repo / ".dogen" / "context" / "doc-gaps.md").write_text("# by hand\n", encoding="utf-8")
+        proc = self.dogen_cli("context", "show", "--json")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertTrue(payload["artifacts"]["glossary.md"]["drifted"])
+        self.assertFalse(payload["artifacts"]["doc-style.md"]["drifted"])
+        self.assertEqual(
+            payload["artifacts"]["doc-gaps.md"],
+            {"present": True, "recorded": False, "sha256": hashlib.sha256(b"# by hand\n").hexdigest(), "drifted": False},
+        )
+        self.assertEqual(payload["next"], "plan")
+        text = self.dogen_cli("context", "show").stdout
+        self.assertIn("drifted: glossary.md", text)
+        self.assertIn("unrecorded: doc-gaps.md", text)
+
+    def test_record_refuses_a_stray_file_in_the_staging_directory(self):
+        self.stage("doc-style.md", self.STYLE)
+        (self.repo / ".dogen" / "staging" / "_context" / "evil.md").write_text("x\n", encoding="utf-8")
+        proc = self.dogen_cli("context", "record")
+        self.assertEqual(proc.returncode, 2)
+        refusal = self.one_refusal(proc)
+        self.assertEqual(refusal["error"], "bad_target")
+        self.assertIn("evil.md", refusal["detail"])
+        self.assertFalse((self.repo / ".dogen" / "context").exists())
+
+    def test_a_damaged_manifest_refuses_bad_target_and_names_the_file(self):
+        self.stage("doc-style.md", self.STYLE)
+        self.dogen_cli("context", "record")
+        (self.repo / ".dogen" / "context" / "manifest.json").write_text("{not json", encoding="utf-8")
+        proc = self.dogen_cli("context", "show")
+        self.assertEqual(proc.returncode, 2)
+        refusal = self.one_refusal(proc)
+        self.assertEqual(refusal["error"], "bad_target")
+        self.assertIn("manifest.json", refusal["detail"])
+
+    def test_record_holds_the_repo_wide_lock_and_refuses_busy_when_held(self):
+        self.stage("doc-style.md", self.STYLE)
+        lock = self.repo / ".dogen" / "staging" / "lock"
+        fd = os.open(str(lock), os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            proc = self.dogen_cli("context", "record")
+        finally:
+            os.close(fd)
+        self.assertEqual(proc.returncode, 5)
+        self.assertEqual(self.one_refusal(proc)["error"], "busy")
+        self.assertFalse((self.repo / ".dogen" / "context").exists())
+
+    def test_a_refused_commit_is_retried_not_noop_ed(self):
+        # A hook rejects the first commit; the placed files stay on disk beside
+        # the manifest. The no-op test reads HEAD, not disk, so the retry
+        # commits rather than reporting "already recorded".
+        hooks = self.repo / ".git" / "hooks"
+        hooks.mkdir(exist_ok=True)
+        hook = hooks / "pre-commit"
+        hook.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+        hook.chmod(0o755)
+        self.stage("doc-style.md", self.STYLE)
+        head = self.git("rev-parse", "HEAD").stdout.strip()
+        proc = self.dogen_cli("context", "record")
+        self.assertEqual(proc.returncode, 2)
+        refusal = self.one_refusal(proc)
+        self.assertEqual(refusal["error"], "bad_write_path")
+        self.assertEqual(refusal["next"], "record")
+        self.assertEqual(self.git("rev-parse", "HEAD").stdout.strip(), head)
+        self.assertTrue((self.repo / ".dogen" / "staging" / "_context" / "doc-style.md").exists())
+        hook.unlink()
+        proc = self.dogen_cli("context", "record")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertNotEqual(self.git("rev-parse", "HEAD").stdout.strip(), head)
+
+    def test_a_context_commit_in_history_leaves_a_units_verify_clean(self):
+        self.stage("doc-style.md", self.STYLE)
+        self.dogen_cli("context", "record")
+        self.assertEqual(self.declare("demo").returncode, 0)
+        self.assertEqual(self.dogen_cli("signoff", "demo").returncode, 0)
+        self.stage("glossary.md", "# G\n")
+        self.assertEqual(self.dogen_cli("context", "record").returncode, 0)
+        proc = self.dogen_cli("verify", "demo", "--json")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["verdict"], "ok")
+
+    def test_every_context_verb_answers_one_line_and_never_a_traceback(self):
+        for argv in (["context", "show"], ["context", "record"], ["context", "stage", "x", "--body-file", "-"]):
+            with self.subTest(argv=argv):
+                proc = self.dogen_cli(*argv, stdin="")
+                self.assertNotIn("Traceback", proc.stderr)
+                lines = [l for l in (proc.stdout + proc.stderr).splitlines() if l.strip()]
+                self.assertEqual(len(lines), 1, lines)
+
+
 # CR-06: this block used to sit at line 4567 of a 5378-line file, two thirds of
 # the way up. ``unittest.main()`` calls ``sys.exit()``, so everything below it —
 # the entire U-11 / V1–V19 block, this phase's headline feature — was never
@@ -7366,7 +7676,7 @@ class TestPhase17In05HashInequalityIsNotContainment(unittest.TestCase):
 #: being fully defined (an early ``sys.exit``, a syntax error swallowed by a
 #: conditional import, a truncated file), not that tests were removed — removing
 #: tests is an edit to this constant in the same commit.
-EXPECTED_MIN_TESTS = 490
+EXPECTED_MIN_TESTS = 508
 
 
 
