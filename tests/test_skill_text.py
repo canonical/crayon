@@ -899,6 +899,22 @@ class TestS05PlanThroughVerbs(unittest.TestCase):
                 "dogen-plan must not name %s; it does not hold it" % tool,
             )
 
+    def test_s05_the_context_is_read_through_the_tool_and_bootstrapped_once(self):
+        # The plan skill grounds on `dogen context show`, not on a directory
+        # listing, and when the context is missing it offers the three-way
+        # choice — including the onboarding skill and the ephemeral reference —
+        # rather than authoring `.dogen/context/` itself.
+        assert_contains(self, self.body, "dogen context show --json", "dogen-plan")
+        assert_contains(self, self.body, "/dogen-onboard", "dogen-plan")
+        assert_contains(self, self.body, "/dogen-fetch", "dogen-plan")
+        assert_contains(self, self.body, "references/context-bootstrap.md", "dogen-plan")
+        for name in ("doc-style.md", "glossary.md", "structure.md", "code-to-docs-map.md", "doc-gaps.md"):
+            with self.subTest(artefact=name):
+                assert_contains(self, self.body, "`%s`" % name, "dogen-plan")
+        bootstrap = (SKILLS_ROOT / "dogen-plan" / "references" / "context-bootstrap.md").read_text(encoding="utf-8")
+        assert_contains(self, bootstrap, "Persist nothing", "context-bootstrap.md")
+        assert_omits(self, bootstrap, "dogen context stage", "context-bootstrap.md")
+
     def test_s05_the_amendment_and_retire_verbs_are_named(self):
         assert_contains(self, self.body, "dogen unit edit", "dogen-plan")  # J3
         assert_contains(self, self.body, "--re-sign", "dogen-plan")
@@ -1414,9 +1430,9 @@ LEGACY_TOKENS = (
 )
 
 #: The vacuous-pass guard for this section: the five skills ship this many
-#: reference files between them (5 plan, 8 write, 3 review, 4 onboard, 5 fetch),
+#: reference files between them (6 plan, 8 write, 3 review, 4 onboard, 5 fetch),
 #: and a mis-rooted glob must not pass by scanning nothing.
-EXPECTED_REFERENCE_COUNT = 25
+EXPECTED_REFERENCE_COUNT = 26
 
 
 def reference_files():

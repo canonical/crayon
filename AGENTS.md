@@ -139,8 +139,9 @@ skills/                            ← the human-facing surface
 │                                     structure-stance.md, style-stance.md (stances mirrored)
 ├── dogen-plan/
 │   ├── SKILL.md                   ← declare + HITL signoff; Socratic intake, routes on Diátaxis
-│   └── references/                ← actionable-intake.md, explanation-intake.md,
-│                                     reference-intake.md, routing.md, socratic-technique.md
+│   └── references/                ← actionable-intake.md, context-bootstrap.md,
+│                                     explanation-intake.md, reference-intake.md, routing.md,
+│                                     socratic-technique.md
 ├── dogen-write/
 │   ├── SKILL.md                   ← the SOLE writer: drafts from sources or from a step walk
 │   └── references/                ← episode-taxonomy.md, explanation-stance.md,

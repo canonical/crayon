@@ -67,9 +67,12 @@ bypass it, and you never need to: every refusal names the verb that clears it.
 2. Confirm the TA wants to declare a NEW unit. If they want to draft or review an
    existing unit, route them to dogen-write or dogen-review. If their ask is an
    assessment ("does this need docs?"), take the triage fork in step 1 instead.
-3. Ground yourself before questioning: check `.dogen/context/` for landed artifacts
-   (`doc-gaps.md`, `structure.md`, `doc-style.md`, `glossary.md`), skim the repo's
-   existing docs for conventions, and read whatever change or feature the TA points at.
+3. Ground yourself before questioning: run `dogen context show --json` and read the
+   recorded artefacts in `.dogen/context/` (`doc-style.md`, `glossary.md`,
+   `structure.md`, and `code-to-docs-map.md` and `doc-gaps.md` when present); when
+   the routed `next` is `onboard`, offer the TA the bootstrap choice ONCE (step 1).
+   Then skim the repo's existing docs for conventions, and read whatever change or
+   feature the TA points at.
 4. Open the Socratic intake with the Why. Ask exactly one question per turn.
 5. Draw out the judgment fields first (reader's problem, then audience), then collect
    the mechanical fields directly (unit id, title, source paths, target placement).
@@ -78,9 +81,11 @@ bypass it, and you never need to: every refusal names the verb that clears it.
 </quick_start>
 
 <pipeline>
-dogen-plan -> dogen-write -> dogen-review
+dogen-onboard / dogen-fetch -> .dogen/context/ -> dogen-plan -> dogen-write -> dogen-review
 
-This skill is the declare+signoff stage. It consumes the TA's answers and records
+This skill is the declare+signoff stage. The context the two skills before it record
+is what it grounds itself in; when that context is missing it offers the TA a choice
+rather than inventing one. It consumes the TA's answers and records
 them as events; the tool's commit seam owns both transitions. On success it hands off
 to dogen-write, which branches internally on the declared direction:
 reference/explanation, or tutorial/how-to via the evidence-walk branch.
@@ -91,13 +96,38 @@ reference/explanation, or tutorial/how-to via the evidence-walk branch.
 Confirm the TA wants to declare a new unit. Before any questioning, ground yourself
 in the prior art with the read-only tools:
 
-- Read any landed context artifacts in `.dogen/context/`: `doc-gaps.md` proposes
-  prioritized units; `structure.md` maps the docs topology; `doc-style.md` and
-  `glossary.md` set voice and vocabulary; `code-to-docs-map.md` links code areas
-  to doc pages — grep it rather than reading it whole.
+- Run `dogen context show --json`. Its payload says which of the five context
+  artefacts are present, which are recorded, and which have `drifted` since their
+  record; its `next` is `onboard` while any of `doc-style.md`, `glossary.md` or
+  `structure.md` is absent, and `plan` when the context is there.
+- Read the recorded artefacts in `.dogen/context/`: `doc-gaps.md` proposes
+  prioritized units; `structure.md` maps the docs topology and tags each
+  code-versus-docs gap `[CODE↔DOCS GAP]`; `doc-style.md` and `glossary.md` set voice
+  and vocabulary; `code-to-docs-map.md` links code areas to doc pages — grep it
+  rather than reading it whole. A `drifted` artefact was edited by hand after its
+  record: read it as it is, and mention the drift once.
 - Skim the repo's existing documentation for conventions and the nearest
   neighbouring pages to the proposed unit.
 - Read any change, feature description, or source files the TA points at.
+
+**Context bootstrap (when `next` is `onboard`).** One or more of the three onboarding
+artefacts is missing. Surface it ONCE, with `AskUserQuestion`, offering three answers:
+
+- **I'll add them** — the TA supplies the missing files, by hand or through
+  `dogen context stage <name> --body-file F` and `dogen context record`. Pause the
+  intake until they are there, then re-run `dogen context show --json` and ground.
+- **Run /dogen-onboard first** — STOP and route the TA to `/dogen-onboard`, which walks
+  the docs and records the three artefacts through the tool; the declaration starts
+  again once it has. Material outside the repository is `/dogen-fetch`'s case instead.
+- **Ground this intake dynamically** — load `references/context-bootstrap.md` and
+  follow it: crawl the unit's own area of the code and docs IN MEMORY, for this one
+  intake, persisting nothing. Nothing is written to `.dogen/context/` and nothing is
+  committed; the next session grounds again from scratch, and says so.
+
+Whichever answer, this skill never authors a context artefact itself: `.dogen/context/`
+is written by the tool on `dogen context record`, and only the onboarding and fetch
+skills hand it artefacts to record. When the artefacts are already present, skip the
+ask and ground from them directly.
 
 Do not start the dialogue until you have looked at what they want to document.
 
@@ -330,8 +360,11 @@ one), and act on the routing row for `next`.
 <must>
 - Open every session with `dogen version --json` then `dogen show <id> --json`, and
   act on the routing row for `next`.
-- Ground yourself first: check `.dogen/context/` artifacts and the repo's existing
-  docs conventions before the intake.
+- Ground yourself first: `dogen context show --json`, the recorded `.dogen/context/`
+  artefacts and the repo's existing docs conventions, before the intake.
+- When the context is missing (`next` is `onboard`), offer the TA the bootstrap choice
+  once — supply the files, run `/dogen-onboard`, or ground dynamically — and persist
+  nothing from a dynamic crawl.
 - Ask exactly one question per turn during the Socratic intake.
 - Draw out the judgment fields (reader problem, audience) before recording anything.
 - Propose every field the repo can answer; ask only for what it cannot.
@@ -354,6 +387,9 @@ one), and act on the routing row for `next`.
 - Never invoke dogen-write before `dogen signoff` exits 0.
 - Never hand-edit the ledger, compose `unit.md` yourself, or write any file — this
   skill holds no write-capable tool and needs none.
+- Never author or persist a `.dogen/context/` artefact — the onboarding and fetch skills
+  hand them to the tool; a dynamic crawl stays in memory and must not outlast the
+  session.
 - Never retire another unit without the TA's explicit yes.
 - Never draft over an existing page — `target_exists` routes to the edits flow.
 - Never draft, review, push, or build — those belong to dogen-write/dogen-review.
@@ -363,7 +399,10 @@ one), and act on the routing row for `next`.
 
 <success_criteria>
 - [ ] The session opened on `dogen version --json` and `dogen show <id> --json`.
-- [ ] Prior art was consulted first (`.dogen/context/` artifacts + existing docs).
+- [ ] Prior art was consulted first (`dogen context show --json`, the recorded
+      `.dogen/context/` artefacts, existing docs).
+- [ ] When the context was missing, the TA was offered the bootstrap choice once, and
+      any dynamic crawl persisted nothing.
 - [ ] The intake ran one question at a time, drawing out intent and audience first.
 - [ ] Every derivable field was proposed, not asked.
 - [ ] The whole ceremony was confirmed once.
