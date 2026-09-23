@@ -563,7 +563,9 @@ its `id`, `text`, `mode`, `stateful`, `status` (the answering verdict, or `unres
 this, a session that had not proposed the plan could learn a step's text and marker only by
 reading the ledger. The same revision rewords `internal_error`'s `hint` to name the route its
 routing row already prescribed — `show`, then the refused command unchanged; `error`, `next`
-and the exit code do not move. Both changes are additive under `contract: 1` by the reading
+and the exit code do not move. `unsteered`'s `hint` likewise leads with the STOP its row
+prescribes — ask the author what should change, then `steer` with their words — instead of
+the `steer` command alone. Both changes are additive under `contract: 1` by the reading
 above: no event kind, reason or enum member changes, the ledger bytes are untouched, and the
 two numbers above and every SKILL.md's metadata stay as they are.
 

@@ -156,6 +156,9 @@ The marker is conversational (no persisted field); the backstop is the safety ne
 so safety never depends on persistence. A step the TA will not consent to can be
 switched to TA-runs.
 
+Ask every time: the gate holds on resume and in a fresh session, and "walk it" is not
+a yes to a stateful step.
+
 "TA-runs" is `mode: ta` on the wire; the marker itself is the plan's `stateful` flag.
 
 ## Workspace lifecycle
