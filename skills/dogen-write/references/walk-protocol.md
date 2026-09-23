@@ -183,9 +183,13 @@ dogen show "$UNIT_ID" --json
 ```
 
 The step tally names every unresolved step by id, in the form `passed 4 · skipped 1
-(<reason>) · deviated 0 · unresolved 1: <id>`. Quote it as printed. When a plan exists
-with unresolved steps, offer resume as the **default**: show that tally, trust every
-resolved step, and continue at the first unresolved one.
+(<reason>) · deviated 0 · unresolved 1: <id>`. Quote it as printed. Below the tally,
+`show` lists the recorded plan itself — one row per step with its id, mode, stateful
+marker, status and text; `--json` carries the same rows as `steps.plan`. That listing
+**is** the plan in a session that did not propose it: never re-propose or re-record it,
+and never read the ledger for it. When a plan exists with unresolved steps, offer resume
+as the **default**: show that tally, trust every resolved step, and continue at the first
+unresolved one — a step marked stateful still takes its just-in-time permission gate.
 
 A step whose text changed on a later plan carries no evidence forward, because the
 tool's own computed hash no longer matches the one the evidence answered — so "only
