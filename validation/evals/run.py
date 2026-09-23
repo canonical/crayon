@@ -90,6 +90,19 @@ def git_head():
         return "unknown"
 
 
+def scripted(replies):
+    """A stub responder that gives ``replies`` in order, then repeats the last."""
+    replies = list(replies)
+    state = {"next": 0}
+
+    def respond(spec, messages, tools):
+        reply = replies[min(state["next"], len(replies) - 1)]
+        state["next"] += 1
+        return reply
+
+    return respond
+
+
 def stub_judge(spec, messages, tools):
     return '{"reason": "dry-run stub judge", "pass": true, "score": 5}'
 
@@ -362,7 +375,7 @@ def main(argv=None):
             oracle = lanes.LANES[name]["oracle"]
             if args.dry_run:
                 def provider_for(case, oracle=oracle):
-                    return StubProvider(lambda s, m, t, case=case: oracle(case))
+                    return StubProvider(scripted(oracle(case)))
             else:
                 def provider_for(case, paid=paid):
                     return paid

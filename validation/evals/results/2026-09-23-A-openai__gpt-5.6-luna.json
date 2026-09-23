@@ -1,0 +1,291 @@
+{
+  "meta": {
+    "lane": "A",
+    "lane_title": "skill selection",
+    "model": "openai/gpt-5.6-luna",
+    "provider_pin": {
+      "order": [
+        "azure"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-23",
+    "dogen_version": "0.2.0",
+    "repo_head": "de7a55e",
+    "skills_sha256": "203509e46134815b712093a95a5b311a228ab15c93adedc5d17952681605007b",
+    "total_cases": 15,
+    "passed": 15,
+    "failed": 0,
+    "errors": 0,
+    "pass_rate": 1.0,
+    "cost_usd": 0.003319,
+    "tokens": {
+      "in": 14681,
+      "out": 319
+    },
+    "truncated": 0,
+    "cached_cases": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null
+  },
+  "cases": [
+    {
+      "id": "A-01",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000207,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 992,
+        "out": 7
+      },
+      "truncated": false,
+      "latency_ms": 1218
+    },
+    {
+      "id": "A-02",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000202,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 969,
+        "out": 7
+      },
+      "truncated": false,
+      "latency_ms": 2093
+    },
+    {
+      "id": "A-03",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000204,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 977,
+        "out": 7
+      },
+      "truncated": false,
+      "latency_ms": 1106
+    },
+    {
+      "id": "A-04",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000206,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 981,
+        "out": 8
+      },
+      "truncated": false,
+      "latency_ms": 1262
+    },
+    {
+      "id": "A-05",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000233,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 984,
+        "out": 30
+      },
+      "truncated": false,
+      "latency_ms": 1878
+    },
+    {
+      "id": "A-06",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000241,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 978,
+        "out": 38
+      },
+      "truncated": false,
+      "latency_ms": 1988
+    },
+    {
+      "id": "A-07",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000203,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 975,
+        "out": 7
+      },
+      "truncated": false,
+      "latency_ms": 1174
+    },
+    {
+      "id": "A-08",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000224,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 975,
+        "out": 24
+      },
+      "truncated": false,
+      "latency_ms": 1779
+    },
+    {
+      "id": "A-09",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000205,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 977,
+        "out": 8
+      },
+      "truncated": false,
+      "latency_ms": 985
+    },
+    {
+      "id": "A-10",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000238,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 979,
+        "out": 35
+      },
+      "truncated": false,
+      "latency_ms": 1801
+    },
+    {
+      "id": "A-11",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000205,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 985,
+        "out": 7
+      },
+      "truncated": false,
+      "latency_ms": 1073
+    },
+    {
+      "id": "A-12",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000252,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 983,
+        "out": 46
+      },
+      "truncated": false,
+      "latency_ms": 1870
+    },
+    {
+      "id": "A-13",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000258,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 984,
+        "out": 51
+      },
+      "truncated": false,
+      "latency_ms": 1620
+    },
+    {
+      "id": "A-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000241,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 970,
+        "out": 39
+      },
+      "truncated": false,
+      "latency_ms": 1752
+    },
+    {
+      "id": "A-15",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.0002,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 972,
+        "out": 5
+      },
+      "truncated": false,
+      "latency_ms": 1816
+    }
+  ]
+}

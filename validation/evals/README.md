@@ -20,8 +20,40 @@ Everything is stdlib Python. Models are reached through OpenRouter with the key 
 | Lane | What it asks | Live turns | Graded by | Status |
 |---|---|---|---|---|
 | A | which skill handles this ask? | 1, no tools | exact skill name | built, 15 cases |
-| B | given this `dogen` output, what is the next action? | 1, replayed history | tool-call regex, stop text, 4 judged | planned |
+| B | given this `dogen` output, what is the next action? | until the first consequential action | that action, the calls on the way, 4 judged | built, 31 cases |
 | C | a whole journey in a real sandbox with a simulated author | many | ledger, `score.py audit`, transcript, 1 judged page | planned |
+
+## How lane B works
+
+A case invokes one skill (`/dogen-review cfg`) and replays a history: the tool calls a model
+made and what `dogen` printed back. Those outputs are never typed by hand.
+`fixtures/states.sh` builds each state in a temporary repository using `tests/lib.sh` and the
+real `dogen.py`, and records its output. `record_states.py` folds that output into
+`cases/decision/states.json`, and the gate re-records it. A change in the tool's output
+therefore turns the gate red; lane B never replays stale bytes. A handful of refusals that
+cannot be reached without breaking a repository are written inline in their cases, using
+`dogen.py`'s own wording.
+
+After the history, the model acts. Looking costs nothing and does not end the episode. That
+covers:
+
+- reading, globbing and grepping the toyq fixture and the installed skills;
+- the read-only `dogen` calls, answered as recorded;
+- inspection commands;
+- staging-directory setup and waiting.
+
+The first consequential action ends the episode and is what the case grades:
+- a `dogen` verb that records something;
+- any other command;
+- a write;
+- a question to the author;
+- a turn with no tool call.
+
+Every case carries two replies:
+- an `oracle`: a correct run, which must pass;
+- a `foil`: a plausible wrong run, which must fail.
+
+Both are enforced offline, so an assertion that would pass anything cannot land.
 
 ## Running
 
@@ -47,7 +79,8 @@ A clean, complete, paid run writes a slim summary to `results/<date>-<lane>-<mod
 never overwrites: a second run on the same day gets `-2`. Those files are committed.
 
 Everything else goes to the gitignored `results/raw/`, with the reason in the file name: `dry`,
-`partial` (a `--filter`), or `errored` (an error or a budget stop). That keeps a partial run from
+`partial` (a `--filter`), `errored` (an error or a budget stop), or `regrade` (every answer came
+from the cache). That keeps a partial run from
 ever standing in for a baseline. Each run also leaves the full turns of every case in
 `results/raw/*.turns.jsonl`.
 
@@ -57,9 +90,14 @@ old one.
 ## The roster and the spend cap
 
 `models.json` holds the candidates, the gate model, the pinned judge and the simulated author.
-Every model is pinned to one first-party backend (`provider.order` plus
-`allow_fallbacks: false`), so the score belongs to one model on one backend. The judge and the
-author are never candidates.
+Every model is pinned to one backend (`provider.order` plus `allow_fallbacks: false`), so the
+score belongs to one model on one backend. Every pin also sends `zdr: true`, so only Zero Data
+Retention endpoints serve these requests; the list of compliant endpoints is at
+`https://openrouter.ai/api/v1/endpoints/zdr`. The judge and the author are never candidates.
+
+Before a model's cases run, one tiny call checks that it can be reached on its pin. A model that
+cannot be reached is skipped with one line, rather than failing every case with the same
+error.
 
 `caps.sweep_usd` caps a whole invocation. `caps.per_model_usd` caps each model, the judge
 included. The cap is checked before every paid call. With `--jobs N`, the overshoot is at most
@@ -71,11 +109,18 @@ Each case must be answerable from what its lane shows the model. For Lane A that
 descriptions and nothing else.
 
 Every case has an oracle, a known-good reply. `tests/test_evals.py` asserts that each case's
-oracle passes its own assertions, and that every other skill fails a Lane A case. So a broken
-expectation turns the gate red, not a model's score.
+oracle passes its own assertions. It also asserts that every other skill fails a Lane A case,
+and that every Lane B case's `foil` fails. So a broken or vacuous expectation turns the gate red,
+not a model's score.
 
-Prefer the deterministic kinds (`skill_choice`, `tool_call`, `no_tool_call`, `text_re`,
-`not_text_re`, `not_prescribed`). Use `judge` only for a judgement call a regex cannot make.
+When the tool's output changes, re-record the states with
+`python3 validation/evals/record_states.py` and review the diff to `states.json`. Do this before
+touching any case.
+
+Prefer the deterministic kinds:
+- `skill_choice`, `tool_call`, `no_tool_call`, `text_re`, `not_text_re` and `not_prescribed`;
+- for an episode: `decisive`, `asks_user`, `bash_sequence` and `before`;
+- `any_of`, for when more than one action is right. Use `judge` only for a judgement call a regex cannot make.
 `not_prescribed` forbids *telling* the user to run a command or running it; mentioning the
 command in a warning is not a failure.
 
