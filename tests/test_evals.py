@@ -613,6 +613,32 @@ class TestLaneBCases(unittest.TestCase):
                 out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
                 self.assertFalse(out["passed"], "the foil passed: the assertions are vacuous")
 
+    def test_planted_runs_grade_as_the_skill_reads(self):
+        """Right runs a strict regex once failed, and wrong runs a loose one would pass."""
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        cases = dict((case["id"], case) for case in lanes.load_b())
+        draft = cases["B-27"]["resolved"]["history"][-1]["cmd"]
+
+        def bash(command):
+            return {"content": "", "tool_calls": [
+                {"name": "Bash", "arguments": {"command": command}}]}
+
+        planted = [
+            ("B-27", [bash("dogen show cfg --json && " + draft)], True),
+            ("B-27", [bash("dogen show cfg"), bash("sleep 2; " + draft + " --json")], True),
+            ("B-27", [bash("dogen show cfg"), bash(draft + " --model x")], False),
+            ("B-18", [bash("sleep 5 && " + draft)], True),
+            ("B-08", [bash("python3 -m toyq.cli init 2>&1 | head -5")], False),
+            ("B-08", [bash("python3 -c \"print(open('.dogen/units/install/ledger.jsonl').read())\"")],
+             False),
+        ]
+        for case_id, replies, passes in planted:
+            with self.subTest(case=case_id, replies=replies):
+                tr = lanes.run_b(cases[case_id], SPEC, StubProvider(run.scripted(replies)), ctx)
+                out = grade.grade(cases[case_id]["assert"], tr, {"judge": ctx["judge"]})
+                self.assertEqual(out["passed"], passes, out)
+
     def test_lane_b_covers_all_five_skills_and_every_group(self):
         cases = lanes.load_b()
         self.assertEqual(set(c["skill"] for c in cases), set(grade.SKILL_NAMES))

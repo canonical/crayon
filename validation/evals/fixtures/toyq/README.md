@@ -5,8 +5,10 @@ time with a configurable retry policy.
 
 ## Install
 
+From a checkout of this repository:
+
 ```bash
-pip install toyq
+python3 -m pip install .
 toyq init
 ```
 
