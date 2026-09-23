@@ -93,7 +93,7 @@
       "skill": "dogen-write",
       "ask": "cfg",
       "opening": "signed",
-      "max_turns": 14,
+      "max_turns": 24,
       "why": "draft: author the page into the unit's own staging directory, never into docs/",
       "assert": [
         {

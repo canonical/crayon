@@ -40,7 +40,7 @@
       "id": "minimax/minimax-m3",
       "role": "candidate",
       "max_tokens": 16000,
-      "provider": {"order": ["novita/fp8"], "allow_fallbacks": false, "zdr": true},
+      "provider": {"order": ["together"], "allow_fallbacks": false, "zdr": true},
       "price_per_mtok": [0.30, 1.20]
     },
     {

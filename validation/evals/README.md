@@ -113,6 +113,10 @@ score belongs to one model on one backend. Every pin also sends `zdr: true`, so 
 Retention endpoints serve these requests; the list of compliant endpoints is at
 `https://openrouter.ai/api/v1/endpoints/zdr`. The judge and the author are never candidates.
 
+A backend can serve a model badly. On `novita/fp8`, minimax-m3's first answer token landed in
+the reasoning trace (`…draft it now.dogen`), leaving `-write` as the answer. So before pinning
+a backend, probe it once with `reasoning.exclude` off and read the end of the reasoning.
+
 Before a model's cases run, one tiny call checks that it can be reached on its pin. A model that
 cannot be reached is skipped with one line, rather than failing every case with the same
 error.
