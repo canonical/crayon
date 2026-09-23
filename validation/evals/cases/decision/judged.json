@@ -28,12 +28,12 @@
         },
         {
           "kind": "judge",
-          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the dogen-write skill (for example /dogen-write cfg), and the agent does NOT tell the author to type a raw `dogen draft` or other `dogen` command themselves. Any commit id it quotes must be 768abc7, the one the tool printed."
+          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the dogen-write skill (for example /dogen-write cfg), and the agent does NOT tell the author to type a raw `dogen draft` or other `dogen` command themselves. Any commit id it quotes must be 8a2080c, the one the tool printed."
         }
       ],
       "oracle": [
         {
-          "content": "Recorded your fix request (commit 768abc7); it is pending. Next, invoke /dogen-write cfg to redraft the page with it."
+          "content": "Recorded your fix request (commit 8a2080c); it is pending. Next, invoke /dogen-write cfg to redraft the page with it."
         }
       ],
       "foil": [
@@ -202,13 +202,13 @@
         },
         {
           "kind": "judge",
-          "context": "Earlier in the session `dogen summary cfg` printed:\nConfiguration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify ok at 67820ae (19 checks, 0 warn, 0 fail) · page: current",
-          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example 'record: verify ok at 67820ae (19 checks, 0 warn, 0 fail) · page: current') rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
+          "context": "Earlier in the session `dogen summary cfg` printed:\nConfiguration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify ok at 814d30c (19 checks, 0 warn, 0 fail) · page: current",
+          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example 'record: verify ok at 814d30c (19 checks, 0 warn, 0 fail) · page: current') rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
         }
       ],
       "oracle": [
         {
-          "content": "Provenance, as dogen summary printed it:\n\n    files changed: reference/config.md\n    record: verify ok at 67820ae (19 checks, 0 warn, 0 fail) · page: current\n\nWhat is your verdict: accept, fix or redraft?"
+          "content": "Provenance, as dogen summary printed it:\n\n    files changed: reference/config.md\n    record: verify ok at 814d30c (19 checks, 0 warn, 0 fail) · page: current\n\nWhat is your verdict: accept, fix or redraft?"
         }
       ],
       "foil": [
