@@ -11,6 +11,12 @@ significance still have one order a reader can predict.
 
 ### Added
 
+- `dogen show` lists the recorded step plan under the step tally — each step's id, mode,
+  stateful marker, status and text — and `show --json` / `summary --json` carry the same rows
+  as `steps.plan`. A session that did not propose a tutorial or how-to plan can now resume the
+  walk from the read surface instead of the ledger; `dogen-write` says so, and gains a
+  must-not against probing a step's command outside the capture recipe. Additive under
+  contract 1, recorded in `docs/contract.md` §5.10.
 - `dogen context stage`, `dogen context record` and `dogen context show` — the repository's
   context artefacts (`doc-style.md`, `glossary.md`, `structure.md`, `code-to-docs-map.md`,
   `doc-gaps.md`) now reach `.dogen/context/` through the tool. `stage` takes one artefact's text
@@ -60,6 +66,10 @@ significance still have one order a reader can predict.
 
 ### Changed
 
+- `internal_error`'s `hint` names the whole route its routing row prescribes: run `dogen show`
+  on the unit, then re-run the same command unchanged and report the detail. The old hint
+  said only "re-run … and report", and models followed it past the `show`. `error`, `next`
+  and exit 6 are unchanged.
 - The source file is `dogen.py`; the installed command is still `dogen`. `install.sh` copies or
   links it under that name, and every in-tree pin names `dogen.py`.
 - The surface is harness-agnostic: no agent harness is named, detected or preferred in the

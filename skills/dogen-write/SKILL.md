@@ -151,9 +151,13 @@ itself. Reach for it only when the author has said so; it is a record, not a byp
 Load `references/walk-protocol.md` now for the evidence contract, capture mechanics,
 consent, workspace, and resume detail.
 
-**Resume:** the step tally in `dogen show` names every unresolved step. Offer resume
-as the default: show the tally as the tool printed it, trust every resolved step, and
-continue at the first unresolved one. The workspace under
+**Resume:** the step tally in `dogen show` names every unresolved step, and below it
+`show` lists the recorded plan — each step's id, mode, stateful marker, status and
+text. In a session that did not propose the plan, that listing IS the plan: never
+re-propose or re-record it, and never read the ledger for it. Offer resume as the
+default: show the tally as the tool printed it, trust every resolved step, and
+continue at the first unresolved one; a step marked stateful still takes its
+just-in-time permission gate before it runs. The workspace under
 `.dogen/staging/<id>/scratch/` persists across sessions.
 
 **Investigate and propose ONE annotated plan.** Read the unit's declared sources and
@@ -480,6 +484,8 @@ applies. Say so before a step prints anything the author would not publish.
 - Never mark a step resolved by narration; only a recorded capture resolves one.
 - Never run an `agent` step in the real repo cwd; they are cwd-pinned to the
   throwaway workspace.
+- Never run any part of a step's command outside the capture recipe — no probe, no
+  `--help`, no dry run in the repo; a probe of a stateful step is the step.
 - Never claim the evidence gate is tamper-proof, and never report a resolved step as
   executed or verified.
 </must_not>

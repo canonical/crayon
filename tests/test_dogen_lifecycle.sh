@@ -560,6 +560,17 @@ print(",".join(sorted(json.load(sys.stdin)["steps"][0])))
         "$(grep -c 'install the tool' ".dogen/units/walk-unit/unit.md" || true)"
     assert_eq "the unit is not plan_stale after planning steps" "false" \
         "$(derived_field walk-unit plan_stale)"
+    # The read surface lists the recorded plan, so a session that did not
+    # propose it walks it from `show` rather than from the ledger.
+    assert_contains "show lists each recorded step with its text" \
+        "$("$DOGEN" show walk-unit 2>&1)" \
+        "1. one [agent] — unresolved: install the tool"
+    assert_eq "show --json carries the plan's texts" \
+        "install the tool|run the check|publish the result" \
+        "$("$DOGEN" show walk-unit --json | python3 -c '
+import json, sys
+print("|".join(row["text"] for row in json.load(sys.stdin)["steps"]["plan"]))
+')"
     assert_eq "the commit names the ledger alone" \
         ".dogen/units/walk-unit/ledger.jsonl" \
         "$(git show --stat --format= --name-only HEAD | sed '/^$/d')"
