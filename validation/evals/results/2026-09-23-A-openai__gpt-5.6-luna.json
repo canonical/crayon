@@ -13,17 +13,17 @@
     "judge": "anthropic/claude-sonnet-5",
     "date": "2026-09-23",
     "dogen_version": "0.2.0",
-    "repo_head": "de7a55e",
-    "skills_sha256": "203509e46134815b712093a95a5b311a228ab15c93adedc5d17952681605007b",
+    "repo_head": "d2026c6",
+    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
     "total_cases": 15,
     "passed": 15,
     "failed": 0,
     "errors": 0,
     "pass_rate": 1.0,
-    "cost_usd": 0.003319,
+    "cost_usd": 0.003343,
     "tokens": {
       "in": 14681,
-      "out": 319
+      "out": 340
     },
     "truncated": 0,
     "cached_cases": 0,
@@ -47,7 +47,7 @@
         "out": 7
       },
       "truncated": false,
-      "latency_ms": 1218
+      "latency_ms": 3885
     },
     {
       "id": "A-02",
@@ -64,7 +64,7 @@
         "out": 7
       },
       "truncated": false,
-      "latency_ms": 2093
+      "latency_ms": 1435
     },
     {
       "id": "A-03",
@@ -81,7 +81,7 @@
         "out": 7
       },
       "truncated": false,
-      "latency_ms": 1106
+      "latency_ms": 1857
     },
     {
       "id": "A-04",
@@ -98,41 +98,41 @@
         "out": 8
       },
       "truncated": false,
-      "latency_ms": 1262
+      "latency_ms": 1646
     },
     {
       "id": "A-05",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000233,
+      "cost": 0.000236,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 984,
-        "out": 30
+        "out": 33
       },
       "truncated": false,
-      "latency_ms": 1878
+      "latency_ms": 1663
     },
     {
       "id": "A-06",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000241,
+      "cost": 0.000244,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 978,
-        "out": 38
+        "out": 40
       },
       "truncated": false,
-      "latency_ms": 1988
+      "latency_ms": 7584
     },
     {
       "id": "A-07",
@@ -149,58 +149,58 @@
         "out": 7
       },
       "truncated": false,
-      "latency_ms": 1174
+      "latency_ms": 1121
     },
     {
       "id": "A-08",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000224,
+      "cost": 0.000237,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 975,
-        "out": 24
+        "out": 35
       },
       "truncated": false,
-      "latency_ms": 1779
+      "latency_ms": 2487
     },
     {
       "id": "A-09",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000205,
+      "cost": 0.000235,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 977,
-        "out": 8
+        "out": 33
       },
       "truncated": false,
-      "latency_ms": 985
+      "latency_ms": 3484
     },
     {
       "id": "A-10",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000238,
+      "cost": 0.000237,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 979,
-        "out": 35
+        "out": 34
       },
       "truncated": false,
-      "latency_ms": 1801
+      "latency_ms": 2582
     },
     {
       "id": "A-11",
@@ -217,44 +217,27 @@
         "out": 7
       },
       "truncated": false,
-      "latency_ms": 1073
+      "latency_ms": 2613
     },
     {
       "id": "A-12",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000252,
+      "cost": 0.000248,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 983,
-        "out": 46
+        "out": 43
       },
       "truncated": false,
-      "latency_ms": 1870
+      "latency_ms": 1920
     },
     {
       "id": "A-13",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.000258,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 984,
-        "out": 51
-      },
-      "truncated": false,
-      "latency_ms": 1620
-    },
-    {
-      "id": "A-14",
       "passed": true,
       "error": null,
       "score": 1.0,
@@ -264,11 +247,28 @@
         "Azure"
       ],
       "tokens": {
-        "in": 970,
-        "out": 39
+        "in": 984,
+        "out": 37
       },
       "truncated": false,
-      "latency_ms": 1752
+      "latency_ms": 1796
+    },
+    {
+      "id": "A-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000238,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 970,
+        "out": 37
+      },
+      "truncated": false,
+      "latency_ms": 2583
     },
     {
       "id": "A-15",
@@ -285,7 +285,7 @@
         "out": 5
       },
       "truncated": false,
-      "latency_ms": 1816
+      "latency_ms": 1232
     }
   ]
 }

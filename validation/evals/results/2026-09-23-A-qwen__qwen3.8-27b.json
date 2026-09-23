@@ -13,17 +13,17 @@
     "judge": "anthropic/claude-sonnet-5",
     "date": "2026-09-23",
     "dogen_version": "0.2.0",
-    "repo_head": "30e5652",
-    "skills_sha256": "203509e46134815b712093a95a5b311a228ab15c93adedc5d17952681605007b",
+    "repo_head": "d2026c6",
+    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
     "total_cases": 15,
     "passed": 15,
     "failed": 0,
     "errors": 0,
     "pass_rate": 1.0,
-    "cost_usd": 0.006522,
+    "cost_usd": 0.008428,
     "tokens": {
       "in": 15695,
-      "out": 2787
+      "out": 3851
     },
     "truncated": 0,
     "cached_cases": 0,
@@ -37,255 +37,255 @@
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00035,
+      "cost": 0.000322,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1059,
-        "out": 149
+        "out": 134
       },
       "truncated": false,
-      "latency_ms": 5300
+      "latency_ms": 3804
     },
     {
       "id": "A-02",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00033,
+      "cost": 0.000217,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1036,
-        "out": 140
+        "out": 80
       },
       "truncated": false,
-      "latency_ms": 5034
+      "latency_ms": 2495
     },
     {
       "id": "A-03",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000466,
+      "cost": 0.000352,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1046,
-        "out": 165
+        "out": 151
       },
       "truncated": false,
-      "latency_ms": 184880
+      "latency_ms": 4330
     },
     {
       "id": "A-04",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000255,
+      "cost": 0.000405,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1050,
-        "out": 52
+        "out": 132
       },
       "truncated": false,
-      "latency_ms": 2463
+      "latency_ms": 3755
     },
     {
       "id": "A-05",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000403,
+      "cost": 0.000608,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1051,
-        "out": 178
+        "out": 287
       },
       "truncated": false,
-      "latency_ms": 6142
+      "latency_ms": 7777
     },
     {
       "id": "A-06",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00029,
+      "cost": 0.00026,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1047,
-        "out": 118
+        "out": 102
       },
       "truncated": false,
-      "latency_ms": 4235
+      "latency_ms": 3168
     },
     {
       "id": "A-07",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001068,
+      "cost": 0.002738,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1042,
-        "out": 486
+        "out": 1424
       },
       "truncated": false,
-      "latency_ms": 13792
+      "latency_ms": 51488
     },
     {
       "id": "A-08",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000318,
+      "cost": 0.000378,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1043,
-        "out": 133
+        "out": 118
       },
       "truncated": false,
-      "latency_ms": 194498
+      "latency_ms": 4128
     },
     {
       "id": "A-09",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000301,
+      "cost": 0.000297,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1045,
-        "out": 124
+        "out": 122
       },
       "truncated": false,
-      "latency_ms": 4305
+      "latency_ms": 3256
     },
     {
       "id": "A-10",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000284,
+      "cost": 0.000485,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1046,
-        "out": 115
+        "out": 222
       },
       "truncated": false,
-      "latency_ms": 8375
+      "latency_ms": 6163
     },
     {
       "id": "A-11",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00049,
+      "cost": 0.000315,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1052,
-        "out": 224
+        "out": 131
       },
       "truncated": false,
-      "latency_ms": 7684
+      "latency_ms": 3914
     },
     {
       "id": "A-12",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000638,
+      "cost": 0.000503,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1052,
-        "out": 303
+        "out": 231
       },
       "truncated": false,
-      "latency_ms": 9422
+      "latency_ms": 9654
     },
     {
       "id": "A-13",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000795,
+      "cost": 0.000861,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1051,
-        "out": 387
+        "out": 422
       },
       "truncated": false,
-      "latency_ms": 12693
+      "latency_ms": 16737
     },
     {
       "id": "A-14",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000341,
+      "cost": 0.000365,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1037,
-        "out": 146
+        "out": 159
       },
       "truncated": false,
-      "latency_ms": 5517
+      "latency_ms": 8873
     },
     {
       "id": "A-15",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000193,
+      "cost": 0.000322,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 1038,
-        "out": 67
+        "out": 136
       },
       "truncated": false,
-      "latency_ms": 2480
+      "latency_ms": 5745
     }
   ]
 }

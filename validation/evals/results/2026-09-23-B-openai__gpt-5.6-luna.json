@@ -13,17 +13,17 @@
     "judge": "anthropic/claude-sonnet-5",
     "date": "2026-09-23",
     "dogen_version": "0.2.0",
-    "repo_head": "f1d6879",
-    "skills_sha256": "203509e46134815b712093a95a5b311a228ab15c93adedc5d17952681605007b",
+    "repo_head": "d2026c6",
+    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
     "total_cases": 31,
     "passed": 23,
     "failed": 8,
     "errors": 0,
     "pass_rate": 0.7419,
-    "cost_usd": 0.124339,
+    "cost_usd": 0.107741,
     "tokens": {
-      "in": 701211,
-      "out": 11581
+      "in": 747988,
+      "out": 12052
     },
     "truncated": 0,
     "cached_cases": 0,
@@ -36,307 +36,293 @@
       "id": "B-28",
       "passed": false,
       "error": null,
-      "score": 0.467,
-      "cost": 0.003584,
+      "score": 0.4,
+      "cost": 0.00375,
       "cached": false,
       "failed": [
         {
           "kind": "text_re",
-          "feedback": "expected the reply to match 'dogen-write'; it reads: 'Recorded the fix request:\\n\\n> Explain what happens when `max_retries` is exceeded.\\n\\nThe unit is now routed to the draft stage (`next: draft`).'"
+          "feedback": "expected the reply to match 'dogen-write'; it reads: 'Recorded the fix request:\\n\\n> Explain what happens when `max_retries` is exceeded.\\n\\nThe unit is routed to drafting (`next: draft`).'"
         },
         {
           "kind": "judge",
-          "feedback": "judge: The agent does not tell the author what happens next in terms of invoking the dogen-write skill; it only mentions the unit is routed to draft stage without any instruction to run /dogen-write cfg or similar. It also does not mention any commit id, but the main failure is the missing explicit next-step instruction referencing the dogen-write skill."
+          "feedback": "judge: The agent recorded the fix verdict but never told the author how to proceed; it merely states the unit is routed to drafting without invoking or mentioning the dogen-write skill (e.g., '/dogen-write cfg'). This fails the requirement that the next step be expressed as invoking dogen-write. No commit id was quoted, but the missing next-step instruction alone is disqualifying."
         }
       ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 7436,
-        "out": 36
+        "in": 7435,
+        "out": 33
       },
       "truncated": false,
-      "answer": "Recorded the fix request:\n\n> Explain what happens when `max_retries` is exceeded.\n\nThe unit is now routed to the draft stage (`next: draft`).",
-      "latency_ms": 4747
+      "answer": "Recorded the fix request:\n\n> Explain what happens when `max_retries` is exceeded.\n\nThe unit is routed to drafting (`next: draft`).",
+      "latency_ms": 7676
     },
     {
       "id": "B-29",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.007529,
+      "cost": 0.009095,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 30346,
-        "out": 837
+        "in": 45260,
+        "out": 885
       },
       "truncated": false,
-      "latency_ms": 20624
+      "latency_ms": 20090
     },
     {
       "id": "B-30",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.7,
-      "cost": 0.022298,
+      "score": 1.0,
+      "cost": 0.00888,
       "cached": false,
-      "failed": [
-        {
-          "kind": "judge",
-          "feedback": "judge: The agent did the right investigative work and even read src/toyq/config.py directly, so it never asked the author open-endedly where the retry logic lives. However, the final message to the author only asks whether 'reference' is the right doc direction and never explicitly names or proposes src/toyq/config.py (or its specific fields) for confirmation as the source of retry settings. Since the criterion requires the file to be proposed for confirmation, and the visible response omits this, it does not meet the strict requirement."
-        }
-      ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 50913,
-        "out": 798
+        "in": 44501,
+        "out": 975
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".dogen/context/doc-style.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/glossary.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/structure.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Glob({\"path\": \"\", \"pattern\": \"docs/**/*\"})\n\n[TOOL CALL] Glob({\"path\": \"\", \"pattern\": \"README*\"})\n\n[TOOL CALL] Grep({\"glob\": \"*.{py,rs,go,js,ts,toml,yaml,yml,md,rst}\", \"path\": \"\", \"pattern\": \"retry|retries|backoff|attempt\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-plan/references/socratic-technique.md\", \"limit\": 160, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"README.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Bash(find . -maxdepth 3 -type f | sort)\n\n[TOOL CALL] Grep({\"glob\": \"*\", \"path\": \".\", \"pattern\": \"retry|Retry|backoff|attempt|failed\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\", \"limit\": 320, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-plan/references/reference-intake.md\", \"limit\": 160, \"offset\": 1})\n\n[TOOL CALL] Bash(find . -type f \\( -name '*.toml' -o -name '*.md' -o -name '*.rst' -o -name '*.py' \\) -not -path './.git/*' -not -path './.agents/*' | sort)\n\nThe page will serve operators who need to look up retry behavior and configuration facts: the retry settings, their defaults, valida",
-      "latency_ms": 31033
+      "latency_ms": 23569
     },
     {
       "id": "B-31",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.8,
-      "cost": 0.017513,
+      "score": 1.0,
+      "cost": 0.009643,
       "cached": false,
-      "failed": [
-        {
-          "kind": "judge",
-          "feedback": "judge: The agent's summary reformats the original tool output into a new bulleted structure (State, Next, Title, Files changed, etc.) with added fields not present in the original 'dogen summary cfg' output, rather than quoting the printed lines verbatim. Only the final 'Provenance:' bullet reproduces the exact record line, but the rest is a recomposition/paraphrase of the tool's output rather than a direct quote. It does not falsely claim steering or requests were applied."
-        }
-      ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 50679,
-        "out": 935
+        "in": 26738,
+        "out": 739
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/provenance-summary.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"reference/config.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Bash(dogen show cfg)\n\n[TOOL CALL] Bash(dogen summary cfg --json)\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \"**/config.md\"})\n\n[TOOL CALL] Glob({\"path\": \".dogen/units/cfg\", \"pattern\": \"**/unit.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"docs/reference/config.md\", \"limit\": 300, \"offset\": 1})\n\n[TOOL CALL] Bash(grep '\"kind\":\"signoff\"' .dogen/units/cfg/ledger.jsonl | tail -1 && grep '\"kind\":\"generation\"' .dogen/units/cfg/ledger.jsonl | tail -1)\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/cfg/unit.md\", \"limit\": 240, \"offset\": 1})\n\n### Provenance\n\n- **State:** `drafted`\n- **Next:** `review`\n- **Title:** `Configuration reference`\n- **Files changed:** `reference/config.md`\n- **Intent:** `reference`\n- **Audience:** `operators configuring toyq on a server`\n- **Requests:** none recorded.\n- **Reviewer edits:** none recorded.\n- **Known gaps:** none recorded.\n- **Steps:** not applicable; this is a step-free reference unit.\n- **Model:** empty; origin: `unknown`\n- **Provenance:** `record: verify ok at cc9800e (19 checks, 0 warn, 0 fail) \u00b7 page: current`\n\nThe declared source is `src/toyq/config.py`, and the generation records that same source as its origin. The page is `",
-      "latency_ms": 31879
+      "latency_ms": 18511
     },
     {
       "id": "B-05",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003353,
+      "cost": 0.005239,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 18436,
-        "out": 455
+        "in": 68504,
+        "out": 938
       },
       "truncated": false,
-      "latency_ms": 9276
+      "latency_ms": 24488
     },
     {
       "id": "B-06",
       "passed": false,
       "error": null,
       "score": 0.0,
-      "cost": 0.002208,
+      "cost": 0.002125,
       "cached": false,
       "failed": [
         {
           "kind": "decisive",
-          "feedback": "expected the action to be Bash matching '^dogen signoff cfg\\\\b'; it was AskUserQuestion({\"questions\": [{\"header\": \"Context bootstrap\", \"multiSelect\": false, \"options\": [{\"description\": \"Stop this declaration and build the repository documentation context, then restart cfg intake.\", \"label\": \"Run /dogen-onboard first\"}, {\"description\": \"Provide the missing context artefacts, then I will re-check them and continue.\", \"label\": \"I'll add them\"}, {\"description\": \"I will inspect the relevant code and docs in memory for this intake only; nothing will be persisted.\", \"label\": \"Ground this intake dynamically\"}], \"question\": \"The repository has no recorded documentation context yet. How would you like to proceed before I sign off cfg?\"}]})"
+          "feedback": "expected the action to be Bash matching '^dogen signoff cfg\\\\b'; it was Bash(printf '%s\\n' '## Intent & scope' '' 'Provide a complete lookup reference for toyq configuration settings. Cover each supported setting, its TOML key, TOYQ_* environment override, type, default, and precedence.' '' '## Outline / acceptance' '' '- Identify every supported configuration setting.' '- State each setting\u2019s TOML key, environment-variable override, type, and default.' '- State that values are resolved in this order: defaults, toyq.toml, then TOYQ_* environment variables, with later values taking precedence.' '- State the validation rule for max_retries.' '- Keep the page information-oriented and suitable for operators configuring toyq on a server.' | dogen unit new cfg --intent reference --audience 'Operators configuring toyq on a server' --title 'Configuration reference' --target reference/config.md --source src/toyq/config.py --body-file -)"
         }
       ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 18821,
-        "out": 457
+        "in": 23790,
+        "out": 807
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(dogen context show --json)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-plan/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Glob({\"path\": \"/srv/toyq\", \"pattern\": \"docs/**/*\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Glob({\"path\": \"/srv/toyq\", \"pattern\": \".dogen/context/*\"})\n\n[TOOL CALL] Glob({\"path\": \"/srv/toyq\", \"pattern\": \"README*\"})\n\n[TOOL CALL] AskUserQuestion({\"questions\": [{\"header\": \"Context bootstrap\", \"multiSelect\": false, \"options\": [{\"description\": \"Stop this declaration and build the repository documentation context, then restart cfg intake.\", \"label\": \"Run /dogen-onboard first\"}, {\"description\": \"Provide the missing context artefacts, then I will re-check them and continue.\", \"label\": \"I'll add them\"}, {\"description\": \"I will inspect the relevant code and docs in memory for this intake only; nothing will be persisted.\", \"label\": \"Ground this intake dynamically\"}], \"question\": \"The repository has no recorded documentation context yet. How would you like to proceed before I sign off cfg?\"}]})",
-      "latency_ms": 9382
+      "answer": "[TOOL CALL] Bash(dogen context show --json)\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \".dogen/context/*\"})\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \"docs/**/*\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/doc-style.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/glossary.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/structure.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-plan/references/reference-intake.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-plan/references/socratic-technique.md\", \"limit\": 160, \"offset\": 1})\n\n[TOOL CALL] Bash(printf '%s\\n' '## Intent & scope' '' 'Provide a complete lookup reference for toyq configuration settings. Cover each supported setting, its TOML key, TOYQ_* environment override, type, default, and precedence.' '' '## Outline / acceptance' '' '- Identify every supported configuration setting.' '- State each setting\u2019s TOML key, environment-variable override, type, and default.' '- State that values are resolved in this order: defaults, toyq.toml, then TOYQ_* environment variables, with later values taking precedence.' '- State the validation rule for max_retries.' '- Keep the page information-oriented and suitable for operators configur",
+      "latency_ms": 16549
     },
     {
       "id": "B-07",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.007387,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 97866,
-        "out": 1368
-      },
-      "truncated": false,
-      "latency_ms": 30137
-    },
-    {
-      "id": "B-08",
       "passed": false,
       "error": null,
-      "score": 0.75,
-      "cost": 0.006021,
+      "score": 0.5,
+      "cost": 0.007313,
       "cached": false,
       "failed": [
         {
-          "kind": "any_of",
-          "feedback": "none of the acceptable actions happened: expected the action to be Bash matching 'pip install toyq[^\\\\n]*\\\\)?\\\\s*>\\\\s*\\\\S+[^\\\\n]*2>&1'; it was a reply with no tool call | expected the model to ask the author before acting; it ended on a reply with no tool call"
+          "kind": "decisive",
+          "feedback": "expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was Bash(mkdir -p .dogen/staging/cfg/draft .dogen/staging/cfg/scratch)"
         }
       ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 43005,
-        "out": 875
+        "in": 89311,
+        "out": 1084
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/walk-protocol.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/episode-taxonomy.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Glob({\"path\": \".dogen/units/install\", \"pattern\": \"**/*\"})\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \"**/*\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/install/unit.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"README.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\", \"limit\": 300, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/how-to-stance.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/writing-standards.md\", \"limit\": 220, \"offset\": 1})\n\nThe tool routed `install` to `walk`. It reports:\n\n> passed 0 \u00b7 skipped 0 \u00b7 deviated 0 \u00b7 unresolved 3: install, init, first-job\n\nBecause this is a how-to, I need to agree and record the evidence-gated step plan before drafting. Proposed plan:\n\n1. **install** \u2014 `ta`, stateful: install toyq with `pip install toyq`.  \n   Assumption: the author\u2019s environment has Python and access to the package source or package index. Invariant: the `toyq` command is available",
-      "latency_ms": 18855
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/writing-standards.md\", \"limit\": 260, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/reference-stance.md\", \"limit\": 260, \"offset\": 1})\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \".dogen/units/cfg/**\"})\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \"docs/**/*\"})\n\n[TOOL CALL] Read({\"file_path\": \"README.md\", \"limit\": 260, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/cfg/unit.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Glob({\"path\": \"toyq\", \"pattern\": \"**/*\"})\n\n[TOOL CALL] Glob({\"path\": \"src\", \"pattern\": \"**/*\"})\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \"*.toml\"})\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\", \"limit\": 260, \"offset\": 1})\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \".dogen/context/*\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\", \"limit\": 300, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\", \"limit\": 320, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"pyproject.toml\", \"limit\": 220, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/doc-style.md\", \"limit\": 220, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/glossary.md\", \"limit\": 220, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/structure.md\", \"limit\": 220, \"offset\": 1})\n\n[TOOL CALL] Grep({\"glob\": \"!*.pyc\", \"path\": \"",
+      "latency_ms": 44781
+    },
+    {
+      "id": "B-08",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004583,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 24708,
+        "out": 439
+      },
+      "truncated": false,
+      "latency_ms": 8500
     },
     {
       "id": "B-09",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00372,
+      "cost": 0.003732,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 21140,
-        "out": 337
+        "in": 21139,
+        "out": 347
       },
       "truncated": false,
-      "latency_ms": 7828
+      "latency_ms": 8649
     },
     {
       "id": "B-10",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003791,
+      "cost": 0.003736,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 21286,
-        "out": 368
+        "in": 21234,
+        "out": 333
       },
       "truncated": false,
-      "latency_ms": 10379
+      "latency_ms": 7971
     },
     {
       "id": "B-11",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003117,
+      "cost": 0.003689,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 19354,
-        "out": 207
+        "in": 21103,
+        "out": 319
       },
       "truncated": false,
-      "latency_ms": 5821
+      "latency_ms": 7355
     },
     {
       "id": "B-12",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003873,
+      "cost": 0.003862,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 22190,
-        "out": 328
+        "in": 22442,
+        "out": 290
       },
       "truncated": false,
-      "latency_ms": 8443
+      "latency_ms": 6639
     },
     {
       "id": "B-13",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00332,
+      "cost": 0.003309,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 31019,
-        "out": 194
+        "in": 31020,
+        "out": 185
       },
       "truncated": false,
-      "latency_ms": 7204
+      "latency_ms": 7574
     },
     {
       "id": "B-14",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.002902,
+      "cost": 0.002883,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 17900,
-        "out": 191
+        "out": 175
       },
       "truncated": false,
-      "latency_ms": 5733
+      "latency_ms": 6105
     },
     {
       "id": "B-15",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001645,
+      "cost": 0.001643,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 6722,
-        "out": 211
+        "out": 209
       },
       "truncated": false,
-      "latency_ms": 3306
+      "latency_ms": 4384
     },
     {
       "id": "B-16",
       "passed": false,
       "error": null,
       "score": 0.667,
-      "cost": 0.003214,
+      "cost": 0.003169,
       "cached": false,
       "failed": [
         {
           "kind": "any_of",
-          "feedback": "none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(set -o pipefail\nprintf '%s\\n' '--- metadata ---'\nstat --printf='path=%n\\nsize=%s\\nmtime=%y\\nmode=%A\\n' exports/style-guide.pdf\nprintf '%s\\n' '--- extraction ---'\npdftotext -layout exports/style-guide.pdf -) | expected the reply to match '(?i)(not found|no such file|missing|unavailable|does not exist|doesn.t exist|could not|couldn.t|cannot find|can.t find|isn.t there|is not there)'; it reads: 'Source declaration (inferred from your request):\\n\\n- **source_id:** `house-style-guide`\\n- **source_type:** `local-export`\\n- **origin:** `exports/style-guide.pdf`\\n- **retrieval_method:** filesystem meta'"
+          "feedback": "none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(set -o pipefail; stat --printf='path=%n\\nsize=%s\\nmtime=%y\\nmode=%a\\n' exports/style-guide.pdf; printf '\\n--- extracted text ---\\n'; pdftotext -layout exports/style-guide.pdf -) | expected the reply to match '(?i)(not found|no such file|missing|unavailable|does not exist|doesn.t exist|could not|couldn.t|cannot find|can.t find|isn.t there|is not there)'; it reads: 'Source declaration (before inspection):\\n\\n- `source_id`: `house-style-guide`\\n- `source_type`: `local-export`\\n- `origin`: `exports/style-guide.pdf`\\n- `retrieval_method`: filesystem metadata inspection f'"
         }
       ],
       "served_by": [
@@ -344,284 +330,298 @@
       ],
       "tokens": {
         "in": 15535,
-        "out": 587
+        "out": 549
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/source-contract.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/style-stance.md\", \"limit\": 240, \"offset\": 1})\n\nSource declaration (inferred from your request):\n\n- **source_id:** `house-style-guide`\n- **source_type:** `local-export`\n- **origin:** `exports/style-guide.pdf`\n- **retrieval_method:** filesystem metadata inspection followed by local PDF text extraction with `pdftotext`\n- **preservation:** no additional copy requested; the existing export remains the preserved source (`content_preserved: true`, location `exports/style-guide.pdf`)\n- **allowed fallbacks:** none declared\n- **artefact:** `doc-style.md`\n\nThe routing response is `next: onboard`; for this declared external source, I\u2019m proceeding with the fetch workflow and will produce only the style artefact.\n\n[TOOL CALL] Bash(set -o pipefail\nprintf '%s\\n' '--- metadata ---'\nstat --printf='path=%n\\nsize=%s\\nmtime=%y\\nmode=%A\\n' exports/style-guide.pdf\nprintf '%s\\n' '--- extraction ---'\npdftotext -layout exports/style-guide.pdf -)",
-      "latency_ms": 11877
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/source-contract.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/style-stance.md\", \"limit\": 240, \"offset\": 1})\n\nSource declaration (before inspection):\n\n- `source_id`: `house-style-guide`\n- `source_type`: `local-export`\n- `origin`: `exports/style-guide.pdf`\n- `retrieval_method`: filesystem metadata inspection followed by local PDF text extraction with `pdftotext`\n- `content_preserved`: no (the requested export is already local; no additional copy will be made)\n- `preserved_location`: `none`\n- `allowed_fallbacks`: none\n- Intended artefact: `doc-style.md`\n\nThe routing response is `onboard`; the routing table says this fetch can add the declared style context, while the other context artefacts remain absent. I\u2019ll inspect only the declared export now.\n\n[TOOL CALL] Bash(set -o pipefail; stat --printf='path=%n\\nsize=%s\\nmtime=%y\\nmode=%a\\n' exports/style-guide.pdf; printf '\\n--- extracted text ---\\n'; pdftotext -layout exports/style-guide.pdf -)",
+      "latency_ms": 11529
     },
     {
       "id": "B-01",
-      "passed": true,
+      "passed": false,
       "error": null,
-      "score": 1.0,
-      "cost": 0.002,
+      "score": 0.0,
+      "cost": 0.002225,
       "cached": false,
+      "failed": [
+        {
+          "kind": "bash_sequence",
+          "feedback": "expected shell command 2 to match '^dogen show cfg --json$'; it was 'dogen show \"cfg\" --json'"
+        }
+      ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 14373,
-        "out": 258
+        "in": 21457,
+        "out": 328
       },
       "truncated": false,
-      "latency_ms": 6118
+      "answer": "[TOOL CALL] Bash(dogen version --json)\n\n[TOOL CALL] Bash(dogen show \"cfg\" --json)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/provenance-summary.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"reference/config.md\", \"limit\": 300, \"offset\": 1})\n\n[TOOL CALL] Bash(dogen show \"cfg\" && printf '\\n--- SUMMARY ---\\n' && dogen summary \"cfg\")",
+      "latency_ms": 12628
     },
     {
       "id": "B-02",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001452,
+      "cost": 0.001453,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 14607,
-        "out": 233
+        "out": 234
       },
       "truncated": false,
-      "latency_ms": 8550
+      "latency_ms": 7897
     },
     {
       "id": "B-03",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000212,
+      "cost": 0.000213,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 7072,
-        "out": 49
+        "out": 50
       },
       "truncated": false,
-      "latency_ms": 2670
+      "latency_ms": 1816
     },
     {
       "id": "B-04",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001434,
+      "cost": 0.001413,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
         "in": 6447,
-        "out": 92
+        "out": 75
       },
       "truncated": false,
-      "latency_ms": 2556
+      "latency_ms": 2358
     },
     {
       "id": "B-17",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001659,
+      "cost": 0.001763,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 7466,
-        "out": 67
+        "in": 7463,
+        "out": 155
       },
       "truncated": false,
-      "latency_ms": 2231
+      "latency_ms": 4750
     },
     {
       "id": "B-18",
       "passed": false,
       "error": null,
       "score": 0.5,
-      "cost": 0.003709,
+      "cost": 0.003962,
       "cached": false,
       "failed": [
         {
           "kind": "any_of",
-          "feedback": "none of the acceptable actions happened: expected the action to be Bash matching '^(sleep \\\\d+(\\\\.\\\\d+)?\\\\s*(;|&&)\\\\s*)?dogen draft cfg \\\\.dogen/staging/cfg/draft/reference/config\\\\.md( --json)?$'; it was Bash(sleep 1; dogen draft cfg .dogen/staging/cfg/draft/ --report .dogen/staging/cfg/report.json) | expected the model to stop and reply; it ended on Bash(sleep 1; dogen draft cfg .dogen/staging/cfg/draft/ --report .dogen/staging/cfg/report.json)"
+          "feedback": "none of the acceptable actions happened: expected the action to be Bash matching '(^|(;|&&)\\\\s*)dogen\\\\ draft\\\\ cfg\\\\ \\\\.dogen/staging/cfg/draft/\\\\ \\\\-\\\\-model\\\\-origin\\\\ unknown\\\\ \\\\-\\\\-report\\\\ \\\\.dogen/staging/cfg/report\\\\.json( --json)?\\\\s*$'; it was Bash(sleep 2; dogen draft cfg .dogen/staging/cfg/draft/ --model '' --model-origin unknown --report .dogen/staging/cfg/report.json) | expected the model to stop and reply; it ended on Bash(sleep 2; dogen draft cfg .dogen/staging/cfg/draft/ --model '' --model-origin unknown --report .dogen/staging/cfg/report.json)"
         },
         {
           "kind": "no_tool_call",
-          "feedback": "expected no a Bash call matching '\\\\bdogen\\\\s+draft\\\\b(?!\\\\s+cfg\\\\s+\\\\.dogen/staging/cfg/draft/reference/config\\\\.md(\\\\s+--json)?\\\\s*$)'; saw Bash(sleep 1; dogen draft cfg .dogen/staging/cfg/draft/ --report .dogen/staging/cfg/report.json)"
+          "feedback": "expected no a Bash call matching '\\\\bdogen\\\\s+draft\\\\b(?! cfg\\\\ \\\\.dogen/staging/cfg/draft/\\\\ \\\\-\\\\-model\\\\-origin\\\\ unknown\\\\ \\\\-\\\\-report\\\\ \\\\.dogen/staging/cfg/report\\\\.json( --json)?\\\\s*$)'; saw Bash(sleep 2; dogen draft cfg .dogen/staging/cfg/draft/ --model '' --model-origin unknown --report .dogen/staging/cfg/report.json)"
         }
       ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 37749,
-        "out": 515
+        "in": 41715,
+        "out": 692
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/writing-standards.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/reference-stance.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \"**/*\"})\n\n[TOOL CALL] Grep({\"glob\": \"*\", \"path\": \"\", \"pattern\": \"config|TOYQ_|toml|Configuration\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/cfg/unit.md\", \"limit\": 100, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"README.md\", \"limit\": 120, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\", \"limit\": 120, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\", \"limit\": 120, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\", \"limit\": 100, \"offset\": 1})\n\n[TOOL CALL] Bash(sleep 1; dogen draft cfg .dogen/staging/cfg/draft/ --report .dogen/staging/cfg/report.json)",
-      "latency_ms": 11509
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/writing-standards.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/reference-stance.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Glob({\"path\": \".\", \"pattern\": \"**/*\"})\n\n[TOOL CALL] Grep({\"glob\": \"*.py\", \"path\": \".\", \"pattern\": \"config|TOYQ_|toyq.toml\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/cfg/unit.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\", \"limit\": 140, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"README.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\", \"limit\": 160, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/doc-style.md\", \"limit\": 160, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/structure.md\", \"limit\": 160, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/glossary.md\", \"limit\": 160, \"offset\": 1})\n\n[TOOL CALL] Bash(sleep 2; dogen draft cfg .dogen/staging/cfg/draft/ --model '' --model-origin unknown --report .dogen/staging/cfg/report.json)",
+      "latency_ms": 18473
     },
     {
       "id": "B-19",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001851,
+      "cost": 0.001884,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 7947,
-        "out": 127
+        "in": 8070,
+        "out": 129
       },
       "truncated": false,
-      "latency_ms": 3293
+      "latency_ms": 4026
     },
     {
       "id": "B-20",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.003334,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 19688,
-        "out": 350
-      },
-      "truncated": false,
-      "latency_ms": 8490
-    },
-    {
-      "id": "B-21",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.001788,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 7393,
-        "out": 190
-      },
-      "truncated": false,
-      "latency_ms": 4215
-    },
-    {
-      "id": "B-22",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.003283,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 20014,
-        "out": 271
-      },
-      "truncated": false,
-      "latency_ms": 7909
-    },
-    {
-      "id": "B-23",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.003748,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 32583,
-        "out": 415
-      },
-      "truncated": false,
-      "latency_ms": 18519
-    },
-    {
-      "id": "B-24",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.00033,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 7156,
-        "out": 130
-      },
-      "truncated": false,
-      "latency_ms": 3573
-    },
-    {
-      "id": "B-25",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.001852,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 19090,
-        "out": 288
-      },
-      "truncated": false,
-      "latency_ms": 7149
-    },
-    {
-      "id": "B-26",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.001886,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 19132,
-        "out": 311
-      },
-      "truncated": false,
-      "latency_ms": 6713
-    },
-    {
-      "id": "B-27",
       "passed": false,
       "error": null,
       "score": 0.5,
-      "cost": 0.000326,
+      "cost": 0.003314,
       "cached": false,
       "failed": [
         {
-          "kind": "decisive",
-          "feedback": "expected the action to be Bash matching '^(sleep \\\\d+(\\\\.\\\\d+)?\\\\s*(;|&&)\\\\s*)?dogen draft cfg \\\\.dogen/staging/cfg/draft/reference/config\\\\.md( --json)?$'; it was Bash(dogen show cfg --json && dogen draft cfg .dogen/staging/cfg/draft/reference/config.md)"
+          "kind": "asks_user",
+          "feedback": "expected the model to ask the author before acting; it ended on a reply with no tool call"
         }
       ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 7846,
-        "out": 101
+        "in": 19688,
+        "out": 333
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(dogen show cfg --json && dogen draft cfg .dogen/staging/cfg/draft/reference/config.md)",
-      "latency_ms": 3372
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n`cfg` cannot be accepted yet.\n\nThe tool reported:\n\n```text\nerror: unapplied_steering\nunit: cfg\ndetail: pending request(s) with no recorded disposition: 4\nhint: --resolves <seq> records the judgment that a request is satisfied; --withdraw <seq> \"<reason>\" drops it\nnext: draft\n```\n\nThe pending request is:\n\n```text\nseq 4: Explain what happens when max_retries is exceeded.\n```\n\nRouting on `next: draft`, this unit must return to `/dogen-write` before review. After the requested update is drafted, it can be reviewed and accepted.",
+      "latency_ms": 10936
+    },
+    {
+      "id": "B-21",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001771,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 7393,
+        "out": 176
+      },
+      "truncated": false,
+      "latency_ms": 4688
+    },
+    {
+      "id": "B-22",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003408,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 20260,
+        "out": 347
+      },
+      "truncated": false,
+      "latency_ms": 9448
+    },
+    {
+      "id": "B-23",
+      "passed": false,
+      "error": null,
+      "score": 0.667,
+      "cost": 0.003711,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "text_re",
+          "feedback": "expected the reply to match '(?i)(re-?sign|dogen-plan)'; it reads: 'The `cfg` unit is routed to `re_sign`: its source plan was edited after the existing sign-off.\\n\\nCurrent plan:\\n\\n- **Title:** Configuration reference\\n- **Intent:** Reference\\n- **Audience:** Operators an'"
+        }
+      ],
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 32952,
+        "out": 354
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/cfg/unit.md\", \"limit\": 240, \"offset\": 1})\n\nThe `cfg` unit is routed to `re_sign`: its source plan was edited after the existing sign-off.\n\nCurrent plan:\n\n- **Title:** Configuration reference\n- **Intent:** Reference\n- **Audience:** Operators and developers configuring toyq\n- **Target:** `reference/config.md`\n- **Source:** `src/toyq/config.py`\n- **Required coverage:**\n  - A table of every `toyq.toml` setting\n  - Each setting\u2019s `TOYQ_*` environment override, type, and default\n  - The precedence rule: defaults, then `toyq.toml`, then environment\n  - The validation rule for `max_retries`\n\nPlease explicitly confirm that this current plan is ready to sign off.",
+      "latency_ms": 8958
+    },
+    {
+      "id": "B-24",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000397,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 7156,
+        "out": 186
+      },
+      "truncated": false,
+      "latency_ms": 4172
+    },
+    {
+      "id": "B-25",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001976,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 26378,
+        "out": 259
+      },
+      "truncated": false,
+      "latency_ms": 8696
+    },
+    {
+      "id": "B-26",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001859,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 19132,
+        "out": 289
+      },
+      "truncated": false,
+      "latency_ms": 6727
+    },
+    {
+      "id": "B-27",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001741,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 20856,
+        "out": 138
+      },
+      "truncated": false,
+      "latency_ms": 5737
     }
   ]
 }
