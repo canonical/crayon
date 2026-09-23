@@ -159,8 +159,8 @@ class TestTransport(unittest.TestCase):
             client(opener).complete(SPEC, [], cache=False)
 
     def test_gives_up_after_the_retry_budget(self):
-        opener = FakeOpener(500, 500, 500, 500)
-        with self.assertRaisesRegex(ProviderError, "gave up after 4"):
+        opener = FakeOpener(500, 500, 500, 500, 500)
+        with self.assertRaisesRegex(ProviderError, "gave up after 5"):
             client(opener).complete(SPEC, [], cache=False)
 
     def test_no_key_is_an_error_not_an_unauthenticated_call(self):
@@ -401,6 +401,7 @@ class TestRosterAndRunner(unittest.TestCase):
         for model in roster["models"]:
             with self.subTest(model=model["id"]):
                 self.assertFalse(model["provider"]["allow_fallbacks"])
+                self.assertIs(model["provider"].get("zdr"), True)
                 self.assertEqual(len(model["provider"]["order"]), 1)
                 self.assertEqual(len(model["price_per_mtok"]), 2)
         candidates = set(m["id"] for m in roster["models"] if m["role"] == "candidate")
@@ -411,7 +412,8 @@ class TestRosterAndRunner(unittest.TestCase):
 
     def summary(self, **meta):
         base = {"date": "2026-01-02", "lane": "A", "model": "vendor/model-x",
-                "dry_run": False, "errors": 0, "budget_stop": None, "partial": False}
+                "dry_run": False, "errors": 0, "budget_stop": None, "partial": False,
+                "total_cases": 3, "cached_cases": 0}
         base.update(meta)
         return {"meta": base, "cases": []}
 
@@ -427,13 +429,44 @@ class TestRosterAndRunner(unittest.TestCase):
                                  "2026-01-02-A-vendor__model-x-2.json")
                 for meta, tag in (({"dry_run": True}, "dry"), ({"errors": 1}, "errored"),
                                   ({"budget_stop": "cap"}, "errored"),
-                                  ({"partial": True}, "partial")):
+                                  ({"partial": True}, "partial"),
+                                  ({"cached_cases": 3}, "regrade")):
                     with self.subTest(tag=tag):
                         path = run.destination(self.summary(**meta), "120000")
                         self.assertEqual(path.parent, Path(tmp) / "raw")
                         self.assertTrue(path.name.endswith("-%s.json" % tag))
             finally:
                 run.RESULTS, run.RAW = saved
+
+    def test_a_partly_cached_run_may_still_be_a_baseline(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            saved = run.RESULTS, run.RAW
+            run.RESULTS, run.RAW = Path(tmp), Path(tmp) / "raw"
+            try:
+                path = run.destination(self.summary(cached_cases=2), "120000")
+            finally:
+                run.RESULTS, run.RAW = saved
+            self.assertEqual(path.parent, Path(tmp))
+
+    def test_an_unreachable_model_is_named_once_by_the_preflight(self):
+        def refused(spec, messages, tools):
+            raise ProviderError("HTTP 404: no endpoints (data policy)")
+
+        self.assertIn("404", run.preflight_model(StubProvider(refused), SPEC))
+        self.assertIsNone(run.preflight_model(StubProvider(), SPEC))
+
+    def test_identical_errors_are_folded_into_one_line(self):
+        records = [{"id": "A-%02d" % i, "passed": False, "error": "HTTP 404"}
+                   for i in range(1, 4)]
+        stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            run.print_problems(records)
+            printed = sys.stdout.getvalue()
+        finally:
+            sys.stdout = stdout
+        self.assertEqual(printed.count("ERROR"), 1)
+        self.assertIn("A-01 (+2 more)", printed)
 
     def test_a_dry_run_of_everything_is_green_and_writes_only_raw(self):
         with tempfile.TemporaryDirectory() as tmp:

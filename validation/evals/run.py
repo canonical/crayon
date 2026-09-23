@@ -180,6 +180,7 @@ def summarise(lane_name, spec, records, ctx, partial, stopped, dry_run):
                 "out": sum(r.get("tokens", {}).get("out", 0) for r in records),
             },
             "truncated": sum(1 for r in records if r.get("truncated")),
+            "cached_cases": sum(1 for r in records if r.get("cached")),
             "partial": partial,
             "dry_run": dry_run,
             "budget_stop": stopped,
@@ -198,6 +199,10 @@ def destination(summary, stamp):
         tag = "errored"
     elif meta["partial"]:
         tag = "partial"
+    elif meta["total_cases"] and meta["cached_cases"] == meta["total_cases"]:
+        # Every answer came from the cache: a re-grade of an earlier run, not a
+        # new observation of the model, so it may not stand as a baseline.
+        tag = "regrade"
     if tag:
         return RAW / ("%s-%s-%s.json" % (stem, stamp, tag))
     path = RESULTS / ("%s.json" % stem)
@@ -226,6 +231,37 @@ def write_traces(path, traces):
         for case_id, trace in traces.items():
             if trace is not None:
                 handle.write(json.dumps({"id": case_id, "trace": trace}) + "\n")
+
+
+def preflight_model(provider, spec):
+    """One tiny uncached call: is this model reachable on its pinned backend?
+
+    A model the account cannot route to (a data-policy filter, a withdrawn
+    backend) fails here once, instead of once per case.
+    """
+    try:
+        provider.complete(
+            dict(spec, max_tokens=256),
+            [{"role": "user", "content": "Reply with the single word: ok"}],
+            cache=False, scope=spec["id"],
+        )
+    except ProviderError as exc:
+        return str(exc)
+    return None
+
+
+def print_problems(records):
+    """Failures one per line; identical errors folded into one line with a count."""
+    errors = {}
+    for record in records:
+        if record["error"]:
+            errors.setdefault(record["error"], []).append(record["id"])
+        elif not record["passed"]:
+            for item in record.get("failed", []):
+                print("   FAIL  %s [%s] %s" % (record["id"], item["kind"], item["feedback"]))
+    for message, ids in errors.items():
+        where = ids[0] if len(ids) == 1 else "%s (+%d more)" % (ids[0], len(ids) - 1)
+        print("   ERROR %s: %s" % (where, message[:400]))
 
 
 def preflight_judge(provider, judge_spec):
@@ -312,6 +348,13 @@ def main(argv=None):
     stamp = now.strftime("%H%M%S")
     worst = 0
     for spec in models:
+        if not args.dry_run:
+            problem = preflight_model(paid, spec)
+            if problem:
+                print("-- %-30s SKIPPED: unreachable on its pinned backend: %s"
+                      % (spec["id"], problem[:400]))
+                worst = 2
+                continue
         for name in lane_names:
             cases = loaded[name]
             if not cases:
@@ -335,13 +378,7 @@ def main(argv=None):
                   % (name, spec["id"], meta["passed"], meta["total_cases"],
                      meta["failed"], meta["errors"], meta["cost_usd"],
                      _shown(path)))
-            for record in records:
-                if record["error"]:
-                    print("   ERROR %s: %s" % (record["id"], record["error"]))
-                elif not record["passed"]:
-                    for item in record.get("failed", []):
-                        print("   FAIL  %s [%s] %s" % (record["id"], item["kind"],
-                                                       item["feedback"]))
+            print_problems(records)
             if meta["errors"] or stopped:
                 worst = 2
             elif meta["failed"] and worst < 1:
