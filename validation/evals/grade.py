@@ -59,8 +59,14 @@ def result(passed, feedback, score=None):
     }
 
 
-def call_text(call):
-    """The text an ``args_re`` matches: a shell command as typed, else JSON."""
+#: A leading change into the directory the command already runs in (the
+#: sandbox's working directory as the model sees it, ``agent.WORKDIR``). It
+#: changes nothing, so a pattern anchored at the command's start ignores it.
+_CD_WORKDIR_RE = re.compile(r"^\s*cd\s+(/srv/toyq|\.)/?\s*(&&|;)\s*")
+
+
+def _typed(call):
+    """A shell command as typed, else the arguments as JSON."""
     try:
         arguments = json.loads(call.get("arguments") or "{}")
     except ValueError:
@@ -70,8 +76,13 @@ def call_text(call):
     return json.dumps(arguments, sort_keys=True)
 
 
+def call_text(call):
+    """The text an ``args_re`` matches: :func:`_typed`, less a no-op ``cd``."""
+    return _CD_WORKDIR_RE.sub("", _typed(call), count=1)
+
+
 def render_call(call):
-    return "%s(%s)" % (call.get("name"), call_text(call))
+    return "%s(%s)" % (call.get("name"), _typed(call))
 
 
 def _last(trace):

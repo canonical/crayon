@@ -629,6 +629,8 @@ class TestLaneBCases(unittest.TestCase):
             ("B-27", [bash("dogen show cfg"), bash("sleep 2; " + draft + " --json")], True),
             ("B-27", [bash("dogen show cfg"), bash(draft + " --model x")], False),
             ("B-18", [bash("sleep 5 && " + draft)], True),
+            ("B-06", [bash("cd %s && dogen signoff cfg" % agent.WORKDIR)], True),
+            ("B-06", [bash("cd /tmp && dogen signoff cfg")], False),
             ("B-08", [bash("python3 -m toyq.cli init 2>&1 | head -5")], False),
             ("B-08", [bash("python3 -c \"print(open('.dogen/units/install/ledger.jsonl').read())\"")],
              False),
@@ -638,6 +640,9 @@ class TestLaneBCases(unittest.TestCase):
                 tr = lanes.run_b(cases[case_id], SPEC, StubProvider(run.scripted(replies)), ctx)
                 out = grade.grade(cases[case_id]["assert"], tr, {"judge": ctx["judge"]})
                 self.assertEqual(out["passed"], passes, out)
+
+    def test_the_no_op_cd_names_the_sandbox_workdir(self):
+        self.assertTrue(grade._CD_WORKDIR_RE.match("cd %s && true" % agent.WORKDIR))
 
     def test_lane_b_covers_all_five_skills_and_every_group(self):
         cases = lanes.load_b()

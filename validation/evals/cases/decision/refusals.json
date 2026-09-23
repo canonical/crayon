@@ -28,7 +28,7 @@
       ],
       "oracle": [
         {
-          "content": "cfg was already accepted at seq 4 (commit 1410440); nothing new was recorded. dogen stops here."
+          "content": "cfg was already accepted at seq 4 (commit 67820ae); nothing new was recorded. dogen stops here."
         }
       ],
       "foil": [
@@ -600,7 +600,7 @@
         {
           "cmd": "dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json",
           "exit": 6,
-          "output": "{\"error\": \"internal_error\", \"unit\": \"cfg\", \"detail\": \"unexpected internal fault: KeyError: 'basis'\", \"hint\": \"this is a dogen defect, not a diagnosis of your record; re-run with the same arguments and report the detail above\", \"next\": \"show\"}"
+          "output": "{\"error\": \"internal_error\", \"unit\": \"cfg\", \"detail\": \"unexpected internal fault: KeyError: 'basis'\", \"hint\": \"this is a dogen defect, not a diagnosis of your record; run dogen show on the unit, then re-run the same command unchanged and report the detail above\", \"next\": \"show\"}"
         }
       ],
       "why": "internal_error: show (read-only), then re-run the same command unchanged",
