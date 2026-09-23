@@ -74,7 +74,19 @@ snap() {
     cp -a . "$SNAPDIR/$1"
 }
 
-base() {
+# The three onboarding artefacts, as dogen-onboard would stage them for toyq.
+DOC_STYLE='# Doc style\n\nImpersonal, present tense. Short sentences.\n'
+GLOSSARY='# Glossary\n\n- **job**: one queued shell command.\n- **retry**: a re-run of a failed job.\n'
+STRUCTURE='# Structure\n\n- docs/reference/: settings and commands.\n- docs/how-to/: task guides.\n'
+
+# stage_context NAME BODY : stage one context artefact through the tool.
+stage_context() {
+    # shellcheck disable=SC2059 # the bodies are printf formats on purpose
+    printf "$2" | "$DOGEN" context stage "$1" --body-file - >/dev/null 2>&1
+}
+
+# base_bare : the toyq project with the skills installed, and no context yet.
+base_bare() {
     setup_repo
     cp -R "$FIXTURE/." .
     mkdir -p .agents/skills
@@ -82,6 +94,16 @@ base() {
     printf '.dogen/staging/\n' >.gitignore
     git add -A
     git commit -q -m "toyq project, dogen skills installed"
+}
+
+# base : base_bare plus a recorded context, so a unit session grounds without
+# being routed to onboarding first.
+base() {
+    base_bare
+    stage_context doc-style.md "$DOC_STYLE"
+    stage_context glossary.md "$GLOSSARY"
+    stage_context structure.md "$STRUCTURE"
+    "$DOGEN" context record --note "toyq context" >/dev/null 2>&1
 }
 
 declare_cfg() {
@@ -225,7 +247,7 @@ scenario_walk() {
             --title "Install toyq" --target how-to/install.md \
             --source README.md --body-file - >/dev/null 2>&1
     "$DOGEN" signoff install >/dev/null 2>&1
-    printf '%s' '[{"id":"install","text":"Install the package: pip install toyq","mode":"agent","stateful":true},{"id":"init","text":"Create the configuration: toyq init","mode":"agent","stateful":true},{"id":"first-job","text":"Queue and run a job: toyq add \"echo hi\" && toyq run --once","mode":"agent","stateful":true}]' |
+    printf '%s' '[{"id":"install","text":"Install toyq from the checkout: python3 -m pip install /srv/toyq","mode":"agent","stateful":true},{"id":"init","text":"Create the configuration: toyq init","mode":"agent","stateful":true},{"id":"first-job","text":"Queue and run a job: toyq add \"echo hi\" && toyq run --once","mode":"agent","stateful":true}]' |
         "$DOGEN" plan-steps install --steps-file - >/dev/null 2>&1
     rec walk show_json show install --json
     rec walk show show install
@@ -299,17 +321,14 @@ scenario_docs_outside() {
 }
 
 scenario_context() {
-    base
+    base_bare
     rec context_empty show_json context show --json
     snap context_empty
-    printf '# Doc style\n\nImpersonal, present tense. Short sentences.\n' |
-        "$DOGEN" context stage doc-style.md --body-file - >/dev/null 2>&1
+    stage_context doc-style.md "$DOC_STYLE"
     rec context_staged show_json context show --json
     snap context_staged
-    printf '# Glossary\n\n- **job**: one queued shell command.\n- **retry**: a re-run of a failed job.\n' |
-        "$DOGEN" context stage glossary.md --body-file - >/dev/null 2>&1
-    printf '# Structure\n\n- docs/reference/: settings and commands.\n- docs/how-to/: task guides.\n' |
-        "$DOGEN" context stage structure.md --body-file - >/dev/null 2>&1
+    stage_context glossary.md "$GLOSSARY"
+    stage_context structure.md "$STRUCTURE"
     "$DOGEN" context record --note "toyq context" >/dev/null 2>&1
     rec context_recorded show_json context show --json
     snap context_recorded

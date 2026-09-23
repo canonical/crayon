@@ -28,7 +28,7 @@
       ],
       "oracle": [
         {
-          "content": "cfg was already accepted at seq 4 (commit cc9800e); nothing new was recorded. dogen stops here."
+          "content": "cfg was already accepted at seq 4 (commit 1410440); nothing new was recorded. dogen stops here."
         }
       ],
       "foil": [
@@ -63,7 +63,17 @@
           "result": "File written: .dogen/staging/cfg/draft/reference/config.md"
         },
         {
-          "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md",
+          "call": {
+            "name": "Write",
+            "arguments": {
+              "file_path": ".dogen/staging/cfg/report.json",
+              "content": "{\"origins\": [\"src/toyq/config.py\"], \"gaps\": []}\n"
+            }
+          },
+          "result": "File written: .dogen/staging/cfg/report.json"
+        },
+        {
+          "cmd": "dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json",
           "exit": 5,
           "output": "{\"error\": \"busy\", \"unit\": \"cfg\", \"detail\": \"another dogen invocation holds .dogen/staging/lock\", \"hint\": \"wait for it to finish and retry\", \"next\": \"\"}"
         }
@@ -76,7 +86,7 @@
             {
               "kind": "decisive",
               "tool": "Bash",
-              "args_re": "^(sleep \\d+(\\.\\d+)?\\s*(;|&&)\\s*)?dogen draft cfg \\.dogen/staging/cfg/draft/reference/config\\.md( --json)?$"
+              "args_re": "(^|(;|&&)\\s*)dogen\\ draft\\ cfg\\ \\.dogen/staging/cfg/draft/\\ \\-\\-model\\-origin\\ unknown\\ \\-\\-report\\ \\.dogen/staging/cfg/report\\.json( --json)?\\s*$"
             },
             {
               "kind": "decisive",
@@ -87,7 +97,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "\\bdogen\\s+draft\\b(?!\\s+cfg\\s+\\.dogen/staging/cfg/draft/reference/config\\.md(\\s+--json)?\\s*$)"
+          "args_re": "\\bdogen\\s+draft\\b(?! cfg\\ \\.dogen/staging/cfg/draft/\\ \\-\\-model\\-origin\\ unknown\\ \\-\\-report\\ \\.dogen/staging/cfg/report\\.json( --json)?\\s*$)"
         },
         {
           "kind": "no_tool_call",
@@ -118,7 +128,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md"
+                "command": "dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json"
               }
             }
           ]
@@ -131,7 +141,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "rm -f .dogen/staging/lock && dogen draft cfg .dogen/staging/cfg/draft/reference/config.md"
+                "command": "rm -f .dogen/staging/lock && dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json"
               }
             }
           ]
@@ -205,7 +215,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --unsteered-reason 'the author asked for a redraft'"
+                "command": "dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json --unsteered-reason 'the author asked for a redraft'"
               }
             }
           ]
@@ -417,7 +427,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md"
+                "command": "dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json"
               }
             }
           ]
@@ -578,7 +588,17 @@
           "result": "File written: .dogen/staging/cfg/draft/reference/config.md"
         },
         {
-          "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md",
+          "call": {
+            "name": "Write",
+            "arguments": {
+              "file_path": ".dogen/staging/cfg/report.json",
+              "content": "{\"origins\": [\"src/toyq/config.py\"], \"gaps\": []}\n"
+            }
+          },
+          "result": "File written: .dogen/staging/cfg/report.json"
+        },
+        {
+          "cmd": "dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json",
           "exit": 6,
           "output": "{\"error\": \"internal_error\", \"unit\": \"cfg\", \"detail\": \"unexpected internal fault: KeyError: 'basis'\", \"hint\": \"this is a dogen defect, not a diagnosis of your record; re-run with the same arguments and report the detail above\", \"next\": \"show\"}"
         }
@@ -594,7 +614,7 @@
         {
           "kind": "decisive",
           "tool": "Bash",
-          "args_re": "^(sleep \\d+(\\.\\d+)?\\s*(;|&&)\\s*)?dogen draft cfg \\.dogen/staging/cfg/draft/reference/config\\.md( --json)?$"
+          "args_re": "(^|(;|&&)\\s*)dogen\\ draft\\ cfg\\ \\.dogen/staging/cfg/draft/\\ \\-\\-model\\-origin\\ unknown\\ \\-\\-report\\ \\.dogen/staging/cfg/report\\.json( --json)?\\s*$"
         }
       ],
       "oracle": [
@@ -615,7 +635,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md"
+                "command": "dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json"
               }
             }
           ]
@@ -623,7 +643,15 @@
       ],
       "foil": [
         {
-          "content": "dogen crashed with an internal error; please report it upstream."
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json"
+              }
+            }
+          ]
         }
       ]
     }
