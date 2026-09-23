@@ -7085,6 +7085,11 @@ test_n09_a_second_draft_with_no_steering_is_unsteered() {
     local rc=$?
     assert_eq "a second unsteered draft exits 1" "1" "$rc"
     assert_json_error "unsteered" "err.txt" "unsteered"
+    # A model follows the hint in front of it, so the hint leads with the STOP:
+    # ask the author first, and only then the verb that records their words.
+    assert_eq "the unsteered hint leads with asking the author" \
+        "a STOP, not a retry: ask the author what should change" \
+        "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["hint"].split(", then")[0])' err.txt)"
     assert_eq "the refusal appends nothing" "$ledger_before" "$(ledger_digest demo-unit)"
     assert_eq "the refusal commits nothing" "$head_before" "$(git rev-parse HEAD)"
     assert_eq "the refusal leaves the page byte-unchanged" "$page_before" \
