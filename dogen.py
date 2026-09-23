@@ -5136,9 +5136,10 @@ def cmd_draft(args):
                 unit=unit,
                 detail="nothing has been recorded since the generation at seq %s"
                 % state["gen_seq"],
-                hint='dogen steer %s --note "…" records what should change; '
-                '`dogen draft %s <staged-file> --unsteered-reason "<why>"` records '
-                "an override" % (unit, unit),
+                hint="a STOP, not a retry: ask the author what should change, then "
+                'dogen steer %s --note "<their words>"; only when the author '
+                "authorises a redraft with nothing to change, `dogen draft %s "
+                '<staged-file> --unsteered-reason "<why>"`' % (unit, unit),
                 next_token=route(state),
             )
 
