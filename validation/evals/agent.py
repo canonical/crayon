@@ -212,6 +212,29 @@ def _segments(command):
     return [_HARMLESS_REDIRECT_RE.sub("", part).strip() for part in parts if part.strip()]
 
 
+_TAIL_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\n)\s*")
+
+
+def strip_looking_tail(command):
+    """``command`` without trailing parts that only look (``; echo "exit:$?"``).
+
+    A chain's last looking parts change nothing the graded action did, so a
+    pattern anchored at the command's end ignores them. Pipes stay: what a
+    command is piped into is part of running it. Quotes are masked first, so a
+    separator inside a string never splits.
+    """
+    while True:
+        masked = _QUOTED_RE.sub(lambda m: "Q" * len(m.group(0)), command)
+        cuts = list(_TAIL_SPLIT_RE.finditer(masked))
+        if not cuts:
+            return command
+        last = cuts[-1]
+        head, tail = command[:last.start()], command[last.end():]
+        if not head.strip() or (tail.strip() and not looking(tail)):
+            return command
+        command = head
+
+
 def looking(command):
     """True when every part of ``command`` only reads (or is setup)."""
     parts = _segments(command)
@@ -278,6 +301,52 @@ def render_output(output, exit_code):
     return text
 
 
+class Jail(object):
+    """Where a model's looking command runs: a bubblewrap jail of one sandbox.
+
+    The command sees the sandbox copy at the real ``WORKDIR`` and each sibling
+    of it (the throwaway home, a docs root moved beside the repository) at
+    ``/srv/<name>``; ``/usr`` read-only, a ``dogen`` shim on ``/opt/dogen``, an
+    empty ``/tmp``, its own process table, and no network. Nothing else of the
+    machine running the eval exists in there — not its home, not the checkout
+    the eval runs from — so a command that goes looking beyond the repository
+    finds nothing to show a model.
+    """
+
+    SHIM = "/opt/dogen/bin"
+    PATH = SHIM + ":/usr/local/bin:/usr/bin:/bin"
+
+    def __init__(self, shim_dir, dogen_py, bwrap="bwrap"):
+        self.shim_dir = str(shim_dir)
+        self.dogen_py = str(dogen_py)
+        self.bwrap = bwrap
+
+    def argv(self, root, env, command):
+        args = [self.bwrap, "--unshare-all", "--die-with-parent", "--new-session",
+                "--ro-bind", "/usr", "/usr"]
+        for top in ("/bin", "/lib", "/lib64", "/sbin"):
+            if os.path.islink(top):
+                args += ["--symlink", os.readlink(top), top]
+            elif os.path.isdir(top):
+                args += ["--ro-bind", top, top]
+        for kept in ("/etc/ld.so.cache", "/etc/alternatives", "/etc/localtime"):
+            args += ["--ro-bind-try", kept, kept]
+        args += ["--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp",
+                 "--ro-bind", self.shim_dir, self.SHIM,
+                 "--ro-bind", self.dogen_py, "/opt/dogen/dogen.py"]
+        holder = os.path.dirname(root)
+        for name in sorted(os.listdir(holder)):
+            full = os.path.join(holder, name)
+            if full == root:
+                args += ["--bind", full, WORKDIR]
+            elif name != os.path.basename(WORKDIR):
+                args += ["--bind", full, "/srv/" + name]
+        args += ["--chdir", WORKDIR, "--clearenv"]
+        for key, value in sorted(env.items()):
+            args += ["--setenv", key, value]
+        return args + ["bash", "-c", command]
+
+
 class SandboxRepo(object):
     """A real copy of a recorded state, in which only looking is carried out.
 
@@ -287,14 +356,18 @@ class SandboxRepo(object):
     under a constructed environment: ``PATH`` with a ``dogen`` shim first, a
     throwaway ``HOME``, git's global and system config switched off, and
     nothing inherited, so no key or setting of the machine running the eval can
-    reach a model's command. ``overrides`` answer a command from the replayed
+    reach a model's command. With a ``jail`` (:class:`Jail`) it runs inside it,
+    where nothing of the machine but ``/usr`` exists; without one it runs on
+    the host, which only a replay of fixed commands may do (``lanes.run_b``
+    refuses a live model that). ``overrides`` answer a command from the replayed
     history instead, where the history was written rather than recorded (a
     refusal no real state here would print). Anything else is consequential:
     it ends the episode and is never run.
     """
 
-    def __init__(self, root, bin_dir, overrides=(), timeout=20, limit=20000):
+    def __init__(self, root, bin_dir, overrides=(), timeout=20, limit=20000, jail=None):
         self.root = os.path.realpath(str(root))
+        self.jail = jail
         self.overrides = list(overrides)
         self.timeout = timeout
         self.limit = limit
@@ -302,8 +375,8 @@ class SandboxRepo(object):
         if not os.path.isdir(home):
             os.makedirs(home)
         self.env = {
-            "PATH": "%s:/usr/local/bin:/usr/bin:/bin" % bin_dir,
-            "HOME": home,
+            "PATH": Jail.PATH if jail else "%s:/usr/local/bin:/usr/bin:/bin" % bin_dir,
+            "HOME": "/srv/home" if jail else home,
             "LANG": "C.UTF-8",
             "LC_ALL": "C.UTF-8",
             "GIT_CONFIG_GLOBAL": "/dev/null",
@@ -394,16 +467,20 @@ class SandboxRepo(object):
                 return override["output"], override["exit"]
         if not looking(command):
             return None
+        if self.jail:
+            argv, env = self.jail.argv(self.root, self.env, command), {}
+        else:
+            argv, env = ["bash", "-c", self._to_disk(command)], self.env
         try:
             done = subprocess.run(
-                ["bash", "-c", self._to_disk(command)], cwd=self.root, env=self.env,
+                argv, cwd=self.root, env=env,
                 stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 timeout=self.timeout,
             )
         except subprocess.TimeoutExpired:
             return "(timed out after %ds)" % self.timeout, 124
         text = done.stdout.decode("utf-8", "replace")[: self.limit].rstrip("\n")
-        return self._from_disk(text), done.returncode
+        return (text if self.jail else self._from_disk(text)), done.returncode
 
     def serve(self, call):
         """(result text, consequential?) for one tool call."""
