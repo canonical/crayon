@@ -178,8 +178,14 @@ def check_tool_call(spec, trace, ctx):
 
 
 def check_no_tool_call(spec, trace, ctx):
-    """No call matches ``tool``/``args_re``; with neither, no call at all."""
-    offending = [call for call in _all_calls(trace) if _matches(call, spec)]
+    """No call matches ``tool``/``args_re``; with neither, no call at all.
+
+    A call the episode carried out as looking (``served_ids``) is skipped: it
+    was read-only by construction, so ``dogen signoff --help`` is not a signoff.
+    """
+    served = set(trace.get("served_ids") or ())
+    offending = [call for call in _all_calls(trace)
+                 if call.get("id") not in served and _matches(call, spec)]
     if not offending:
         return result(True, "no matching tool call")
     what = "a tool call" if not (spec.get("tool") or spec.get("args_re")) else (
@@ -313,7 +319,7 @@ Do not reward effort, tone or helpfulness outside it.
 
 CRITERION:
 {rubric}
-
+{context}
 THE AGENT'S RESPONSE (text, then any tool calls it made):
 <<<
 {response}
@@ -355,8 +361,12 @@ def check_judge(spec, trace, ctx):
     if judge is None:
         raise GradeError("a judge assertion needs a judge; none is configured")
     provider, judge_spec = judge
+    context = ""
+    if spec.get("context"):
+        context = ("\nCONTEXT (what the agent saw earlier in the session; not part of its "
+                   "response):\n<<<\n%s\n>>>\n" % spec["context"].strip())
     prompt = JUDGE_INSTRUCTIONS.format(
-        rubric=spec["rubric"].strip(), response=render_turns(trace)
+        rubric=spec["rubric"].strip(), context=context, response=render_turns(trace)
     )
     try:
         turn = provider.complete(

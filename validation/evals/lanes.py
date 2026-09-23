@@ -23,6 +23,7 @@ from pathlib import Path
 
 import agent
 import grade
+import sandbox
 import skills as skillmod
 
 HERE = Path(__file__).resolve().parent
@@ -85,7 +86,6 @@ def oracle_a(case):
 # --- lane B: next action -------------------------------------------------------
 
 DECISION = CASES / "decision"
-FIXTURE = HERE / "fixtures" / "toyq"
 
 #: Patterns a case names by macro, so the same rule reads the same everywhere.
 MACROS = {
@@ -129,7 +129,7 @@ def _resolve_step(step, states, where):
     if not isinstance(step, dict) or not (
             {"user", "assistant", "call"} & set(step) or {"cmd", "exit", "output"} <= set(step)):
         raise ValueError("%s: a history step has an unknown shape: %r" % (where, step))
-    return step
+    return dict(step, written=True) if "cmd" in step else step
 
 
 def _opening(case, states, where):
@@ -139,56 +139,56 @@ def _opening(case, states, where):
     return ["tool/version_json", "%s/show_json" % case["opening"]]
 
 
-def _tree(case, states, where):
-    files = {}
-    for path in sorted(FIXTURE.rglob("*")):
-        if path.is_file():
-            files[str(path.relative_to(FIXTURE))] = path.read_text(encoding="utf-8")
-    for skill_dir in sorted(skillmod.SKILLS_ROOT.glob("dogen-*")):
-        for path in sorted(skill_dir.rglob("*.md")):
-            key = "%s/%s/%s" % (skillmod.INSTALLED_AT, skill_dir.name,
-                                path.relative_to(skill_dir))
-            files[key] = path.read_text(encoding="utf-8")
-    for state in case.get("files", []):
-        if state not in states:
-            raise ValueError("%s: no recorded state %r for files" % (where, state))
-        for label, entry in states[state].items():
-            if label.startswith("file:"):
-                files[label[len("file:"):]] = entry["output"]
-    return files
+def _sandbox(case, where):
+    """The snapshot an episode runs in: named, or the last state the history reads."""
+    name = case.get("sandbox")
+    if not name:
+        steps = _opening(case, None, where) + case.get("history", [])
+        refs = [step.partition("/")[0] for step in steps if isinstance(step, str)]
+        refs = [ref for ref in refs if ref != "tool"]
+        if not refs:
+            raise ValueError("%s: no recorded state in the history; name a sandbox" % where)
+        name = refs[-1]
+    if name not in sandbox.SANDBOXES:
+        raise ValueError("%s: no sandbox %r (sandbox.SANDBOXES)" % (where, name))
+    return name
 
 
-def _replies(case, history, states, where):
-    """Every read-only command in the history, answered as recorded; plus extras."""
-    replies = []
+def _overrides(history):
+    """Read-only steps written into a case answer as the history says.
+
+    A recorded step needs no override: the sandbox is the recorded state, so
+    it answers the same, and after a later step changed the state it answers
+    with the state as it is now, which is what a real repository would do. A
+    step written into a case (a refusal no recorded state prints) must win over
+    the sandbox for the whole verb on that unit — ``dogen show cfg`` with or
+    without ``--json`` — or a model re-running it would see the history
+    contradicted.
+    """
+    return [{"prefix": " ".join(agent.normalise(step["cmd"]).split()[:3]),
+             "output": step["output"], "exit": step["exit"]}
+            for step in history
+            if step.get("written") and agent.looking(step["cmd"])]
+
+
+def _writes(history, where):
+    """(path, content) for every Write the history says already happened."""
+    writes = []
     for step in history:
-        if "cmd" in step and agent._READONLY_DOGEN_RE.match(agent.normalise(step["cmd"])):
-            replies.append({"exact": agent.normalise(step["cmd"]),
-                            "output": step["output"], "exit": step["exit"]})
-    for extra in case.get("replies", []):
-        if isinstance(extra, str):
-            entry = _recorded(states, extra, where)
-            replies.append({"exact": agent.normalise(entry["cmd"]),
-                            "output": entry["output"], "exit": entry["exit"]})
-        elif "ref" in extra:
-            entry = _recorded(states, extra["ref"], where)
-            replies.append({"re": extra["re"], "output": entry["output"],
-                            "exit": entry["exit"]})
-        else:
-            replies.append({"re": extra["re"], "output": extra["output"],
-                            "exit": extra.get("exit", 0)})
-    for reply in replies:
-        if "re" in reply:
-            re.compile(reply["re"])
-    return replies
+        call = step.get("call") or {}
+        if call.get("name") == "Write":
+            args = call.get("arguments") or {}
+            if not args.get("file_path") or "content" not in args:
+                raise ValueError("%s: a history Write needs file_path and content" % where)
+            writes.append((args["file_path"], args["content"]))
+    return writes
 
 
 def load_b(root=CASES):
     states = load_states(Path(root) / "decision" / "states.json")
     known = skillmod.load_skills()
     cases, seen = [], set()
-    files = sorted((Path(root) / "decision").glob("*.json"))
-    for path in files:
+    for path in sorted((Path(root) / "decision").glob("*.json")):
         if path.name == "states.json":
             continue
         data = _read(path)
@@ -208,8 +208,9 @@ def load_b(root=CASES):
                        for step in _opening(case, states, where) + case.get("history", [])]
             case["resolved"] = {
                 "history": history,
-                "files": _tree(case, states, where),
-                "replies": _replies(case, history, states, where),
+                "sandbox": _sandbox(case, where),
+                "overrides": _overrides(history),
+                "writes": _writes(history, where),
             }
             case["assert"] = _expand(case["assert"])
             for spec in case["assert"]:
@@ -230,10 +231,16 @@ def run_b(case, spec, provider, ctx):
          "content": skillmod.agent_system_prompt(ctx["skills"], agent.WORKDIR)},
         {"role": "user", "content": invocation},
     ] + agent.history_messages(case["resolved"]["history"])
-    repo = agent.VirtualRepo(case["resolved"]["files"], case["resolved"]["replies"])
-    return agent.run_episode(provider, spec, messages, agent.tools_for(skill), repo,
-                             max_turns=case.get("max_turns", 6),
-                             cache=ctx.get("cache", True), scope=spec["id"])
+    root = sandbox.materialise(case["resolved"]["sandbox"])
+    try:
+        repo = agent.SandboxRepo(root, sandbox.bin_dir(), case["resolved"]["overrides"])
+        for path, content in case["resolved"]["writes"]:
+            repo.write(path, content)
+        return agent.run_episode(provider, spec, messages, agent.tools_for(skill), repo,
+                                 max_turns=case.get("max_turns", 14),
+                                 cache=ctx.get("cache", True), scope=spec["id"])
+    finally:
+        sandbox.discard(root)
 
 
 def oracle_b(case):

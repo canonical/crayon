@@ -6,6 +6,7 @@
       "id": "B-28",
       "skill": "dogen-review",
       "ask": "cfg",
+      "sandbox": "fixed",
       "history": [
         "tool/version_json",
         "drafted/show_json",
@@ -18,6 +19,7 @@
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@MUTATING"
         },
         {
@@ -26,12 +28,12 @@
         },
         {
           "kind": "judge",
-          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the dogen-write skill (for example /dogen-write cfg), and the agent does NOT tell the author to type a raw `dogen draft` or other `dogen` command themselves. Any commit id it quotes must be 9196ba9, the one the tool printed."
+          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the dogen-write skill (for example /dogen-write cfg), and the agent does NOT tell the author to type a raw `dogen draft` or other `dogen` command themselves. Any commit id it quotes must be 4eb50bb, the one the tool printed."
         }
       ],
       "oracle": [
         {
-          "content": "Recorded your fix request (commit 9196ba9); it is pending. Next, invoke /dogen-write cfg to redraft the page with it."
+          "content": "Recorded your fix request (commit 4eb50bb); it is pending. Next, invoke /dogen-write cfg to redraft the page with it."
         }
       ],
       "foil": [
@@ -48,10 +50,7 @@
         "tool/version_json",
         "context_recorded/show_json"
       ],
-      "files": [
-        "context_recorded"
-      ],
-      "max_turns": 8,
+      "max_turns": 14,
       "why": "Socratic intake: after grounding, exactly one question per turn; nothing declared yet",
       "assert": [
         {
@@ -59,6 +58,7 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+unit\\s+new\\b"
         },
         {
@@ -116,14 +116,12 @@
           "user": "Operators running toyq on servers."
         }
       ],
-      "files": [
-        "context_recorded"
-      ],
-      "max_turns": 8,
+      "max_turns": 14,
       "why": "propose, don't ask: a field the repository answers (the source) is proposed, not asked for",
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+unit\\s+new\\b"
         },
         {
@@ -196,7 +194,7 @@
       "assert": [
         {
           "kind": "text_re",
-          "re": "19 checks, 1 warn, 0 fail"
+          "re": "\\(19\\ checks,\\ 0\\ warn,\\ 0\\ fail\\)"
         },
         {
           "kind": "not_text_re",
@@ -204,12 +202,13 @@
         },
         {
           "kind": "judge",
-          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example 'record: verify warn at c56607b (19 checks, 1 warn, 0 fail) . page: current') rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
+          "context": "Earlier in the session `dogen summary cfg` printed:\nConfiguration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify ok at cc9800e (19 checks, 0 warn, 0 fail) · page: current",
+          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example 'record: verify ok at cc9800e (19 checks, 0 warn, 0 fail) · page: current') rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
         }
       ],
       "oracle": [
         {
-          "content": "Provenance, as dogen summary printed it:\n\n    files changed: reference/config.md\n    record: verify warn at c56607b (19 checks, 1 warn, 0 fail) · page: current\n\nWhat is your verdict: accept, fix or redraft?"
+          "content": "Provenance, as dogen summary printed it:\n\n    files changed: reference/config.md\n    record: verify ok at cc9800e (19 checks, 0 warn, 0 fail) · page: current\n\nWhat is your verdict: accept, fix or redraft?"
         }
       ],
       "foil": [

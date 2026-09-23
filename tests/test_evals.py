@@ -11,6 +11,7 @@ here rather than blamed on a model in a paid run.
 
 import io
 import json
+import os
 import re
 import sys
 import tempfile
@@ -26,6 +27,7 @@ import agent  # noqa: E402
 import grade  # noqa: E402
 import lanes  # noqa: E402
 import record_states  # noqa: E402
+import sandbox  # noqa: E402
 import openrouter  # noqa: E402
 import run  # noqa: E402
 import skills as skillmod  # noqa: E402
@@ -468,12 +470,24 @@ class TestEpisodeKinds(unittest.TestCase):
 
 
 class TestAgentSurface(unittest.TestCase):
-    """E-07 — tools per skill, the virtual repo, and where an episode ends."""
+    """E-07 — tools per skill, the sandbox, and where an episode ends."""
+
+    def setUp(self):
+        self.holder = tempfile.mkdtemp(prefix="dogen-eval-test-")
+        root = Path(self.holder) / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "a.py").write_text("retries = 3\n", encoding="utf-8")
+        (root / ".agents" / "skills" / "dogen-plan").mkdir(parents=True)
+        (root / ".agents" / "skills" / "dogen-plan" / "SKILL.md").write_text("body", encoding="utf-8")
+        self.root = str(root)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.holder, ignore_errors=True)
 
     def repo(self):
-        return agent.VirtualRepo(
-            {"src/a.py": "retries = 3\n", ".agents/skills/dogen-plan/SKILL.md": "body"},
-            [{"exact": "dogen show cfg --json", "output": "{}", "exit": 0}])
+        return agent.SandboxRepo(self.root, sandbox.bin_dir(),
+                                 [{"exact": "dogen show cfg --json", "output": "{}", "exit": 0}])
 
     def test_a_skill_is_offered_exactly_the_tools_it_declares(self):
         loaded = skillmod.load_skills()
@@ -484,20 +498,36 @@ class TestAgentSurface(unittest.TestCase):
                 self.assertNotIn("Write", names(other))
                 self.assertNotIn("Edit", names(other))
 
-    def test_looking_is_answered_and_acting_is_not(self):
+    def test_looking_is_carried_out_and_acting_is_not(self):
         repo = self.repo()
         cases = [
             (call("Read", file_path="/srv/toyq/src/a.py"), False, "retries = 3"),
+            (call("Read", file_path="/etc/hostname"), False, "outside the repository"),
+            (call("Read", file_path="../../etc/hostname"), False, "outside the repository"),
             (call("Glob", pattern="src/*.py"), False, "src/a.py"),
             (call("Grep", pattern="retr"), False, "src/a.py:1:retries = 3"),
             (call("Bash", command='dogen show "cfg" --json 2>&1'), False, "{}"),
-            (call("Bash", command="dogen summary cfg"), False, "not recorded"),
             (call("Bash", command="cat src/a.py"), False, "retries = 3"),
+            (call("Bash", command="ls -la /srv/toyq && ls /srv/toyq/src 2>/dev/null"), False, "a.py"),
+            (call("Bash", command="pwd"), False, "/srv/toyq"),
+            (call("Bash", command='grep -rn "retr\\|x" src | grep -v zzz'), False, "retries"),
             (call("Bash", command="WS=.dogen/staging/x/scratch && mkdir -p $WS/evidence"), False, ""),
-            (call("Bash", command="sleep 5"), False, ""),
+            (call("Bash", command='for f in src/*; do case "$f" in *.pyc) ;; *) cat "$f" ;; esac; done'),
+             False, "retries"),
+            (call("Bash", command="if [ -f src/a.py ]; then cat src/a.py; fi"), False, "retries"),
+            (call("Bash", command="which git; pip show nothing-installed 2>/dev/null | head -2"), False, ""),
+            (call("Bash", command="for f in src/*; do rm $f; done"), True, None),
+            (call("Bash", command="if [ -f src/a.py ]; then rm src/a.py; fi"), True, None),
             (call("Bash", command="dogen signoff cfg"), True, None),
             (call("Bash", command="dogen resume cfg"), True, None),
+            (call("Bash", command="sleep 2; dogen draft cfg x"), True, None),
             (call("Bash", command="cat src/a.py > /tmp/x"), True, None),
+            (call("Bash", command="find . -name a.py -delete"), True, None),
+            (call("Bash", command="ls $(pwd)"), False, "src"),
+            (call("Bash", command='echo "$(git log -1 --format=%h -- src/a.py 2>/dev/null)"'), False, ""),
+            (call("Bash", command="ls $(rm -rf src)"), True, None),
+            (call("Bash", command="echo `touch x`"), True, None),
+            (call("Bash", command="git status && git commit -m x"), True, None),
             (call("Bash", command="mkdir -p docs/reference"), True, None),
             (call("Write", file_path="x", content="y"), True, None),
             (call("AskUserQuestion", questions=[]), True, None),
@@ -508,6 +538,36 @@ class TestAgentSurface(unittest.TestCase):
                 self.assertEqual(acted, consequential)
                 if expected:
                     self.assertIn(expected, result)
+        self.assertTrue(os.path.isfile(os.path.join(self.root, "src", "a.py")),
+                        "an acting call must never be carried out")
+
+    def test_a_written_refusal_answers_the_whole_verb_on_its_unit(self):
+        repo = agent.SandboxRepo(self.root, sandbox.bin_dir(),
+                                 [{"prefix": "dogen show cfg", "output": "{\"error\": \"x\"}",
+                                   "exit": 2}])
+        for command in ("dogen show cfg --json", "dogen show cfg", 'dogen show "cfg" --diff'):
+            with self.subTest(command=command):
+                out, acted = repo.serve(call("Bash", command=command))
+                self.assertFalse(acted)
+                self.assertIn('"error"', out)
+        out, _ = repo.serve(call("Bash", command="dogen show cfgx"))
+        self.assertNotIn('"error": "x"', out)
+
+    def test_a_model_command_never_sees_the_runner_environment(self):
+        os.environ["DOGEN_EVAL_CANARY"] = "canary-value"
+        try:
+            out, _ = self.repo().serve(call("Bash", command="echo $DOGEN_EVAL_CANARY $OPENROUTER_API_KEY"))
+        finally:
+            del os.environ["DOGEN_EVAL_CANARY"]
+        self.assertNotIn("canary-value", out)
+        self.assertNotIn("sk-", out)
+
+    def test_history_writes_land_inside_the_repository_only(self):
+        repo = self.repo()
+        repo.write(".dogen/staging/cfg/draft/p.md", "draft")
+        self.assertIn("draft", repo.read({"file_path": ".dogen/staging/cfg/draft/p.md"}))
+        with self.assertRaises(ValueError):
+            repo.write("../escape.md", "x")
 
     def test_an_episode_ends_on_the_first_consequential_call(self):
         replies = run.scripted([
@@ -558,6 +618,43 @@ class TestLaneBCases(unittest.TestCase):
         self.assertEqual(set(c["skill"] for c in cases), set(grade.SKILL_NAMES))
         self.assertEqual(set(c["group"] for c in cases), {"opening", "next", "refusals", "judged"})
         self.assertGreaterEqual(len(cases), 30)
+
+    def test_every_sandbox_agrees_with_its_history(self):
+        """What a model sees when it looks is what the replayed history said.
+
+        Each recorded read-only step of every case is re-run in that case's
+        sandbox, with the overrides switched off, and must print the same bytes.
+        This is the property an emulated repository broke: histories and the
+        tree they describe disagreed, and models spent their turns on that.
+        """
+        checked = 0
+        for case in lanes.load_b():
+            history = case["resolved"]["history"]
+
+            def changes(step):
+                if "cmd" in step:
+                    return not agent.looking(step["cmd"])
+                return (step.get("call") or {}).get("name") == "Write"
+
+            last_change = max([i for i, step in enumerate(history) if changes(step)] or [-1])
+            steps = [step for i, step in enumerate(history)
+                     if i > last_change and "cmd" in step and not step.get("written")
+                     and agent.looking(step["cmd"])]
+            if not steps:
+                continue
+            root = sandbox.materialise(case["resolved"]["sandbox"])
+            try:
+                repo = agent.SandboxRepo(root, sandbox.bin_dir())
+                for path, content in case["resolved"]["writes"]:
+                    repo.write(path, content)
+                for step in steps:
+                    with self.subTest(case=case["id"], cmd=step["cmd"]):
+                        output, code = repo.bash(step["cmd"])
+                        self.assertEqual((output, code), (step["output"], step["exit"]))
+                        checked += 1
+            finally:
+                sandbox.discard(root)
+        self.assertGreaterEqual(checked, 20, "the agreement check has stopped matching steps")
 
     def test_the_recorded_states_match_what_the_tool_prints_now(self):
         stdout = sys.stdout
@@ -652,7 +749,7 @@ class TestRosterAndRunner(unittest.TestCase):
             stdout = sys.stdout
             sys.stdout = io.StringIO()
             try:
-                code = run.main(["all", "--roster", "--dry-run", "--jobs", "2"])
+                code = run.main(["all", "--model", "z-ai/glm-5.3", "--dry-run", "--jobs", "4"])
             finally:
                 sys.stdout = stdout
                 run.RESULTS, run.RAW = saved

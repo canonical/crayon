@@ -283,7 +283,7 @@ def preflight_judge(provider, judge_spec):
         turn = provider.complete(
             judge_spec,
             [{"role": "user", "content": grade.JUDGE_INSTRUCTIONS.format(
-                rubric="The response says hello.", response="hello")}],
+                rubric="The response says hello.", context="", response="hello")}],
             cache=False, scope="judge",
         )
         grade.parse_verdict(turn["content"])

@@ -7,11 +7,8 @@
       "skill": "dogen-review",
       "ask": "cfg",
       "max_turns": 3,
+      "sandbox": "drafted",
       "why": "every unit session opens on version, then show --json",
-      "replies": [
-        "tool/version_json",
-        "drafted/show_json"
-      ],
       "assert": [
         {
           "kind": "bash_sequence",
@@ -87,11 +84,8 @@
       "skill": "dogen-onboard",
       "ask": "",
       "max_turns": 3,
+      "sandbox": "context_empty",
       "why": "a context skill opens on version, then context show --json",
-      "replies": [
-        "tool/version_json",
-        "context_empty/show_json"
-      ],
       "assert": [
         {
           "kind": "bash_sequence",
@@ -146,6 +140,7 @@
       "id": "B-03",
       "skill": "dogen-review",
       "ask": "cfg",
+      "sandbox": "drafted",
       "why": "stop rule: a contract other than 1 stops the session before show",
       "history": [
         {
@@ -157,8 +152,8 @@
       "assert": [
         {
           "kind": "no_tool_call",
-          "args_re": "^dogen\\s+(?!version\\b)",
-          "tool": "Bash"
+          "tool": "Bash",
+          "args_re": "^dogen\\s+(?!version\\b)"
         },
         {
           "kind": "text_re",
@@ -188,6 +183,7 @@
       "id": "B-04",
       "skill": "dogen-plan",
       "ask": "cfg",
+      "sandbox": "declared",
       "why": "stop rule: a tool older than min_tool 0.2.0 stops the session",
       "history": [
         {
@@ -199,8 +195,8 @@
       "assert": [
         {
           "kind": "no_tool_call",
-          "args_re": "^dogen\\s+(?!version\\b)",
-          "tool": "Bash"
+          "tool": "Bash",
+          "args_re": "^dogen\\s+(?!version\\b)"
         },
         {
           "kind": "text_re",
