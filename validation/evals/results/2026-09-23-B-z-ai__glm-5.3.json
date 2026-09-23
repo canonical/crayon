@@ -13,17 +13,17 @@
     "judge": "anthropic/claude-sonnet-5",
     "date": "2026-09-23",
     "dogen_version": "0.2.0",
-    "repo_head": "a9d77c5",
-    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
+    "repo_head": "801b507",
+    "skills_sha256": "efb12fbeb37aa284f1e5c1397d214d52c94a79fce3f2d9ea434a15a435c4ce93",
     "total_cases": 31,
-    "passed": 27,
-    "failed": 4,
+    "passed": 29,
+    "failed": 2,
     "errors": 0,
-    "pass_rate": 0.871,
-    "cost_usd": 1.404191,
+    "pass_rate": 0.9355,
+    "cost_usd": 1.152653,
     "tokens": {
-      "in": 1760718,
-      "out": 154874
+      "in": 1716337,
+      "out": 100328
     },
     "truncated": 0,
     "cached_cases": 0,
@@ -37,412 +37,405 @@
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.013306,
+      "cost": 0.018057,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 7743,
-        "out": 119
+        "in": 15584,
+        "out": 161
       },
       "truncated": false,
-      "latency_ms": 5006
+      "latency_ms": 15894
     },
     {
       "id": "B-29",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.071042,
+      "cost": 0.048326,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 125619,
-        "out": 4813
+        "in": 63157,
+        "out": 2468
       },
       "truncated": false,
-      "latency_ms": 157242
+      "latency_ms": 87494
     },
     {
       "id": "B-30",
       "passed": false,
       "error": null,
       "score": 0.6,
-      "cost": 0.012258,
+      "cost": 0.012371,
       "cached": false,
       "failed": [
         {
           "kind": "judge",
-          "feedback": "judge: The agent's response only asks about audience and does not mention or propose src/toyq/config.py or the retry settings fields at all. It neither proposes the file for confirmation nor asks an open-ended question about source files in this snippet, but since the criterion requires the agent to actively propose the config.py file, and it fails to do so here, this does not meet the PASS bar."
+          "feedback": "judge: The agent's response only asks about documentation format (reference vs how-to) and does not mention or propose src/toyq/config.py or any specific source file/setting for confirmation. It neither proposes the file nor asks where the retry logic lives, but it completely fails to satisfy the requirement of proposing config.py as the source for the settings."
         }
       ],
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 7283,
-        "out": 15
+        "in": 7284,
+        "out": 44
       },
       "truncated": false,
-      "answer": "**Q2 \u2014 Audience.** Who is the page for?",
-      "latency_ms": 4586
+      "answer": "Which do you want it to be, and why: a **reference** page where operators look up each setting and its default, or a **how-to** that walks through changing retry behaviour for a deployment?",
+      "latency_ms": 10234
     },
     {
       "id": "B-31",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.037105,
+      "cost": 0.035227,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 90546,
-        "out": 1289
+        "in": 64294,
+        "out": 1140
       },
       "truncated": false,
-      "latency_ms": 66780
+      "latency_ms": 55092
     },
     {
       "id": "B-05",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.040296,
+      "cost": 0.04,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 87196,
-        "out": 2108
+        "in": 68904,
+        "out": 2074
       },
       "truncated": false,
-      "latency_ms": 75114
+      "latency_ms": 60336
     },
     {
       "id": "B-06",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.009582,
+      "cost": 0.002033,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
         "in": 6978,
-        "out": 372
+        "out": 16
       },
       "truncated": false,
-      "latency_ms": 11230
+      "latency_ms": 3445
     },
     {
       "id": "B-07",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.5,
-      "cost": 0.302558,
+      "score": 1.0,
+      "cost": 0.170971,
       "cached": false,
-      "failed": [
-        {
-          "kind": "decisive",
-          "feedback": "expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was nothing: the turn cap was reached while the model was still looking"
-        }
-      ],
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 223220,
-        "out": 50021
+        "in": 258541,
+        "out": 18726
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\"})\n\nThe routing row for `next: draft` is: *Author the page, stage it under the unit's own draft directory, and record it.* The intent is **reference**, so this is an author-straight branch (steps 2\u20136, no walk). Let me read the declared plan.\n\n[TOOL CALL] Bash(ls -la /srv/toyq/.dogen/units/cfg/ 2>/dev/null && echo \"---\" && ls /srv/toyq/.dogen/)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/units/cfg/unit.md\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/.dogen/context/ && echo \"---staging---\" && ls -R /srv/toyq/.dogen/staging/ 2>/dev/null)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/config.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/doc-style.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/glossary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/structure.md\"})\n\n[TOOL CALL] Bash(find /srv/toyq -type f \\( -name \"*.md\" -o -name \"*.rst\" -o -name \"*.py\" -o -name \"*.toml\" \\) -not -path \"*/.git/*\" -not -path \"*/.dogen/*\" | sort)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/README.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/docs/index.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/__init__.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/pyproject.toml\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-write/references/writing-standards.md\"})\n\n[TOOL CALL] Read({\"f",
-      "latency_ms": 1354528
+      "latency_ms": 648116
     },
     {
       "id": "B-08",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.073062,
+      "cost": 0.091507,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 106807,
-        "out": 5935
+        "in": 179125,
+        "out": 4876
       },
       "truncated": false,
-      "latency_ms": 175337
+      "latency_ms": 142215
     },
     {
       "id": "B-09",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.020524,
+      "cost": 0.038694,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 45483,
-        "out": 573
+        "in": 109078,
+        "out": 834
       },
       "truncated": false,
-      "latency_ms": 31847
+      "latency_ms": 41894
     },
     {
       "id": "B-10",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.061119,
+      "cost": 0.080967,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 103428,
-        "out": 5672
+        "in": 85561,
+        "out": 11623
       },
       "truncated": false,
-      "latency_ms": 166640
+      "latency_ms": 433355
     },
     {
       "id": "B-11",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.093398,
+      "cost": 0.020488,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 170475,
-        "out": 8771
+        "in": 32327,
+        "out": 1451
       },
       "truncated": false,
-      "latency_ms": 270035
+      "latency_ms": 44829
     },
     {
       "id": "B-12",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.025704,
+      "cost": 0.044307,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 21044,
-        "out": 3308
+        "in": 90130,
+        "out": 3048
       },
       "truncated": false,
-      "latency_ms": 93921
+      "latency_ms": 90623
     },
     {
       "id": "B-13",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.015617,
+      "cost": 0.015287,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 31927,
-        "out": 355
+        "in": 27272,
+        "out": 584
       },
       "truncated": false,
-      "latency_ms": 16191
+      "latency_ms": 20994
     },
     {
       "id": "B-14",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.032222,
+      "cost": 0.044399,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 68397,
-        "out": 1678
+        "in": 106729,
+        "out": 1966
       },
       "truncated": false,
-      "latency_ms": 53447
+      "latency_ms": 67332
     },
     {
       "id": "B-15",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.031644,
+      "cost": 0.020733,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 62553,
-        "out": 1466
+        "in": 30375,
+        "out": 1050
       },
       "truncated": false,
-      "latency_ms": 65851
+      "latency_ms": 34100
     },
     {
       "id": "B-16",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.031082,
+      "cost": 0.058506,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 15592,
-        "out": 3811
+        "in": 27318,
+        "out": 9032
       },
       "truncated": false,
-      "latency_ms": 98117
+      "latency_ms": 221389
     },
     {
       "id": "B-01",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.021019,
+      "cost": 0.014856,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 32378,
-        "out": 1456
+        "in": 27339,
+        "out": 448
       },
       "truncated": false,
-      "latency_ms": 48973
+      "latency_ms": 10975
     },
     {
       "id": "B-02",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.019325,
+      "cost": 0.018333,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 20898,
-        "out": 860
+        "in": 20966,
+        "out": 613
       },
       "truncated": false,
-      "latency_ms": 34581
+      "latency_ms": 16338
     },
     {
       "id": "B-03",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003768,
+      "cost": 0.005409,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
         "in": 7393,
-        "out": 411
+        "out": 784
       },
       "truncated": false,
-      "latency_ms": 15843
+      "latency_ms": 18123
     },
     {
       "id": "B-04",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.010465,
+      "cost": 0.011618,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
         "in": 6781,
-        "out": 1962
+        "out": 2224
       },
       "truncated": false,
-      "latency_ms": 49340
+      "latency_ms": 48226
     },
     {
       "id": "B-17",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.011755,
+      "cost": 0.01219,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 7773,
-        "out": 613
+        "in": 15703,
+        "out": 195
       },
       "truncated": false,
-      "latency_ms": 14883
+      "latency_ms": 9360
     },
     {
       "id": "B-18",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.002673,
+      "cost": 0.002654,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 8300,
-        "out": 56
+        "in": 8428,
+        "out": 44
       },
       "truncated": false,
-      "latency_ms": 5457
+      "latency_ms": 4975
     },
     {
       "id": "B-19",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.012373,
+      "cost": 0.013291,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 8363,
-        "out": 549
+        "in": 8516,
+        "out": 709
       },
       "truncated": false,
-      "latency_ms": 18136
+      "latency_ms": 22423
     },
     {
       "id": "B-20",
       "passed": false,
       "error": null,
       "score": 0.5,
-      "cost": 0.116857,
+      "cost": 0.126274,
       "cached": false,
       "failed": [
         {
@@ -454,138 +447,131 @@
         "Z.AI"
       ],
       "tokens": {
-        "in": 149408,
-        "out": 14173
+        "in": 134203,
+        "out": 16674
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(dogen summary cfg)\n\n[TOOL CALL] Read({\"file_path\": \"reference/config.md\"})\n\n[TOOL CALL] Glob({\"pattern\": \"**/config.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"docs/reference/config.md\"})\n\n[TOOL CALL] Bash(ls .dogen/units/cfg/ && cat .dogen/units/cfg/unit.md 2>/dev/null)\n\n[TOOL CALL] Grep({\"path\": \"src/toyq/config.py\", \"pattern\": \"max_retries|retry|defeated|exhausted|drop|fail\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\"})\n\n[TOOL CALL] Bash(sha256sum docs/reference/config.md .dogen/staging/cfg/draft/reference/config.md; echo ---; git status --short; echo ---; git log --oneline -5)\n\n[TOOL CALL] Grep({\"path\": \"src\", \"pattern\": \"max_retries|retries\"})\n\n[TOOL CALL] Bash(ls src/toyq/ && ls docs/)\n\n[TOOL CALL] Grep({\"path\": \"src/toyq/cli.py\", \"pattern\": \"max_retries|retry|retries|fail|drop\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/provenance-summary.md\"})",
-      "latency_ms": 416511
+      "answer": "[TOOL CALL] Bash(dogen summary cfg)\n\n[TOOL CALL] Read({\"file_path\": \"reference/config.md\"})\n\n[TOOL CALL] Glob({\"pattern\": \"reference/config.md\"})\n\n[TOOL CALL] Glob({\"pattern\": \"**/config.md\"})\n\n[TOOL CALL] Bash(sha256sum docs/reference/config.md .dogen/staging/cfg/draft/reference/config.md && git status --short -- docs/reference/config.md)\n\n[TOOL CALL] Read({\"file_path\": \"docs/reference/config.md\"})\n\n[TOOL CALL] Grep({\"glob\": \"*.py\", \"path\": \".\", \"pattern\": \"max_retries|MAX_RETRIES\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\"})\n\n[TOOL CALL] Grep({\"path\": \"src\", \"pattern\": \"max_retries|retries|retry\"})\n\n[TOOL CALL] Bash(grep -rn \"retry\\|retries\" src/toyq/*.py --include=\"*.py\" -l; ls src/toyq/)\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/provenance-summary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/staging/cfg/draft/reference/config.md\"})\n\n[TOOL CALL] Bash(grep '\"kind\":\"signoff\"' \".dogen/units/cfg/ledger.jsonl\" | tail -1; echo ---; grep '\"kind\":\"generation\"' \".dogen/units/cfg/ledger.jsonl\" | tail -1)\n\n[TOOL CALL] Bash(dogen summary cfg --json)\n\n[TOOL CALL] Bash(git ls-files docs/reference/config.md; git status --short; git log --oneline -3)",
+      "latency_ms": 448028
     },
     {
       "id": "B-21",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.151396,
+      "cost": 0.020047,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 73264,
-        "out": 26402
+        "in": 23398,
+        "out": 1522
       },
       "truncated": false,
-      "latency_ms": 693860
+      "latency_ms": 44128
     },
     {
       "id": "B-22",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.667,
-      "cost": 0.018434,
+      "score": 1.0,
+      "cost": 0.050864,
       "cached": false,
-      "failed": [
-        {
-          "kind": "text_re",
-          "feedback": "expected the reply to match '(?i)(dogen-review|review skill|dogen edits|\\\\bedits\\\\b|adopt)'; it reads: 'The route is `record_edits` \u2014 so I stop the drafting branch before it starts. Let me name the paths involved.'"
-        }
-      ],
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 33765,
-        "out": 908
+        "in": 114506,
+        "out": 3332
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\"})\n\nThe route is `record_edits` \u2014 so I stop the drafting branch before it starts. Let me name the paths involved.\n\n[TOOL CALL] Bash(dogen show cfg)\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/cfg/unit.md\"})\n\n[TOOL CALL] Bash(dogen show cfg --json | python3 -c \"import json,sys; d=json.load(sys.stdin); print(json.dumps(d, indent=2))\" 2>/dev/null | head -60; echo \"---\"; ls docs 2>/dev/null; echo \"---\"; git status --porcelain)",
-      "latency_ms": 34079
+      "latency_ms": 98169
     },
     {
       "id": "B-23",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.022158,
+      "cost": 0.030466,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 46766,
-        "out": 934
+        "in": 74362,
+        "out": 1089
       },
       "truncated": false,
-      "latency_ms": 29473
+      "latency_ms": 37283
     },
     {
       "id": "B-24",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.026539,
+      "cost": 0.021914,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 48657,
-        "out": 1643
+        "in": 32954,
+        "out": 1592
       },
       "truncated": false,
-      "latency_ms": 54179
+      "latency_ms": 41045
     },
     {
       "id": "B-25",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.020727,
+      "cost": 0.020409,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 19684,
-        "out": 2278
+        "in": 19652,
+        "out": 2216
       },
       "truncated": false,
-      "latency_ms": 53816
+      "latency_ms": 61782
     },
     {
       "id": "B-26",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.091268,
+      "cost": 0.057474,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 106220,
-        "out": 12266
+        "in": 32446,
+        "out": 9736
       },
       "truncated": false,
-      "latency_ms": 303676
+      "latency_ms": 235139
     },
     {
       "id": "B-27",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004915,
+      "cost": 0.004981,
       "cached": false,
       "served_by": [
         "Z.AI"
       ],
       "tokens": {
-        "in": 16777,
+        "in": 17033,
         "out": 57
       },
       "truncated": false,
-      "latency_ms": 7172
+      "latency_ms": 5016
     }
   ]
 }

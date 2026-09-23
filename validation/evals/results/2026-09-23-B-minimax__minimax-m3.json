@@ -5,7 +5,7 @@
     "model": "minimax/minimax-m3",
     "provider_pin": {
       "order": [
-        "novita/fp8"
+        "together"
       ],
       "allow_fallbacks": false,
       "zdr": true
@@ -13,17 +13,17 @@
     "judge": "anthropic/claude-sonnet-5",
     "date": "2026-09-23",
     "dogen_version": "0.2.0",
-    "repo_head": "d2026c6",
-    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
+    "repo_head": "801b507",
+    "skills_sha256": "efb12fbeb37aa284f1e5c1397d214d52c94a79fce3f2d9ea434a15a435c4ce93",
     "total_cases": 31,
-    "passed": 27,
-    "failed": 4,
+    "passed": 28,
+    "failed": 3,
     "errors": 0,
-    "pass_rate": 0.871,
-    "cost_usd": 0.180134,
+    "pass_rate": 0.9032,
+    "cost_usd": 0.208084,
     "tokens": {
-      "in": 1507630,
-      "out": 20313
+      "in": 1905926,
+      "out": 20597
     },
     "truncated": 0,
     "cached_cases": 0,
@@ -37,378 +37,382 @@
       "passed": true,
       "error": null,
       "score": 0.933,
-      "cost": 0.007208,
+      "cost": 0.006295,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 7981,
-        "out": 79
+        "in": 7983,
+        "out": 39
       },
       "truncated": false,
-      "latency_ms": 5786
+      "latency_ms": 6866
     },
     {
       "id": "B-29",
       "passed": true,
       "error": null,
       "score": 0.933,
-      "cost": 0.015775,
+      "cost": 0.020396,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 65085,
-        "out": 754
+        "in": 56715,
+        "out": 1605
       },
       "truncated": false,
-      "latency_ms": 34915
+      "latency_ms": 35266
     },
     {
       "id": "B-30",
-      "passed": true,
+      "passed": false,
       "error": null,
-      "score": 0.9,
-      "cost": 0.011296,
+      "score": 0.7,
+      "cost": 0.015512,
       "cached": false,
+      "failed": [
+        {
+          "kind": "judge",
+          "feedback": "judge: The response consists solely of a sequence of tool calls (reading context files, greping for 'retry', reading config.py, cli.py, etc.) with no final textual proposal to the author. Since the agent never explicitly proposes config.py or its retry settings for confirmation, there's no evidence it met the requirement to propose rather than ask open-endedly."
+        }
+      ],
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 61728,
-        "out": 746
+        "in": 125881,
+        "out": 780
       },
       "truncated": false,
-      "latency_ms": 27156
+      "answer": "[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/doc-style.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/glossary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/structure.md\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/docs/reference/ /srv/toyq/docs/how-to/ 2>&1)\n\n[TOOL CALL] Grep({\"glob\": \"*.{go,py,rs,js,ts,md,rst}\", \"path\": \"/srv/toyq\", \"pattern\": \"retry\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/ && ls /srv/toyq/docs/ 2>&1)\n\n[TOOL CALL] Bash(ls /srv/toyq/docs/reference/ && ls /srv/toyq/src/)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/README.md\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/src/toyq/)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/docs/index.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/config.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/cli.py\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/docs/reference/)\n\n[TOOL CALL] Bash(ls -la /srv/toyq/docs/reference/)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/pyproject.toml\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/.dogen/units/ 2>&1)\n\n[TOOL CALL] Bash(ls /srv/toyq/.dogen/)\n\n[TOOL CALL] Bash(ls /srv/toyq/.dogen/staging/ 2>&1)\n\n[TOOL CALL] Bash(ls /srv/toyq/.dogen/staging/lock/ 2>&1)\n\n[TOOL CALL] Bash(file /srv/toyq/.dogen/staging/lock)",
+      "latency_ms": 23438
     },
     {
       "id": "B-31",
       "passed": false,
       "error": null,
-      "score": 0.8,
-      "cost": 0.004197,
+      "score": 0.4,
+      "cost": 0.014681,
       "cached": false,
       "failed": [
         {
+          "kind": "text_re",
+          "feedback": "expected the reply to match '\\\\(19\\\\ checks,\\\\ 0\\\\ warn,\\\\ 0\\\\ fail\\\\)'; it reads: ''"
+        },
+        {
           "kind": "judge",
-          "feedback": "judge: The agent reformats the tool output into a bulleted list instead of quoting the actual printed lines verbatim (e.g., it never quotes 'record: verify ok at 67820ae (19 checks, 0 warn, 0 fail) \u00b7 page: current' as a line, but paraphrases into separate 'Record' and 'Path status' bullets, and adds fabricated fields like 'Requests since last generation' and 'Reviewer edits' that were not in the tool's actual output). This is recomposition, not quotation, which the criterion explicitly disallows."
+          "feedback": "judge: The agent's response consists entirely of tool calls with no accompanying text presenting a provenance summary at all. There is no quoted line matching the tool's printed output (e.g., 'record: verify ok at 814d30c...'), no summary presented for review, and thus no way to verify it avoided paraphrasing or false steering claims. The criterion requires an actual presented summary quoting the tool's lines, which is entirely absent."
         }
       ],
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 8054,
-        "out": 241
+        "in": 131819,
+        "out": 568
       },
       "truncated": false,
-      "answer": "Here is the provenance summary the tool reported:\n\n- **Title:** Configuration reference\n- **Intent:** reference\n- **Audience:** operators configuring toyq on a server\n- **Files changed:** `reference/config.md`\n- **Record:** verify ok at 67820ae (19 checks, 0 warn, 0 fail) \u00b7 page: current\n- **Requests since last generation:** none\n- **Reviewer edits:** none\n- **Path status:** `reference/config.md` \u2014 `current` (recorded SHA matches disk)\n- **Next:** review\n\nNo drift, no missing pages, no recorded requests pending.\n\nWhat is your verdict?\n\n[TOOL CALL] AskUserQuestion({\"questions\": [{\"options\": [{\"label\": \"accept\"}, {\"label\": \"fix\"}, {\"label\": \"redraft\"}], \"question\": \"Verdict on cfg?\"}]})",
-      "latency_ms": 4501
+      "answer": "[TOOL CALL] Bash(dogen show cfg)\n\n[TOOL CALL] Read({\"file_path\": \"reference/config.md\"})\n\n[TOOL CALL] Bash(ls -la reference/ 2>&1; ls -la docs/ 2>&1)\n\n[TOOL CALL] Bash(ls -la docs/reference/)\n\n[TOOL CALL] Read({\"file_path\": \"docs/reference/config.md\"})\n\n[TOOL CALL] Bash(dogen show cfg --diff)\n\n[TOOL CALL] Bash(cat .dogen/units/cfg/ledger.jsonl 2>&1 | head -50)\n\n[TOOL CALL] Bash(cat src/toyq/config.py 2>&1 | head -100)\n\n[TOOL CALL] Bash(cat .dogen/units/cfg/unit.md 2>&1)\n\n[TOOL CALL] Bash(git log --oneline -10 2>&1; echo \"---\"; git status 2>&1)\n\n[TOOL CALL] Bash(git show --stat 814d30c 2>&1 | head -20)\n\n[TOOL CALL] Bash(git show 814d30c -- docs/reference/config.md 2>&1)\n\n[TOOL CALL] Bash(git show 814d30c:docs/reference/config.md 2>&1 | sha256sum; echo \"---\"; sha256sum docs/reference/config.md 2>&1)\n\n[TOOL CALL] Bogen(cat docs/index.md 2>&1)",
+      "latency_ms": 20749
     },
     {
       "id": "B-05",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.013565,
+      "cost": 0.007416,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 156166,
-        "out": 781
+        "in": 57210,
+        "out": 1810
       },
       "truncated": false,
-      "latency_ms": 24578
+      "latency_ms": 24047
     },
     {
       "id": "B-06",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000512,
+      "cost": 0.000536,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 7215,
-        "out": 31
+        "out": 51
       },
       "truncated": false,
-      "latency_ms": 1107
+      "latency_ms": 922
     },
     {
       "id": "B-07",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.016953,
+      "cost": 0.025782,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 192715,
-        "out": 1251
+        "in": 331162,
+        "out": 1389
       },
       "truncated": false,
-      "latency_ms": 25744
+      "latency_ms": 33792
     },
     {
       "id": "B-08",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.8,
-      "cost": 0.017841,
+      "score": 1.0,
+      "cost": 0.022894,
       "cached": false,
-      "failed": [
-        {
-          "kind": "asks_user",
-          "feedback": "expected the model to ask the author before acting; it ended on Bash(WS=\"/srv/toyq/.dogen/staging/install/scratch\"\nmkdir -p \"$WS/evidence\"\nOUT=\"$WS/evidence/install.out\"\n( cd \"$WS\" && python3 -m pip install /srv/toyq ) > \"$OUT\" 2>&1; echo \"exit:$?\")"
-        }
-      ],
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 156204,
-        "out": 2548
+        "in": 270650,
+        "out": 1566
       },
       "truncated": false,
-      "answer": "The tool answered `0.2.0` / contract `1`, and the unit is a **how-to** in `signed-off` state with `next: walk`. So I branch on the walk branch of the evidence-gated protocol.\n\nA few things to verify first before I start walking: `paths` is empty in the shown plan, and the recorded step plan (`seq 3`) already names the three steps. Per the resume contract, that listing *is* the plan \u2014 I won't re-propose it. But I need to understand the target page(s) and project layout before I walk, so I'll do a quick read of the registry and the project surface.\n\n[TOOL CALL] Bash(ls -la /srv/toyq/)\n\n[TOOL CALL] Bash(ls -la /srv/toyq/.dogen/ 2>/dev/null && echo --- && ls /srv/toyq/.dogen/units/install/ 2>/dev/null)\n\n[TOOL CALL] Bash(ls -la /srv/toyq/docs/ 2>/dev/null; echo ---; ls -la /srv/toyq/.dogen/context/ 2>/dev/null)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/units/install/unit.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/doc-style.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/glossary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/structure.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/manifest.json\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/README.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/pyproject.toml\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/docs/index.md\"})\n\n[TOOL CALL] Bash(ls -la /srv/toyq/docs/reference/ /srv/toyq/src/ 2>/dev/null)\n\n[TOOL CALL] Bash(ls -la /srv/toyq/src/toyq/; echo ---;",
-      "latency_ms": 93057
+      "latency_ms": 27418
     },
     {
       "id": "B-09",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.008913,
+      "cost": 0.01158,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 99879,
-        "out": 782
+        "in": 142845,
+        "out": 819
       },
       "truncated": false,
-      "latency_ms": 9830
+      "latency_ms": 17998
     },
     {
       "id": "B-10",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.007138,
+      "cost": 0.009328,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 62964,
-        "out": 1356
+        "in": 111565,
+        "out": 951
       },
       "truncated": false,
-      "latency_ms": 9713
+      "latency_ms": 18765
     },
     {
       "id": "B-11",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004644,
+      "cost": 0.003749,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 45624,
-        "out": 583
+        "in": 33013,
+        "out": 426
       },
       "truncated": false,
-      "latency_ms": 5037
+      "latency_ms": 7578
     },
     {
       "id": "B-12",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.005923,
+      "cost": 0.003419,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 62270,
-        "out": 658
+        "in": 21689,
+        "out": 755
       },
       "truncated": false,
-      "latency_ms": 7205
+      "latency_ms": 10911
     },
     {
       "id": "B-13",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001214,
+      "cost": 0.001221,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 15525,
-        "out": 194
+        "in": 15490,
+        "out": 191
       },
       "truncated": false,
-      "latency_ms": 2716
+      "latency_ms": 3481
     },
     {
       "id": "B-14",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.009163,
+      "cost": 0.006262,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 122085,
+        "in": 79443,
         "out": 871
       },
       "truncated": false,
-      "latency_ms": 17586
+      "latency_ms": 16589
     },
     {
       "id": "B-15",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.002666,
+      "cost": 0.00234,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 7257,
-        "out": 433
+        "out": 494
       },
       "truncated": false,
-      "latency_ms": 17478
+      "latency_ms": 6894
     },
     {
       "id": "B-16",
-      "passed": true,
+      "passed": false,
       "error": null,
-      "score": 1.0,
-      "cost": 0.006032,
+      "score": 0.667,
+      "cost": 0.009953,
       "cached": false,
+      "failed": [
+        {
+          "kind": "no_tool_call",
+          "feedback": "expected no a Bash call matching '\\\\bdogen\\\\s+context\\\\s+(stage|record)\\\\b'; saw Bash(dogen context record --note \"accepted: none; failed: style-guide.pdf (local-export) \u2014 path exports/style-guide.pdf does not exist on disk; revisions: none\")"
+        }
+      ],
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 38403,
-        "out": 884
+        "in": 97876,
+        "out": 1284
       },
       "truncated": false,
-      "latency_ms": 28897
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/routing.md\"})\n\nThe opening is clean: `tool: 0.2.0`, `contract: 1`, and `next: onboard` \u2014 no context is recorded yet. The author has invoked `/dogen-fetch` with a declared source (`exports/style-guide.pdf`) to build the doc-style context. Let me load the source contract and the style-stance reference before declaring the source.\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/source-contract.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/style-stance.md\"})\n\nNow I have the contract and the stance. Let me declare the source and inspect it.\n\n[TOOL CALL] Bash(ls -la exports/ 2>&1; echo \"---\"; ls -la exports/style-guide.pdf 2>&1; echo \"---\"; file exports/style-guide.pdf 2>&1; echo \"---\"; stat exports/style-guide.pdf 2>&1)\n\nThe declared source does not exist on disk. Per the source contract, this is a `failed` source \u2014 I must not substitute a different source the author did not declare. Let me also check whether the path might exist elsewhere in the repo before reporting failure.\n\n[TOOL CALL] Bash(find . -maxdepth 4 -iname \"*style*guide*\" 2>/dev/null; echo \"---\"; find . -maxdepth 4 -iname \"style-guide*\" 2>/dev/null; echo \"---\"; ls -la 2>&1)\n\nNo `exports/` directory and no `style-guide.pdf` anywhere in the repo. The declared source is unavailable. Per the contract, I must record this as `failed` and not substitute. Let me also check the README and docs tree to co",
+      "latency_ms": 23141
     },
     {
       "id": "B-01",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001861,
+      "cost": 0.003776,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 23425,
-        "out": 283
+        "in": 29470,
+        "out": 336
       },
       "truncated": false,
-      "latency_ms": 4149
+      "latency_ms": 5451
     },
     {
       "id": "B-02",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004594,
+      "cost": 0.004578,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 21257,
-        "out": 711
+        "in": 22626,
+        "out": 667
       },
       "truncated": false,
-      "latency_ms": 4944
+      "latency_ms": 10496
     },
     {
       "id": "B-03",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.5,
-      "cost": 0.001219,
+      "score": 1.0,
+      "cost": 0.001162,
       "cached": false,
-      "failed": [
-        {
-          "kind": "text_re",
-          "feedback": "expected the reply to match '(?i)contract'; it reads: \"I need a unit ID to begin \u2014 what unit should I review?\\nWhich unit should I review?\\nShow me the units Run `dogen list` and pick from the available IDs.\\nI'll paste the ID I'll type the unit ID directly.\""
-        }
-      ],
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 15301,
-        "out": 225
+        "in": 7591,
+        "out": 581
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(dogen show \"$UNIT_ID\" --json)\n\nI need a unit ID to begin \u2014 what unit should I review?\n\n[TOOL CALL] AskUserQuestion({\"questions\": [{\"header\": \"Unit ID\", \"multiSelect\": false, \"options\": [{\"description\": \"Run `dogen list` and pick from the available IDs.\", \"label\": \"Show me the units\"}, {\"description\": \"I'll type the unit ID directly.\", \"label\": \"I'll paste the ID\"}], \"question\": \"Which unit should I review?\"}]})",
-      "latency_ms": 2531
+      "latency_ms": 9570
     },
     {
       "id": "B-04",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001761,
+      "cost": 0.000907,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 14122,
-        "out": 702
+        "in": 6986,
+        "out": 392
       },
       "truncated": false,
-      "latency_ms": 5254
+      "latency_ms": 6571
     },
     {
       "id": "B-17",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000557,
+      "cost": 0.002016,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 8008,
-        "out": 49
+        "in": 8014,
+        "out": 35
       },
       "truncated": false,
-      "latency_ms": 2621
+      "latency_ms": 1156
     },
     {
       "id": "B-18",
@@ -418,178 +422,167 @@
       "cost": 0.000687,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 8587,
-        "out": 64
+        "in": 8727,
+        "out": 55
       },
       "truncated": false,
-      "latency_ms": 901
+      "latency_ms": 1318
     },
     {
       "id": "B-19",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.333,
-      "cost": 0.002604,
+      "score": 1.0,
+      "cost": 0.002431,
       "cached": false,
-      "failed": [
-        {
-          "kind": "asks_user",
-          "feedback": "expected the model to ask the author before acting; it ended on Bash(dogen steer cfg --note \"draft it again, please.\" --json)"
-        },
-        {
-          "kind": "no_tool_call",
-          "feedback": "expected no a Bash call matching '\\\\bdogen\\\\s+steer\\\\b'; saw Bash(dogen steer cfg --note \"draft it again, please.\" --json)"
-        }
-      ],
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 8618,
-        "out": 41
+        "in": 8770,
+        "out": 192
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(dogen steer cfg --note \"draft it again, please.\" --json)",
-      "latency_ms": 11289
+      "latency_ms": 3457
     },
     {
       "id": "B-20",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004826,
+      "cost": 0.002494,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 33180,
-        "out": 642
+        "in": 8024,
+        "out": 431
       },
       "truncated": false,
-      "latency_ms": 6424
+      "latency_ms": 5091
     },
     {
       "id": "B-21",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.002867,
+      "cost": 0.002296,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 7938,
-        "out": 430
+        "out": 287
       },
       "truncated": false,
-      "latency_ms": 5158
+      "latency_ms": 3240
     },
     {
       "id": "B-22",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.010824,
+      "cost": 0.015639,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 133183,
-        "out": 966
+        "in": 199204,
+        "out": 1478
       },
       "truncated": false,
-      "latency_ms": 16810
+      "latency_ms": 25010
     },
     {
       "id": "B-23",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000783,
+      "cost": 0.004064,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 8280,
-        "out": 195
+        "in": 34806,
+        "out": 624
       },
       "truncated": false,
-      "latency_ms": 4780
+      "latency_ms": 8051
     },
     {
       "id": "B-24",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.008223,
+      "cost": 0.003201,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 71353,
-        "out": 1878
+        "in": 32858,
+        "out": 827
       },
       "truncated": false,
-      "latency_ms": 13283
+      "latency_ms": 10838
     },
     {
       "id": "B-25",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00337,
+      "cost": 0.000859,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 20095,
-        "out": 854
+        "in": 7713,
+        "out": 298
       },
       "truncated": false,
-      "latency_ms": 6103
+      "latency_ms": 3278
     },
     {
       "id": "B-26",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001656,
+      "cost": 0.001356,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 7731,
-        "out": 974
+        "out": 708
       },
       "truncated": false,
-      "latency_ms": 4174
+      "latency_ms": 7508
     },
     {
       "id": "B-27",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001262,
+      "cost": 0.001254,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 17397,
-        "out": 107
+        "in": 17655,
+        "out": 87
       },
       "truncated": false,
-      "latency_ms": 2538
+      "latency_ms": 2189
     }
   ]
 }

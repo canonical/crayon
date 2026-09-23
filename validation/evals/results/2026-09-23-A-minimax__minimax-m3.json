@@ -5,7 +5,7 @@
     "model": "minimax/minimax-m3",
     "provider_pin": {
       "order": [
-        "novita/fp8"
+        "together"
       ],
       "allow_fallbacks": false,
       "zdr": true
@@ -13,17 +13,17 @@
     "judge": "anthropic/claude-sonnet-5",
     "date": "2026-09-23",
     "dogen_version": "0.2.0",
-    "repo_head": "a9d77c5",
-    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
+    "repo_head": "801b507",
+    "skills_sha256": "efb12fbeb37aa284f1e5c1397d214d52c94a79fce3f2d9ea434a15a435c4ce93",
     "total_cases": 15,
-    "passed": 13,
-    "failed": 2,
+    "passed": 15,
+    "failed": 0,
     "errors": 0,
-    "pass_rate": 0.8667,
-    "cost_usd": 0.004508,
+    "pass_rate": 1.0,
+    "cost_usd": 0.004061,
     "tokens": {
-      "in": 16890,
-      "out": 2042
+      "in": 16916,
+      "out": 2225
     },
     "truncated": 0,
     "cached_cases": 0,
@@ -37,269 +37,255 @@
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000171,
+      "cost": 0.000211,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1141,
-        "out": 62
+        "out": 95
       },
       "truncated": false,
-      "latency_ms": 900
+      "latency_ms": 1252
     },
     {
       "id": "A-02",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000185,
+      "cost": 0.00015,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1118,
-        "out": 54
+        "out": 50
       },
       "truncated": false,
-      "latency_ms": 2224
+      "latency_ms": 1019
     },
     {
       "id": "A-03",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000137,
+      "cost": 0.000159,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1126,
-        "out": 58
+        "out": 56
       },
       "truncated": false,
-      "latency_ms": 1285
+      "latency_ms": 1066
     },
     {
       "id": "A-04",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000162,
+      "cost": 0.000189,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1130,
-        "out": 57
+        "out": 80
       },
       "truncated": false,
-      "latency_ms": 2915
+      "latency_ms": 1172
     },
     {
       "id": "A-05",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00038,
+      "cost": 0.000267,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1133,
-        "out": 260
+        "out": 144
       },
       "truncated": false,
-      "latency_ms": 2537
+      "latency_ms": 2013
     },
     {
       "id": "A-06",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.0,
-      "cost": 0.000356,
+      "score": 1.0,
+      "cost": 0.000262,
       "cached": false,
-      "failed": [
-        {
-          "kind": "skill_choice",
-          "feedback": "expected dogen-plan; the answer named no skill: 'ogen-plan'"
-        }
-      ],
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1127,
-        "out": 194
+        "out": 141
       },
       "truncated": false,
-      "answer": "ogen-plan",
-      "latency_ms": 3745
+      "latency_ms": 2058
     },
     {
       "id": "A-07",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 9.2e-05,
+      "cost": 0.000454,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 1111,
-        "out": 4
+        "in": 1124,
+        "out": 302
       },
       "truncated": false,
-      "latency_ms": 1869
+      "latency_ms": 3458
     },
     {
       "id": "A-08",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000653,
+      "cost": 0.000299,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1123,
-        "out": 296
+        "out": 173
       },
       "truncated": false,
-      "latency_ms": 2896
+      "latency_ms": 1966
     },
     {
       "id": "A-09",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000309,
+      "cost": 0.000294,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
-        "in": 1113,
-        "out": 5
+        "in": 1126,
+        "out": 168
       },
       "truncated": false,
-      "latency_ms": 1285
+      "latency_ms": 1782
     },
     {
       "id": "A-10",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000646,
+      "cost": 0.000255,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1128,
-        "out": 282
+        "out": 135
       },
       "truncated": false,
-      "latency_ms": 1510
+      "latency_ms": 1628
     },
     {
       "id": "A-11",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000172,
+      "cost": 0.000303,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1134,
-        "out": 65
+        "out": 174
       },
       "truncated": false,
-      "latency_ms": 958
+      "latency_ms": 1929
     },
     {
       "id": "A-12",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000371,
+      "cost": 0.000309,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1132,
-        "out": 231
+        "out": 179
       },
       "truncated": false,
-      "latency_ms": 2648
+      "latency_ms": 2313
     },
     {
       "id": "A-13",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.0,
-      "cost": 0.000462,
+      "score": 1.0,
+      "cost": 0.000435,
       "cached": false,
-      "failed": [
-        {
-          "kind": "skill_choice",
-          "feedback": "expected dogen-fetch; the answer named no skill: 'ogen-fetch'"
-        }
-      ],
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1132,
-        "out": 281
+        "out": 284
       },
       "truncated": false,
-      "answer": "ogen-fetch",
-      "latency_ms": 5575
+      "latency_ms": 2661
     },
     {
       "id": "A-14",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000241,
+      "cost": 0.000299,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1120,
-        "out": 126
+        "out": 174
       },
       "truncated": false,
-      "latency_ms": 1257
+      "latency_ms": 2130
     },
     {
       "id": "A-15",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000171,
+      "cost": 0.000175,
       "cached": false,
       "served_by": [
-        "Novita"
+        "Together"
       ],
       "tokens": {
         "in": 1122,
-        "out": 67
+        "out": 70
       },
       "truncated": false,
-      "latency_ms": 2385
+      "latency_ms": 1197
     }
   ]
 }
