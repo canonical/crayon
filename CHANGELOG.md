@@ -70,6 +70,10 @@ significance still have one order a reader can predict.
   on the unit, then re-run the same command unchanged and report the detail. The old hint
   said only "re-run … and report", and models followed it past the `show`. `error`, `next`
   and exit 6 are unchanged.
+- `unsteered`'s `hint` leads with the STOP: ask the author what should change, then
+  `dogen steer <id> --note "<their words>"`; `--unsteered-reason` only for an authorised
+  redraft with nothing to change. `dogen-write` says a bare "draft it again" is not a note,
+  and that a step marked `stateful` takes the author's yes every time, on resume too.
 - The source file is `dogen.py`; the installed command is still `dogen`. `install.sh` copies or
   links it under that name, and every in-tree pin names `dogen.py`.
 - The surface is harness-agnostic: no agent harness is named, detected or preferred in the
