@@ -1,0 +1,237 @@
+{
+ "accepted": {
+  "accept_again_json": {
+   "cmd": "dogen review cfg --verdict accept --note 'Accurate and complete.' --json",
+   "exit": 3,
+   "output": "{\"error\": \"already_accepted\", \"unit\": \"cfg\", \"detail\": \"the basis at seq 3 was already accepted at seq 4\", \"hint\": \"nothing has been recorded since; the unit is sealed\", \"next\": \"publish\", \"seq\": 4, \"commit\": \"c56607b78d7fedd8bd0050dc9f3c57c15f26b064\"}"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"sealed\", \"qualifier\": \"\", \"paths\": [{\"path\": \"reference/config.md\", \"status\": \"current\", \"recorded_sha\": \"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\", \"current_sha\": \"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\"}], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": 3, \"reviewer_edit\": null, \"review\": 4, \"basis\": 3, \"tip\": 4}, \"next\": \"publish\"}"
+  }
+ },
+ "context_empty": {
+  "show_json": {
+   "cmd": "dogen context show --json",
+   "exit": 0,
+   "output": "{\"ok\": true, \"message\": \"context: 0 of 5 artefact(s) present · missing: doc-style.md, glossary.md, structure.md, code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"onboard\", \"artifacts\": {\"doc-style.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"glossary.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"structure.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": null}"
+  }
+ },
+ "context_recorded": {
+  "file:.dogen/context/doc-style.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Doc style\n\nImpersonal, present tense. Short sentences.\n"
+  },
+  "file:.dogen/context/glossary.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Glossary\n\n- **job**: one queued shell command.\n- **retry**: a re-run of a failed job.\n"
+  },
+  "file:.dogen/context/structure.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Structure\n\n- docs/reference/: settings and commands.\n- docs/how-to/: task guides.\n"
+  },
+  "show_json": {
+   "cmd": "dogen context show --json",
+   "exit": 0,
+   "output": "{\"ok\": true, \"message\": \"context: 3 of 5 artefact(s) present (doc-style.md, glossary.md, structure.md) · missing: code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"plan\", \"artifacts\": {\"doc-style.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"76aee5746f4f4cc34b22e1b21f8f55909153772e4dde30f709b06c19b98c87a7\", \"drifted\": false}, \"glossary.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"b88b260f8e822be1973b199bc145aa2051023f9c5c123456ac30db3116f3e86d\", \"drifted\": false}, \"structure.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"0e7a132931da7055af3bf442ff334d8c6fbeeadf437a7200d720b120d6a41760\", \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": {\"recorded_at\": \"2026-01-01T00:00:00+00:00\", \"commit\": \"047c96ae61beb3fd7f5b591ae1be9fe9bda72e5a\", \"model\": \"\", \"model_origin\": \"unknown\"}}"
+  }
+ },
+ "context_staged": {
+  "show_json": {
+   "cmd": "dogen context show --json",
+   "exit": 0,
+   "output": "{\"ok\": true, \"message\": \"context: 0 of 5 artefact(s) present · missing: doc-style.md, glossary.md, structure.md, code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: doc-style.md\", \"next\": \"record\", \"artifacts\": {\"doc-style.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"glossary.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"structure.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [\"doc-style.md\"], \"manifest\": null}"
+  }
+ },
+ "crashed": {
+  "draft_json": {
+   "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
+   "exit": 6,
+   "output": "{\"error\": \"uncommitted_tail\", \"unit\": \"cfg\", \"detail\": \"uncommitted event(s) at seq 2–2\", \"hint\": \"dogen resume cfg\", \"next\": \"resume\"}"
+  },
+  "resume_dry": {
+   "cmd": "dogen resume cfg --dry-run",
+   "exit": 0,
+   "output": "done .dogen/units/cfg/unit.md\nresumable cfg · uncommitted event(s) at seq 2–2 · 1 file(s) · Next: resume"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 6,
+   "output": "{\"error\": \"uncommitted_tail\", \"unit\": \"cfg\", \"detail\": \"uncommitted event(s) at seq 2–2\", \"hint\": \"dogen resume cfg\", \"next\": \"resume\"}"
+  }
+ },
+ "declared": {
+  "draft_json": {
+   "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
+   "exit": 1,
+   "output": "{\"error\": \"no_signoff\", \"unit\": \"cfg\", \"detail\": \"unit cfg has no recorded signoff\", \"hint\": \"dogen signoff cfg\", \"next\": \"sign_off\"}"
+  },
+  "file:.dogen/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "show": {
+   "cmd": "dogen show cfg",
+   "exit": 0,
+   "output": "Configuration reference\nintent: reference\nstate: declared\nNext: sign_off"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"declared\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": null, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"sign_off\"}"
+  },
+  "signoff_json": {
+   "cmd": "dogen signoff cfg --json",
+   "exit": 0,
+   "output": "git: committed 2dcd47c — dogen: signed-off cfg\n{\"ok\": true, \"message\": \"signed off cfg · plan_hash 538bcc063ff3 · 1 target(s) frozen\", \"next\": \"draft\"}"
+  }
+ },
+ "drafted": {
+  "file:.dogen/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "file:docs/reference/config.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n\n| Setting | Variable | Type | Default |\n|---|---|---|---|\n| `db_path` | `TOYQ_DB_PATH` | string | `toyq.sqlite` |\n| `max_retries` | `TOYQ_MAX_RETRIES` | integer | `3` |\n| `retry_backoff_seconds` | `TOYQ_RETRY_BACKOFF` | float | `5.0` |\n| `job_timeout_seconds` | `TOYQ_JOB_TIMEOUT` | integer | `600` |\n| `log_level` | `TOYQ_LOG_LEVEL` | string | `info` |\n\n`max_retries` must be 0 or more.\n"
+  },
+  "fix_json": {
+   "cmd": "dogen review cfg --verdict fix --note 'Explain what happens when max_retries is exceeded.' --json",
+   "exit": 0,
+   "output": "git: committed 9196ba9 — dogen: reviewed cfg\n{\"ok\": true, \"message\": \"reviewed cfg: fix · .dogen/units/cfg/ledger.jsonl · the request is recorded and pending\", \"next\": \"draft\"}"
+  },
+  "redraft_json": {
+   "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
+   "exit": 1,
+   "output": "{\"error\": \"unsteered\", \"unit\": \"cfg\", \"detail\": \"nothing has been recorded since the generation at seq 3\", \"hint\": \"dogen steer cfg --note \\\"…\\\" records what should change; `dogen draft cfg <staged-file> --unsteered-reason \\\"<why>\\\"` records an override\", \"next\": \"review\"}"
+  },
+  "show": {
+   "cmd": "dogen show cfg",
+   "exit": 0,
+   "output": "Configuration reference\nintent: reference\nstate: drafted\npaths:\n  reference/config.md — current\nNext: review"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"drafted\", \"qualifier\": \"\", \"paths\": [{\"path\": \"reference/config.md\", \"status\": \"current\", \"recorded_sha\": \"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\", \"current_sha\": \"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\"}], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": 3, \"reviewer_edit\": null, \"review\": null, \"basis\": 3, \"tip\": 3}, \"next\": \"review\"}"
+  },
+  "steering_accept_json": {
+   "cmd": "dogen review cfg --verdict accept --note 'Looks right.' --json",
+   "exit": 1,
+   "output": "{\"error\": \"unapplied_steering\", \"unit\": \"cfg\", \"detail\": \"pending request(s) with no recorded disposition: 4\", \"hint\": \"--resolves <seq> records the judgment that a request is satisfied; --withdraw <seq> \\\"<reason>\\\" drops it\", \"next\": \"draft\"}"
+  },
+  "steering_show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"reviewed\", \"qualifier\": \"1 request pending\", \"paths\": [{\"path\": \"reference/config.md\", \"status\": \"current\", \"recorded_sha\": \"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\", \"current_sha\": \"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\"}], \"requests\": [{\"seq\": 4, \"origin\": \"review fix\", \"note\": \"Explain what happens when max_retries is exceeded.\", \"disposition\": \"pending\", \"reason\": \"\"}], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [4], \"seqs\": {\"signoff\": 2, \"generation\": 3, \"reviewer_edit\": null, \"review\": 4, \"basis\": 3, \"tip\": 4}, \"next\": \"draft\"}"
+  },
+  "summary": {
+   "cmd": "dogen summary cfg",
+   "exit": 0,
+   "output": "Configuration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify warn at c56607b (19 checks, 1 warn, 0 fail) · page: current"
+  }
+ },
+ "edited": {
+  "show_diff": {
+   "cmd": "dogen show cfg --diff",
+   "exit": 0,
+   "output": "Configuration reference\nintent: reference\nstate: drafted\npaths:\n  reference/config.md — drifted (uncommitted)\n  --- basis:reference/config.md\n  +++ disk:reference/config.md\n  @@ -11,3 +11,5 @@\n   | `log_level` | `TOYQ_LOG_LEVEL` | string | `info` |\n   \n   `max_retries` must be 0 or more.\n  +\n  +Defaults apply when a setting appears nowhere else.\nNext: record_edits"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"drafted\", \"qualifier\": \"\", \"paths\": [{\"path\": \"reference/config.md\", \"status\": \"drifted (uncommitted)\", \"recorded_sha\": \"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\", \"current_sha\": \"909de14f7447fe9e2c0d86f1851c08738f81263fa0568c8462d5d530eae3a6cf\"}], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": 3, \"reviewer_edit\": null, \"review\": null, \"basis\": 3, \"tip\": 3}, \"next\": \"record_edits\"}"
+  }
+ },
+ "missing": {
+  "accept_json": {
+   "cmd": "dogen review cfg --verdict accept --note 'Ship it.' --json",
+   "exit": 1,
+   "output": "{\"error\": \"target_missing\", \"unit\": \"cfg\", \"detail\": \"signed target(s) not in the basis or missing from disk: reference/config.md\", \"hint\": \"dogen steer cfg --note \\\"restore …\\\" records the request; the next draft writes it\", \"next\": \"review\"}"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"drafted\", \"qualifier\": \"\", \"paths\": [{\"path\": \"reference/config.md\", \"status\": \"missing\", \"recorded_sha\": \"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\", \"current_sha\": null}], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": 3, \"reviewer_edit\": null, \"review\": null, \"basis\": 3, \"tip\": 3}, \"next\": \"review\"}"
+  }
+ },
+ "retired": {
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"retired\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": null, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"retired\"}"
+  }
+ },
+ "signed": {
+  "draft_json": {
+   "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
+   "exit": 0,
+   "output": "git: committed c56607b — dogen: drafted cfg\n{\"ok\": true, \"message\": \"drafted cfg · reference/config.md · 1 file(s) written\", \"next\": \"review\"}"
+  },
+  "file:.dogen/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "show": {
+   "cmd": "dogen show cfg",
+   "exit": 0,
+   "output": "Configuration reference\nintent: reference\nstate: signed-off\nNext: draft"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"signed-off\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"draft\"}"
+  }
+ },
+ "stale": {
+  "draft_json": {
+   "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
+   "exit": 1,
+   "output": "{\"error\": \"plan_stale\", \"unit\": \"cfg\", \"detail\": \"unit.md no longer matches the plan_hash signed at seq 2\", \"hint\": \"dogen unit edit cfg --re-sign records the amendment\", \"next\": \"re_sign\"}"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"signed-off\", \"qualifier\": \"unit.md edited since the signoff at seq 2\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"re_sign\"}"
+  }
+ },
+ "target_exists": {
+  "draft_json": {
+   "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
+   "exit": 1,
+   "output": "{\"error\": \"target_exists\", \"unit\": \"cfg\", \"detail\": \"a signed target exists on disk and is not in the basis: reference/config.md\", \"hint\": \"dogen edits cfg --note \\\"…\\\" adopts the existing page\", \"next\": \"record_edits\"}"
+  }
+ },
+ "tool": {
+  "version_json": {
+   "cmd": "dogen version --json",
+   "exit": 0,
+   "output": "{\"tool\": \"0.2.0\", \"contract\": 1}"
+  }
+ },
+ "walk": {
+  "file:.dogen/units/install/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Install toyq\"\nintent: \"how-to\"\naudience: \"operators installing toyq for the first time\"\ntargets:\n  - \"how-to/install.md\"\nsources:\n  - \"README.md\"\n---\n# Plan\n\nInstall toyq and queue a first job.\n"
+  },
+  "show": {
+   "cmd": "dogen show install",
+   "exit": 0,
+   "output": "Install toyq\nintent: how-to\nstate: signed-off\nsteps: passed 0 · skipped 0 · deviated 0 · unresolved 3: install, init, first-job\nNext: walk"
+  },
+  "show_json": {
+   "cmd": "dogen show install --json",
+   "exit": 0,
+   "output": "{\"unit\": \"install\", \"title\": \"Install toyq\", \"intent\": \"how-to\", \"state\": \"signed-off\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": {\"steps_seq\": 3, \"passed\": 0, \"skipped\": 0, \"skipped_reasons\": [], \"deviated\": 0, \"failed\": 0, \"unresolved\": [\"install\", \"init\", \"first-job\"]}, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"walk\"}"
+  }
+ }
+}

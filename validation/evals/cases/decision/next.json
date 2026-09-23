@@ -1,0 +1,688 @@
+{
+  "lane": "B",
+  "_comment": "One case per routed next token: the model acts on the row for the emitted next.",
+  "cases": [
+    {
+      "id": "B-05",
+      "skill": "dogen-plan",
+      "ask": "cfg",
+      "opening": "declared",
+      "files": [
+        "declared"
+      ],
+      "why": "sign_off: read the plan back and get a go-ahead; never sign unasked",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "\\bdogen\\s+signoff\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Read",
+              "arguments": {
+                "file_path": ".dogen/units/cfg/unit.md"
+              }
+            }
+          ]
+        },
+        {
+          "content": "The plan: a reference page for every toyq setting, for operators configuring toyq on a server, from src/toyq/config.py, at reference/config.md. Shall I record the signoff?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen signoff cfg"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-06",
+      "skill": "dogen-plan",
+      "ask": "cfg",
+      "opening": "declared",
+      "files": [
+        "declared"
+      ],
+      "why": "sign_off after an explicit go-ahead: record the gate act",
+      "history": [
+        {
+          "assistant": "The plan for cfg: a reference page for every toyq setting (key, TOYQ_* override, type, default, precedence), for operators configuring toyq on a server, from src/toyq/config.py, written to reference/config.md. Shall I record the signoff?"
+        },
+        {
+          "user": "Yes, that is right. Sign it off."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "^dogen signoff cfg\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen signoff cfg"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "Before I sign, shall I read the plan back once more?"
+        }
+      ]
+    },
+    {
+      "id": "B-07",
+      "skill": "dogen-write",
+      "ask": "cfg",
+      "opening": "signed",
+      "files": [
+        "signed"
+      ],
+      "max_turns": 8,
+      "why": "draft: author the page into the unit's own staging directory, never into docs/",
+      "assert": [
+        {
+          "kind": "decisive",
+          "args_re": "\\.dogen/staging/cfg/draft/"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Write",
+          "args_re": "\\\"file_path\\\": \\\"(/srv/toyq/)?docs/"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Read",
+              "arguments": {
+                "file_path": ".dogen/units/cfg/unit.md"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Read",
+              "arguments": {
+                "file_path": "src/toyq/config.py"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Write",
+              "arguments": {
+                "file_path": ".dogen/staging/cfg/draft/reference/config.md",
+                "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Write",
+              "arguments": {
+                "file_path": "docs/reference/config.md",
+                "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-08",
+      "skill": "dogen-write",
+      "ask": "install",
+      "opening": "walk",
+      "files": [
+        "walk"
+      ],
+      "max_turns": 8,
+      "why": "walk: run the first step captured in the workspace (or ask first); no digest, no early draft",
+      "assert": [
+        {
+          "kind": "any_of",
+          "of": [
+            {
+              "kind": "decisive",
+              "tool": "Bash",
+              "args_re": "pip install toyq[^\\n]*\\)?\\s*>\\s*\\S+[^\\n]*2>&1"
+            },
+            {
+              "kind": "asks_user"
+            }
+          ]
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "\\b[0-9a-f]{64}\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "\\bdogen\\s+(step|draft)\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "^\\s*pip install",
+          "tool": "Bash"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "WS=.dogen/staging/install/scratch && mkdir -p $WS/evidence"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "( cd .dogen/staging/install/scratch && pip install toyq ) > .dogen/staging/install/scratch/evidence/install.out 2>&1; echo \"exit:$?\""
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "pip install toyq"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-09",
+      "skill": "dogen-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "files": [
+        "drafted"
+      ],
+      "replies": [
+        "drafted/show",
+        "drafted/summary"
+      ],
+      "why": "review: ask the reviewer to choose record or review mode before anything else",
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "AskUserQuestion",
+          "args_re": "(?i)\\brecord\\b"
+        },
+        {
+          "kind": "tool_call",
+          "tool": "AskUserQuestion",
+          "which": "any",
+          "args_re": "(?i)\\breview\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen summary cfg"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "How do you want to review cfg?",
+                    "options": [
+                      {
+                        "label": "record"
+                      },
+                      {
+                        "label": "review"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen review cfg --verdict accept --note ok"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-10",
+      "skill": "dogen-review",
+      "ask": "cfg",
+      "opening": "edited",
+      "files": [
+        "drafted"
+      ],
+      "replies": [
+        "edited/show_diff"
+      ],
+      "why": "record_edits: show the diff and ask before recording the author's edits",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "\\bdogen\\s+edits\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen show cfg --diff"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "docs/reference/config.md changed on disk since the draft (one added line). Record these as your edits?",
+                    "options": [
+                      {
+                        "label": "yes"
+                      },
+                      {
+                        "label": "no"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen edits cfg --note 'author edits'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-11",
+      "skill": "dogen-review",
+      "ask": "cfg",
+      "opening": "accepted",
+      "why": "publish: dogen stops here; the author owns the PR, the build and the publish",
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "@PUBLISH"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "cfg is accepted and sealed; its page is current. dogen stops here: the pull request, the build and the publish are yours."
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "git push origin HEAD"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-12",
+      "skill": "dogen-write",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "review in the writer: the draft waits for review; route to dogen-review, do not redraft",
+      "assert": [
+        {
+          "kind": "no_tool_call",
+          "args_re": "\\bdogen\\s+draft\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Write"
+        },
+        {
+          "kind": "text_re",
+          "re": "dogen-review"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "cfg is drafted and waiting for review. Invoke /dogen-review cfg to review it."
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Write",
+              "arguments": {
+                "file_path": ".dogen/staging/cfg/draft/reference/config.md",
+                "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-13",
+      "skill": "dogen-review",
+      "ask": "cfg",
+      "history": [
+        "tool/version_json",
+        "crashed/show_json"
+      ],
+      "replies": [
+        "crashed/resume_dry"
+      ],
+      "why": "resume: show what a resume would do (--dry-run) before resuming",
+      "assert": [
+        {
+          "kind": "before",
+          "first": "^dogen resume cfg --dry-run$",
+          "then": "^dogen resume cfg( --json)?$"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "--(overwrite|adopt)\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen resume cfg --dry-run"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen resume cfg"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen resume cfg"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-14",
+      "skill": "dogen-plan",
+      "ask": "cfg",
+      "opening": "retired",
+      "why": "retired: STOP; a retired unit is never reopened; offer a fresh declaration",
+      "assert": [
+        {
+          "kind": "no_tool_call",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)retired"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "cfg is retired, and a retired unit is never reopened. I can declare a fresh unit for reference/config.md if you want one. Shall I?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen unit new cfg2 --intent reference --audience ops --title Config --target reference/config.md --body-file -"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-15",
+      "skill": "dogen-plan",
+      "ask": "I'd like a reference page for toyq's retry settings.",
+      "history": [
+        "tool/version_json",
+        "context_empty/show_json"
+      ],
+      "why": "onboard: no context recorded; offer the bootstrap choice, never author context",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)onboard"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "\\bdogen\\s+(context\\s+(stage|record)|unit\\s+new)\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "No documentation context is recorded yet. How should I ground this intake?",
+                    "options": [
+                      {
+                        "label": "Supply the context files"
+                      },
+                      {
+                        "label": "Run /dogen-onboard first"
+                      },
+                      {
+                        "label": "Ground this intake without recording context"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen context stage doc-style.md --body-file -"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-16",
+      "skill": "dogen-fetch",
+      "ask": "Use our house style guide, exported at exports/style-guide.pdf, to build the doc-style context.",
+      "history": [
+        "tool/version_json",
+        "context_empty/show_json"
+      ],
+      "why": "fetch: a declared source that is absent is reported, never substituted or searched for",
+      "assert": [
+        {
+          "kind": "no_tool_call",
+          "args_re": "\\bdogen\\s+context\\s+(stage|record)\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "args_re": "\\b(curl|wget)\\b"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)(not found|no such file|missing|unavailable|does not exist|doesn.t exist|could not|couldn.t|cannot find|can.t find|isn.t there|is not there)"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "ls exports"
+              }
+            }
+          ]
+        },
+        {
+          "content": "The declared source exports/style-guide.pdf does not exist in this repository, so nothing was fetched and no doc-style context was staged. Where is the export?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "curl -sO https://example.com/style-guide.pdf"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

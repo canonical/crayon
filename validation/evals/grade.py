@@ -10,9 +10,11 @@ Deterministic kinds come first and carry most of the weight. ``judge`` is for
 the judgement calls that resist a regex (routing voice, one question per turn)
 and goes through a pinned model, never whichever one happens to be configured.
 
-Grading reads a *trace*: ``{"turns": [normalised assistant turns]}``. The kinds
-below read the LAST turn unless they say otherwise; the lanes that replay a
-history put only the live turn(s) in ``turns``.
+Grading reads a *trace*: ``{"turns": [normalised assistant turns]}``, plus, for
+an episode, ``decisive`` — the action that ended it (``agent.run_episode``).
+Only live turns are in ``turns``; a replayed history is never graded. The text
+kinds read everything the model *said*: every live turn's content and every
+question it put to the author through ``AskUserQuestion``.
 """
 
 import json
@@ -83,6 +85,32 @@ def _all_calls(trace):
     return [call for turn in trace.get("turns") or [] for call in turn["tool_calls"]]
 
 
+def _args(call):
+    try:
+        parsed = json.loads(call.get("arguments") or "{}")
+    except ValueError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _said(trace):
+    """Every live turn's text, then the text of every question asked."""
+    if not trace.get("turns"):
+        raise GradeError("the trace holds no assistant turn to grade")
+    parts = [turn["content"] for turn in trace["turns"] if turn["content"]]
+    for call in _all_calls(trace):
+        if call.get("name") == "AskUserQuestion":
+            for question in _args(call).get("questions") or []:
+                if not isinstance(question, dict):
+                    continue
+                parts.append(str(question.get("question", "")))
+                for option in question.get("options") or []:
+                    if isinstance(option, dict):
+                        parts.append("%s %s" % (option.get("label", ""),
+                                                option.get("description", "")))
+    return "\n".join(parts)
+
+
 def _matches(call, spec):
     if spec.get("tool") and call.get("name") != spec["tool"]:
         return False
@@ -122,8 +150,15 @@ def check_skill_choice(spec, trace, ctx):
 
 
 def check_tool_call(spec, trace, ctx):
-    """A tool call matching ``tool``/``args_re`` — the first one, or any."""
-    calls = _last(trace)["tool_calls"] if spec.get("turn") == "last" else _all_calls(trace)
+    """A tool call matching ``tool``/``args_re`` — the first one, or any.
+
+    With ``tool`` named, "first" means the first call OF THAT TOOL: a model may
+    read a reference file before its first command without failing a check on
+    that command.
+    """
+    calls = _all_calls(trace)
+    if spec.get("tool"):
+        calls = [call for call in calls if call.get("name") == spec["tool"]]
     if not calls:
         return result(False, "expected a %s call matching %r; the model made no "
                       "tool call" % (spec.get("tool", "tool"), spec.get("args_re")))
@@ -154,7 +189,7 @@ def check_no_tool_call(spec, trace, ctx):
 
 
 def check_text_re(spec, trace, ctx):
-    text = _last(trace)["content"]
+    text = _said(trace)
     if re.search(spec["re"], text):
         return result(True, "text matches %r" % spec["re"])
     return result(False, "expected the reply to match %r; it reads: %r"
@@ -162,7 +197,7 @@ def check_text_re(spec, trace, ctx):
 
 
 def check_not_text_re(spec, trace, ctx):
-    text = _last(trace)["content"]
+    text = _said(trace)
     match = re.search(spec["re"], text)
     if not match:
         return result(True, "text does not match %r" % spec["re"])
@@ -188,6 +223,88 @@ def check_not_prescribed(spec, trace, ctx):
                     return result(False, "the reply prescribes %r: %r"
                                   % (match.group(0), line.strip()[:200]))
     return result(True, "never prescribed %r" % spec["re"])
+
+
+def _decisive(trace):
+    decisive = trace.get("decisive")
+    if decisive is None:
+        raise GradeError("this assertion needs an episode trace with a decisive action")
+    return decisive
+
+
+def describe_decisive(decisive):
+    if decisive["type"] == "call":
+        return render_call(decisive["call"])
+    if decisive["type"] == "text":
+        return "a reply with no tool call"
+    return "nothing: the turn cap was reached while the model was still looking"
+
+
+def check_decisive(spec, trace, ctx):
+    """What ended the episode: a matching call, or (``type: text``) a reply."""
+    decisive = _decisive(trace)
+    if spec.get("type") == "text":
+        if decisive["type"] == "text":
+            return result(True, "ended on a reply with no tool call")
+        return result(False, "expected the model to stop and reply; it ended on %s"
+                      % describe_decisive(decisive))
+    if decisive["type"] == "call" and _matches(decisive["call"], spec):
+        return result(True, "acted with %s" % render_call(decisive["call"]))
+    return result(False, "expected the action to be %s matching %r; it was %s"
+                  % (spec.get("tool", "a call"), spec.get("args_re"),
+                     describe_decisive(decisive)))
+
+
+def check_asks_user(spec, trace, ctx):
+    """The episode ended by putting a question to the author.
+
+    Either through ``AskUserQuestion`` or as a plain reply that asks (contains a
+    question mark). Acting — any other consequential call — fails.
+    """
+    decisive = _decisive(trace)
+    if decisive["type"] == "call" and decisive["call"].get("name") == "AskUserQuestion":
+        return result(True, "asked the author through AskUserQuestion")
+    if decisive["type"] == "text" and "?" in (trace["turns"][-1]["content"] or ""):
+        return result(True, "asked the author in its reply")
+    return result(False, "expected the model to ask the author before acting; it "
+                  "ended on %s" % describe_decisive(decisive))
+
+
+def check_bash_sequence(spec, trace, ctx):
+    """The first shell commands, in order, match ``prefix``."""
+    commands = [call_text(call) for call in _all_calls(trace) if call.get("name") == "Bash"]
+    for index, pattern in enumerate(spec["prefix"]):
+        if index >= len(commands):
+            return result(False, "expected shell command %d to match %r; only %d "
+                          "command(s) ran: %s" % (index + 1, pattern, len(commands),
+                                                  "; ".join(commands) or "none"))
+        if not re.search(pattern, commands[index]):
+            return result(False, "expected shell command %d to match %r; it was %r"
+                          % (index + 1, pattern, commands[index]))
+    return result(True, "opened with %s" % "; ".join(commands[: len(spec["prefix"])]))
+
+
+def check_before(spec, trace, ctx):
+    """A call matching ``first`` happens, and none matching ``then`` precedes it."""
+    texts = [call_text(call) for call in _all_calls(trace)]
+    firsts = [i for i, text in enumerate(texts) if re.search(spec["first"], text)]
+    if not firsts:
+        return result(False, "expected a call matching %r; saw %s"
+                      % (spec["first"], "; ".join(texts) or "no calls"))
+    early = [text for text in texts[: firsts[0]] if re.search(spec["then"], text)]
+    if early:
+        return result(False, "%r ran before %r" % (early[0], spec["first"]))
+    return result(True, "%r came first" % texts[firsts[0]])
+
+
+def check_any_of(spec, trace, ctx):
+    """At least one of the nested assertions passes (the right action can differ)."""
+    outcomes = [KINDS[inner["kind"]](inner, trace, ctx) for inner in spec["of"]]
+    for outcome in outcomes:
+        if outcome["pass"]:
+            return result(True, outcome["feedback"])
+    return result(False, "none of the acceptable actions happened: %s"
+                  % " | ".join(outcome["feedback"] for outcome in outcomes))
 
 
 JUDGE_INSTRUCTIONS = """You grade one response from an AI agent that is following a
@@ -261,6 +378,11 @@ KINDS = {
     "text_re": check_text_re,
     "not_text_re": check_not_text_re,
     "not_prescribed": check_not_prescribed,
+    "decisive": check_decisive,
+    "asks_user": check_asks_user,
+    "bash_sequence": check_bash_sequence,
+    "before": check_before,
+    "any_of": check_any_of,
     "judge": check_judge,
 }
 
@@ -276,15 +398,24 @@ def validate_assertion(spec):
         "not_text_re": ("re",),
         "not_prescribed": ("re",),
         "judge": ("rubric",),
+        "bash_sequence": ("prefix",),
+        "before": ("first", "then"),
+        "any_of": ("of",),
     }.get(kind, ())
     for field in required:
         if field not in spec:
             raise ValueError("%s assertion is missing %r" % (kind, field))
     if kind == "skill_choice" and spec["expect"] not in SKILL_NAMES + ("none",):
         raise ValueError("skill_choice expects an unknown skill %r" % spec["expect"])
-    for field in ("args_re", "re"):
+    for field in ("args_re", "re", "first", "then"):
         if field in spec:
             re.compile(spec[field])
+    for pattern in spec.get("prefix", []):
+        re.compile(pattern)
+    for inner in spec.get("of", []):
+        if inner.get("kind") in ("any_of", "judge"):
+            raise ValueError("any_of may not nest %r" % inner.get("kind"))
+        validate_assertion(inner)
 
 
 def grade(assertions, trace, ctx=None):

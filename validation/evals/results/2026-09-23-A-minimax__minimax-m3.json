@@ -1,0 +1,305 @@
+{
+  "meta": {
+    "lane": "A",
+    "lane_title": "skill selection",
+    "model": "minimax/minimax-m3",
+    "provider_pin": {
+      "order": [
+        "novita/fp8"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-23",
+    "dogen_version": "0.2.0",
+    "repo_head": "de7a55e",
+    "skills_sha256": "203509e46134815b712093a95a5b311a228ab15c93adedc5d17952681605007b",
+    "total_cases": 15,
+    "passed": 13,
+    "failed": 2,
+    "errors": 0,
+    "pass_rate": 0.8667,
+    "cost_usd": 0.005137,
+    "tokens": {
+      "in": 16890,
+      "out": 1731
+    },
+    "truncated": 0,
+    "cached_cases": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null
+  },
+  "cases": [
+    {
+      "id": "A-01",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000349,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1141,
+        "out": 31
+      },
+      "truncated": false,
+      "latency_ms": 2728
+    },
+    {
+      "id": "A-02",
+      "passed": false,
+      "error": null,
+      "score": 0.0,
+      "cost": 0.000453,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "skill_choice",
+          "feedback": "expected dogen-write; the answer named no skill: '-write'"
+        }
+      ],
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1118,
+        "out": 98
+      },
+      "truncated": false,
+      "answer": "-write",
+      "latency_ms": 2655
+    },
+    {
+      "id": "A-03",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000391,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1126,
+        "out": 70
+      },
+      "truncated": false,
+      "latency_ms": 1403
+    },
+    {
+      "id": "A-04",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00031,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1117,
+        "out": 5
+      },
+      "truncated": false,
+      "latency_ms": 1993
+    },
+    {
+      "id": "A-05",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00031,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1120,
+        "out": 4
+      },
+      "truncated": false,
+      "latency_ms": 822
+    },
+    {
+      "id": "A-06",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000169,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1127,
+        "out": 38
+      },
+      "truncated": false,
+      "latency_ms": 1975
+    },
+    {
+      "id": "A-07",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000408,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1124,
+        "out": 264
+      },
+      "truncated": false,
+      "latency_ms": 2447
+    },
+    {
+      "id": "A-08",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000446,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1123,
+        "out": 124
+      },
+      "truncated": false,
+      "latency_ms": 5445
+    },
+    {
+      "id": "A-09",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000347,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1126,
+        "out": 187
+      },
+      "truncated": false,
+      "latency_ms": 4807
+    },
+    {
+      "id": "A-10",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000291,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1128,
+        "out": 140
+      },
+      "truncated": false,
+      "latency_ms": 4197
+    },
+    {
+      "id": "A-11",
+      "passed": false,
+      "error": null,
+      "score": 0.0,
+      "cost": 0.000258,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "skill_choice",
+          "feedback": "expected dogen-write; the answer named no skill: '-write'"
+        }
+      ],
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1134,
+        "out": 111
+      },
+      "truncated": false,
+      "answer": "-write",
+      "latency_ms": 3958
+    },
+    {
+      "id": "A-12",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000205,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1132,
+        "out": 93
+      },
+      "truncated": false,
+      "latency_ms": 1864
+    },
+    {
+      "id": "A-13",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000542,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1132,
+        "out": 348
+      },
+      "truncated": false,
+      "latency_ms": 8385
+    },
+    {
+      "id": "A-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000269,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1120,
+        "out": 149
+      },
+      "truncated": false,
+      "latency_ms": 1792
+    },
+    {
+      "id": "A-15",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000389,
+      "cached": false,
+      "served_by": [
+        "Novita"
+      ],
+      "tokens": {
+        "in": 1122,
+        "out": 69
+      },
+      "truncated": false,
+      "latency_ms": 1887
+    }
+  ]
+}

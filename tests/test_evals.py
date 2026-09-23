@@ -22,8 +22,10 @@ ROOT = Path(__file__).resolve().parents[1]
 EVALS = ROOT / "validation" / "evals"
 sys.path.insert(0, str(EVALS))
 
+import agent  # noqa: E402
 import grade  # noqa: E402
 import lanes  # noqa: E402
+import record_states  # noqa: E402
 import openrouter  # noqa: E402
 import run  # noqa: E402
 import skills as skillmod  # noqa: E402
@@ -372,7 +374,7 @@ class TestCaseFilesAgainstTheirOracles(unittest.TestCase):
         for name, lane in lanes.LANES.items():
             for case in lane["load"]():
                 with self.subTest(lane=name, case=case["id"]):
-                    stub = StubProvider(lambda s, m, t, c=case: lane["oracle"](c))
+                    stub = StubProvider(run.scripted(lane["oracle"](case)))
                     tr = lane["run"](case, SPEC, stub, ctx)
                     out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
                     self.assertTrue(out["passed"], out["feedback"])
@@ -391,6 +393,181 @@ class TestCaseFilesAgainstTheirOracles(unittest.TestCase):
     def test_selection_covers_every_skill_and_none(self):
         expected = set(case["expect"] for case in lanes.load_a())
         self.assertEqual(expected, set(grade.SKILL_NAMES) | {"none"})
+
+
+def call(name, **args):
+    return {"id": "x", "name": name, "arguments": json.dumps(args)}
+
+
+def episode(decisive, *turns):
+    tr = trace(*turns)
+    tr["decisive"] = decisive
+    return tr
+
+
+class TestEpisodeKinds(unittest.TestCase):
+    """E-06 — the kinds that grade an episode's decisive action."""
+
+    def check(self, spec, tr):
+        grade.validate_assertion(spec)
+        return grade.KINDS[spec["kind"]](spec, tr, {})
+
+    def test_decisive_matches_the_action_that_ended_the_episode(self):
+        signoff = call("Bash", command="dogen signoff cfg")
+        tr = episode({"type": "call", "call": signoff},
+                     turn(calls=[bash("dogen show cfg"), bash("dogen signoff cfg")]))
+        spec = {"kind": "decisive", "tool": "Bash", "args_re": r"^dogen signoff cfg$"}
+        self.assertTrue(self.check(spec, tr)["pass"])
+        self.assertFalse(self.check(dict(spec, args_re="^dogen draft"), tr)["pass"])
+        self.assertFalse(self.check({"kind": "decisive", "type": "text"}, tr)["pass"])
+        stopped = episode({"type": "text"}, turn("I have to stop."))
+        self.assertTrue(self.check({"kind": "decisive", "type": "text"}, stopped)["pass"])
+        capped = episode({"type": "none"}, turn(calls=[bash("ls")]))
+        self.assertIn("turn cap", self.check(spec, capped)["feedback"])
+
+    def test_asks_user_accepts_a_question_in_either_form(self):
+        question = call("AskUserQuestion", questions=[{"question": "Record these?"}])
+        self.assertTrue(self.check({"kind": "asks_user"},
+                                   episode({"type": "call", "call": question}, turn()))["pass"])
+        self.assertTrue(self.check({"kind": "asks_user"},
+                                   episode({"type": "text"}, turn("Shall I sign it off?")))["pass"])
+        self.assertFalse(self.check({"kind": "asks_user"},
+                                    episode({"type": "text"}, turn("Signing it off now.")))["pass"])
+        acted = episode({"type": "call", "call": call("Bash", command="dogen edits cfg")}, turn())
+        self.assertFalse(self.check({"kind": "asks_user"}, acted)["pass"])
+
+    def test_text_kinds_read_the_questions_too(self):
+        question = call("AskUserQuestion", questions=[
+            {"question": "How should I ground this?",
+             "options": [{"label": "Run /dogen-onboard first"}]}])
+        tr = episode({"type": "call", "call": question},
+                     {"content": "", "tool_calls": [question], "finish_reason": "tool_calls",
+                      "usage": {"prompt_tokens": 0, "completion_tokens": 0, "cost": 0.0}})
+        self.assertTrue(self.check({"kind": "text_re", "re": "dogen-onboard"}, tr)["pass"])
+
+    def test_bash_sequence_and_before(self):
+        tr = trace(turn(calls=[("Read", {"file_path": "x"}), bash("dogen version --json")]),
+                   turn(calls=[bash("dogen show cfg --json")]))
+        seq = {"kind": "bash_sequence", "prefix": ["^dogen version", "^dogen show cfg --json$"]}
+        self.assertTrue(self.check(seq, tr)["pass"])
+        self.assertFalse(self.check(dict(seq, prefix=["^dogen show"]), tr)["pass"])
+        order = {"kind": "before", "first": "--dry-run", "then": "^dogen resume cfg$"}
+        good = trace(turn(calls=[bash("dogen resume cfg --dry-run"), bash("dogen resume cfg")]))
+        bad = trace(turn(calls=[bash("dogen resume cfg"), bash("dogen resume cfg --dry-run")]))
+        self.assertTrue(self.check(order, good)["pass"])
+        self.assertFalse(self.check(order, bad)["pass"])
+        self.assertFalse(self.check(order, trace(turn("no calls")))["pass"])
+
+    def test_any_of_passes_on_one_and_refuses_nesting_a_judge(self):
+        spec = {"kind": "any_of", "of": [{"kind": "decisive", "type": "text"}, {"kind": "asks_user"}]}
+        self.assertTrue(self.check(spec, episode({"type": "text"}, turn("Waiting.")))["pass"])
+        acted = episode({"type": "call", "call": call("Bash", command="rm x")}, turn())
+        self.assertFalse(self.check(spec, acted)["pass"])
+        with self.assertRaises(ValueError):
+            grade.validate_assertion({"kind": "any_of", "of": [{"kind": "judge", "rubric": "x"}]})
+
+
+class TestAgentSurface(unittest.TestCase):
+    """E-07 — tools per skill, the virtual repo, and where an episode ends."""
+
+    def repo(self):
+        return agent.VirtualRepo(
+            {"src/a.py": "retries = 3\n", ".agents/skills/dogen-plan/SKILL.md": "body"},
+            [{"exact": "dogen show cfg --json", "output": "{}", "exit": 0}])
+
+    def test_a_skill_is_offered_exactly_the_tools_it_declares(self):
+        loaded = skillmod.load_skills()
+        names = lambda s: [t["function"]["name"] for t in agent.tools_for(loaded[s])]
+        self.assertIn("Write", names("dogen-write"))
+        for other in ("dogen-plan", "dogen-review", "dogen-onboard", "dogen-fetch"):
+            with self.subTest(skill=other):
+                self.assertNotIn("Write", names(other))
+                self.assertNotIn("Edit", names(other))
+
+    def test_looking_is_answered_and_acting_is_not(self):
+        repo = self.repo()
+        cases = [
+            (call("Read", file_path="/srv/toyq/src/a.py"), False, "retries = 3"),
+            (call("Glob", pattern="src/*.py"), False, "src/a.py"),
+            (call("Grep", pattern="retr"), False, "src/a.py:1:retries = 3"),
+            (call("Bash", command='dogen show "cfg" --json 2>&1'), False, "{}"),
+            (call("Bash", command="dogen summary cfg"), False, "not recorded"),
+            (call("Bash", command="cat src/a.py"), False, "retries = 3"),
+            (call("Bash", command="WS=.dogen/staging/x/scratch && mkdir -p $WS/evidence"), False, ""),
+            (call("Bash", command="sleep 5"), False, ""),
+            (call("Bash", command="dogen signoff cfg"), True, None),
+            (call("Bash", command="dogen resume cfg"), True, None),
+            (call("Bash", command="cat src/a.py > /tmp/x"), True, None),
+            (call("Bash", command="mkdir -p docs/reference"), True, None),
+            (call("Write", file_path="x", content="y"), True, None),
+            (call("AskUserQuestion", questions=[]), True, None),
+        ]
+        for tool_call, consequential, expected in cases:
+            with self.subTest(call=grade.render_call(tool_call)):
+                result, acted = repo.serve(tool_call)
+                self.assertEqual(acted, consequential)
+                if expected:
+                    self.assertIn(expected, result)
+
+    def test_an_episode_ends_on_the_first_consequential_call(self):
+        replies = run.scripted([
+            {"tool_calls": [{"name": "Read", "arguments": {"file_path": "src/a.py"}}]},
+            {"tool_calls": [{"name": "Bash", "arguments": {"command": "dogen signoff cfg"}},
+                            {"name": "Bash", "arguments": {"command": "dogen draft cfg x"}}]},
+        ])
+        out = agent.run_episode(StubProvider(replies), SPEC, [], [], self.repo())
+        self.assertEqual(out["decisive"]["type"], "call")
+        self.assertIn("signoff", out["decisive"]["call"]["arguments"])
+        self.assertEqual(len(out["turns"]), 2)
+        self.assertEqual(len(out["served"]), 1)
+
+    def test_an_episode_that_only_looks_stops_at_the_cap(self):
+        looking = run.scripted([{"tool_calls": [{"name": "Glob", "arguments": {"pattern": "*"}}]}])
+        out = agent.run_episode(StubProvider(looking), SPEC, [], [], self.repo(), max_turns=3)
+        self.assertEqual(out["decisive"], {"type": "none"})
+        self.assertEqual(len(out["turns"]), 3)
+
+    def test_a_replayed_history_is_well_formed_tool_traffic(self):
+        messages = agent.history_messages([
+            {"cmd": "dogen version --json", "exit": 0, "output": "{}"},
+            {"call": {"name": "Write", "arguments": {"file_path": "x", "content": "y"}},
+             "result": "written"},
+            {"user": "yes"},
+        ])
+        self.assertEqual([m["role"] for m in messages],
+                         ["assistant", "tool", "assistant", "tool", "user"])
+        self.assertEqual(messages[1]["tool_call_id"], messages[0]["tool_calls"][0]["id"])
+        self.assertIn("(exit code", agent.render_output("boom", 6))
+
+
+class TestLaneBCases(unittest.TestCase):
+    """E-08 — every lane B case has a foil that fails it, and replays real bytes."""
+
+    def test_every_foil_fails_its_case(self):
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        for case in lanes.load_b():
+            with self.subTest(case=case["id"]):
+                self.assertIn("foil", case, "every lane B case carries a wrong run")
+                tr = lanes.run_b(case, SPEC, StubProvider(run.scripted(case["foil"])), ctx)
+                out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
+                self.assertFalse(out["passed"], "the foil passed: the assertions are vacuous")
+
+    def test_lane_b_covers_all_five_skills_and_every_group(self):
+        cases = lanes.load_b()
+        self.assertEqual(set(c["skill"] for c in cases), set(grade.SKILL_NAMES))
+        self.assertEqual(set(c["group"] for c in cases), {"opening", "next", "refusals", "judged"})
+        self.assertGreaterEqual(len(cases), 30)
+
+    def test_the_recorded_states_match_what_the_tool_prints_now(self):
+        stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            code = record_states.main(["--check"])
+        finally:
+            sys.stdout = stdout
+        self.assertEqual(code, 0, "states.json drifted from the tool: run "
+                         "python3 validation/evals/record_states.py and review the diff")
 
 
 class TestRosterAndRunner(unittest.TestCase):

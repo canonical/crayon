@@ -171,8 +171,11 @@ validation/                        ← the validation kit: the evidence apparatu
     ├── openrouter.py              ← the one transport: pinned backend, retries, cache, spend cap
     ├── skills.py                  ← the catalog and /skill invocation, shared by every model
     ├── lanes.py                   ← each lane's case loader, live call and oracle
+    ├── agent.py                   ← the seven tools, the replayed history, the decisive action
     ├── grade.py                   ← the assertion kinds and the pinned judge
+    ├── record_states.py           ← records the real tool's output for lane B; --check for drift
     ├── models.json                ← the roster: candidates, gate, judge, author, caps
+    ├── fixtures/                  ← states.sh (the recorder, on tests/lib.sh) and the toyq project
     ├── cases/                     ← the case files, one set per lane
     └── results/                   ← committed clean summaries; raw/ is gitignored
 
