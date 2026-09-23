@@ -164,8 +164,8 @@ def normalise(payload, spec):
 class OpenRouter:
     """The paid transport. Reads the key from the environment, never a file."""
 
-    def __init__(self, budget, cache_dir=None, api_key=None, retries=3,
-                 backoff=2.0, timeout=300, sleep=time.sleep, opener=None):
+    def __init__(self, budget, cache_dir=None, api_key=None, retries=4,
+                 backoff=5.0, timeout=120, sleep=time.sleep, opener=None):
         self.key = api_key or os.environ.get(KEY_ENV, "")
         if not self.key:
             raise ProviderError("%s is not set" % KEY_ENV)
