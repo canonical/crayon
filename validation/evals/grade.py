@@ -20,6 +20,7 @@ question it put to the author through ``AskUserQuestion``.
 import json
 import re
 
+import agent
 from openrouter import ProviderError
 
 SKILL_NAMES = (
@@ -62,7 +63,7 @@ def result(passed, feedback, score=None):
 #: A leading change into the directory the command already runs in (the
 #: sandbox's working directory as the model sees it, ``agent.WORKDIR``). It
 #: changes nothing, so a pattern anchored at the command's start ignores it.
-_CD_WORKDIR_RE = re.compile(r"^\s*cd\s+(/srv/toyq|\.)/?\s*(&&|;)\s*")
+_CD_WORKDIR_RE = re.compile(r"^\s*cd\s+(%s|\.)/?\s*(&&|;)\s*" % re.escape(agent.WORKDIR))
 
 
 def _typed(call):
@@ -77,8 +78,16 @@ def _typed(call):
 
 
 def call_text(call):
-    """The text an ``args_re`` matches: :func:`_typed`, less a no-op ``cd``."""
-    return _CD_WORKDIR_RE.sub("", _typed(call), count=1)
+    """The text an ``args_re`` matches: :func:`_typed`, less what changes nothing.
+
+    For a shell command, that is a leading ``cd`` into the working directory and
+    any trailing parts that only look (``; echo "exit:$?"``), so a pattern
+    anchored at either end grades the action rather than its wrapping.
+    """
+    text = _typed(call)
+    if call.get("name") != "Bash":
+        return text
+    return agent.strip_looking_tail(_CD_WORKDIR_RE.sub("", text, count=1))
 
 
 def render_call(call):
@@ -122,10 +131,10 @@ def _said(trace):
     return "\n".join(parts)
 
 
-def _matches(call, spec):
+def _matches(call, spec, text=call_text):
     if spec.get("tool") and call.get("name") != spec["tool"]:
         return False
-    if spec.get("args_re") and not re.search(spec["args_re"], call_text(call)):
+    if spec.get("args_re") and not re.search(spec["args_re"], text(call)):
         return False
     return True
 
@@ -195,8 +204,9 @@ def check_no_tool_call(spec, trace, ctx):
     was read-only by construction, so ``dogen signoff --help`` is not a signoff.
     """
     served = set(trace.get("served_ids") or ())
+    # The whole command as typed: nothing forbidden hides in a looking tail.
     offending = [call for call in _all_calls(trace)
-                 if call.get("id") not in served and _matches(call, spec)]
+                 if call.get("id") not in served and _matches(call, spec, _typed)]
     if not offending:
         return result(True, "no matching tool call")
     what = "a tool call" if not (spec.get("tool") or spec.get("args_re")) else (

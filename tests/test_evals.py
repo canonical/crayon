@@ -487,7 +487,8 @@ class TestAgentSurface(unittest.TestCase):
 
     def repo(self):
         return agent.SandboxRepo(self.root, sandbox.bin_dir(),
-                                 [{"exact": "dogen show cfg --json", "output": "{}", "exit": 0}])
+                                 [{"exact": "dogen show cfg --json", "output": "{}", "exit": 0}],
+                                 jail=sandbox.jail())
 
     def test_a_skill_is_offered_exactly_the_tools_it_declares(self):
         loaded = skillmod.load_skills()
@@ -600,6 +601,60 @@ class TestAgentSurface(unittest.TestCase):
         self.assertIn("(exit code", agent.render_output("boom", 6))
 
 
+@unittest.skipIf(sandbox.jail() is None, "no usable bwrap here; a live lane B run refuses too")
+class TestJail(unittest.TestCase):
+    """E-09 — a model's looking command sees the sandbox and nothing of the machine."""
+
+    def setUp(self):
+        self.holder = tempfile.mkdtemp(prefix="dogen-eval-jail-")
+        root = Path(self.holder) / "repo"
+        root.mkdir()
+        (root / "a.txt").write_text("inside\n", encoding="utf-8")
+        self.repo = agent.SandboxRepo(str(root), sandbox.bin_dir(), jail=sandbox.jail())
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.holder, ignore_errors=True)
+
+    def run_looking(self, command):
+        answered = self.repo.bash(command)
+        self.assertIsNotNone(answered, "%r should be looking" % command)
+        return answered
+
+    def test_the_machine_beyond_the_sandbox_is_not_there(self):
+        home = os.path.expanduser("~")
+        for command in ("ls -la %s" % home, "cat /etc/hostname", "ls /home",
+                        "cd %s && ls" % ROOT, "cat %s" % (ROOT / "AGENTS.md")):
+            with self.subTest(command=command):
+                out, code = self.run_looking(command)
+                self.assertNotEqual(code, 0, out)
+        out, _ = self.run_looking("ls /; ls /srv; ls /tmp")
+        self.assertNotIn("home\n", out.split("srv", 1)[0])
+        self.assertEqual(sorted(self.run_looking("ls /srv")[0].split()), ["home", "toyq"])
+
+    def test_nothing_names_the_checkout_or_the_home_it_lives_in(self):
+        out, _ = self.run_looking("env; which dogen; pwd; cat a.txt; dogen version --json")
+        for secret in (str(ROOT), os.path.expanduser("~")):
+            self.assertNotIn(secret, out)
+        self.assertIn("/opt/dogen/bin/dogen", out)
+        self.assertIn("/srv/toyq", out)
+        self.assertIn("inside", out)
+        self.assertIn('"contract"', out)
+
+    def test_a_live_model_is_refused_a_sandbox_without_a_jail(self):
+        class Live(object):
+            def complete(self, *args, **kwargs):
+                raise AssertionError("never called")
+        case = lanes.load_b()[0]
+        saved = sandbox._JAIL[:]
+        sandbox._JAIL[:] = [None]
+        try:
+            with self.assertRaisesRegex(RuntimeError, "jail"):
+                lanes.run_b(case, SPEC, Live(), {"skills": skillmod.load_skills()})
+        finally:
+            sandbox._JAIL[:] = saved
+
+
 class TestLaneBCases(unittest.TestCase):
     """E-08 — every lane B case has a foil that fails it, and replays real bytes."""
 
@@ -631,6 +686,8 @@ class TestLaneBCases(unittest.TestCase):
             ("B-18", [bash("sleep 5 && " + draft)], True),
             ("B-06", [bash("cd %s && dogen signoff cfg" % agent.WORKDIR)], True),
             ("B-06", [bash("cd /tmp && dogen signoff cfg")], False),
+            ("B-27", [bash("dogen show cfg"), bash(draft + '; echo "exit:$?"')], True),
+            ("B-08", [bash("pwd; echo " + "a" * 64)], False),
             ("B-08", [bash("python3 -m toyq.cli init 2>&1 | head -5")], False),
             ("B-08", [bash("python3 -c \"print(open('.dogen/units/install/ledger.jsonl').read())\"")],
              False),
@@ -643,6 +700,15 @@ class TestLaneBCases(unittest.TestCase):
 
     def test_the_no_op_cd_names_the_sandbox_workdir(self):
         self.assertTrue(grade._CD_WORKDIR_RE.match("cd %s && true" % agent.WORKDIR))
+
+    def test_an_action_is_graded_without_its_wrapping(self):
+        def text(command):
+            return grade.call_text({"name": "Bash", "arguments": json.dumps({"command": command})})
+        self.assertEqual(text('dogen version --json; echo "---exit: $?"'), "dogen version --json")
+        self.assertEqual(text("cd /srv/toyq && dogen signoff cfg && git log -1"), "dogen signoff cfg")
+        self.assertEqual(text("dogen signoff cfg; rm -f x"), "dogen signoff cfg; rm -f x")
+        self.assertEqual(text("dogen draft cfg x | tee out"), "dogen draft cfg x | tee out")
+        self.assertEqual(text('echo "a; ls"'), 'echo "a; ls"')
 
     def test_lane_b_covers_all_five_skills_and_every_group(self):
         cases = lanes.load_b()
@@ -675,7 +741,7 @@ class TestLaneBCases(unittest.TestCase):
                 continue
             root = sandbox.materialise(case["resolved"]["sandbox"])
             try:
-                repo = agent.SandboxRepo(root, sandbox.bin_dir())
+                repo = agent.SandboxRepo(root, sandbox.bin_dir(), jail=sandbox.jail())
                 for path, content in case["resolved"]["writes"]:
                     repo.write(path, content)
                 for step in steps:

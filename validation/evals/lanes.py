@@ -231,9 +231,14 @@ def run_b(case, spec, provider, ctx):
          "content": skillmod.agent_system_prompt(ctx["skills"], agent.WORKDIR)},
         {"role": "user", "content": invocation},
     ] + agent.history_messages(case["resolved"]["history"])
+    jail = sandbox.jail()
+    if jail is None and not getattr(provider, "replays", False):
+        raise RuntimeError("no bubblewrap jail on this machine (bwrap missing or refused): "
+                           "a live model's commands never run outside one")
     root = sandbox.materialise(case["resolved"]["sandbox"])
     try:
-        repo = agent.SandboxRepo(root, sandbox.bin_dir(), case["resolved"]["overrides"])
+        repo = agent.SandboxRepo(root, sandbox.bin_dir(), case["resolved"]["overrides"],
+                                 jail=jail)
         for path, content in case["resolved"]["writes"]:
             repo.write(path, content)
         return agent.run_episode(provider, spec, messages, agent.tools_for(skill), repo,

@@ -252,6 +252,10 @@ class StubProvider:
     self-tests and ``run.py --dry-run`` use it, so neither needs the network.
     """
 
+    #: Its turns are fixed by the test that wrote them, never chosen by a model,
+    #: so lane B may run their commands without a jail (``lanes.run_b``).
+    replays = True
+
     def __init__(self, responder=None):
         self.responder = responder or (lambda spec, messages, tools: "none")
         self.calls = []

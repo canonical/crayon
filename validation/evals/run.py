@@ -40,6 +40,7 @@ sys.path.insert(0, str(HERE))
 
 import grade  # noqa: E402
 import lanes  # noqa: E402
+import sandbox  # noqa: E402
 import skills as skillmod  # noqa: E402
 from openrouter import (  # noqa: E402
     Budget,
@@ -337,6 +338,10 @@ def main(argv=None):
     if args.dry_run:
         judge = (StubProvider(stub_judge), judge_spec)
     else:
+        if loaded.get("B") and sandbox.jail() is None:
+            print("lane B needs a bubblewrap jail and bwrap is missing or refused here: "
+                  "a live model's commands never run on the host", file=sys.stderr)
+            return 2
         try:
             paid = OpenRouter(budget, cache_dir=None if args.no_cache else CACHE)
         except ProviderError as exc:

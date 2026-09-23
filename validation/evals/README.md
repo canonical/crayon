@@ -45,10 +45,19 @@ Looking costs nothing and does not end the episode. It runs for real in that cop
 - staging-directory setup and waiting.
 
 The command list is short and strict: nothing may be redirected into a file, and command
-substitution, `-exec` and `-delete` are refused. Commands run under an environment that is built
-from scratch rather than inherited: `PATH` with a `dogen` shim, a throwaway `HOME`, and git
-config switched off. No key or setting of the machine running the eval reaches them. A command
-the history wrote rather than recorded answers as the history says.
+substitution, `-exec` and `-delete` are refused. A command list cannot stop a path from
+leaving the sandbox, so every looking command runs inside a bubblewrap jail. The copy is mounted
+at a real `/srv/toyq`, with `/usr` read-only, a `dogen` shim on `/opt/dogen` and an empty
+`/tmp`. The jail has its own process table and no network. Nothing else of the machine running
+the eval exists in there: not its home, not this checkout. The environment is built from scratch
+rather than inherited: that `PATH`, a throwaway `HOME`, and git config switched off, so no key
+or setting reaches a command. A live lane B run needs `bwrap`, and without one it refuses to
+start; only the self-tests' fixed commands may run on the host. A command the history wrote
+rather than recorded answers as the history says.
+
+Grading sees the action, not its wrapping. A leading `cd /srv/toyq &&` and trailing looking
+parts such as `; echo "exit:$?"` are dropped before a pattern matches what a command *is*. A
+"no such call" check still reads the whole command, so nothing forbidden hides in a tail.
 
 The first consequential action ends the episode, is never carried out, and is what the case
 grades:

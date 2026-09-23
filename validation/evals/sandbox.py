@@ -6,7 +6,8 @@ copy of the repo at each ``snap`` point. ``ensure()`` runs it once per input
 digest into the gitignored ``.cache/snapshots/<digest>/``, so a change to the
 recorder, the fixture, the skills or ``dogen.py`` rebuilds them, and nothing
 else does. ``materialise()`` copies one snapshot to a fresh temp directory for
-one episode; ``discard()`` removes it.
+one episode; ``discard()`` removes it. ``jail()`` is where a model's looking
+commands run in that copy: a bubblewrap jail, or None where there is none.
 """
 
 import hashlib
@@ -76,6 +77,50 @@ def bin_dir():
             shim.write_text(body, encoding="utf-8")
             shim.chmod(0o755)
     return str(directory)
+
+
+_JAIL = []
+
+
+def jail():
+    """The :class:`agent.Jail` for this machine, or None when bwrap cannot run.
+
+    Probed once per process: a jail that starts, sees ``/srv/toyq`` and runs
+    the ``dogen`` shim. A live model is never given a sandbox without one.
+    """
+    import agent
+
+    with _LOCK:
+        if _JAIL:
+            return _JAIL[0]
+        found = None
+        bwrap = shutil.which("bwrap")
+        if bwrap:
+            directory = CACHE / "jail-bin"
+            shim = directory / "dogen"
+            body = '#!/bin/sh\nexec /usr/bin/python3 /opt/dogen/dogen.py "$@"\n'
+            if not shim.is_file() or shim.read_text(encoding="utf-8") != body:
+                directory.mkdir(parents=True, exist_ok=True)
+                shim.write_text(body, encoding="utf-8")
+                shim.chmod(0o755)
+            candidate = agent.Jail(directory, REPO / "dogen.py", bwrap)
+            holder = tempfile.mkdtemp(prefix="dogen-jail-probe-")
+            try:
+                os.mkdir(os.path.join(holder, "repo"))
+                argv = candidate.argv(os.path.join(holder, "repo"),
+                                      {"PATH": agent.Jail.PATH},
+                                      "pwd && dogen version --json")
+                done = subprocess.run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT, timeout=30)
+                out = done.stdout.decode("utf-8", "replace")
+                if done.returncode == 0 and out.startswith(agent.WORKDIR + "\n"):
+                    found = candidate
+            except (OSError, subprocess.SubprocessError):
+                found = None
+            finally:
+                shutil.rmtree(holder, ignore_errors=True)
+        _JAIL.append(found)
+        return found
 
 
 def ensure():
