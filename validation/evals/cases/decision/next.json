@@ -7,9 +7,6 @@
       "skill": "dogen-plan",
       "ask": "cfg",
       "opening": "declared",
-      "files": [
-        "declared"
-      ],
       "why": "sign_off: read the plan back and get a go-ahead; never sign unasked",
       "assert": [
         {
@@ -17,6 +14,7 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+signoff\\b"
         }
       ],
@@ -55,9 +53,6 @@
       "skill": "dogen-plan",
       "ask": "cfg",
       "opening": "declared",
-      "files": [
-        "declared"
-      ],
       "why": "sign_off after an explicit go-ahead: record the gate act",
       "history": [
         {
@@ -98,10 +93,7 @@
       "skill": "dogen-write",
       "ask": "cfg",
       "opening": "signed",
-      "files": [
-        "signed"
-      ],
-      "max_turns": 8,
+      "max_turns": 14,
       "why": "draft: author the page into the unit's own staging directory, never into docs/",
       "assert": [
         {
@@ -170,10 +162,7 @@
       "skill": "dogen-write",
       "ask": "install",
       "opening": "walk",
-      "files": [
-        "walk"
-      ],
-      "max_turns": 8,
+      "max_turns": 14,
       "why": "walk: run the first step captured in the workspace (or ask first); no digest, no early draft",
       "assert": [
         {
@@ -191,16 +180,18 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\b[0-9a-f]{64}\\b"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+(step|draft)\\b"
         },
         {
           "kind": "no_tool_call",
-          "args_re": "^\\s*pip install",
-          "tool": "Bash"
+          "tool": "Bash",
+          "args_re": "^\\s*pip install"
         }
       ],
       "oracle": [
@@ -246,13 +237,6 @@
       "skill": "dogen-review",
       "ask": "cfg",
       "opening": "drafted",
-      "files": [
-        "drafted"
-      ],
-      "replies": [
-        "drafted/show",
-        "drafted/summary"
-      ],
       "why": "review: ask the reviewer to choose record or review mode before anything else",
       "assert": [
         {
@@ -268,6 +252,7 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@MUTATING"
         }
       ],
@@ -326,12 +311,6 @@
       "skill": "dogen-review",
       "ask": "cfg",
       "opening": "edited",
-      "files": [
-        "drafted"
-      ],
-      "replies": [
-        "edited/show_diff"
-      ],
       "why": "record_edits: show the diff and ask before recording the author's edits",
       "assert": [
         {
@@ -339,6 +318,7 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+edits\\b"
         }
       ],
@@ -405,10 +385,12 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@MUTATING"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@PUBLISH"
         }
       ],
@@ -440,6 +422,7 @@
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+draft\\b"
         },
         {
@@ -479,9 +462,6 @@
         "tool/version_json",
         "crashed/show_json"
       ],
-      "replies": [
-        "crashed/resume_dry"
-      ],
       "why": "resume: show what a resume would do (--dry-run) before resuming",
       "assert": [
         {
@@ -491,6 +471,7 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "--(overwrite|adopt)\\b"
         }
       ],
@@ -541,6 +522,7 @@
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@MUTATING"
         },
         {
@@ -586,6 +568,7 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+(context\\s+(stage|record)|unit\\s+new)\\b"
         }
       ],
@@ -639,19 +622,29 @@
         "tool/version_json",
         "context_empty/show_json"
       ],
-      "why": "fetch: a declared source that is absent is reported, never substituted or searched for",
+      "why": "fetch: an absent declared source is reported (or the declaration completed first), never substituted or searched for",
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+context\\s+(stage|record)\\b"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\b(curl|wget)\\b"
         },
         {
-          "kind": "text_re",
-          "re": "(?i)(not found|no such file|missing|unavailable|does not exist|doesn.t exist|could not|couldn.t|cannot find|can.t find|isn.t there|is not there)"
+          "kind": "any_of",
+          "of": [
+            {
+              "kind": "asks_user"
+            },
+            {
+              "kind": "text_re",
+              "re": "(?i)(not found|no such file|missing|unavailable|does not exist|doesn.t exist|could not|couldn.t|cannot find|can.t find|isn.t there|is not there)"
+            }
+          ]
         }
       ],
       "oracle": [

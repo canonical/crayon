@@ -7,18 +7,19 @@ carry the names the skills declare in their ``allowed-tools`` frontmatter
 the tools its invoked skill declares.
 
 Lane B uses ``run_episode``: the conversation up to a recorded ``dogen`` output
-is replayed as real tool calls and results, then the model acts. Looking is
-free: reads, searches, the inspection commands and the read-only ``dogen``
-calls the case recorded are answered from a ``VirtualRepo`` and the episode
-goes on. The first *consequential* action ends it — a ``dogen`` verb that
-writes, any other command, a write, a question to the author, or a turn with
-no tool call — and that action is what the case grades.
+is replayed as real tool calls and results, then the model acts, in a real copy
+of the recorded state (``SandboxRepo``). Looking is free: reads, searches,
+inspection commands and read-only ``dogen`` calls run for real there and the
+episode goes on. The first *consequential* action ends it — a ``dogen`` verb
+that records, any other command, a write, a question to the author, or a turn
+with no tool call — and that action is what the case grades. It is never run.
 """
 
 import fnmatch
 import json
+import os
 import re
-import shlex
+import subprocess
 
 WORKDIR = "/srv/toyq"
 
@@ -130,25 +131,40 @@ TOOL_SCHEMAS = {
 
 READ_TOOLS = ("Read", "Glob", "Grep")
 
-#: The answer to a read-only ``dogen`` call the case did not record. Looking is
-#: never graded, so it must not end the episode; it must not invent output
-#: either.
-NOT_RECORDED = ("(this session replays a recorded state; the output of this "
-                "read-only command was not recorded — act on the outputs above)")
-
-#: ``dogen`` verbs that only look. Anything else a model runs is consequential.
+#: ``dogen`` calls that only look. Any other ``dogen`` call is consequential.
 _READONLY_DOGEN_RE = re.compile(
-    r"^dogen\s+(version|show|summary|verify|context\s+show|resume\s+\S+\s+--dry-run"
-    r"|[a-z-]+(\s+[a-z-]+)?\s+--help)\b"
+    r"^dogen(\s+(version|show|summary|verify|context\s+show|resume\s+\S+\s+--dry-run"
+    r"|[a-z-]+(\s+[a-z-]+)?\s+(--help|-h))\b|\s+(--help|-h|--version)\b)"
 )
-#: Shell inspection a careful agent does before acting; answered, never graded.
-_INSPECT_RE = re.compile(r"^(cat|ls|head|tail|sed\s+-n|grep|find|wc|pwd|echo|"
-                         r"git\s+(status|log|diff|show))\b")
-
+#: Shell inspection a careful agent does before acting. Run for real in the
+#: sandbox and never graded. Deliberately a short list of commands that read.
+_INSPECT_RE = re.compile(
+    r"^(cat|ls|head|tail|sed\s+-n|grep|egrep|find|wc|pwd|echo|printf|cd|tree|file|stat|"
+    r"sort|uniq|cut|tr|true|test|\[|which|type|command\s+-v|sha256sum|md5sum|du|diff|"
+    r"basename|dirname|realpath|readlink|nl|jq|column|od|xxd|hexdump|strings|cmp|comm|"
+    r"fold|fmt|rev|printenv|env|id|whoami|uname|date|"
+    r"(python3?\s+-m\s+)?pip3?\s+(show|list|freeze|index|--version)|python3?\s+(--version|-V)|"
+    r"git(\s+-C\s+\S+)?\s+(status|log|diff|show|ls-files|rev-parse|branch|blame))(?=\s|$)"
+)
+#: Shell control flow around the commands of a chain. Its keywords are peeled
+#: off a part before the part's command word is checked, so a ``for`` loop of
+#: ``cat`` calls is looking and a ``for`` loop of ``rm`` calls is not.
+_CONTROL_LEAD_RE = re.compile(r"^(do|then|else|elif|if|while|until|!|\{|\()\s+")
+_CONTROL_WHOLE_RE = re.compile(
+    r"^(done|fi|esac|;;|\}|\)|for\s+\w+\s+in\b.*|case\s+\S+\s+in(\s+[^\s()]+\))?)$")
+_CASE_PATTERN_RE = re.compile(r"^[^\s()]+\)\s*")
+#: Arguments that turn a reading command into a writing or executing one.
+_ACTING_WORD_RE = re.compile(
+    r"(^|\s)(-delete|-exec|-execdir|-ok|-okdir|-fprint\S*|-fls|--output\S*)(\s|$)"
+    r"|^(sort|tree)\b.*\s-o\b|^sed\s+-n\b.*(\bw\s|\bW\s|-i\b)"
+)
+#: Redirections that change nothing on disk; any other ``>`` writes a file.
+_HARMLESS_REDIRECT_RE = re.compile(r"\d?>\s*/dev/null|\d?>&\d|&>\s*/dev/null")
+_SEGMENT_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\||\n)\s*")
+_QUOTED_RE = re.compile(r"'[^']*'|\"(?:\\.|[^\"\\])*\"")
 
 #: Setup is not the graded action: naming variables, creating a directory under
-#: the staging tree (or one named by a variable), and waiting. A command made
-#: only of such parts, joined by ``;``/``&&`` or newlines, is answered.
+#: the staging tree (or one named by a variable), and waiting.
 _SETUP_PART_RE = re.compile(
     r"^([A-Za-z_][A-Za-z0-9_]*=\S*|"
     r"mkdir\s+-p\s+((/srv/toyq/)?\.dogen/staging/\S+|\$\{?[A-Za-z_]\S*)|"
@@ -156,16 +172,81 @@ _SETUP_PART_RE = re.compile(
 )
 
 
-def _is_setup(command):
-    parts = [part.strip() for part in re.split(r"&&|;|\n", command) if part.strip()]
-    return bool(parts) and all(_SETUP_PART_RE.match(part) for part in parts)
+_SUBSTITUTION_RE = re.compile(r"\$\(([^()]*)\)|`([^`]*)`")
+
+
+def _unsubstitute(command):
+    """``command`` with each command substitution replaced by a word, or None.
+
+    A substitution is allowed only when what it runs is itself looking, checked
+    innermost first; anything else makes the whole command acting.
+    """
+    while True:
+        match = _SUBSTITUTION_RE.search(command)
+        if match is None:
+            return command
+        inner = match.group(1) if match.group(1) is not None else match.group(2)
+        if not looking(inner):
+            return None
+        command = command[:match.start()] + "SUBST" + command[match.end():]
+
+
+def _segments(command):
+    """The parts of a chain, split outside quotes, with harmless redirects dropped.
+
+    None when the command runs an acting substitution or redirects into a file:
+    such a command is never "only looking", whatever its parts are.
+    """
+    command = _unsubstitute(command)
+    if command is None or "$(" in command or "`" in command:
+        return None
+    masked = _QUOTED_RE.sub(lambda m: "Q" * len(m.group(0)), command)
+    cleaned = _HARMLESS_REDIRECT_RE.sub(lambda m: " " * len(m.group(0)), masked)
+    if ">" in cleaned:
+        return None
+    parts, position = [], 0
+    for match in _SEGMENT_SPLIT_RE.finditer(cleaned):
+        parts.append(command[position:match.start()])
+        position = match.end()
+    parts.append(command[position:])
+    return [_HARMLESS_REDIRECT_RE.sub("", part).strip() for part in parts if part.strip()]
+
+
+def looking(command):
+    """True when every part of ``command`` only reads (or is setup)."""
+    parts = _segments(command)
+    if not parts:
+        return False
+    for part in parts:
+        if _ACTING_WORD_RE.search(part):
+            return False
+        part = _command_word_first(part)
+        if not part:
+            continue
+        if not (_INSPECT_RE.match(part) or _READONLY_DOGEN_RE.match(normalise(part))
+                or _SETUP_PART_RE.match(part)):
+            return False
+    return True
+
+
+def _command_word_first(part):
+    """``part`` with its control-flow keywords peeled off; "" if it is only those."""
+    while True:
+        part = part.strip().rstrip(";").strip()
+        if not part or _CONTROL_WHOLE_RE.match(part):
+            return ""
+        peeled = _CONTROL_LEAD_RE.sub("", part, count=1)
+        peeled = _CASE_PATTERN_RE.sub("", peeled, count=1) if peeled == part else peeled
+        if peeled == part:
+            return part
+        part = peeled
 
 
 def normalise(command):
     """A command as typed, minus what does not change its meaning here.
 
     Quotes are dropped, whitespace collapsed, and a trailing ``2>&1`` removed,
-    so ``dogen show "cfg" --json 2>&1`` answers like ``dogen show cfg --json``.
+    so ``dogen show "cfg" --json 2>&1`` matches ``dogen show cfg --json``.
     """
     command = re.sub(r"\s*2>&1\s*$", "", command.strip())
     command = command.replace('"', "").replace("'", "")
@@ -197,95 +278,132 @@ def render_output(output, exit_code):
     return text
 
 
-class VirtualRepo(object):
-    """A read-only file tree plus the recorded answers to read-only commands."""
+class SandboxRepo(object):
+    """A real copy of a recorded state, in which only looking is carried out.
 
-    def __init__(self, files, replies):
-        self.files = dict(files)
-        self.replies = list(replies)
+    The copy lives at ``root``; the model is told it works in ``WORKDIR``, and
+    paths are mapped both ways. ``Read``/``Glob``/``Grep`` read the copy. A
+    ``Bash`` call that only looks (``looking``) runs for real, in the copy,
+    under a constructed environment: ``PATH`` with a ``dogen`` shim first, a
+    throwaway ``HOME``, git's global and system config switched off, and
+    nothing inherited, so no key or setting of the machine running the eval can
+    reach a model's command. ``overrides`` answer a command from the replayed
+    history instead, where the history was written rather than recorded (a
+    refusal no real state here would print). Anything else is consequential:
+    it ends the episode and is never run.
+    """
 
-    @staticmethod
-    def _rel(path):
-        path = (path or "").strip()
-        if path.startswith(WORKDIR):
-            path = path[len(WORKDIR):]
-        path = path.lstrip("/")
-        while path.startswith("./"):
-            path = path[2:]
-        return path
+    def __init__(self, root, bin_dir, overrides=(), timeout=20, limit=20000):
+        self.root = os.path.realpath(str(root))
+        self.overrides = list(overrides)
+        self.timeout = timeout
+        self.limit = limit
+        home = os.path.join(os.path.dirname(self.root), "home")
+        if not os.path.isdir(home):
+            os.makedirs(home)
+        self.env = {
+            "PATH": "%s:/usr/local/bin:/usr/bin:/bin" % bin_dir,
+            "HOME": home,
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "GIT_CONFIG_GLOBAL": "/dev/null",
+            "GIT_CONFIG_SYSTEM": "/dev/null",
+            "GIT_PAGER": "cat",
+            "PAGER": "cat",
+            "TERM": "dumb",
+        }
+
+    # -- paths ----------------------------------------------------------------
+
+    def _to_disk(self, text):
+        return (text or "").replace(WORKDIR, self.root)
+
+    def _from_disk(self, text):
+        return (text or "").replace(self.root, WORKDIR)
+
+    def _inside(self, path):
+        """The real path for a model's path, or None outside the repository."""
+        path = self._to_disk((path or "").strip()) or "."
+        full = os.path.realpath(os.path.join(self.root, path))
+        if full != self.root and not full.startswith(self.root + os.sep):
+            return None
+        return full
+
+    def _shown(self, full):
+        return os.path.relpath(full, self.root)
+
+    # -- the read tools -------------------------------------------------------
 
     def read(self, args):
-        path = self._rel(args.get("file_path", ""))
-        if path not in self.files:
-            return "Error: file not found: %s" % path
-        lines = self.files[path].split("\n")
+        full = self._inside(args.get("file_path", ""))
+        if full is None:
+            return "Error: %s is outside the repository" % args.get("file_path")
+        if not os.path.isfile(full):
+            return "Error: file not found: %s" % args.get("file_path")
+        with open(full, encoding="utf-8", errors="replace") as handle:
+            lines = handle.read().split("\n")
         offset = max(int(args.get("offset") or 1), 1) - 1
         limit = int(args.get("limit") or len(lines))
-        return "\n".join(lines[offset: offset + limit])
+        return "\n".join(lines[offset: offset + limit])[: self.limit]
+
+    def _files(self, base):
+        for directory, dirs, files in os.walk(base):
+            dirs[:] = sorted(d for d in dirs if d != ".git")
+            for name in sorted(files):
+                yield os.path.join(directory, name)
 
     def glob(self, args):
-        base = self._rel(args.get("path", "")).rstrip("/")
+        base = self._inside(args.get("path", "")) or self.root
         pattern = args.get("pattern", "*")
-        if base:
-            pattern = base + "/" + pattern
-        hits = [p for p in sorted(self.files)
-                if fnmatch.fnmatch(p, pattern) or fnmatch.fnmatch(p, pattern.replace("**/", ""))]
-        return "\n".join(hits) or "(no matches)"
+        hits = []
+        for full in self._files(base):
+            rel = os.path.relpath(full, base)
+            if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel, pattern.replace("**/", "")):
+                hits.append(self._shown(full))
+        return "\n".join(hits[:500]) or "(no matches)"
 
     def grep(self, args):
         try:
             pattern = re.compile(args.get("pattern", ""))
         except re.error as exc:
             return "Error: bad pattern: %s" % exc
-        base = self._rel(args.get("path", "")).rstrip("/")
+        base = self._inside(args.get("path", "")) or self.root
+        targets = [base] if os.path.isfile(base) else self._files(base)
         out = []
-        for path in sorted(self.files):
-            if base and not (path == base or path.startswith(base + "/")):
+        for full in targets:
+            if args.get("glob") and not fnmatch.fnmatch(os.path.basename(full), args["glob"]):
                 continue
-            if args.get("glob") and not fnmatch.fnmatch(path.split("/")[-1], args["glob"]):
+            try:
+                with open(full, encoding="utf-8") as handle:
+                    for number, line in enumerate(handle, 1):
+                        if pattern.search(line):
+                            out.append("%s:%d:%s" % (self._shown(full), number, line.rstrip("\n")))
+            except (UnicodeDecodeError, OSError):
                 continue
-            for number, line in enumerate(self.files[path].split("\n"), 1):
-                if pattern.search(line):
-                    out.append("%s:%d:%s" % (path, number, line))
         return "\n".join(out[:200]) or "(no matches)"
 
+    # -- the shell ------------------------------------------------------------
+
     def bash(self, command):
-        """(output, exit) for a command this repo can answer, else None.
-
-        A reply matches on the normalised command (``normalise``), either
-        exactly (``exact``) or by regex (``re``). Recorded read-only answers
-        come first; then an unrecorded read-only ``dogen`` call, a shell
-        inspection, or creating a directory under ``.dogen/staging/`` is
-        answered without ending the episode.
-        """
-        raw, command = command, normalise(command)
-        for reply in self.replies:
-            if ("exact" in reply and command == reply["exact"]) or \
-                    ("re" in reply and re.search(reply["re"], command)):
-                return reply["output"], reply["exit"]
-        if _READONLY_DOGEN_RE.match(command):
-            return NOT_RECORDED, 0
-        if _is_setup(raw.strip()):
-            return "", 0
-        if _INSPECT_RE.match(command) and not re.search(r"[;&|>]", command):
-            return self._inspect(command), 0
-        return None
-
-    def _inspect(self, command):
+        """(output, exit) for a command carried out or answered here, else None."""
+        normal = normalise(command)
+        for override in self.overrides:
+            if normal == override.get("exact") or (
+                    override.get("prefix") and (normal == override["prefix"]
+                                                or normal.startswith(override["prefix"] + " "))):
+                return override["output"], override["exit"]
+        if not looking(command):
+            return None
         try:
-            words = shlex.split(command)
-        except ValueError:
-            words = command.split()
-        paths = [self._rel(w) for w in words[1:] if not w.startswith("-")]
-        if words[0] == "cat":
-            return "\n".join(self.files.get(p, "cat: %s: No such file" % p) for p in paths)
-        if words[0] in ("ls", "find"):
-            base = paths[0].rstrip("/") if paths else ""
-            return "\n".join(p for p in sorted(self.files)
-                             if not base or p.startswith(base + "/")) or "(empty)"
-        if words[0] == "pwd":
-            return WORKDIR
-        return "(no output)"
+            done = subprocess.run(
+                ["bash", "-c", self._to_disk(command)], cwd=self.root, env=self.env,
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                timeout=self.timeout,
+            )
+        except subprocess.TimeoutExpired:
+            return "(timed out after %ds)" % self.timeout, 124
+        text = done.stdout.decode("utf-8", "replace")[: self.limit].rstrip("\n")
+        return self._from_disk(text), done.returncode
 
     def serve(self, call):
         """(result text, consequential?) for one tool call."""
@@ -301,6 +419,17 @@ class VirtualRepo(object):
             if answered is not None:
                 return render_output(*answered), False
         return None, True
+
+    def write(self, path, content):
+        """Materialise a write the replayed history says already happened."""
+        full = self._inside(path)
+        if full is None:
+            raise ValueError("a history write escapes the repository: %s" % path)
+        directory = os.path.dirname(full)
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        with open(full, "w", encoding="utf-8") as handle:
+            handle.write(content)
 
 
 def history_messages(steps):
@@ -356,18 +485,22 @@ def run_episode(provider, spec, messages, tools, repo, max_turns=6, cache=True,
     """
     messages = list(messages)
     turns, served = [], []
+    served_ids = []
     for _ in range(max_turns):
         turn = provider.complete(spec, messages, tools=tools, cache=cache, scope=scope)
         turns.append(turn)
         if not turn["tool_calls"]:
-            return {"turns": turns, "decisive": {"type": "text"}, "served": served}
+            return {"turns": turns, "decisive": {"type": "text"}, "served": served,
+                    "served_ids": served_ids}
         messages.append(assistant_message(turn))
         for call in turn["tool_calls"]:
             result, consequential = repo.serve(call)
             if consequential:
                 return {"turns": turns, "decisive": {"type": "call", "call": call},
-                        "served": served}
+                        "served": served, "served_ids": served_ids}
             served.append({"name": call["name"], "arguments": call["arguments"]})
+            served_ids.append(call["id"])
             messages.append({"role": "tool", "tool_call_id": call["id"],
                              "content": result})
-    return {"turns": turns, "decisive": {"type": "none"}, "served": served}
+    return {"turns": turns, "decisive": {"type": "none"}, "served": served,
+            "served_ids": served_ids}

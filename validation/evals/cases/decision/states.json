@@ -3,7 +3,22 @@
   "accept_again_json": {
    "cmd": "dogen review cfg --verdict accept --note 'Accurate and complete.' --json",
    "exit": 3,
-   "output": "{\"error\": \"already_accepted\", \"unit\": \"cfg\", \"detail\": \"the basis at seq 3 was already accepted at seq 4\", \"hint\": \"nothing has been recorded since; the unit is sealed\", \"next\": \"publish\", \"seq\": 4, \"commit\": \"c56607b78d7fedd8bd0050dc9f3c57c15f26b064\"}"
+   "output": "{\"error\": \"already_accepted\", \"unit\": \"cfg\", \"detail\": \"the basis at seq 3 was already accepted at seq 4\", \"hint\": \"nothing has been recorded since; the unit is sealed\", \"next\": \"publish\", \"seq\": 4, \"commit\": \"cc9800e062b455a7456a9ef142c6cc604aaa1d70\"}"
+  },
+  "file:.dogen/units/cfg/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"cfg\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators configuring toyq on a server\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"d40be0864d339b2b0f41aac789acfeb30abd0c4f88eda866861df87df725e489\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"operators configuring toyq on a server\",\"commit\":\"5f5ebfbdda7e96f5f2cafdcc90e154b5f0c2364c\",\"context\":{\"src/toyq/config.py\":\"a0c2544f1072cf201693bd259f8a50d4a7d7ebc51788b7932635ce7ac5a35bc3\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"31523c8b5a22649dd350ac75df9bfb57528f6d60cee1095146006648a868adfc\",\"seq\":2,\"sources\":[{\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"path\":\"src/toyq/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.2.0\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"basis_seq\":null,\"commit\":\"367cb594ca9f7eb2024b402c3c9eb70c73a492c7\",\"contract\":1,\"files\":[{\"bytes\":529,\"path\":\"reference/config.md\",\"sha256\":\"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\"}],\"kind\":\"generation\",\"model\":\"\",\"model_origin\":\"unknown\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"33de9e002c004f5a0dc9127cd72467bf8853b6f393148136e3976d132fbb6218\",\"seq\":3,\"signoff_seq\":2,\"tool_version\":\"0.2.0\",\"unsteered\":false}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"basis_seq\":3,\"commit\":\"cc9800e062b455a7456a9ef142c6cc604aaa1d70\",\"contract\":1,\"files\":[{\"bytes\":529,\"path\":\"reference/config.md\",\"sha256\":\"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\"}],\"generation_seq\":3,\"kind\":\"review\",\"note\":\"Accurate and complete.\",\"prev\":\"b14322952109a9fbb74720d919b6205ec78f27dde5c775b6ef6e7f4f68263cd7\",\"resolves\":[],\"seq\":4,\"tool_version\":\"0.2.0\",\"verdict\":\"accept\",\"withdraws\":[]}\n"
+  },
+  "file:.dogen/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "file:docs/reference/config.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n\n| Setting | Variable | Type | Default |\n|---|---|---|---|\n| `db_path` | `TOYQ_DB_PATH` | string | `toyq.sqlite` |\n| `max_retries` | `TOYQ_MAX_RETRIES` | integer | `3` |\n| `retry_backoff_seconds` | `TOYQ_RETRY_BACKOFF` | float | `5.0` |\n| `job_timeout_seconds` | `TOYQ_JOB_TIMEOUT` | integer | `600` |\n| `log_level` | `TOYQ_LOG_LEVEL` | string | `info` |\n\n`max_retries` must be 0 or more.\n"
   },
   "show_json": {
    "cmd": "dogen show cfg --json",
@@ -37,7 +52,7 @@
   "show_json": {
    "cmd": "dogen context show --json",
    "exit": 0,
-   "output": "{\"ok\": true, \"message\": \"context: 3 of 5 artefact(s) present (doc-style.md, glossary.md, structure.md) · missing: code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"plan\", \"artifacts\": {\"doc-style.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"76aee5746f4f4cc34b22e1b21f8f55909153772e4dde30f709b06c19b98c87a7\", \"drifted\": false}, \"glossary.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"b88b260f8e822be1973b199bc145aa2051023f9c5c123456ac30db3116f3e86d\", \"drifted\": false}, \"structure.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"0e7a132931da7055af3bf442ff334d8c6fbeeadf437a7200d720b120d6a41760\", \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": {\"recorded_at\": \"2026-01-01T00:00:00+00:00\", \"commit\": \"047c96ae61beb3fd7f5b591ae1be9fe9bda72e5a\", \"model\": \"\", \"model_origin\": \"unknown\"}}"
+   "output": "{\"ok\": true, \"message\": \"context: 3 of 5 artefact(s) present (doc-style.md, glossary.md, structure.md) · missing: code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"plan\", \"artifacts\": {\"doc-style.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"76aee5746f4f4cc34b22e1b21f8f55909153772e4dde30f709b06c19b98c87a7\", \"drifted\": false}, \"glossary.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"b88b260f8e822be1973b199bc145aa2051023f9c5c123456ac30db3116f3e86d\", \"drifted\": false}, \"structure.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"0e7a132931da7055af3bf442ff334d8c6fbeeadf437a7200d720b120d6a41760\", \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": {\"recorded_at\": \"2026-01-01T00:00:00+00:00\", \"commit\": \"19d56dacc693c94d667ece1327850fc3e9d69708\", \"model\": \"\", \"model_origin\": \"unknown\"}}"
   }
  },
  "context_staged": {
@@ -52,6 +67,16 @@
    "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
    "exit": 6,
    "output": "{\"error\": \"uncommitted_tail\", \"unit\": \"cfg\", \"detail\": \"uncommitted event(s) at seq 2–2\", \"hint\": \"dogen resume cfg\", \"next\": \"resume\"}"
+  },
+  "file:.dogen/units/cfg/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"cfg\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators configuring toyq on a server\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"d40be0864d339b2b0f41aac789acfeb30abd0c4f88eda866861df87df725e489\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"operators configuring toyq on a server\",\"commit\":\"5f5ebfbdda7e96f5f2cafdcc90e154b5f0c2364c\",\"context\":{\"src/toyq/config.py\":\"a0c2544f1072cf201693bd259f8a50d4a7d7ebc51788b7932635ce7ac5a35bc3\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"31523c8b5a22649dd350ac75df9bfb57528f6d60cee1095146006648a868adfc\",\"seq\":2,\"sources\":[{\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"path\":\"src/toyq/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.2.0\"}\n"
+  },
+  "file:.dogen/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
   },
   "resume_dry": {
    "cmd": "dogen resume cfg --dry-run",
@@ -69,6 +94,11 @@
    "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
    "exit": 1,
    "output": "{\"error\": \"no_signoff\", \"unit\": \"cfg\", \"detail\": \"unit cfg has no recorded signoff\", \"hint\": \"dogen signoff cfg\", \"next\": \"sign_off\"}"
+  },
+  "file:.dogen/units/cfg/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"cfg\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators configuring toyq on a server\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"d40be0864d339b2b0f41aac789acfeb30abd0c4f88eda866861df87df725e489\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n"
   },
   "file:.dogen/units/cfg/unit.md": {
    "cmd": null,
@@ -88,10 +118,29 @@
   "signoff_json": {
    "cmd": "dogen signoff cfg --json",
    "exit": 0,
-   "output": "git: committed 2dcd47c — dogen: signed-off cfg\n{\"ok\": true, \"message\": \"signed off cfg · plan_hash 538bcc063ff3 · 1 target(s) frozen\", \"next\": \"draft\"}"
+   "output": "git: committed 367cb59 — dogen: signed-off cfg\n{\"ok\": true, \"message\": \"signed off cfg · plan_hash 538bcc063ff3 · 1 target(s) frozen\", \"next\": \"draft\"}"
+  }
+ },
+ "diverged": {
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 6,
+   "output": "{\"error\": \"ledger_diverged\", \"unit\": \"cfg\", \"detail\": \"the committed prefix of .dogen/units/cfg/ledger.jsonl no longer matches HEAD\", \"hint\": \"git log -- .dogen/units/cfg/ledger.jsonl; the committed record was rewritten\", \"next\": \"resume\"}"
+  }
+ },
+ "docs_outside": {
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 2,
+   "output": "{\"error\": \"bad_write_path\", \"unit\": \"cfg\", \"detail\": \"the docs root resolves outside the repository\", \"hint\": \"docs/ must be a real directory inside the repository\", \"next\": \"\"}"
   }
  },
  "drafted": {
+  "file:.dogen/units/cfg/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"cfg\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators configuring toyq on a server\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"d40be0864d339b2b0f41aac789acfeb30abd0c4f88eda866861df87df725e489\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"operators configuring toyq on a server\",\"commit\":\"5f5ebfbdda7e96f5f2cafdcc90e154b5f0c2364c\",\"context\":{\"src/toyq/config.py\":\"a0c2544f1072cf201693bd259f8a50d4a7d7ebc51788b7932635ce7ac5a35bc3\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"31523c8b5a22649dd350ac75df9bfb57528f6d60cee1095146006648a868adfc\",\"seq\":2,\"sources\":[{\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"path\":\"src/toyq/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.2.0\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"basis_seq\":null,\"commit\":\"367cb594ca9f7eb2024b402c3c9eb70c73a492c7\",\"contract\":1,\"files\":[{\"bytes\":529,\"path\":\"reference/config.md\",\"sha256\":\"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\"}],\"kind\":\"generation\",\"model\":\"\",\"model_origin\":\"unknown\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"33de9e002c004f5a0dc9127cd72467bf8853b6f393148136e3976d132fbb6218\",\"seq\":3,\"signoff_seq\":2,\"tool_version\":\"0.2.0\",\"unsteered\":false}\n"
+  },
   "file:.dogen/units/cfg/unit.md": {
    "cmd": null,
    "exit": 0,
@@ -105,7 +154,7 @@
   "fix_json": {
    "cmd": "dogen review cfg --verdict fix --note 'Explain what happens when max_retries is exceeded.' --json",
    "exit": 0,
-   "output": "git: committed 9196ba9 — dogen: reviewed cfg\n{\"ok\": true, \"message\": \"reviewed cfg: fix · .dogen/units/cfg/ledger.jsonl · the request is recorded and pending\", \"next\": \"draft\"}"
+   "output": "git: committed 4eb50bb — dogen: reviewed cfg\n{\"ok\": true, \"message\": \"reviewed cfg: fix · .dogen/units/cfg/ledger.jsonl · the request is recorded and pending\", \"next\": \"draft\"}"
   },
   "redraft_json": {
    "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
@@ -135,10 +184,25 @@
   "summary": {
    "cmd": "dogen summary cfg",
    "exit": 0,
-   "output": "Configuration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify warn at c56607b (19 checks, 1 warn, 0 fail) · page: current"
+   "output": "Configuration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify ok at cc9800e (19 checks, 0 warn, 0 fail) · page: current"
   }
  },
  "edited": {
+  "file:.dogen/units/cfg/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"cfg\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators configuring toyq on a server\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"d40be0864d339b2b0f41aac789acfeb30abd0c4f88eda866861df87df725e489\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"operators configuring toyq on a server\",\"commit\":\"5f5ebfbdda7e96f5f2cafdcc90e154b5f0c2364c\",\"context\":{\"src/toyq/config.py\":\"a0c2544f1072cf201693bd259f8a50d4a7d7ebc51788b7932635ce7ac5a35bc3\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"31523c8b5a22649dd350ac75df9bfb57528f6d60cee1095146006648a868adfc\",\"seq\":2,\"sources\":[{\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"path\":\"src/toyq/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.2.0\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"basis_seq\":null,\"commit\":\"367cb594ca9f7eb2024b402c3c9eb70c73a492c7\",\"contract\":1,\"files\":[{\"bytes\":529,\"path\":\"reference/config.md\",\"sha256\":\"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\"}],\"kind\":\"generation\",\"model\":\"\",\"model_origin\":\"unknown\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"33de9e002c004f5a0dc9127cd72467bf8853b6f393148136e3976d132fbb6218\",\"seq\":3,\"signoff_seq\":2,\"tool_version\":\"0.2.0\",\"unsteered\":false}\n"
+  },
+  "file:.dogen/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "file:docs/reference/config.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n\n| Setting | Variable | Type | Default |\n|---|---|---|---|\n| `db_path` | `TOYQ_DB_PATH` | string | `toyq.sqlite` |\n| `max_retries` | `TOYQ_MAX_RETRIES` | integer | `3` |\n| `retry_backoff_seconds` | `TOYQ_RETRY_BACKOFF` | float | `5.0` |\n| `job_timeout_seconds` | `TOYQ_JOB_TIMEOUT` | integer | `600` |\n| `log_level` | `TOYQ_LOG_LEVEL` | string | `info` |\n\n`max_retries` must be 0 or more.\n\nDefaults apply when a setting appears nowhere else.\n"
+  },
   "show_diff": {
    "cmd": "dogen show cfg --diff",
    "exit": 0,
@@ -156,13 +220,45 @@
    "exit": 1,
    "output": "{\"error\": \"target_missing\", \"unit\": \"cfg\", \"detail\": \"signed target(s) not in the basis or missing from disk: reference/config.md\", \"hint\": \"dogen steer cfg --note \\\"restore …\\\" records the request; the next draft writes it\", \"next\": \"review\"}"
   },
+  "file:.dogen/units/cfg/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"cfg\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators configuring toyq on a server\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"d40be0864d339b2b0f41aac789acfeb30abd0c4f88eda866861df87df725e489\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"operators configuring toyq on a server\",\"commit\":\"5f5ebfbdda7e96f5f2cafdcc90e154b5f0c2364c\",\"context\":{\"src/toyq/config.py\":\"a0c2544f1072cf201693bd259f8a50d4a7d7ebc51788b7932635ce7ac5a35bc3\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"31523c8b5a22649dd350ac75df9bfb57528f6d60cee1095146006648a868adfc\",\"seq\":2,\"sources\":[{\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"path\":\"src/toyq/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.2.0\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"basis_seq\":null,\"commit\":\"367cb594ca9f7eb2024b402c3c9eb70c73a492c7\",\"contract\":1,\"files\":[{\"bytes\":529,\"path\":\"reference/config.md\",\"sha256\":\"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\"}],\"kind\":\"generation\",\"model\":\"\",\"model_origin\":\"unknown\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"33de9e002c004f5a0dc9127cd72467bf8853b6f393148136e3976d132fbb6218\",\"seq\":3,\"signoff_seq\":2,\"tool_version\":\"0.2.0\",\"unsteered\":false}\n"
+  },
+  "file:.dogen/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
   "show_json": {
    "cmd": "dogen show cfg --json",
    "exit": 0,
    "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"drafted\", \"qualifier\": \"\", \"paths\": [{\"path\": \"reference/config.md\", \"status\": \"missing\", \"recorded_sha\": \"065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\", \"current_sha\": null}], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": 3, \"reviewer_edit\": null, \"review\": null, \"basis\": 3, \"tip\": 3}, \"next\": \"review\"}"
   }
  },
+ "no_material": {
+  "resume_json": {
+   "cmd": "dogen resume cfg --json",
+   "exit": 6,
+   "output": "{\"error\": \"recovery_unsupported\", \"unit\": \"cfg\", \"detail\": \"no_material\", \"hint\": \"1 uncommitted event(s) with no manifest; inspect .dogen/units/cfg/ledger.jsonl — nothing is restored from HEAD and the unit directory is preserved\", \"next\": \"resume\", \"paths\": [{\"path\": \"docs/reference/config.md\", \"verdict\": \"matches recorded digest\"}]}"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 6,
+   "output": "{\"error\": \"recovery_unsupported\", \"unit\": \"cfg\", \"detail\": \"no_material\", \"hint\": \"1 uncommitted event(s) with no manifest; inspect .dogen/units/cfg/ledger.jsonl — nothing is restored from HEAD and the unit directory is preserved\", \"next\": \"resume\", \"paths\": [{\"path\": \"docs/reference/config.md\", \"verdict\": \"matches recorded digest\"}]}"
+  }
+ },
  "retired": {
+  "file:.dogen/units/cfg/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"cfg\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators configuring toyq on a server\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"d40be0864d339b2b0f41aac789acfeb30abd0c4f88eda866861df87df725e489\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"5f5ebfbdda7e96f5f2cafdcc90e154b5f0c2364c\",\"contract\":1,\"kind\":\"retired\",\"note\":\"Superseded by the settings guide.\",\"prev\":\"31523c8b5a22649dd350ac75df9bfb57528f6d60cee1095146006648a868adfc\",\"seq\":2,\"tool_version\":\"0.2.0\"}\n"
+  },
+  "file:.dogen/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
   "show_json": {
    "cmd": "dogen show cfg --json",
    "exit": 0,
@@ -173,7 +269,12 @@
   "draft_json": {
    "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
    "exit": 0,
-   "output": "git: committed c56607b — dogen: drafted cfg\n{\"ok\": true, \"message\": \"drafted cfg · reference/config.md · 1 file(s) written\", \"next\": \"review\"}"
+   "output": "git: committed cc9800e — dogen: drafted cfg\n{\"ok\": true, \"message\": \"drafted cfg · reference/config.md · 1 file(s) written\", \"next\": \"review\"}"
+  },
+  "file:.dogen/units/cfg/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"cfg\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators configuring toyq on a server\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"d40be0864d339b2b0f41aac789acfeb30abd0c4f88eda866861df87df725e489\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"operators configuring toyq on a server\",\"commit\":\"5f5ebfbdda7e96f5f2cafdcc90e154b5f0c2364c\",\"context\":{\"src/toyq/config.py\":\"a0c2544f1072cf201693bd259f8a50d4a7d7ebc51788b7932635ce7ac5a35bc3\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"31523c8b5a22649dd350ac75df9bfb57528f6d60cee1095146006648a868adfc\",\"seq\":2,\"sources\":[{\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"path\":\"src/toyq/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.2.0\"}\n"
   },
   "file:.dogen/units/cfg/unit.md": {
    "cmd": null,
@@ -197,6 +298,16 @@
    "exit": 1,
    "output": "{\"error\": \"plan_stale\", \"unit\": \"cfg\", \"detail\": \"unit.md no longer matches the plan_hash signed at seq 2\", \"hint\": \"dogen unit edit cfg --re-sign records the amendment\", \"next\": \"re_sign\"}"
   },
+  "file:.dogen/units/cfg/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"cfg\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators configuring toyq on a server\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"d40be0864d339b2b0f41aac789acfeb30abd0c4f88eda866861df87df725e489\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"operators configuring toyq on a server\",\"commit\":\"5f5ebfbdda7e96f5f2cafdcc90e154b5f0c2364c\",\"context\":{\"src/toyq/config.py\":\"a0c2544f1072cf201693bd259f8a50d4a7d7ebc51788b7932635ce7ac5a35bc3\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\",\"prev\":\"31523c8b5a22649dd350ac75df9bfb57528f6d60cee1095146006648a868adfc\",\"seq\":2,\"sources\":[{\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"path\":\"src/toyq/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.2.0\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"367cb594ca9f7eb2024b402c3c9eb70c73a492c7\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators and developers configuring toyq\",\"intent\":\"reference\",\"sources\":[\"src/toyq/config.py\"],\"targets\":[\"reference/config.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-edited\",\"prev\":\"33de9e002c004f5a0dc9127cd72467bf8853b6f393148136e3976d132fbb6218\",\"seq\":3,\"tool_version\":\"0.2.0\",\"unit_hash_after\":\"e0e7bd1409157c10a9e807c2254d8eff9b455d0adb7c0379a03cd1c06709a866\",\"unit_hash_before\":\"538bcc063ff37a9a4de3fecf3188747c0a020ae742d063e51bcddf9b72ab28a8\"}\n"
+  },
+  "file:.dogen/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators and developers configuring toyq\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
   "show_json": {
    "cmd": "dogen show cfg --json",
    "exit": 0,
@@ -208,6 +319,11 @@
    "cmd": "dogen draft cfg .dogen/staging/cfg/draft/reference/config.md --json",
    "exit": 1,
    "output": "{\"error\": \"target_exists\", \"unit\": \"cfg\", \"detail\": \"a signed target exists on disk and is not in the basis: reference/config.md\", \"hint\": \"dogen edits cfg --note \\\"…\\\" adopts the existing page\", \"next\": \"record_edits\"}"
+  },
+  "show_json": {
+   "cmd": "dogen show cfg --json",
+   "exit": 0,
+   "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"signed-off\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"record_edits\"}"
   }
  },
  "tool": {
@@ -218,6 +334,11 @@
   }
  },
  "walk": {
+  "file:.dogen/units/install/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.2.0\",\"unit\":\"install\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"contract\":1,\"frontmatter\":{\"audience\":\"operators installing toyq for the first time\",\"intent\":\"how-to\",\"sources\":[\"README.md\"],\"targets\":[\"how-to/install.md\"],\"title\":\"Install toyq\"},\"kind\":\"unit-declared\",\"prev\":\"97981cf4ff76530ee8a35b23390f1dbb8b227ec1c3a6f81efee0c46b775c1f37\",\"seq\":1,\"tool_version\":\"0.2.0\",\"unit_hash\":\"96390b82168bdf362c1f54c6ff33b80a7bf449600b83f4621900a1bc0a19d3bc\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"operators installing toyq for the first time\",\"commit\":\"420c1b833135145ce778727b965d99b0e5e66028\",\"context\":{\"README.md\":\"5e40e1e1fea33461d1d2e27e6679ffcdf136cae49d6ab8bc0d5f5b78d4ac1713\"},\"contract\":1,\"intent\":\"how-to\",\"kind\":\"signoff\",\"plan_hash\":\"96390b82168bdf362c1f54c6ff33b80a7bf449600b83f4621900a1bc0a19d3bc\",\"prev\":\"8faa162b0e9abe95184a0cfdf10914aba53b7f531997f8b8a2f7d5e9ec1e064c\",\"seq\":2,\"sources\":[{\"commit\":\"19d56dacc693c94d667ece1327850fc3e9d69708\",\"path\":\"README.md\"}],\"supersedes\":null,\"targets\":[\"how-to/install.md\"],\"title\":\"Install toyq\",\"tool_version\":\"0.2.0\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"346d704e0dc351013e208be10501e87143290bf5\",\"contract\":1,\"kind\":\"steps-planned\",\"prev\":\"a611a3ccdf6fe4746c3384e93290a79f74b9b175db787c940b4c078115938b65\",\"replaces\":null,\"reuse\":false,\"seq\":3,\"steps\":[{\"id\":\"install\",\"mode\":\"agent\",\"stateful\":true,\"text\":\"Install the package: pip install toyq\",\"text_hash\":\"65fa01af069685b1d38d6467835f8040ea6994dfdfcbfa5b96a7c7875f8e1753\"},{\"id\":\"init\",\"mode\":\"agent\",\"stateful\":true,\"text\":\"Create the configuration: toyq init\",\"text_hash\":\"052d77889197c2cbb7147ffc22353a6b3096f392d119e32757ecd8216a916e12\"},{\"id\":\"first-job\",\"mode\":\"agent\",\"stateful\":true,\"text\":\"Queue and run a job: toyq add \\\"echo hi\\\" && toyq run --once\",\"text_hash\":\"c708687f1f063f2064aeec576db4c6e7af383d8653d42d7567ee76c23f2d576c\"}],\"tool_version\":\"0.2.0\"}\n"
+  },
   "file:.dogen/units/install/unit.md": {
    "cmd": null,
    "exit": 0,

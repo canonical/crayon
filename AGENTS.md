@@ -172,6 +172,7 @@ validation/                        ← the validation kit: the evidence apparatu
     ├── skills.py                  ← the catalog and /skill invocation, shared by every model
     ├── lanes.py                   ← each lane's case loader, live call and oracle
     ├── agent.py                   ← the seven tools, the replayed history, the decisive action
+    ├── sandbox.py                 ← real snapshots of the recorded states, copied per episode
     ├── grade.py                   ← the assertion kinds and the pinned judge
     ├── record_states.py           ← records the real tool's output for lane B; --check for drift
     ├── models.json                ← the roster: candidates, gate, judge, author, caps

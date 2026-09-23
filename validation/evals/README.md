@@ -34,15 +34,24 @@ therefore turns the gate red; lane B never replays stale bytes. A handful of ref
 cannot be reached without breaking a repository are written inline in their cases, using
 `dogen.py`'s own wording.
 
-After the history, the model acts. Looking costs nothing and does not end the episode. That
-covers:
+After the history, the model acts in a **real copy of the recorded state**. The recorder keeps a
+snapshot of its temp repository at each state, with the skills installed and the history's writes
+applied. Snapshots are built once per input digest into the gitignored `.cache/`.
 
-- reading, globbing and grepping the toyq fixture and the installed skills;
-- the read-only `dogen` calls, answered as recorded;
-- inspection commands;
+Looking costs nothing and does not end the episode. It runs for real in that copy:
+- reading, globbing and grepping;
+- read-only `dogen` calls;
+- inspection commands, including chains joined by `&&`, `;` or `|`;
 - staging-directory setup and waiting.
 
-The first consequential action ends the episode and is what the case grades:
+The command list is short and strict: nothing may be redirected into a file, and command
+substitution, `-exec` and `-delete` are refused. Commands run under an environment that is built
+from scratch rather than inherited: `PATH` with a `dogen` shim, a throwaway `HOME`, and git
+config switched off. No key or setting of the machine running the eval reaches them. A command
+the history wrote rather than recorded answers as the history says.
+
+The first consequential action ends the episode, is never carried out, and is what the case
+grades:
 - a `dogen` verb that records something;
 - any other command;
 - a write;

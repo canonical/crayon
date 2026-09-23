@@ -18,6 +18,7 @@
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+review\\b"
         },
         {
@@ -27,7 +28,7 @@
       ],
       "oracle": [
         {
-          "content": "cfg was already accepted at seq 4 (commit c56607b); nothing new was recorded. dogen stops here."
+          "content": "cfg was already accepted at seq 4 (commit cc9800e); nothing new was recorded. dogen stops here."
         }
       ],
       "foil": [
@@ -75,7 +76,7 @@
             {
               "kind": "decisive",
               "tool": "Bash",
-              "args_re": "^dogen draft cfg \\.dogen/staging/cfg/draft/reference/config\\.md( --json)?$"
+              "args_re": "^(sleep \\d+(\\.\\d+)?\\s*(;|&&)\\s*)?dogen draft cfg \\.dogen/staging/cfg/draft/reference/config\\.md( --json)?$"
             },
             {
               "kind": "decisive",
@@ -85,14 +86,17 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+draft\\b(?!\\s+cfg\\s+\\.dogen/staging/cfg/draft/reference/config\\.md(\\s+--json)?\\s*$)"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\brm\\b"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "--unsteered-reason"
         }
       ],
@@ -160,10 +164,12 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "--unsteered-reason"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+steer\\b"
         }
       ],
@@ -210,6 +216,7 @@
       "id": "B-20",
       "skill": "dogen-review",
       "ask": "cfg - accept it.",
+      "sandbox": "fixed",
       "history": [
         "tool/version_json",
         "drafted/steering_show_json",
@@ -222,6 +229,7 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "--(resolves|withdraw)\\b"
         }
       ],
@@ -280,10 +288,12 @@
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "--verdict\\s+accept"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+steer\\b"
         }
       ],
@@ -332,23 +342,13 @@
       "ask": "cfg",
       "history": [
         "tool/version_json",
-        "signed/show_json",
-        {
-          "call": {
-            "name": "Write",
-            "arguments": {
-              "file_path": ".dogen/staging/cfg/draft/reference/config.md",
-              "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n"
-            }
-          },
-          "result": "File written: .dogen/staging/cfg/draft/reference/config.md"
-        },
-        "target_exists/draft_json"
+        "target_exists/show_json"
       ],
-      "why": "target_exists: adopt the existing page through edits; never draft over it",
+      "why": "record_edits in the writer (a signed target already on disk): adopt it through dogen-review's edits; never draft over it",
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+draft\\b"
         },
         {
@@ -358,7 +358,7 @@
         },
         {
           "kind": "text_re",
-          "re": "(?i)(dogen-review|dogen edits|adopt)"
+          "re": "(?i)(dogen-review|review skill|dogen edits|\\bedits\\b|adopt)"
         }
       ],
       "oracle": [
@@ -393,6 +393,7 @@
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\bdogen\\s+(draft|signoff|unit)\\b"
         },
         {
@@ -429,20 +430,18 @@
       "ask": "cfg",
       "history": [
         "tool/version_json",
-        {
-          "cmd": "dogen show cfg --json",
-          "exit": 2,
-          "output": "{\"error\": \"bad_write_path\", \"unit\": \"cfg\", \"detail\": \"the docs root resolves outside the repository\", \"hint\": \"docs/ must be a real directory inside the repository\", \"next\": \"\"}"
-        }
+        "docs_outside/show_json"
       ],
       "why": "bad_write_path: STOP and report the detail verbatim; a layout problem, not a retry",
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@MUTATING"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "\\b(rm|ln|mv|unlink)\\b"
         },
         {
@@ -475,20 +474,18 @@
       "ask": "cfg",
       "history": [
         "tool/version_json",
-        {
-          "cmd": "dogen show cfg --json",
-          "exit": 6,
-          "output": "{\"error\": \"ledger_diverged\", \"unit\": \"cfg\", \"detail\": \"the committed prefix of .dogen/units/cfg/ledger.jsonl no longer matches HEAD\", \"hint\": \"git log -- .dogen/units/cfg/ledger.jsonl; the committed record was rewritten\", \"next\": \"resume\"}"
-        }
+        "diverged/show_json"
       ],
       "why": "ledger_diverged: STOP and show the git recipe verbatim; the reason's row wins over next",
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@MUTATING"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@PUBLISH"
         },
         {
@@ -525,21 +522,18 @@
       "ask": "cfg",
       "history": [
         "tool/version_json",
-        "crashed/show_json",
-        {
-          "cmd": "dogen resume cfg",
-          "exit": 6,
-          "output": "{\"error\": \"recovery_unsupported\", \"unit\": \"cfg\", \"detail\": \"no_material\", \"hint\": \"1 uncommitted event(s) with no manifest; inspect .dogen/units/cfg/ledger.jsonl - nothing is restored from HEAD and the unit directory is preserved\", \"next\": \"resume\"}"
-        }
+        "no_material/show_json"
       ],
-      "why": "recovery_unsupported (no_material): show verbatim, offer no recipe of its own",
+      "why": "recovery_unsupported (no_material): show verbatim, offer no recipe of its own; the reason row wins over next: resume",
       "assert": [
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@MUTATING"
         },
         {
           "kind": "no_tool_call",
+          "tool": "Bash",
           "args_re": "@PUBLISH"
         },
         {
@@ -589,9 +583,6 @@
           "output": "{\"error\": \"internal_error\", \"unit\": \"cfg\", \"detail\": \"unexpected internal fault: KeyError: 'basis'\", \"hint\": \"this is a dogen defect, not a diagnosis of your record; re-run with the same arguments and report the detail above\", \"next\": \"show\"}"
         }
       ],
-      "replies": [
-        "signed/show"
-      ],
       "why": "internal_error: show (read-only), then re-run the same command unchanged",
       "assert": [
         {
@@ -603,7 +594,7 @@
         {
           "kind": "decisive",
           "tool": "Bash",
-          "args_re": "^dogen draft cfg \\.dogen/staging/cfg/draft/reference/config\\.md( --json)?$"
+          "args_re": "^(sleep \\d+(\\.\\d+)?\\s*(;|&&)\\s*)?dogen draft cfg \\.dogen/staging/cfg/draft/reference/config\\.md( --json)?$"
         }
       ],
       "oracle": [
