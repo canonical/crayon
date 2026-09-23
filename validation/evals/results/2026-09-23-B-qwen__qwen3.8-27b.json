@@ -13,17 +13,17 @@
     "judge": "anthropic/claude-sonnet-5",
     "date": "2026-09-23",
     "dogen_version": "0.2.0",
-    "repo_head": "d2026c6",
-    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
+    "repo_head": "801b507",
+    "skills_sha256": "efb12fbeb37aa284f1e5c1397d214d52c94a79fce3f2d9ea434a15a435c4ce93",
     "total_cases": 31,
-    "passed": 26,
-    "failed": 5,
+    "passed": 29,
+    "failed": 2,
     "errors": 0,
-    "pass_rate": 0.8387,
-    "cost_usd": 0.248365,
+    "pass_rate": 0.9355,
+    "cost_usd": 0.287783,
     "tokens": {
-      "in": 1174918,
-      "out": 68579
+      "in": 1486767,
+      "out": 68842
     },
     "truncated": 0,
     "cached_cases": 0,
@@ -37,562 +37,541 @@
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003582,
+      "cost": 0.003282,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 8264,
-        "out": 189
+        "in": 8266,
+        "out": 300
       },
       "truncated": false,
-      "latency_ms": 9050
+      "latency_ms": 12945
     },
     {
       "id": "B-29",
-      "passed": true,
+      "passed": false,
       "error": null,
-      "score": 0.933,
-      "cost": 0.017001,
+      "score": 0.8,
+      "cost": 0.011638,
       "cached": false,
+      "failed": [
+        {
+          "kind": "judge",
+          "feedback": "judge: The final message ends with a single question mark but the question is compound: it first asks 'what problem does this page solve for its reader' and then, joined by 'and', asks a separate question about 'which toyq does it describe' with two options. This effectively asks two distinct questions in one turn, not a single question with options."
+        }
+      ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 52892,
-        "out": 3227
+        "in": 51903,
+        "out": 949
       },
       "truncated": false,
-      "latency_ms": 127999
+      "answer": "Context is present (doc-style, glossary, structure \u2014 none drifted), and it routes to `plan`. Let me ground myself before asking anything.\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/doc-style.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/glossary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/structure.md\"})\n\n[TOOL CALL] Glob({\"pattern\": \"docs/**\"})\n\n[TOOL CALL] Grep({\"-i\": \"true\", \"pattern\": \"retry\"})\n\n[TOOL CALL] Read({\"file_path\": \"README.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\"})\n\n[TOOL CALL] Glob({\"pattern\": \"src/**\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\"})\n\nI've grounded myself in the prior art before starting the intake:\n\n- **Context** (recorded, no drift): docs are MyST Markdown (`docs/index.md` with an empty toctree), style is \"impersonal, present tense, short sentences\", glossary defines **job** (one queued shell command) and **retry** (a re-run of a failed job), and structure expects `docs/reference/` for settings/commands and `docs/how-to/` for task guides.\n- **The product surface**: `toyq` is a small local job queue (SQLite, one job at a time). `src/toyq/config.py` declares retry settings \u2014 `max_retries` (default 3, env `TOYQ_MAX_RETRIES`) and `retry_backoff_seconds` (default 5.0, env `TOYQ_RETRY_BACKOFF`) \u2014 but the `run` loop in `src/toyq/cli.py` marks a failed job `failed` and moves on; I can see no code path that re-runs it, and no backoff delay.\n\nThat last poin",
+      "latency_ms": 39287
     },
     {
       "id": "B-30",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.016857,
+      "cost": 0.01058,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 81542,
-        "out": 3750
+        "in": 50926,
+        "out": 1770
       },
       "truncated": false,
-      "latency_ms": 143887
+      "latency_ms": 68857
     },
     {
       "id": "B-31",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004307,
+      "cost": 0.010661,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 8303,
-        "out": 438
+        "in": 66793,
+        "out": 1148
       },
       "truncated": false,
-      "latency_ms": 19302
+      "latency_ms": 39262
     },
     {
       "id": "B-05",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.010268,
+      "cost": 0.010403,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 72768,
-        "out": 2477
+        "in": 72736,
+        "out": 2505
       },
       "truncated": false,
-      "latency_ms": 97582
+      "latency_ms": 102917
     },
     {
       "id": "B-06",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004831,
+      "cost": 0.000593,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 19635,
-        "out": 1006
+        "in": 7435,
+        "out": 145
       },
       "truncated": false,
-      "latency_ms": 55425
+      "latency_ms": 4235
     },
     {
       "id": "B-07",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.034489,
+      "cost": 0.028289,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 123676,
-        "out": 14333
+        "in": 173862,
+        "out": 8987
       },
       "truncated": false,
-      "latency_ms": 798671
+      "latency_ms": 319882
     },
     {
       "id": "B-08",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.8,
-      "cost": 0.010875,
+      "score": 1.0,
+      "cost": 0.032105,
       "cached": false,
-      "failed": [
-        {
-          "kind": "asks_user",
-          "feedback": "expected the model to ask the author before acting; it ended on Bash(python3 --version; python3 -c \"import sys; print(sys.executable)\"; python3 -m pip --version)"
-        }
-      ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 77869,
-        "out": 2628
+        "in": 192959,
+        "out": 7566
       },
       "truncated": false,
-      "answer": "The tool is paired correctly (`contract` 1, tool `0.2.0` = `min_tool`). The unit is signed off, and the unit's `next` is `walk` \u2014 this is a **how-to** with three unresolved, all-stateful agent steps. Loading the reference before acting.\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/walk-protocol.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/episode-taxonomy.md\"})\n\nI've reviewed the routing and walk-protocol references. The recorded plan exists (`steps_seq` 3, all steps unresolved), so per the resume rules I won't re-propose it \u2014 I'll trust the record and continue at the first unresolved step. Let me ground myself in the unit's declaration before the consent gate.\n\n[TOOL CALL] Bash(ls -R /srv/toyq/.dogen/units/install /srv/toyq/.dogen/staging 2>/dev/null; echo ---; ls /srv/toyq)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/units/install/unit.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/README.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/pyproject.toml\"})\n\n[TOOL CALL] Bash(find /srv/toyq/src /srv/toyq/docs -type f | sort)\n\n[TOOL CALL] Bash(python3 --version; python3 -c \"import sys; print(sys.executable)\"; python3 -m pip --version)",
-      "latency_ms": 112872
+      "latency_ms": 325397
     },
     {
       "id": "B-09",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003842,
+      "cost": 0.006934,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 34226,
-        "out": 534
+        "in": 51727,
+        "out": 1630
       },
       "truncated": false,
-      "latency_ms": 21221
+      "latency_ms": 58833
     },
     {
       "id": "B-10",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.005342,
+      "cost": 0.016227,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 34254,
-        "out": 1520
+        "in": 61842,
+        "out": 5730
       },
       "truncated": false,
-      "latency_ms": 72513
+      "latency_ms": 200605
     },
     {
       "id": "B-11",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.005904,
+      "cost": 0.006114,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 47298,
-        "out": 1529
+        "in": 34060,
+        "out": 1477
       },
       "truncated": false,
-      "latency_ms": 75269
+      "latency_ms": 77705
     },
     {
       "id": "B-12",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.011418,
+      "cost": 0.009374,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 50354,
-        "out": 3096
+        "in": 50289,
+        "out": 2011
       },
       "truncated": false,
-      "latency_ms": 276521
+      "latency_ms": 73135
     },
     {
       "id": "B-13",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003991,
+      "cost": 0.004892,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 33453,
-        "out": 393
+        "in": 35089,
+        "out": 1025
       },
       "truncated": false,
-      "latency_ms": 21718
+      "latency_ms": 36195
     },
     {
       "id": "B-14",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.011382,
+      "cost": 0.0107,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 72684,
-        "out": 3078
+        "in": 69871,
+        "out": 2657
       },
       "truncated": false,
-      "latency_ms": 291434
+      "latency_ms": 80089
     },
     {
       "id": "B-15",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.006507,
+      "cost": 0.009085,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 36177,
-        "out": 1564
+        "in": 60418,
+        "out": 2176
       },
       "truncated": false,
-      "latency_ms": 76183
+      "latency_ms": 65739
     },
     {
       "id": "B-16",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.667,
-      "cost": 0.006474,
+      "score": 1.0,
+      "cost": 0.010994,
       "cached": false,
-      "failed": [
-        {
-          "kind": "any_of",
-          "feedback": "none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(date -u +%Y-%m-%dT%H:%M:%SZ; echo ---; ls -la exports/ 2>&1; echo ---; stat --format='%n %s bytes, modified %y' exports/style-guide.pdf 2>&1; echo ---; file exports/style-guide.pdf 2>&1; echo ---; command -v pdftotext python3 2>&1; echo ---; python3 -c \"import pypdf; print('pypdf', pypdf.__version__)\" 2>&1 | tail -1) | expected the reply to match '(?i)(not found|no such file|missing|unavailable|does not exist|doesn.t exist|could not|couldn.t|cannot find|can.t find|isn.t there|is not there)'; it reads: \"I've confirmed the tool is at the latest version and no context has been recorded yet, so I'll build the doc-style artifact from your source. Now I'm reviewing the source contract.\\n\\n\\n\\n\\nThe style guide\""
-        }
-      ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 26837,
-        "out": 1400
+        "in": 51016,
+        "out": 2441
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/routing.md\"})\n\nI've confirmed the tool is at the latest version and no context has been recorded yet, so I'll build the doc-style artifact from your source. Now I'm reviewing the source contract.\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/source-contract.md\"})\n\nThe style guide is a PDF, so let me record the declaration and then verify the file. I'll present the source record now, before touching it:\n\n**Declared source**\n\n| field | value |\n|---|---|\n| source_id | `style-guide` |\n| source_type | `local-export` |\n| origin / locator | `exports/style-guide.pdf` |\n| retrieval_method | inspect the exported file on the local filesystem; extract the PDF text with locally available tooling (no network) |\n| requested preservation | yes \u2014 the exported file itself is retained in the repo; no further local copy is made |\n| allowed fallbacks | none (no URL, no substitute) |\n| target artefact | `doc-style.md` only |\n\nTwo inferences I'm making from your request, stated rather than asked: preservation as \"keep the export in place,\" and no fallback sources. Now verifying the file exists and what extraction tooling is available (filesystem metadata only \u2014 the content has not been read yet):\n\n[TOOL CALL] Bash(date -u +%Y-%m-%dT%H:%M:%SZ; echo ---; ls -la exports/ 2>&1; echo ---; stat --format='%n %s bytes, modified %y' exports/style-guide.pdf 2>&1; echo ---; file exports/style-guide.pdf 2>&1; echo --",
-      "latency_ms": 117879
+      "latency_ms": 112949
     },
     {
       "id": "B-01",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004492,
+      "cost": 0.004524,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 28827,
-        "out": 607
+        "in": 33846,
+        "out": 975
       },
       "truncated": false,
-      "latency_ms": 23422
+      "latency_ms": 44861
     },
     {
       "id": "B-02",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004124,
+      "cost": 0.003688,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 21819,
-        "out": 736
+        "in": 21864,
+        "out": 500
       },
       "truncated": false,
-      "latency_ms": 20714
+      "latency_ms": 49684
     },
     {
       "id": "B-03",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001333,
+      "cost": 0.001236,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 7831,
-        "out": 508
+        "out": 456
       },
       "truncated": false,
-      "latency_ms": 20595
+      "latency_ms": 40897
     },
     {
       "id": "B-04",
-      "passed": true,
+      "passed": false,
       "error": null,
-      "score": 1.0,
-      "cost": 0.004905,
+      "score": 0.5,
+      "cost": 0.015306,
       "cached": false,
+      "failed": [
+        {
+          "kind": "text_re",
+          "feedback": "expected the reply to match '0\\\\.1\\\\.9|0\\\\.2\\\\.0'; it reads: \"Context is grounded (all three onboarding artefacts present, no drift). Now let me look at the repo before asking anything.\\n\\n\\n\\n\\nI've confirmed a unit already exists at `.dogen/units/cfg/`, so I'm chec\""
+        }
+      ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 7201,
-        "out": 2134
+        "in": 73337,
+        "out": 2296
       },
       "truncated": false,
-      "latency_ms": 67014
+      "answer": "[TOOL CALL] Bash(dogen context show --json)\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/doc-style.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/glossary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/structure.md\"})\n\nContext is grounded (all three onboarding artefacts present, no drift). Now let me look at the repo before asking anything.\n\n[TOOL CALL] Bash(find . -path ./.git -prune -o -type f -print | head -100)\n\nI've confirmed a unit already exists at `.dogen/units/cfg/`, so I'm checking the routing table and its state.\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-plan/references/routing.md\"})\n\n[TOOL CALL] Bash(dogen show cfg --json)\n\nThe unit `cfg` is **already declared** \u2014 this is not a fresh declaration. The tool says `next: sign_off`, so the plan needs to be read back to you and signed off. Let me read the recorded plan first.\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/cfg/unit.md\"})\n\nThe plan for `cfg` is already declared and recorded. Before I read it back for signoff, let me ground it against the repo \u2014 source and target placement.\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"README.md\"})\n\nThe plan for `cfg` is already declared and recorded on disk \u2014 there's nothing to re-declare. The tool's `next` is `sign_off`, which means the one remaining act is the gate: read the plan back to you and, on your explicit go-ahead, sign it.\n\nHere is the recorde",
+      "latency_ms": 252907
     },
     {
       "id": "B-17",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001507,
+      "cost": 0.002874,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 8307,
-        "out": 139
+        "in": 8311,
+        "out": 962
       },
       "truncated": false,
-      "latency_ms": 6126
+      "latency_ms": 58368
     },
     {
       "id": "B-18",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001525,
+      "cost": 0.0015,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 8881,
-        "out": 103
+        "in": 9012,
+        "out": 79
       },
       "truncated": false,
-      "latency_ms": 4784
+      "latency_ms": 18293
     },
     {
       "id": "B-19",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.667,
-      "cost": 0.002027,
+      "score": 1.0,
+      "cost": 0.002708,
       "cached": false,
-      "failed": [
-        {
-          "kind": "asks_user",
-          "feedback": "expected the model to ask the author before acting; it ended on Write({\"content\": \"{\\n  \\\"files_read\\\": [\\n    {\\\"path\\\": \\\".dogen/staging/cfg/draft/reference/config.md\\\", \\\"commit\\\": \\\"\\\", \\\"note\\\": \\\"staged page read back after writing\\\"}\\n  ],\\n  \\\"gaps\\\": []\\n}\\n\", \"file_path\": \".dogen/staging/cfg/report.json\"})"
-        }
-      ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 8935,
-        "out": 366
+        "in": 9091,
+        "out": 717
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Write({\"content\": \"{\\n  \\\"files_read\\\": [\\n    {\\\"path\\\": \\\".dogen/staging/cfg/draft/reference/config.md\\\", \\\"commit\\\": \\\"\\\", \\\"note\\\": \\\"staged page read back after writing\\\"}\\n  ],\\n  \\\"gaps\\\": []\\n}\\n\", \"file_path\": \".dogen/staging/cfg/report.json\"})",
-      "latency_ms": 11673
+      "latency_ms": 63271
     },
     {
       "id": "B-20",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.02306,
+      "cost": 0.002182,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 52775,
-        "out": 9911
+        "in": 8306,
+        "out": 499
       },
       "truncated": false,
-      "latency_ms": 269075
+      "latency_ms": 20682
     },
     {
       "id": "B-21",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003641,
+      "cost": 0.001618,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 16514,
-        "out": 715
+        "in": 8201,
+        "out": 301
       },
       "truncated": false,
-      "latency_ms": 27907
+      "latency_ms": 12314
     },
     {
       "id": "B-22",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.010898,
+      "cost": 0.016746,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 59266,
-        "out": 2106
+        "in": 89021,
+        "out": 4491
       },
       "truncated": false,
-      "latency_ms": 96660
+      "latency_ms": 217898
     },
     {
       "id": "B-23",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.008468,
+      "cost": 0.007483,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 63415,
-        "out": 1654
+        "in": 35885,
+        "out": 1120
       },
       "truncated": false,
-      "latency_ms": 85215
+      "latency_ms": 134000
     },
     {
       "id": "B-24",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.008382,
+      "cost": 0.008807,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 47712,
-        "out": 2488
+        "in": 34929,
+        "out": 1903
       },
       "truncated": false,
-      "latency_ms": 102275
+      "latency_ms": 142337
     },
     {
       "id": "B-25",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.75,
-      "cost": 0.011041,
+      "score": 1.0,
+      "cost": 0.022628,
       "cached": false,
-      "failed": [
-        {
-          "kind": "text_re",
-          "feedback": "expected the reply to match 'git log -- \\\\.dogen/units/cfg/ledger\\\\.jsonl'; it reads: 'The unit `cfg` is blocked by `ledger_diverged` \u2014 the committed ledger no longer matches HEAD, so dogen refuses all verbs on it, and this review skill has no authorized next command. How would you like'"
-        }
-      ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 33584,
-        "out": 4613
+        "in": 49691,
+        "out": 8093
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\"})\n\n[TOOL CALL] Bash(git log --oneline -- .dogen/units/cfg/ledger.jsonl)\n\n[TOOL CALL] Bash(git status --short -- .dogen/units/cfg/)\n\n[TOOL CALL] AskUserQuestion({\"questions\": [{\"header\": \"Next step\", \"multiSelect\": false, \"options\": [{\"description\": \"You take the matter to the dogen maintainers / resolve the rewritten history yourself. The unit directory and every file are preserved exactly as they are.\", \"label\": \"Stop here \\u2014 I'll handle it\"}, {\"description\": \"One read-only verification pass. The refusal already says 'verify' is unavailable while the ledger is diverged, so this may refuse as well \\u2014 in which case we stop.\", \"label\": \"Try dogen verify cfg\"}], \"question\": \"The unit `cfg` is blocked by `ledger_diverged` \\u2014 the committed ledger no longer matches HEAD, so dogen refuses all verbs on it, and this review skill has no authorized next command. How would you like to proceed?\"}]})",
-      "latency_ms": 179738
+      "latency_ms": 335696
     },
     {
       "id": "B-26",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004389,
+      "cost": 0.012569,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 20713,
-        "out": 1248
+        "in": 40024,
+        "out": 3784
       },
       "truncated": false,
-      "latency_ms": 43953
+      "latency_ms": 212587
     },
     {
       "id": "B-27",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.5,
-      "cost": 0.001503,
+      "score": 1.0,
+      "cost": 0.002043,
       "cached": false,
-      "failed": [
-        {
-          "kind": "tool_call",
-          "feedback": "expected a Bash call matching '^dogen show cfg\\\\b'; saw Bash(dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json)"
-        }
-      ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 8906,
-        "out": 89
+        "in": 18226,
+        "out": 149
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json)",
-      "latency_ms": 3291
+      "latency_ms": 5476
     }
   ]
 }

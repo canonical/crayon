@@ -13,17 +13,17 @@
     "judge": "anthropic/claude-sonnet-5",
     "date": "2026-09-23",
     "dogen_version": "0.2.0",
-    "repo_head": "d2026c6",
-    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
+    "repo_head": "801b507",
+    "skills_sha256": "efb12fbeb37aa284f1e5c1397d214d52c94a79fce3f2d9ea434a15a435c4ce93",
     "total_cases": 31,
-    "passed": 25,
-    "failed": 6,
+    "passed": 27,
+    "failed": 4,
     "errors": 0,
-    "pass_rate": 0.8065,
-    "cost_usd": 0.103505,
+    "pass_rate": 0.871,
+    "cost_usd": 0.103355,
     "tokens": {
-      "in": 1979198,
-      "out": 95364
+      "in": 1764892,
+      "out": 71064
     },
     "truncated": 0,
     "cached_cases": 0,
@@ -36,570 +36,556 @@
       "id": "B-28",
       "passed": true,
       "error": null,
-      "score": 1.0,
-      "cost": 0.004952,
+      "score": 0.933,
+      "cost": 0.00773,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 29551,
-        "out": 1761
+        "in": 42498,
+        "out": 1246
       },
       "truncated": false,
-      "latency_ms": 36062
+      "latency_ms": 39115
     },
     {
       "id": "B-29",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.007555,
+      "cost": 0.0067,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 72437,
-        "out": 2225
+        "in": 78206,
+        "out": 3072
       },
       "truncated": false,
-      "latency_ms": 41110
+      "latency_ms": 57854
     },
     {
       "id": "B-30",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.009522,
+      "cost": 0.00809,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 90968,
-        "out": 4934
+        "in": 83683,
+        "out": 3794
       },
       "truncated": false,
-      "latency_ms": 88179
+      "latency_ms": 65943
     },
     {
       "id": "B-31",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.007039,
+      "cost": 0.004644,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 49555,
-        "out": 1232
+        "in": 24884,
+        "out": 575
       },
       "truncated": false,
-      "latency_ms": 28273
+      "latency_ms": 10932
     },
     {
       "id": "B-05",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004552,
+      "cost": 0.003114,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 52145,
-        "out": 2892
+        "in": 62177,
+        "out": 2125
       },
       "truncated": false,
-      "latency_ms": 46650
+      "latency_ms": 35146
     },
     {
       "id": "B-06",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000994,
+      "cost": 0.001041,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 19566,
-        "out": 481
+        "in": 19990,
+        "out": 451
       },
       "truncated": false,
-      "latency_ms": 7884
+      "latency_ms": 6395
     },
     {
       "id": "B-07",
       "passed": false,
       "error": null,
       "score": 0.5,
-      "cost": 0.004056,
+      "cost": 0.005333,
       "cached": false,
       "failed": [
         {
           "kind": "decisive",
-          "feedback": "expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was nothing: the turn cap was reached while the model was still looking"
+          "feedback": "expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was Bash(which dogen; python3 -c \"import dogen, os; print(os.path.dirname(dogen.__file__))\" 2>/dev/null; pip show dogen 2>/dev/null | head -20)"
         }
       ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 218639,
-        "out": 3534
+        "in": 152066,
+        "out": 4347
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(ls .agents/skills/dogen-write/ && ls .agents/skills/dogen-write/references/)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\"})\n\n[TOOL CALL] Bash(ls -la .dogen/ .dogen/units/ .dogen/units/cfg/ 2>&1; echo ---; cat .dogen/units/cfg/unit.md)\n\n[TOOL CALL] Bash(ls -la; echo ---; find . -path ./.git -prune -o -type f -print | head -100)\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"README.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\"})\n\n[TOOL CALL] Bash(cat .dogen/context/doc-style.md; echo \"======\"; cat .dogen/context/glossary.md; echo \"======\"; cat .dogen/context/structure.md; echo \"======\"; cat .dogen/context/manifest.json)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/writing-standards.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/reference-stance.md\"})\n\n[TOOL CALL] Bash(cat pyproject.toml; echo ===; cat src/toyq/__init__.py; echo ===; cat .gitignore; echo ===; ls -R docs; echo ===; cat .dogen/.gitattributes)\n\n[TOOL CALL] Bash(grep -rn \"retry_backoff\\|max_retries\\|job_timeout\\|log_level\\|db_path\" --include=*.py --include=*.md --include=*.toml . | grep -v '^./.agents' ; echo ===; git log --oneline | head -20; echo ===; git status --porcelain)\n\n[TOOL CALL] Bash(ls -la .dogen/staging/; find .dogen/staging -type f | head; echo ===; grep -rn \"report\" .agents/skills/dogen-review",
-      "latency_ms": 62426
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\"})\n\nThe unit is `reference` intent, signed off, `next: draft`. Let me read the plan and ground the draft.\n\n[TOOL CALL] Bash(dogen show cfg)\n\n[TOOL CALL] Bash(ls -la; ls -la .dogen; ls .dogen/units/cfg/ 2>/dev/null; cat .dogen/units/cfg/unit.md 2>/dev/null)\n\n[TOOL CALL] Bash(find . -path ./.git -prune -o -type f -print | sort)\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/doc-style.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/glossary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/structure.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"README.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/__init__.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"pyproject.toml\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/writing-standards.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/reference-stance.md\"})\n\n[TOOL CALL] Bash(cat -n src/toyq/config.py; echo ---; cat -n src/toyq/cli.py | sed -n '1,30p'; echo ---; git rev-parse HEAD; git log --oneline -3; echo ---; cat .dogen/context/manifest.json)\n\n[TOOL CALL] Bash(dogen draft --help; echo ---; dogen --help)\n\n[TOOL CALL] Bash(which dogen; python3 -c \"import dogen, os; print(os.path.dirname(dogen.__file__))\" 2>/dev/null; pip show dogen 2>/dev/null | hea",
+      "latency_ms": 74741
     },
     {
       "id": "B-08",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004855,
+      "cost": 0.006681,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 113639,
-        "out": 4348
+        "in": 142741,
+        "out": 3589
       },
       "truncated": false,
-      "latency_ms": 75233
+      "latency_ms": 64821
     },
     {
       "id": "B-09",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001948,
+      "cost": 0.001348,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 91871,
-        "out": 1289
+        "in": 47982,
+        "out": 708
       },
       "truncated": false,
-      "latency_ms": 23132
+      "latency_ms": 8508
     },
     {
       "id": "B-10",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001695,
+      "cost": 0.00453,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 42586,
-        "out": 1802
+        "in": 78400,
+        "out": 2407
       },
       "truncated": false,
-      "latency_ms": 29961
+      "latency_ms": 48951
     },
     {
       "id": "B-11",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00176,
+      "cost": 0.001422,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 62210,
-        "out": 2988
+        "in": 33695,
+        "out": 1300
       },
       "truncated": false,
-      "latency_ms": 49597
+      "latency_ms": 21203
     },
     {
       "id": "B-12",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.002763,
+      "cost": 0.001155,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 101217,
-        "out": 3425
+        "in": 22064,
+        "out": 859
       },
       "truncated": false,
-      "latency_ms": 59707
+      "latency_ms": 16632
     },
     {
       "id": "B-13",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001117,
+      "cost": 0.001083,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 33423,
-        "out": 583
+        "in": 33220,
+        "out": 568
       },
       "truncated": false,
-      "latency_ms": 7305
+      "latency_ms": 8637
     },
     {
       "id": "B-14",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001715,
+      "cost": 0.002694,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 60948,
-        "out": 2267
+        "in": 71780,
+        "out": 2851
       },
       "truncated": false,
-      "latency_ms": 33949
+      "latency_ms": 297064
     },
     {
       "id": "B-15",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00226,
+      "cost": 0.001767,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 59498,
-        "out": 1897
+        "in": 33161,
+        "out": 1225
       },
       "truncated": false,
-      "latency_ms": 28933
+      "latency_ms": 22364
     },
     {
       "id": "B-16",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001464,
+      "cost": 0.004547,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 16337,
-        "out": 1434
+        "in": 52354,
+        "out": 3100
       },
       "truncated": false,
-      "latency_ms": 19918
+      "latency_ms": 61439
     },
     {
       "id": "B-01",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.0013,
+      "cost": 0.0012,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 30133,
-        "out": 542
+        "in": 28740,
+        "out": 726
       },
       "truncated": false,
-      "latency_ms": 8838
+      "latency_ms": 9088
     },
     {
       "id": "B-02",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001123,
+      "cost": 0.002295,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 21684,
-        "out": 661
+        "in": 22698,
+        "out": 630
       },
       "truncated": false,
-      "latency_ms": 9461
+      "latency_ms": 9436
     },
     {
       "id": "B-03",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000292,
+      "cost": 0.00024,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
         "in": 7701,
-        "out": 611
+        "out": 488
       },
       "truncated": false,
-      "latency_ms": 9638
+      "latency_ms": 7446
     },
     {
       "id": "B-04",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.5,
-      "cost": 0.003686,
+      "score": 1.0,
+      "cost": 0.001734,
       "cached": false,
-      "failed": [
-        {
-          "kind": "text_re",
-          "feedback": "expected the reply to match '0\\\\.1\\\\.9|0\\\\.2\\\\.0'; it reads: ''"
-        }
-      ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 69380,
-        "out": 5102
+        "in": 31027,
+        "out": 3223
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(cd /srv/toyq && ls -a && grep -rn \"min_tool\" --include=* -l . 2>/dev/null | head -50)\n\n[TOOL CALL] Bash(cd /srv/toyq && which dogen && dogen --help 2>&1 | head -40)\n\n[TOOL CALL] Bash(cd /srv/toyq && dogen version --json; echo \"---\"; dogen version; echo \"---\"; ls /opt/dogen; grep -rn \"min_tool\" /opt/dogen 2>/dev/null | head; echo \"---\"; ls -R .dogen | head -50)\n\n[TOOL CALL] Bash(cd /srv/toyq && grep -rn \"min_tool\\|0\\.2\\.0\" docs README.md pyproject.toml 2>/dev/null | head -20)\n\n[TOOL CALL] Bash(cd /srv/toyq && for i in 1 2 3; do dogen version --json; done; echo \"---\"; md5sum /opt/dogen/bin/dogen /opt/dogen/dogen.py 2>/dev/null; ls -la /opt/dogen/bin)\n\n[TOOL CALL] Bash(cd /srv/toyq && dogen show cfg --json)\n\n[TOOL CALL] Bash(cd /srv/toyq && ls -R .agents/skills/dogen-plan)\n\n[TOOL CALL] Bash(cd /srv/toyq && cat .dogen/units/cfg/unit.md; echo \"=== LEDGER ===\"; cat .dogen/units/cfg/ledger.jsonl)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-plan/references/routing.md\"})\n\n[TOOL CALL] Bash(cd /srv/toyq && dogen context show --json)\n\n[TOOL CALL] Bash(cd /srv/toyq && find docs -type f | sort; echo \"=== git log ===\"; git log --oneline | head -20; echo \"=== status ===\"; git status --porcelain; echo \"=== verify ===\"; dogen verify cfg; echo \"exit=$?\")\n\n[TOOL CALL] Bash(cd /srv/toyq && dogen show cfg; echo \"exit=$?\"; echo \"=== summary ===\"; dogen summary cfg; echo \"exit=$?\")\n\n[TOOL CALL] Bash(pwd; echo \"PATH=$PATH\"; type -a dogen; ls -la /opt/dogen/bin/dogen; cat /o",
-      "latency_ms": 60734
+      "latency_ms": 63364
     },
     {
       "id": "B-17",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.5,
-      "cost": 0.006169,
+      "score": 1.0,
+      "cost": 0.001281,
       "cached": false,
-      "failed": [
-        {
-          "kind": "text_re",
-          "feedback": "expected the reply to match '(?i)already'; it reads: ''"
-        }
-      ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 109680,
-        "out": 6313
+        "in": 16600,
+        "out": 662
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(dogen show cfg --json; echo \"---\"; dogen summary cfg)\n\n[TOOL CALL] Bash(cd /srv/toyq && cat .dogen/units/cfg/ledger.jsonl | tail -5; echo \"--- git status\"; git status --porcelain; echo \"--- log\"; git log --oneline -5)\n\n[TOOL CALL] Bash(cd /srv/toyq && which dogen && head -30 $(which dogen) 2>/dev/null | head -30)\n\n[TOOL CALL] Bash(cd /srv/toyq && grep -n \"already_accepted\" -A 25 -B 25 /opt/dogen/dogen.py | head -120)\n\n[TOOL CALL] Bash(cd /srv/toyq && sed -n 5594,5660p /opt/dogen/dogen.py)\n\n[TOOL CALL] Bash(cd /srv/toyq && git show 67820ae --stat && echo \"=== ledger in 67820ae tail:\" && git show 67820ae:.dogen/units/cfg/ledger.jsonl | tail -2 && echo \"=== ledger in d5a1777 tail:\" && git show d5a1777:.dogen/units/cfg/ledger.jsonl | tail -2)\n\n[TOOL CALL] Bash(cd /srv/toyq && cat .agents/skills/dogen-review/references/routing.md)\n\n[TOOL CALL] Bash(cd /srv/toyq && dogen show cfg; echo \"--- exit $?\"; ls -la .dogen/staging/cfg/ 2>/dev/null; echo \"--- git\"; git status --short --branch)\n\n[TOOL CALL] Bash(cd /srv/toyq && stat -c '%y %n' .dogen/units/cfg/ledger.jsonl docs/reference/config.md .dogen/units/cfg/unit.md 2>/dev/null; echo \"--- reflog\"; git reflog --date=iso | head -10; echo \"--- date now\"; date -Is)",
-      "latency_ms": 82341
+      "latency_ms": 20682
     },
     {
       "id": "B-18",
       "passed": false,
       "error": null,
       "score": 0.75,
-      "cost": 0.000221,
+      "cost": 0.004419,
       "cached": false,
       "failed": [
         {
           "kind": "any_of",
-          "feedback": "none of the acceptable actions happened: expected the action to be Bash matching '(^|(;|&&)\\\\s*)dogen\\\\ draft\\\\ cfg\\\\ \\\\.dogen/staging/cfg/draft/\\\\ \\\\-\\\\-model\\\\-origin\\\\ unknown\\\\ \\\\-\\\\-report\\\\ \\\\.dogen/staging/cfg/report\\\\.json( --json)?\\\\s*$'; it was Bash(dogen unit show cfg --json 2>/dev/null || dogen unit cfg --json 2>/dev/null || ls .dogen/units/cfg/) | expected the model to stop and reply; it ended on Bash(dogen unit show cfg --json 2>/dev/null || dogen unit cfg --json 2>/dev/null || ls .dogen/units/cfg/)"
+          "feedback": "none of the acceptable actions happened: expected the action to be Bash matching '(^|(;|&&)\\\\s*)dogen\\\\ draft\\\\ cfg\\\\ \\\\.dogen/staging/cfg/draft/\\\\ \\\\-\\\\-model\\\\-origin\\\\ unknown\\\\ \\\\-\\\\-report\\\\ \\\\.dogen/staging/cfg/report\\\\.json( --json)?\\\\s*$'; it was Bash(ps aux | grep -i dogen | grep -v grep; echo \"exit:$?\"; stat .dogen/staging/lock; date) | expected the model to stop and reply; it ended on Bash(ps aux | grep -i dogen | grep -v grep; echo \"exit:$?\"; stat .dogen/staging/lock; date)"
         }
       ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 8759,
-        "out": 420
+        "in": 83344,
+        "out": 1986
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(cat .agents/skills/dogen-write/references/routing.md)\n\n[TOOL CALL] Bash(dogen unit show cfg --json 2>/dev/null || dogen unit cfg --json 2>/dev/null || ls .dogen/units/cfg/)",
-      "latency_ms": 8180
+      "answer": "[TOOL CALL] Bash(ls -la .dogen/ 2>/dev/null; ls -la .dogen/staging/ 2>/dev/null; ls -la .dogen/units/ 2>/dev/null)\n\n[TOOL CALL] Bash(ls .agents/skills/dogen-write/references/)\n\n[TOOL CALL] Bash(ls -la .dogen/units/cfg/; echo ---; cat .dogen/units/cfg/*.json 2>/dev/null | head -100)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\"})\n\n[TOOL CALL] Bash(cat .dogen/units/cfg/unit.md; echo \"=== ledger (read-only, not editing) ===\"; cat .dogen/units/cfg/ledger.jsonl)\n\n[TOOL CALL] Bash(ls -la; echo ---; ls docs 2>/dev/null; echo ---; ls .dogen/context/)\n\nI jumped ahead and staged a stub before grounding \u2014 that was wrong. Let me ground properly from the declared sources.\n\n[TOOL CALL] Bash(find src docs -type f | sort; echo ===; cat src/toyq/config.py)\n\n[TOOL CALL] Bash(cat README.md; echo ===; cat pyproject.toml; echo ===; cat .gitignore; echo ===; cat .dogen/context/manifest.json)\n\n[TOOL CALL] Bash(cat .dogen/context/doc-style.md; echo \"=====GLOSSARY\"; cat .dogen/context/glossary.md; echo \"=====STRUCTURE\"; cat .dogen/context/structure.md)\n\n[TOOL CALL] Bash(cat docs/index.md; echo ===; find docs -type f | sort; echo ===; cat src/toyq/cli.py; echo ===; cat src/toyq/__init__.py)\n\n[TOOL CALL] Bash(ps aux | grep -i dogen | grep -v grep; echo \"exit:$?\"; stat .dogen/staging/lock; date)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/writing-standards.md\"})",
+      "latency_ms": 26624
     },
     {
       "id": "B-19",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003511,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 51488,
+        "out": 3572
+      },
+      "truncated": false,
+      "latency_ms": 49255
+    },
+    {
+      "id": "B-20",
       "passed": false,
       "error": null,
-      "score": 0.667,
-      "cost": 0.002159,
+      "score": 0.5,
+      "cost": 0.004012,
       "cached": false,
       "failed": [
         {
           "kind": "asks_user",
-          "feedback": "expected the model to ask the author before acting; it ended on Bash(cd /srv/toyq && cp docs/reference/config.md .dogen/staging/cfg/draft/reference/config.md && diff docs/reference/config.md .dogen/staging/cfg/draft/reference/config.md && echo \"staging restored to recorded bytes\")"
+          "feedback": "expected the model to ask the author before acting; it ended on a reply with no tool call"
         }
       ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 65291,
-        "out": 2414
+        "in": 51897,
+        "out": 4379
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(cat .agents/skills/dogen-write/references/routing.md)\n\n[TOOL CALL] Bash(cd /srv/toyq && ls -la .dogen/staging/cfg/ 2>/dev/null; echo ---; ls -la .dogen/staging/cfg/draft 2>/dev/null; echo ---; ls .dogen/units/cfg/ 2>/dev/null; echo ---; ls docs/ 2>/dev/null; echo ---; ls docs/reference 2>/dev/null)\n\n[TOOL CALL] Bash(cd /srv/toyq && git status --porcelain; echo ---; git log --oneline -12; echo ---; cat .dogen/units/cfg/unit.md)\n\n[TOOL CALL] Bash(cd /srv/toyq && cat docs/reference/config.md; echo \"=== source ===\"; cat src/toyq/config.py)\n\n[TOOL CALL] Bash(cd /srv/toyq && cp docs/reference/config.md .dogen/staging/cfg/draft/reference/config.md && diff docs/reference/config.md .dogen/staging/cfg/draft/reference/config.md && echo \"staging restored to recorded bytes\")",
-      "latency_ms": 31751
-    },
-    {
-      "id": "B-20",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.011533,
-      "cached": false,
-      "served_by": [
-        "DeepInfra"
-      ],
-      "tokens": {
-        "in": 65810,
-        "out": 19759
-      },
-      "truncated": false,
-      "latency_ms": 313768
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\"})\n\n[TOOL CALL] Bash(dogen show cfg; echo \"---\"; dogen summary cfg)\n\n[TOOL CALL] Bash(dogen show cfg --diff; echo \"=== exit $?\"; echo \"--- git status ---\"; git status --short; echo \"--- log ---\"; git log --oneline -6; echo \"--- files ---\"; ls -la docs/reference/ 2>/dev/null; ls -la .dogen/units/cfg/ 2>/dev/null)\n\n[TOOL CALL] Bash(cat .dogen/units/cfg/unit.md 2>/dev/null; echo \"=== ledger tail ===\"; tail -4 .dogen/units/cfg/ledger.jsonl 2>/dev/null | cut -c1-600)\n\n[TOOL CALL] Bash(echo \"=== docs/reference/config.md ===\"; cat docs/reference/config.md; echo; echo \"=== src/toyq/config.py ===\"; cat src/toyq/config.py)\n\n[TOOL CALL] Bash(which dogen; dogen --help 2>&1 | head -60)\n\nI ran the opening, and I have to stop before the verdict \u2014 **accept is not available for `cfg` right now.**\n\n## What the tool says\n\n```\n$ dogen version --json\n{\"tool\": \"0.2.0\", \"contract\": 1}\n```\nPairing supported (contract `1`, tool `0.2.0`).\n\n```\n$ dogen show cfg --json\nstate: \"reviewed\" \u2014 qualifier: \"1 request pending\"\nnext: \"draft\"\n```\n\nRouting for `next: draft` (references/routing.md): *\"Author the page, stage it under the unit's own draft directory, and record it.\"* \u2014 `dogen draft <id> <staging file|dir>`. That is dogen-write's verb, not mine.\n\n## Why there is nothing to accept\n\n`dogen summary cfg`, quoted as the tool printed it:\n\n```\nConfiguration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudienc",
+      "latency_ms": 71580
     },
     {
       "id": "B-21",
       "passed": false,
       "error": null,
       "score": 0.667,
-      "cost": 0.0034,
+      "cost": 0.005816,
       "cached": false,
       "failed": [
         {
           "kind": "asks_user",
-          "feedback": "expected the model to ask the author before acting; it ended on Bash(cd /srv/toyq && sha256sum .dogen/staging/cfg/draft/reference/config.md; echo \"=== recorded sha ===\"; echo 065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3; echo \"=== git log for page ===\"; git log --oneline -3 -- docs/reference/config.md; echo \"=== HEAD has it? ===\"; git cat-file -e HEAD:docs/reference/config.md && echo \"present in HEAD\"; echo \"=== index ===\"; git status --porcelain; echo \"=== generation commit ===\"; git cat-file -t f320925de44f4edd144d5f7e52ebc3458c8a5da7 2>&1 | head -2)"
+          "feedback": "expected the model to ask the author before acting; it ended on Bash(cd /srv/toyq && find .dogen/staging -type f | sed 's/^/staging: /'; echo \"---- index\"; cat docs/index.md; echo \"---- deleted-in-worktree\"; git status --porcelain docs/reference/config.md)"
         }
       ],
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 56887,
-        "out": 3369
+        "in": 86746,
+        "out": 7860
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(dogen show cfg; echo \"---\"; dogen summary cfg; echo \"---\"; ls -la reference/ 2>/dev/null; echo \"---\"; ls docs 2>/dev/null)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\"})\n\n[TOOL CALL] Bash(cd /srv/toyq && cat .dogen/units/cfg/unit.md 2>/dev/null; echo \"=== staging ===\"; find .dogen/staging -maxdepth 3 2>/dev/null; echo \"=== git status ===\"; git status --short; echo \"=== docs tree ===\"; find docs reference -maxdepth 2 2>/dev/null)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/provenance-summary.md\"})\n\n[TOOL CALL] Bash(cd /srv/toyq && echo \"=== staging draft ===\"; find .dogen/staging/cfg -type f | head -50; echo \"=== report ===\"; cat .dogen/staging/cfg/report.json 2>/dev/null; echo; echo \"=== signoff ===\"; grep '\"kind\":\"signoff\"' .dogen/units/cfg/ledger.jsonl | tail -1; echo \"=== generation ===\"; grep '\"kind\":\"generation\"' .dogen/units/cfg/ledger.jsonl | tail -1; echo \"=== summary json ===\"; dogen summary cfg --json)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/review-rubric.md\"})\n\n[TOOL CALL] Bash(cd /srv/toyq && sha256sum .dogen/staging/cfg/draft/reference/config.md; echo \"=== recorded sha ===\"; echo 065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3; echo \"=== git log for page ===\"; git log --oneline -3 -- docs/reference/config.md; echo \"=== HEAD has it? ===\"; git cat-file -e HEAD:docs/reference/config.md && echo \"present in HEAD\"; echo \"=== index ===\"; g",
-      "latency_ms": 39691
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/provenance-summary.md\"})\n\n[TOOL CALL] Bash(dogen show cfg; echo \"----\"; dogen summary cfg; echo \"---- exit $?\")\n\n[TOOL CALL] Bash(git status --porcelain; echo \"---- ls docs\"; ls -la docs 2>/dev/null; echo \"---- find\"; find . -path ./.git -prune -o -name 'config.md' -print)\n\n[TOOL CALL] Bash(dogen summary cfg --json; echo \"----\"; dogen show cfg --json; echo \"----\"; dogen show cfg --diff)\n\n[TOOL CALL] Bash(grep '\"kind\":\"signoff\"' .dogen/units/cfg/ledger.jsonl | tail -1; echo \"----\"; grep '\"kind\":\"generation\"' .dogen/units/cfg/ledger.jsonl | tail -1; echo \"---- verify\"; dogen verify cfg)\n\n[TOOL CALL] Bash(cat .dogen/units/cfg/unit.md; echo \"---- staging\"; ls -R .dogen/staging/cfg; echo \"---- git log\"; git log --oneline -5; echo \"---- plan\"; ls -la docs/reference)\n\n[TOOL CALL] Bash(cd /srv/toyq && git show HEAD:docs/reference/config.md | sha256sum; echo \"recorded: 065ddb754ec35e52b2ea504f56add648b6548e6d2299abe2934a8fd310c5a7b3\"; echo \"---- staged sha\"; sha256sum .dogen/staging/cfg/draft/reference/config.md; echo \"---- diff HEAD vs staged\"; git show HEAD:docs/reference/config.md | diff - .dogen/staging/cfg/draft/reference/config.md && echo IDENTICAL)\n\n[TOOL CALL] Read({\"file_path\": \".dogen/staging/cfg/draft/reference/config.md\"})\n\n[TOOL CALL] Bash(cd /srv/toyq && find .dogen/staging -type f | sed 's/^/staging: /'; echo \"---- ",
+      "latency_ms": 106620
     },
     {
       "id": "B-22",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.007372,
+      "cost": 0.005197,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 210012,
-        "out": 10249
+        "in": 152291,
+        "out": 5315
       },
       "truncated": false,
-      "latency_ms": 209145
+      "latency_ms": 70456
     },
     {
       "id": "B-23",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.002177,
+      "cost": 0.004607,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 92721,
-        "out": 3413
+        "in": 105375,
+        "out": 3863
       },
       "truncated": false,
-      "latency_ms": 75823
+      "latency_ms": 55809
     },
     {
       "id": "B-24",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.002102,
+      "cost": 0.00302,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 62960,
-        "out": 2145
+        "in": 62371,
+        "out": 2459
       },
       "truncated": false,
-      "latency_ms": 44940
+      "latency_ms": 60995
     },
     {
       "id": "B-25",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00142,
+      "cost": 0.001207,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 20489,
-        "out": 1560
+        "in": 28479,
+        "out": 955
       },
       "truncated": false,
-      "latency_ms": 51818
+      "latency_ms": 24039
     },
     {
       "id": "B-26",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001314,
+      "cost": 0.001801,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 20535,
-        "out": 1291
+        "in": 34272,
+        "out": 1968
       },
       "truncated": false,
-      "latency_ms": 35300
+      "latency_ms": 24175
     },
     {
       "id": "B-27",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00099,
+      "cost": 0.001136,
       "cached": false,
       "served_by": [
         "DeepInfra"
       ],
       "tokens": {
-        "in": 22566,
-        "out": 423
+        "in": 22962,
+        "out": 761
       },
       "truncated": false,
-      "latency_ms": 7270
+      "latency_ms": 9424
     }
   ]
 }
