@@ -1902,6 +1902,10 @@ class TestChainValidButStructurallyUnexpected(TempRepoTestCase):
             "`resume` is not_implemented in this phase; a dead-end route is not a route",
         )
         self.assertIn("defect", payload["hint"])
+        # The hint carries the routing row's whole route, show first: a model
+        # reads the hint in front of it before the table it would have to open.
+        self.assertIn("dogen show", payload["hint"])
+        self.assertIn("re-run the same command unchanged", payload["hint"])
         self.assertIn("unexpected internal fault", payload["detail"])
         self.assertIn("TypeError: boom", payload["detail"])
 
@@ -3752,6 +3756,48 @@ class TestStepTally(unittest.TestCase):
             "passed 1 · skipped 1 (no network in this environment) · deviated 0 · "
             "unresolved 1: three",
         )
+
+    def test_the_tally_carries_the_recorded_plan_itself(self):
+        """A session that did not propose the plan reads it here, not in the ledger."""
+        events = [
+            make_event(
+                "steps-planned",
+                seq=0,
+                steps=[
+                    {"id": "one", "text": "Install it", "text_hash": "h1",
+                     "mode": "agent", "stateful": True},
+                    {"id": "two", "text": "Log in", "text_hash": "h2", "mode": "ta",
+                     "stateful": False},
+                ],
+                replaces=None,
+                reuse=False,
+            ),
+            make_event(
+                "step-recorded",
+                seq=1,
+                step_id="one",
+                steps_seq=0,
+                verdict="pass",
+                exit_code=0,
+                output_sha256=STEP_DIGEST,
+            ),
+        ]
+        tally = dogen.step_tally(events)
+        self.assertEqual(
+            tally["plan"],
+            [
+                {"id": "one", "text": "Install it", "mode": "agent", "stateful": True,
+                 "status": "pass", "resolved": True},
+                {"id": "two", "text": "Log in", "mode": "ta", "stateful": False,
+                 "status": "unresolved", "resolved": False},
+            ],
+        )
+        self.assertEqual(
+            dogen.render_step_plan(tally),
+            ["  1. one [agent, stateful] — pass: Install it",
+             "  2. two [ta] — unresolved: Log in"],
+        )
+        self.assertEqual(dogen.render_step_plan(None), [])
 
 
 # U-08 — the paste-ready PR text for a fixed fixture, pinned byte for byte.
