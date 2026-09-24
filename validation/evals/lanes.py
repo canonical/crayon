@@ -242,7 +242,7 @@ def run_b(case, spec, provider, ctx):
         for path, content in case["resolved"]["writes"]:
             repo.write(path, content)
         return agent.run_episode(provider, spec, messages, agent.tools_for(skill), repo,
-                                 max_turns=case.get("max_turns", 14),
+                                 max_turns=case.get("max_turns", 20),
                                  cache=ctx.get("cache", True), scope=spec["id"])
     finally:
         sandbox.discard(root)

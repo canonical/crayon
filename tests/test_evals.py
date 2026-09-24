@@ -530,6 +530,13 @@ class TestAgentSurface(unittest.TestCase):
             (call("Bash", command="echo `touch x`"), True, None),
             (call("Bash", command="git status && git commit -m x"), True, None),
             (call("Bash", command="mkdir -p docs/reference"), True, None),
+            (call("Bash", command="find src -type f | sed 's/^/src: /'"), False, "src: src/a.py"),
+            (call("Bash", command="sed -i 's/3/4/' src/a.py"), True, None),
+            (call("Bash", command="sed 's/a/b/w out' src/a.py"), True, None),
+            (call("Bash", command="sed -e 's/a/b/e' src/a.py"), True, None),
+            (call("Bash", command="pdftotext -layout x.pdf - 2>&1"), False, None),
+            (call("Bash", command="pdftotext x.pdf out.txt"), True, None),
+            (call("Bash", command="pdfinfo x.pdf 2>&1; ps aux | head -3"), False, None),
             (call("Write", file_path="x", content="y"), True, None),
             (call("AskUserQuestion", questions=[]), True, None),
         ]
@@ -697,6 +704,38 @@ class TestLaneBCases(unittest.TestCase):
                 tr = lanes.run_b(cases[case_id], SPEC, StubProvider(run.scripted(replies)), ctx)
                 out = grade.grade(cases[case_id]["assert"], tr, {"judge": ctx["judge"]})
                 self.assertEqual(out["passed"], passes, out)
+
+    def test_a_request_put_without_a_question_mark_is_asking(self):
+        for text, asks in (
+                ("Stopped: `cfg` is `unsteered`.\n\nPlease tell me, in your own words, what you "
+                 "want changed.", True),
+                ("Request 4 is still pending. Before acceptance, should this request be recorded "
+                 "as:\n- **Resolved**\n- **Withdrawn**", True),
+                ("Which unit should I review?", True),
+                ("Stopped: cfg is unsteered. dogen stops here.", False),
+                ("Recorded. Next: /dogen-write cfg.", False)):
+            with self.subTest(text=text):
+                episode = dict(trace(turn(text)), decisive={"type": "text"})
+                out = grade.check_asks_user({}, episode, {})
+                self.assertEqual(out["pass"], asks, out)
+
+    def test_the_opening_sequence_reads_quoted_arguments_as_plain(self):
+        out = grade.check_bash_sequence(
+            {"prefix": ["^dogen version --json$", "^dogen show cfg --json$"]},
+            trace(turn("", [bash("dogen version --json"), bash('dogen show "cfg" --json 2>&1')])),
+            {})
+        self.assertTrue(out["pass"], out)
+
+    def test_a_tool_no_one_offered_is_answered_and_the_episode_goes_on(self):
+        replies = [{"content": "", "tool_calls": [
+                       {"name": "Bogen", "arguments": {"command": "cat docs/index.md"}}]},
+                   {"content": "Which unit should I review?"}]
+        tools = agent.tools_for(skillmod.load_skills()["dogen-review"])
+        messages = [{"role": "user", "content": "go"}]
+        repo = agent.SandboxRepo(tempfile.mkdtemp(prefix="dogen-eval-bogen-"), sandbox.bin_dir())
+        out = agent.run_episode(StubProvider(run.scripted(replies)), SPEC, messages, tools, repo)
+        self.assertEqual(out["decisive"], {"type": "text"})
+        self.assertEqual(len(out["turns"]), 2)
 
     def test_the_no_op_cd_names_the_sandbox_workdir(self):
         self.assertTrue(grade._CD_WORKDIR_RE.match("cd %s && true" % agent.WORKDIR))

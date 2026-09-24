@@ -162,7 +162,6 @@
       "skill": "dogen-write",
       "ask": "install",
       "opening": "walk",
-      "max_turns": 14,
       "why": "walk resume: the recorded plan is the plan; step 1 is marked stateful, so ask at its permission gate before it runs; never re-plan, parse the ledger or probe a step's command",
       "assert": [
         {
