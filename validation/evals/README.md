@@ -84,6 +84,11 @@ python3 validation/evals/run.py all --roster                  # the full sweep, 
 `--filter <regex>` narrows by case id, `--jobs N` sets how many cases run at once, and
 `--no-cache` bypasses the response cache.
 
+`--repeat K` runs each lane K times per model, and always bypasses the cache. The backends are
+not deterministic even at temperature 0, so one run cannot tell a one-point change from noise.
+The K-run summary reports each case as passes out of K. A case at K/K or 0/K is settled; one in
+between is flaky, and that's where a change to a skill has to be measured.
+
 The exit codes are those of every checker in this repository:
 - `0`: every case passed.
 - `1`: at least one case failed.
@@ -101,6 +106,9 @@ Everything else goes to the gitignored `results/raw/`, with the reason in the fi
 from the cache). That keeps a partial run from
 ever standing in for a baseline. Each run also leaves the full turns of every case in
 `results/raw/*.turns.jsonl`.
+
+With `--repeat K`, each run goes to `results/raw/` as `…-runIofK.json`, and the per-case pass
+counts go to `results/<date>-<lane>-<model>-kK.json`, under the same rules.
 
 Baselines are per (candidate, judge) pair. When the judge changes, add a new row; don't edit the
 old one.
@@ -122,8 +130,8 @@ cannot be reached is skipped with one line, rather than failing every case with 
 error.
 
 `caps.sweep_usd` caps a whole invocation. `caps.per_model_usd` caps each model, the judge
-included. The cap is checked before every paid call. With `--jobs N`, the overshoot is at most
-the `N - 1` calls already in flight.
+included, and scales with `--repeat`. The cap is checked before every paid call. With
+`--jobs N`, the overshoot is at most the `N - 1` calls already in flight.
 
 ## Adding a case
 

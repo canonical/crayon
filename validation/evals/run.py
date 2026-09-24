@@ -206,6 +206,8 @@ def summarise(lane_name, spec, records, ctx, partial, stopped, dry_run):
 def destination(summary, stamp):
     meta = summary["meta"]
     stem = "%s-%s-%s" % (meta["date"], meta["lane"], model_slug(meta["model"]))
+    if meta.get("runs", 1) > 1:
+        stem += "-k%d" % meta["runs"]
     tag = None
     if meta["dry_run"]:
         tag = "dry"
@@ -225,6 +227,56 @@ def destination(summary, stamp):
         path = RESULTS / ("%s-%d.json" % (stem, suffix))
         suffix += 1
     return path
+
+
+def aggregate(summaries):
+    """``k`` runs of one lane on one model -> one summary of per-case pass counts.
+
+    A case that passes every run or none is settled; one in between is flaky,
+    and a single run could have reported it either way. An errored run of a
+    case is counted, never folded into a pass or a fail.
+    """
+    k = len(summaries)
+    order = [record["id"] for record in summaries[0]["cases"]]
+    runs = dict((case_id, []) for case_id in order)
+    for summary in summaries:
+        for record in summary["cases"]:
+            runs.setdefault(record["id"], []).append(record)
+    cases = []
+    for case_id in order:
+        records = runs[case_id]
+        entry = {
+            "id": case_id,
+            "runs": len(records),
+            "passes": sum(1 for r in records if r["passed"]),
+            "errors": sum(1 for r in records if r["error"]),
+            "cost": round(sum(r.get("cost", 0.0) for r in records), 6),
+        }
+        failed = ["%s: %s" % (item["kind"], item["feedback"][:300])
+                  for r in records for item in r.get("failed", [])]
+        if failed:
+            entry["failed"] = failed
+        cases.append(entry)
+    metas = [summary["meta"] for summary in summaries]
+    meta = dict((key, value) for key, value in metas[0].items()
+                if key not in ("passed", "failed", "pass_rate", "cached_cases"))
+    passes = sum(case["passes"] for case in cases)
+    meta.update(
+        runs=k,
+        passes=passes,
+        pass_rate=round(passes / float(k * len(cases) or 1), 4),
+        stable_pass=sum(1 for c in cases if c["passes"] == c["runs"]),
+        stable_fail=sum(1 for c in cases if c["passes"] == 0 and not c["errors"]),
+        flaky=sum(1 for c in cases if 0 < c["passes"] < c["runs"]),
+        errors=sum(case["errors"] for case in cases),
+        cost_usd=round(sum(m["cost_usd"] for m in metas), 6),
+        tokens={"in": sum(m["tokens"]["in"] for m in metas),
+                "out": sum(m["tokens"]["out"] for m in metas)},
+        truncated=sum(m["truncated"] for m in metas),
+        cached_cases=0,
+        budget_stop=next((m["budget_stop"] for m in metas if m["budget_stop"]), None),
+    )
+    return {"meta": meta, "cases": cases}
 
 
 def _shown(path):
@@ -292,6 +344,50 @@ def preflight_judge(provider, judge_spec):
         raise SystemExit("judge preflight failed (%s): %s" % (judge_spec["id"], exc))
 
 
+def run_repeated(name, cases, spec, provider_for, ctx, args, stamp):
+    """K runs of one lane on one model: each run to raw/, the pass counts to results/.
+
+    Returns the exit contribution: 0 every case passed every run, 1 a case
+    failed a run, 2 a run errored, 3 the budget stopped the sweep.
+    """
+    summaries = []
+    for index in range(1, args.repeat + 1):
+        records, traces, stopped = run_lane(name, cases, spec, provider_for, ctx, args.jobs)
+        summary = summarise(name, spec, records, ctx, bool(args.filter), stopped,
+                            args.dry_run)
+        meta = summary["meta"]
+        stem = "%s-%s-%s-%s-run%dof%d" % (meta["date"], name, model_slug(spec["id"]), stamp,
+                                          index, args.repeat)
+        write_json(RAW / ("%s.json" % stem), summary)
+        write_traces(RAW / ("%s.turns.jsonl" % stem), traces)
+        print("   run %d/%d  %2d/%-2d pass  %d error  $%.4f"
+              % (index, args.repeat, meta["passed"], meta["total_cases"], meta["errors"],
+                 meta["cost_usd"]))
+        summaries.append(summary)
+        if stopped:
+            print("budget stop: %s" % stopped, file=sys.stderr)
+            break
+    combined = aggregate(summaries)
+    path = destination(combined, stamp)
+    write_json(path, combined)
+    meta = combined["meta"]
+    print("%-2s %-30s %3d/%-3d passes (k=%d)  settled pass %d  settled fail %d  flaky %d  "
+          "%d error  $%.4f  -> %s"
+          % (name, spec["id"], meta["passes"], meta["runs"] * meta["total_cases"],
+             meta["runs"], meta["stable_pass"], meta["stable_fail"], meta["flaky"],
+             meta["errors"], meta["cost_usd"], _shown(path)))
+    for case in combined["cases"]:
+        if case["passes"] < case["runs"]:
+            label = "FLAKY" if case["passes"] else "FAIL "
+            print("   %s %s %d/%d  %s" % (label, case["id"], case["passes"], case["runs"],
+                                          (case.get("failed") or ["(errored)"])[0][:200]))
+    if meta["budget_stop"]:
+        return 3
+    if meta["errors"]:
+        return 2
+    return 1 if meta["passes"] < meta["runs"] * meta["total_cases"] else 0
+
+
 def parse_args(argv):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("lane", choices=sorted(lanes.LANES) + ["all"])
@@ -304,11 +400,21 @@ def parse_args(argv):
     parser.add_argument("--jobs", type=int, default=4, help="cases in flight (default 4)")
     parser.add_argument("--budget", type=float, help="override the sweep cap in USD")
     parser.add_argument("--no-cache", action="store_true", help="bypass the response cache")
+    parser.add_argument("--repeat", type=int, default=1, metavar="K",
+                        help="run each lane K times per model and record per-case pass "
+                             "counts; K > 1 bypasses the cache (default 1)")
     return parser.parse_args(argv)
 
 
 def main(argv=None):
     args = parse_args(argv)
+    if args.repeat < 1:
+        print("--repeat takes a count of 1 or more", file=sys.stderr)
+        return 2
+    if args.repeat > 1:
+        # A cached answer is not a new observation of the model: K runs of the
+        # same cache hit would report a settled case that was never re-asked.
+        args.no_cache = True
     roster, by_id = load_roster()
     if args.roster:
         models = [m for m in roster["models"] if m["role"] == "candidate"]
@@ -331,7 +437,7 @@ def main(argv=None):
 
     caps = roster["caps"]
     budget = Budget(args.budget if args.budget is not None else caps["sweep_usd"],
-                    caps["per_model_usd"])
+                    caps["per_model_usd"] * args.repeat)
     judge_spec = by_id[roster["judge"]]
     needs_judge = any(spec["kind"] == "judge" for cases in loaded.values()
                       for case in cases for spec in case["assert"])
@@ -384,6 +490,12 @@ def main(argv=None):
             else:
                 def provider_for(case, paid=paid):
                     return paid
+            if args.repeat > 1:
+                code = run_repeated(name, cases, spec, provider_for, ctx, args, stamp)
+                worst = max(worst, code)
+                if code == 3:
+                    return 2
+                continue
             records, traces, stopped = run_lane(name, cases, spec, provider_for, ctx,
                                                 args.jobs)
             summary = summarise(name, spec, records, ctx, bool(args.filter), stopped,

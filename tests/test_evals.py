@@ -895,6 +895,42 @@ class TestRosterAndRunner(unittest.TestCase):
             self.assertTrue(written)
             self.assertTrue(all("-dry." in name for name in written))
 
+    def test_repeated_runs_count_passes_per_case(self):
+        def run_of(passes):
+            records = [{"id": case_id, "passed": ok, "error": None, "cost": 0.01,
+                        "failed": [] if ok else [{"kind": "k", "feedback": "no"}]}
+                       for case_id, ok in passes]
+            return {"meta": {"lane": "B", "model": "m", "date": "d", "total_cases": 2,
+                             "passed": 0, "cost_usd": 0.02, "tokens": {"in": 1, "out": 1},
+                             "truncated": 0, "budget_stop": None, "partial": False,
+                             "dry_run": False}, "cases": records}
+        combined = run.aggregate([run_of([("B-01", True), ("B-02", False)]),
+                                  run_of([("B-01", True), ("B-02", True)]),
+                                  run_of([("B-01", True), ("B-02", False)])])
+        meta = combined["meta"]
+        self.assertEqual((meta["runs"], meta["passes"]), (3, 4))
+        self.assertEqual((meta["stable_pass"], meta["flaky"], meta["stable_fail"]), (1, 1, 0))
+        self.assertEqual([(c["id"], c["passes"]) for c in combined["cases"]],
+                         [("B-01", 3), ("B-02", 1)])
+        self.assertTrue(run.destination(combined, "000000").name.endswith("-k3.json"))
+
+    def test_a_repeated_dry_run_writes_each_run_and_the_counts_to_raw(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            saved = run.RESULTS, run.RAW
+            run.RESULTS, run.RAW = Path(tmp), Path(tmp) / "raw"
+            stdout = sys.stdout
+            sys.stdout = io.StringIO()
+            try:
+                code = run.main(["A", "--model", "z-ai/glm-5.3", "--dry-run", "--repeat", "2"])
+            finally:
+                sys.stdout = stdout
+                run.RESULTS, run.RAW = saved
+            self.assertEqual(code, 0)
+            written = sorted(p.name for p in (Path(tmp) / "raw").iterdir())
+            self.assertEqual(len([n for n in written if "run1of2.json" in n or
+                                  "run2of2.json" in n]), 2)
+            self.assertEqual(len([n for n in written if "-k2-" in n and n.endswith("-dry.json")]), 1)
+
     def test_an_unknown_model_is_refused_before_anything_runs(self):
         stderr = sys.stderr
         sys.stderr = io.StringIO()
