@@ -219,6 +219,23 @@ def _segments(command):
     return [_HARMLESS_REDIRECT_RE.sub("", part).strip() for part in parts if part.strip()]
 
 
+#: ``python3 -c '<script>'``: looking only inside the jail, and only a script
+#: that names nothing able to write, delete, spawn, reach the network or run
+#: code it builds. Models reach for it to read the ledger or a JSON payload;
+#: the jail makes a mistake in this list cost a throwaway copy, not the host.
+_PYTHON_PART_RE = re.compile(r"^python3?\s+-c\s+")
+_PYTHON_ACTS_RE = re.compile(
+    r"\b(shutil|subprocess|socket|urllib|http|requests|ctypes|multiprocessing|importlib|"
+    r"tempfile|sqlite3|pty|signal)\b"
+    r"|\bfrom\s+os\b|\bos\.(remove|unlink|rmdir|removedirs|rename|renames|replace|system|"
+    r"popen|exec\w*|spawn\w*|fork\w*|kill\w*|mkdir|makedirs|chmod|chown|link|symlink|"
+    r"truncate|write|open|putenv|unsetenv|chdir|utime|mkfifo|mknod)\b|\bos\.environ\s*\["
+    r"|\.(write|writelines|write_text|write_bytes|unlink|rename|replace|mkdir|rmdir|touch|"
+    r"chmod|symlink_to|hardlink_to)\s*\("
+    r"|\bopen\s*\([^)]*,\s*(mode\s*=\s*)?[rbt]*['\"][^'\"]*[wax+]"
+    r"|\b(exec|eval|compile|__import__|breakpoint|input)\s*\("
+)
+
 _TAIL_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\n)\s*")
 
 
@@ -242,8 +259,12 @@ def strip_looking_tail(command):
         command = head
 
 
-def looking(command):
-    """True when every part of ``command`` only reads (or is setup)."""
+def looking(command, python=False):
+    """True when every part of ``command`` only reads (or is setup).
+
+    ``python`` admits a read-only ``python3 -c`` part; only a jailed sandbox
+    passes it, so on the host every such script stays consequential.
+    """
     parts = _segments(command)
     if not parts:
         return False
@@ -252,6 +273,10 @@ def looking(command):
             return False
         part = _command_word_first(part)
         if not part:
+            continue
+        if python and _PYTHON_PART_RE.match(part):
+            if _PYTHON_ACTS_RE.search(part):
+                return False
             continue
         if not (_INSPECT_RE.match(part) or _READONLY_DOGEN_RE.match(normalise(part))
                 or _SETUP_PART_RE.match(part)):
@@ -472,7 +497,7 @@ class SandboxRepo(object):
                     override.get("prefix") and (normal == override["prefix"]
                                                 or normal.startswith(override["prefix"] + " "))):
                 return override["output"], override["exit"]
-        if not looking(command):
+        if not looking(command, python=self.jail is not None):
             return None
         if self.jail:
             argv, env = self.jail.argv(self.root, self.env, command), {}

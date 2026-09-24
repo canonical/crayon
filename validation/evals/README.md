@@ -42,6 +42,8 @@ Looking costs nothing and does not end the episode. It runs for real in that cop
 - reading, globbing and grepping;
 - read-only `dogen` calls;
 - inspection commands, including chains joined by `&&`, `;` or `|`;
+- a `python3 -c` script that names nothing able to write, delete, spawn a process, reach the
+  network or run code it builds, and only inside the jail;
 - staging-directory setup and waiting.
 
 The command list is short and strict: nothing may be redirected into a file, and command
