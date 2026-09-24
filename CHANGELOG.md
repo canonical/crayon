@@ -11,6 +11,14 @@ significance still have one order a reader can predict.
 
 ### Added
 
+- `validation/evals/` — model evals. They measure how well a model drives the five skills
+  under the same skill text and a neutral loop, through OpenRouter. Lane A checks skill
+  selection (15 cases). Lane B checks the next action after real, recorded `dogen` output
+  (31 cases), acted out in a copy of the state inside a bubblewrap jail. Every case carries a
+  reply that must pass and one that must fail. `--repeat K` reports per-case pass counts, and
+  results are committed under `validation/evals/results/`. Paid runs are started by hand, never
+  in CI. The gate gains `python3 -m unittest tests.test_evals`, the kit's offline self-tests.
+  See `docs/evals.md`.
 - `dogen show` lists the recorded step plan under the step tally — each step's id, mode,
   stateful marker, status and text — and `show --json` / `summary --json` carry the same rows
   as `steps.plan`. A session that did not propose a tutorial or how-to plan can now resume the

@@ -117,6 +117,7 @@ kit to is everything that needs no model:
 - every case file, against its own known-good reply;
 - the rule that no prompt or kit file names an agent harness.
 
+[[evals]] explains what the evals measure and how to read their results;
 `validation/evals/README.md` says how to run a lane, where results land and how to add a case.
 
 ## The checkers and lints
@@ -223,4 +224,4 @@ with `unsteered`. Every refusal is one JSON line with `error`, `unit`, `detail`,
   bracketed link from `AGENTS.md` or from a page it reaches; the wiki lint names what is missing.
 - A new shell file: add it to the shellcheck command in all three places.
 
-Related: [[architecture]], [[conventions]], [[shellcheck]], [[install]].
+Related: [[architecture]], [[conventions]], [[shellcheck]], [[install]], [[evals]].

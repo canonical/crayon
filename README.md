@@ -203,6 +203,15 @@ The authoritative list is the tool's own `REASONS` table and
   in [`docs/development.md`](docs/development.md).
 - `CHANGELOG.md`, `LICENSE` (LGPL-3.0-only for the tool; `skills/LICENSE` is Apache-2.0).
 
+## Model evals
+
+dogen's guarantees live in the tool, and the gate proves them. What the gate cannot prove is how
+well a given model follows the five skills, so `validation/evals/` measures that: every model gets
+the same skill text through one neutral loop, and acts in a jailed copy of real `dogen` states.
+Paid runs are started by hand and never run in CI; their results are committed under
+`validation/evals/results/`. [`docs/evals.md`](docs/evals.md) explains what is measured and how
+to read the numbers.
+
 ## Further reading
 
 - [`docs/install.md`](docs/install.md) — every install choice, the manual install.
@@ -217,6 +226,7 @@ The authoritative list is the tool's own `REASONS` table and
 - [`skills/README.md`](skills/README.md) — the skill family contract and the routing table.
 - [`docs/development.md`](docs/development.md) — tooling, testing and verification for
   contributors; [`docs/shellcheck.md`](docs/shellcheck.md) — the shell lint policy.
+- [`docs/evals.md`](docs/evals.md) — the model evals: what they measure, how to read results.
 - [`CHANGELOG.md`](CHANGELOG.md) — the release record.
 
 ## Licensing
