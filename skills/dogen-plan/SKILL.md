@@ -29,7 +29,8 @@ dogen show "$UNIT_ID" --json         # the derived state, and the routed `next`
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
 `tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed, ordered or rounded as versions. Any other answer means the pairing is
+never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 
 The second call is the only source of direction.
@@ -37,8 +38,10 @@ The second call is the only source of direction.
 Never re-derive the state, never infer the
 next step from the conversation, and never decide direction yourself: the tool
 derives state from the record, and the routing table is a rendering of the same
-preconditions the tool enforces. A refusal carries its own `next` in the JSON line —
-route on that the same way.
+preconditions the tool enforces.
+A refusal is one JSON line with `error`, `hint` and `next`: act on the routing row
+for its `error` first — that row says what to do now — and route on `next` only
+after it. The `hint` is a reminder, never the whole route.
 
 For a brand-new unit there is no id to show yet. Run the version call, take the
 intake below, and the first `dogen show` is the one that follows the declaration.
