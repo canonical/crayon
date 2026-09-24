@@ -198,10 +198,10 @@ to be readable at runtime.
 Every skill declares both in its frontmatter as `metadata.dogen_contract: 1` and
 `metadata.dogen_min_tool: "0.2.0"`, and opens by reading `dogen version --json`, which
 answers `{"tool","contract"}`. The two numbers are compared as **literal strings** —
-never parsed, ordered or rounded as versions.
+never parsed or rounded as versions.
 
 A skill stops for exactly two reasons: the tool answers anything other than
-`contract 1`, or its `tool` version is older than `min_tool 0.2.0`. Anything else is a
+`contract 1`, or its `tool` version is older than `min_tool 0.2.0` (`0.1.9` is older). Anything else is a
 routing row above, not a stop.
 
 ## Hooks

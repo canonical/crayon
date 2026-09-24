@@ -7653,6 +7653,10 @@ test_n20_t1_an_undisposed_fix_request_blocks_the_accept() {
     assert_eq "an accept over a pending request exits 1" "1" "$?"
     assert_json_error "unapplied_steering on accept" "err.txt" "unapplied_steering"
     assert_contains "the detail lists the undisposed seq" "$(cat err.txt)" "disposition: 4"
+    # The hint leads with the act its routing row prescribes, before the flags.
+    assert_eq "the unapplied_steering hint leads with asking the reviewer" \
+        "put each pending seq to the reviewer" \
+        "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["hint"].split(", then")[0])' err.txt)"
     assert_eq "the refusal appends nothing" "$ledger_before" "$(ledger_digest demo-unit)"
     assert_eq "the refusal commits nothing" "$head_before" "$(git rev-parse HEAD)"
 

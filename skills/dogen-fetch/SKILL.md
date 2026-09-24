@@ -31,7 +31,8 @@ dogen context show --json            # what is present, staged, drifted; the rou
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
 `tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed, ordered or rounded as versions. Any other answer means the pairing is
+never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 
 The second call is the only source of direction.
@@ -39,8 +40,10 @@ The second call is the only source of direction.
 `record` means artefacts are already staged and not yet recorded — record them
 before fetching anything; `onboard` or `plan` say what the repository holds today,
 and either way this skill's work is to add or refresh the artefacts the author's
-declared sources support. A refusal carries its own `next` in the JSON line — route
-on that the same way.
+declared sources support.
+A refusal is one JSON line with `error`, `hint` and `next`: act on the routing row
+for its `error` first — that row says what to do now — and route on `next` only
+after it. The `hint` is a reminder, never the whole route.
 
 **The ledger is never hand-edited.** This skill touches no unit and no ledger at all;
 the record it makes is `.dogen/context/manifest.json`, which the tool writes and
@@ -69,7 +72,10 @@ one the author did not declare.
    the matching stance reference for each, and hand each one to the tool with
    `dogen context stage <name> --body-file - --source …`.
 6. Record the set with `dogen context record --note "…"`, the note summarising the
-   accepted and failed sources.
+   accepted and failed sources. When no declared source was accepted, nothing is
+   staged and there is nothing to record — the tool refuses a record with nothing
+   staged. Skip this step, report the failed sources, and ask the author how to
+   proceed.
 7. Report accepted sources, failed sources, revisions, preservation, output paths and
    limitations, and route the author on `next`.
 </quick_start>
@@ -258,6 +264,7 @@ one), and act on the routing row for `next`.
 - Never claim exhaustive coverage over partial, sampled or failed sources.
 - Never rewrite source documentation, declare, draft, review, push or build.
 - Never re-derive state or invent a next step; the tool emits `next`.
+- Never run `dogen context record` with nothing staged.
 </must_not>
 </constraints>
 
