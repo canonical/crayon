@@ -282,6 +282,14 @@ def check_decisive(spec, trace, ctx):
                      describe_decisive(decisive)))
 
 
+#: A reply that asks: a question mark, or a request put without one
+#: ("Please tell me what should change", "should this be recorded as: …").
+_ASKS_RE = re.compile(
+    r"\?|(?i:\b(please (tell|let me know|confirm|choose|say|provide|reply|pick)"
+    r"|let me know|tell me (what|which|how|whether)"
+    r"|(should|shall|do you want) (this|it|i|we|me)\b[^.\n]*:))")
+
+
 def check_asks_user(spec, trace, ctx):
     """The episode ended by putting a question to the author.
 
@@ -291,7 +299,7 @@ def check_asks_user(spec, trace, ctx):
     decisive = _decisive(trace)
     if decisive["type"] == "call" and decisive["call"].get("name") == "AskUserQuestion":
         return result(True, "asked the author through AskUserQuestion")
-    if decisive["type"] == "text" and "?" in (trace["turns"][-1]["content"] or ""):
+    if decisive["type"] == "text" and _ASKS_RE.search(trace["turns"][-1]["content"] or ""):
         return result(True, "asked the author in its reply")
     return result(False, "expected the model to ask the author before acting; it "
                   "ended on %s" % describe_decisive(decisive))
@@ -299,7 +307,9 @@ def check_asks_user(spec, trace, ctx):
 
 def check_bash_sequence(spec, trace, ctx):
     """The first shell commands, in order, match ``prefix``."""
-    commands = [call_text(call) for call in _all_calls(trace) if call.get("name") == "Bash"]
+    # Quotes and a trailing `2>&1` change nothing: `dogen show "cfg"` is `dogen show cfg`.
+    commands = [agent.normalise(call_text(call)) for call in _all_calls(trace)
+                if call.get("name") == "Bash"]
     for index, pattern in enumerate(spec["prefix"]):
         if index >= len(commands):
             return result(False, "expected shell command %d to match %r; only %d "

@@ -139,7 +139,8 @@ _READONLY_DOGEN_RE = re.compile(
 #: Shell inspection a careful agent does before acting. Run for real in the
 #: sandbox and never graded. Deliberately a short list of commands that read.
 _INSPECT_RE = re.compile(
-    r"^(cat|ls|head|tail|sed\s+-n|grep|egrep|find|wc|pwd|echo|printf|cd|tree|file|stat|"
+    r"^(cat|ls|head|tail|sed|grep|egrep|find|wc|pwd|echo|printf|cd|tree|file|stat|ps|"
+    r"pdfinfo|pdftotext|"
     r"sort|uniq|cut|tr|true|test|\[|which|type|command\s+-v|sha256sum|md5sum|du|diff|"
     r"basename|dirname|realpath|readlink|nl|jq|column|od|xxd|hexdump|strings|cmp|comm|"
     r"fold|fmt|rev|printenv|env|id|whoami|uname|date|"
@@ -156,8 +157,14 @@ _CASE_PATTERN_RE = re.compile(r"^[^\s()]+\)\s*")
 #: Arguments that turn a reading command into a writing or executing one.
 _ACTING_WORD_RE = re.compile(
     r"(^|\s)(-delete|-exec|-execdir|-ok|-okdir|-fprint\S*|-fls|--output\S*)(\s|$)"
-    r"|^(sort|tree)\b.*\s-o\b|^sed\s+-n\b.*(\bw\s|\bW\s|-i\b)"
+    r"|^(sort|tree)\b.*\s-o\b"
+    r"|^sed\b.*(\s-i\S*|--in-place|[/;\s]w\s|[/;\s]W\s|/e\b|;\s*e\b)"
+    # pdftotext writes a .txt beside its input unless the output is `-` (stdout).
+    r"|^pdftotext\b(?!.*\s-\s*$)"
 )
+#: ``ps`` is on the list above only because a live episode always runs inside
+#: the jail (:class:`Jail`), whose own process namespace holds nothing but the
+#: command itself: outside it, ``ps`` would show a model the host's processes.
 #: Redirections that change nothing on disk; any other ``>`` writes a file.
 _HARMLESS_REDIRECT_RE = re.compile(r"\d?>\s*/dev/null|\d?>&\d|&>\s*/dev/null")
 _SEGMENT_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\||\n)\s*")
@@ -563,6 +570,7 @@ def run_episode(provider, spec, messages, tools, repo, max_turns=6, cache=True,
     messages = list(messages)
     turns, served = [], []
     served_ids = []
+    offered = [tool["function"]["name"] for tool in tools or ()]
     for _ in range(max_turns):
         turn = provider.complete(spec, messages, tools=tools, cache=cache, scope=scope)
         turns.append(turn)
@@ -571,6 +579,14 @@ def run_episode(provider, spec, messages, tools, repo, max_turns=6, cache=True,
                     "served_ids": served_ids}
         messages.append(assistant_message(turn))
         for call in turn["tool_calls"]:
+            if call["name"] not in TOOL_SCHEMAS:
+                # A name no tool has (a mangled `Bogen`) is answered the way a
+                # harness answers it, and the model goes on; it acted on nothing.
+                result = "Error: no tool named %r; the tools are: %s" % (
+                    call["name"], ", ".join(offered))
+                messages.append({"role": "tool", "tool_call_id": call["id"],
+                                 "content": result})
+                continue
             result, consequential = repo.serve(call)
             if consequential:
                 return {"turns": turns, "decisive": {"type": "call", "call": call},
