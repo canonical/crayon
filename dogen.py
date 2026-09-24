@@ -5136,9 +5136,10 @@ def cmd_draft(args):
                 unit=unit,
                 detail="nothing has been recorded since the generation at seq %s"
                 % state["gen_seq"],
-                hint='dogen steer %s --note "…" records what should change; '
-                '`dogen draft %s <staged-file> --unsteered-reason "<why>"` records '
-                "an override" % (unit, unit),
+                hint="a STOP, not a retry: ask the author what should change, then "
+                'dogen steer %s --note "<their words>"; only when the author '
+                "authorises a redraft with nothing to change, `dogen draft %s "
+                '<staged-file> --unsteered-reason "<why>"`' % (unit, unit),
                 next_token=route(state),
             )
 
@@ -5624,8 +5625,9 @@ def cmd_review(args):
                     unit=unit,
                     detail="pending request(s) with no recorded disposition: %s"
                     % ", ".join(str(seq) for seq in outstanding),
-                    hint="--resolves <seq> records the judgment that a request is "
-                    'satisfied; --withdraw <seq> "<reason>" drops it',
+                    hint="put each pending seq to the reviewer, then dogen review %s "
+                    '--verdict accept --note "…" with --resolves <seq> or --withdraw '
+                    '<seq> "<reason>" for every one' % unit,
                     next_token=route(state),
                 )
         elif not note:
@@ -5896,6 +5898,11 @@ def step_tally(events):
     counts are per STEP, not per event, and read :func:`step_answers`, so
     evidence carried forward under `--keep-evidence` is counted where it
     resolves rather than vanishing because it names an earlier plan's seq.
+
+    ``plan`` lists the recorded steps themselves — id, text, mode, stateful
+    marker, the step's verdict (``unresolved`` while it has none) and whether it
+    resolves — so a session that did not propose the plan can walk it from the
+    read surface, without reading the ledger.
     """
     plan = _last_of(events, "steps-planned")
     if plan is None:
@@ -5904,6 +5911,7 @@ def step_tally(events):
     counts = {"pass": 0, "skipped": 0, "deviated": 0, "fail": 0}
     reasons = []
     unresolved = []
+    rows = []
     for step in plan.get("steps") or []:
         step_id = step.get("id")
         event = answers.get(step_id) or {}
@@ -5912,8 +5920,19 @@ def step_tally(events):
             counts[verdict] += 1
         if verdict == "skipped" and event.get("reason"):
             reasons.append(event.get("reason"))
-        if not step_resolves(event):
+        resolves = step_resolves(event)
+        if not resolves:
             unresolved.append(step_id)
+        rows.append(
+            {
+                "id": step_id,
+                "text": step.get("text"),
+                "mode": step.get("mode"),
+                "stateful": bool(step.get("stateful")),
+                "status": verdict if verdict in counts else "unresolved",
+                "resolved": resolves,
+            }
+        )
     return {
         "steps_seq": plan.get("seq"),
         "passed": counts["pass"],
@@ -5922,6 +5941,7 @@ def step_tally(events):
         "deviated": counts["deviated"],
         "failed": counts["fail"],
         "unresolved": unresolved,
+        "plan": rows,
     }
 
 
@@ -5941,6 +5961,24 @@ def render_step_tally(tally):
     if tally["unresolved"]:
         text += ": %s" % ", ".join(tally["unresolved"])
     return text
+
+
+def render_step_plan(tally):
+    """One line per recorded step: `  1. <id> [<mode>, stateful] — <status>: <text>`."""
+    lines = []
+    for number, row in enumerate((tally or {}).get("plan") or [], 1):
+        marks = [str(row["mode"])] + (["stateful"] if row["stateful"] else [])
+        lines.append(
+            "  %d. %s [%s] — %s: %s"
+            % (
+                number,
+                row["id"],
+                ", ".join(marks),
+                row["status"],
+                collapse_note(str(row["text"] or ""), 200),
+            )
+        )
+    return lines
 
 
 def seq_commit_ranges(repo, unit):
@@ -6147,6 +6185,7 @@ def cmd_show(args):
             )
     if tally is not None:
         out.append("steps: %s" % render_step_tally(tally))
+        out.extend(render_step_plan(tally))
     if edits:
         out.append("reviewer edits:")
         for entry in edits:
@@ -10006,8 +10045,9 @@ def main(argv=None):
             "internal_error",
             unit=_argv_unit(args),
             detail="unexpected internal fault: %s: %s" % (type(bad).__name__, bad),
-            hint="this is a dogen defect, not a diagnosis of your record; "
-            "re-run with the same arguments and report the detail above",
+            hint="this is a dogen defect, not a diagnosis of your record; run "
+            "dogen show on the unit, then re-run the same command unchanged and "
+            "report the detail above",
             next_token="show",
             as_json=as_json,
         )

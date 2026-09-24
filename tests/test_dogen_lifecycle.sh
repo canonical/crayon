@@ -560,6 +560,17 @@ print(",".join(sorted(json.load(sys.stdin)["steps"][0])))
         "$(grep -c 'install the tool' ".dogen/units/walk-unit/unit.md" || true)"
     assert_eq "the unit is not plan_stale after planning steps" "false" \
         "$(derived_field walk-unit plan_stale)"
+    # The read surface lists the recorded plan, so a session that did not
+    # propose it walks it from `show` rather than from the ledger.
+    assert_contains "show lists each recorded step with its text" \
+        "$("$DOGEN" show walk-unit 2>&1)" \
+        "1. one [agent] — unresolved: install the tool"
+    assert_eq "show --json carries the plan's texts" \
+        "install the tool|run the check|publish the result" \
+        "$("$DOGEN" show walk-unit --json | python3 -c '
+import json, sys
+print("|".join(row["text"] for row in json.load(sys.stdin)["steps"]["plan"]))
+')"
     assert_eq "the commit names the ledger alone" \
         ".dogen/units/walk-unit/ledger.jsonl" \
         "$(git show --stat --format= --name-only HEAD | sed '/^$/d')"
@@ -7074,6 +7085,11 @@ test_n09_a_second_draft_with_no_steering_is_unsteered() {
     local rc=$?
     assert_eq "a second unsteered draft exits 1" "1" "$rc"
     assert_json_error "unsteered" "err.txt" "unsteered"
+    # A model follows the hint in front of it, so the hint leads with the STOP:
+    # ask the author first, and only then the verb that records their words.
+    assert_eq "the unsteered hint leads with asking the author" \
+        "a STOP, not a retry: ask the author what should change" \
+        "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["hint"].split(", then")[0])' err.txt)"
     assert_eq "the refusal appends nothing" "$ledger_before" "$(ledger_digest demo-unit)"
     assert_eq "the refusal commits nothing" "$head_before" "$(git rev-parse HEAD)"
     assert_eq "the refusal leaves the page byte-unchanged" "$page_before" \
@@ -7637,6 +7653,10 @@ test_n20_t1_an_undisposed_fix_request_blocks_the_accept() {
     assert_eq "an accept over a pending request exits 1" "1" "$?"
     assert_json_error "unapplied_steering on accept" "err.txt" "unapplied_steering"
     assert_contains "the detail lists the undisposed seq" "$(cat err.txt)" "disposition: 4"
+    # The hint leads with the act its routing row prescribes, before the flags.
+    assert_eq "the unapplied_steering hint leads with asking the reviewer" \
+        "put each pending seq to the reviewer" \
+        "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["hint"].split(", then")[0])' err.txt)"
     assert_eq "the refusal appends nothing" "$ledger_before" "$(ledger_digest demo-unit)"
     assert_eq "the refusal commits nothing" "$head_before" "$(git rev-parse HEAD)"
 

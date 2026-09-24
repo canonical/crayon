@@ -1,6 +1,6 @@
 # dogen contract v1
 
-<!-- provenance: frozen at tag contract-v1; the internal_error reason row and the context verbs (§5.1, §5.5, §5.7, §6) were added after the freeze -->
+<!-- provenance: frozen at tag contract-v1; the internal_error reason row, the context verbs (§5.1, §5.5, §5.7, §6) and the step plan in `show` were added after the freeze -->
 
 The normative contract for the `dogen` tool: what it writes, what it refuses, and what the
 record it leaves behind does and does not prove. This document is frozen at git tag
@@ -555,6 +555,20 @@ ledger written before this revision derives exactly as it did; a tool from befor
 does not know the verbs, which `dogen --help` and `tests/check_docs.py` make visible rather
 than silent. The two numbers above are unchanged, and so are every SKILL.md's
 `metadata.dogen_contract` and `metadata.dogen_min_tool`.
+
+**Revision (step plan in `show`).** `show` and `summary --json` gain the recorded step plan
+beside the step tally: `steps.plan` lists each step of the current `steps-planned` event with
+its `id`, `text`, `mode`, `stateful`, `status` (the answering verdict, or `unresolved`) and
+`resolved`, and `show`'s human form prints one row per step under the `steps:` line. Before
+this, a session that had not proposed the plan could learn a step's text and marker only by
+reading the ledger. The same revision rewords `internal_error`'s `hint` to name the route its
+routing row already prescribed — `show`, then the refused command unchanged; `error`, `next`
+and the exit code do not move. `unsteered`'s `hint` likewise leads with the STOP its row
+prescribes — ask the author what should change, then `steer` with their words — instead of
+the `steer` command alone, and `unapplied_steering`'s leads with putting each pending seq to
+the reviewer before the `--resolves` / `--withdraw` flags that record the answers. Both changes are additive under `contract: 1` by the reading
+above: no event kind, reason or enum member changes, the ledger bytes are untouched, and the
+two numbers above and every SKILL.md's metadata stay as they are.
 
 ## 6 Verb table
 

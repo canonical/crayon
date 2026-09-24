@@ -38,15 +38,18 @@ dogen show "$UNIT_ID" --json         # the derived state, and the routed `next`
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
 `tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed, ordered or rounded as versions. Any other answer means the pairing is
+never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 
 The second call is the only source of direction.
 **Read `references/routing.md` and act on the row for the emitted `next`.**
 Never re-derive the state, never infer the next step from the conversation, and never
 decide direction yourself: the tool derives state from the record, and the routing
-table is a rendering of the same preconditions the tool enforces. A refusal carries
-its own `next` in the JSON line — route on that the same way.
+table is a rendering of the same preconditions the tool enforces.
+A refusal is one JSON line with `error`, `hint` and `next`: act on the routing row
+for its `error` first — that row says what to do now — and route on `next` only
+after it. The `hint` is a reminder, never the whole route.
 
 **The ledger is never hand-edited.** `.dogen/units/<id>/ledger.jsonl` is hash-chained:
 every line's `prev` is the digest of the previous line's bytes, so editing any line
@@ -130,7 +133,9 @@ A second generation with nothing recorded between it and the last one is refused
 `unsteered` (exit 1). **This is a STOP, not a retry.** Do not re-run the draft, do
 not compose a reason to get past the gate, and do not paraphrase the conversation
 into a note. Stop, ask the author what they want changed, and record their answer in
-their own words:
+their own words. A request to redraft that names no change — "draft it again" — is
+exactly what this STOP is for; it is not a note. Never write, copy or delete a staged
+or published file to get a different draft:
 
 ```bash
 dogen steer "$UNIT_ID" --note "<the author's own words>"
@@ -151,9 +156,13 @@ itself. Reach for it only when the author has said so; it is a record, not a byp
 Load `references/walk-protocol.md` now for the evidence contract, capture mechanics,
 consent, workspace, and resume detail.
 
-**Resume:** the step tally in `dogen show` names every unresolved step. Offer resume
-as the default: show the tally as the tool printed it, trust every resolved step, and
-continue at the first unresolved one. The workspace under
+**Resume:** the step tally in `dogen show` names every unresolved step, and below it
+`show` lists the recorded plan — each step's id, mode, stateful marker, status and
+text. In a session that did not propose the plan, that listing IS the plan: never
+re-propose or re-record it, and never read the ledger for it. Offer resume as the
+default: show the tally as the tool printed it, trust every resolved step, and
+continue at the first unresolved one; a step marked stateful still takes its
+just-in-time permission gate before it runs. The workspace under
 `.dogen/staging/<id>/scratch/` persists across sessions.
 
 **Investigate and propose ONE annotated plan.** Read the unit's declared sources and
@@ -207,8 +216,9 @@ at:
 
 - a **genuine fork** — missing information, or an informed choice with doc-visible
   consequences;
-- a **destructive/stateful permission gate** — just-in-time, right before a marked
-  step runs;
+- a **destructive/stateful permission gate** — before a step marked `stateful` runs,
+  every time: ask the TA for a yes to that step, naming what it changes, and wait. It
+  holds on resume and in a fresh session, and "walk it" is not that yes;
 - a **failed step**.
 
 **Capture the command's output (D-15).** One redirection, one status, no digest:
@@ -467,6 +477,7 @@ applies. Say so before a step prints anything the author would not publish.
 - Never compute, type or transcribe a digest; the tool hashes its own copy.
 - Never read a pipeline's exit-status array: there is no pipe, and `$?` is the
   command's own status.
+- Never record a redraft request itself as the steering note.
 - Never treat `unsteered` as a retry — it is a STOP, and a restoration is not an
   exception.
 - Never draft over a page the tool has not told you to write; `page_drift` and
@@ -480,6 +491,10 @@ applies. Say so before a step prints anything the author would not publish.
 - Never mark a step resolved by narration; only a recorded capture resolves one.
 - Never run an `agent` step in the real repo cwd; they are cwd-pinned to the
   throwaway workspace.
+- Never run a step marked `stateful` without the TA's yes to that step in this
+  session.
+- Never run any part of a step's command outside the capture recipe — no probe, no
+  `--help`, no dry run in the repo; a probe of a stateful step is the step.
 - Never claim the evidence gate is tamper-proof, and never report a resolved step as
   executed or verified.
 </must_not>

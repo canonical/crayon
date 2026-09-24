@@ -1902,6 +1902,10 @@ class TestChainValidButStructurallyUnexpected(TempRepoTestCase):
             "`resume` is not_implemented in this phase; a dead-end route is not a route",
         )
         self.assertIn("defect", payload["hint"])
+        # The hint carries the routing row's whole route, show first: a model
+        # reads the hint in front of it before the table it would have to open.
+        self.assertIn("dogen show", payload["hint"])
+        self.assertIn("re-run the same command unchanged", payload["hint"])
         self.assertIn("unexpected internal fault", payload["detail"])
         self.assertIn("TypeError: boom", payload["detail"])
 
@@ -3753,6 +3757,48 @@ class TestStepTally(unittest.TestCase):
             "unresolved 1: three",
         )
 
+    def test_the_tally_carries_the_recorded_plan_itself(self):
+        """A session that did not propose the plan reads it here, not in the ledger."""
+        events = [
+            make_event(
+                "steps-planned",
+                seq=0,
+                steps=[
+                    {"id": "one", "text": "Install it", "text_hash": "h1",
+                     "mode": "agent", "stateful": True},
+                    {"id": "two", "text": "Log in", "text_hash": "h2", "mode": "ta",
+                     "stateful": False},
+                ],
+                replaces=None,
+                reuse=False,
+            ),
+            make_event(
+                "step-recorded",
+                seq=1,
+                step_id="one",
+                steps_seq=0,
+                verdict="pass",
+                exit_code=0,
+                output_sha256=STEP_DIGEST,
+            ),
+        ]
+        tally = dogen.step_tally(events)
+        self.assertEqual(
+            tally["plan"],
+            [
+                {"id": "one", "text": "Install it", "mode": "agent", "stateful": True,
+                 "status": "pass", "resolved": True},
+                {"id": "two", "text": "Log in", "mode": "ta", "stateful": False,
+                 "status": "unresolved", "resolved": False},
+            ],
+        )
+        self.assertEqual(
+            dogen.render_step_plan(tally),
+            ["  1. one [agent, stateful] — pass: Install it",
+             "  2. two [ta] — unresolved: Log in"],
+        )
+        self.assertEqual(dogen.render_step_plan(None), [])
+
 
 # U-08 — the paste-ready PR text for a fixed fixture, pinned byte for byte.
 #
@@ -4944,6 +4990,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "python3 tests/size_guard.py",
         "python3 -m unittest tests.test_wiki_lint",
         "python3 scripts/wiki_lint.py",
+        "python3 -m unittest tests.test_evals",
     )
 
     #: CR-01 — the gate command that deliberately has no separate CI step,
@@ -5068,8 +5115,10 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         # suite, which is CI's `validation` job's local dry-run command under
         # that same D-02 rule — and a kit the local gate does not run is exactly
         # the WR-08 orphan defect this tuple exists against — so it is fourteen.
-        self.assertEqual(len(self.GATE_COMMANDS), 16)
-        self.assertEqual(len(set(self.GATE_COMMANDS)), 16)
+        # The model-eval kit's offline self-tests make it seventeen: a module in
+        # tests/ is a gate command by the rule above, and they need no key.
+        self.assertEqual(len(self.GATE_COMMANDS), 17)
+        self.assertEqual(len(set(self.GATE_COMMANDS)), 17)
 
     def test_no_gate_command_names_a_path_the_tree_does_not_have(self):
         """T-18-25 — the declared gate may never outrun the tree.

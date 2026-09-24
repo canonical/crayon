@@ -1,0 +1,286 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "provider_pin": {
+      "order": [
+        "deepinfra/fp8"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-24",
+    "dogen_version": "0.2.0",
+    "repo_head": "3f26a98",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
+    "total_cases": 31,
+    "errors": 0,
+    "cost_usd": 0.324358,
+    "tokens": {
+      "in": 5510835,
+      "out": 264020
+    },
+    "truncated": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null,
+    "runs": 3,
+    "passes": 81,
+    "pass_rate": 0.871,
+    "stable_pass": 22,
+    "stable_fail": 1,
+    "flaky": 8,
+    "cached_cases": 0
+  },
+  "cases": [
+    {
+      "id": "B-28",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.016124
+    },
+    {
+      "id": "B-29",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.024299
+    },
+    {
+      "id": "B-30",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.021608
+    },
+    {
+      "id": "B-31",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.033741
+    },
+    {
+      "id": "B-05",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.010173
+    },
+    {
+      "id": "B-06",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003939
+    },
+    {
+      "id": "B-07",
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.021005,
+      "failed": [
+        "decisive: expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was Bash(which dogen; python3 -c \"import dogen,os;print(os.path.dirname(dogen.__file__))\" 2>/dev/null; pip show dogen 2>/dev/null | head)",
+        "decisive: expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was Bash(which dogen; python3 -c \"import dogen, os; print(os.path.dirname(dogen.__file__))\" 2>/dev/null; pip show dogen 2>/dev/null | head -5)",
+        "decisive: expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was Bash(cd /srv/toyq && grep -rn \"retries\\|backoff\\|timeout\\|log_level\" src/toyq/cli.py; echo ---; cat src/toyq/__init__.py; echo ---; which dogen; python3 -c \"import dogen,os;print(os.path.dirname(dogen.__file__))\" 2>/dev/"
+      ]
+    },
+    {
+      "id": "B-08",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.011898,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(cd /srv/toyq && python3 -c 'import sys; print(\"prefix:\", sys.prefix); print(\"base:\", sys.base_prefix); print(\"venv:\", sys.prefix != sys.base_prefix)'; echo \"--- which ---\"; which toyq 2>&1; echo \"--- pip target check ---\"; python3 "
+      ]
+    },
+    {
+      "id": "B-09",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005542
+    },
+    {
+      "id": "B-10",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.010602
+    },
+    {
+      "id": "B-11",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.003453,
+      "failed": [
+        "decisive: expected the model to stop and reply; it ended on Bash(dogen show cfg --json | python3 -c \"import json,sys;d=json.load(sys.stdin);print(d['seqs'])\"; echo \"---\"; dogen verify cfg 2>&1 | tail -5)"
+      ]
+    },
+    {
+      "id": "B-12",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002892
+    },
+    {
+      "id": "B-13",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004628
+    },
+    {
+      "id": "B-14",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.009028,
+      "failed": [
+        "text_re: expected the reply to match '(?i)retired'; it reads: ''"
+      ]
+    },
+    {
+      "id": "B-15",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.006887
+    },
+    {
+      "id": "B-16",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.009103
+    },
+    {
+      "id": "B-01",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003745
+    },
+    {
+      "id": "B-02",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005246
+    },
+    {
+      "id": "B-03",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000652
+    },
+    {
+      "id": "B-04",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00044
+    },
+    {
+      "id": "B-17",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003603
+    },
+    {
+      "id": "B-18",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.017677,
+      "failed": [
+        "any_of: none of the acceptable actions happened: expected the action to be Bash matching '(^|(;|&&)\\\\s*)dogen\\\\ draft\\\\ cfg\\\\ \\\\.dogen/staging/cfg/draft/\\\\ \\\\-\\\\-model\\\\-origin\\\\ unknown\\\\ \\\\-\\\\-report\\\\ \\\\.dogen/staging/cfg/report\\\\.json( --json)?\\\\s*$'; it was Bash(cd /srv/toyq && python3 -c \"import dogen",
+        "any_of: none of the acceptable actions happened: expected the action to be Bash matching '(^|(;|&&)\\\\s*)dogen\\\\ draft\\\\ cfg\\\\ \\\\.dogen/staging/cfg/draft/\\\\ \\\\-\\\\-model\\\\-origin\\\\ unknown\\\\ \\\\-\\\\-report\\\\ \\\\.dogen/staging/cfg/report\\\\.json( --json)?\\\\s*$'; it was Bash(which dogen; python3 -c \"import dogen, o"
+      ]
+    },
+    {
+      "id": "B-19",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.006051,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(cd /srv/toyq && git status --porcelain; echo \"--- tracked?\"; git ls-files .dogen/staging; echo \"--- show stored page\"; cat docs/reference/config.md; echo \"--- plan\"; dogen unit show cfg --json 2>/dev/null || dogen show cfg --plan -"
+      ]
+    },
+    {
+      "id": "B-20",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.031127,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(cat src/toyq/config.py 2>/dev/null | head -80; echo \"=== ledger (seqs only) ===\"; python3 -c \"\nimport json\nfor l in open('.dogen/units/cfg/ledger.jsonl'):\n    d=json.loads(l)\n    print(d.get('seq'), d.get('event') or d.get('kind'),"
+      ]
+    },
+    {
+      "id": "B-21",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.018313
+    },
+    {
+      "id": "B-22",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.009378,
+      "failed": [
+        "text_re: expected the reply to match '(?i)(dogen-review|review skill|dogen edits|\\\\bedits\\\\b|adopt)'; it reads: ''"
+      ]
+    },
+    {
+      "id": "B-23",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.007387
+    },
+    {
+      "id": "B-24",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00578
+    },
+    {
+      "id": "B-25",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003311
+    },
+    {
+      "id": "B-26",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004623
+    },
+    {
+      "id": "B-27",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.012103,
+      "failed": [
+        "decisive: expected the action to be Bash matching '(^|(;|&&)\\\\s*)dogen\\\\ draft\\\\ cfg\\\\ \\\\.dogen/staging/cfg/draft/\\\\ \\\\-\\\\-model\\\\-origin\\\\ unknown\\\\ \\\\-\\\\-report\\\\ \\\\.dogen/staging/cfg/report\\\\.json( --json)?\\\\s*$'; it was Bash(which dogen; head -5 $(which dogen); python3 -c \"import dogen, os; print(os.path."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,291 @@
+{
+  "meta": {
+    "lane": "A",
+    "lane_title": "skill selection",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "provider_pin": {
+      "order": [
+        "deepinfra/fp8"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-23",
+    "dogen_version": "0.2.0",
+    "repo_head": "d2026c6",
+    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
+    "total_cases": 15,
+    "passed": 15,
+    "failed": 0,
+    "errors": 0,
+    "pass_rate": 1.0,
+    "cost_usd": 0.001023,
+    "tokens": {
+      "in": 15279,
+      "out": 821
+    },
+    "truncated": 0,
+    "cached_cases": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null
+  },
+  "cases": [
+    {
+      "id": "A-01",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00016,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1032,
+        "out": 37
+      },
+      "truncated": false,
+      "latency_ms": 1031
+    },
+    {
+      "id": "A-02",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000153,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1008,
+        "out": 28
+      },
+      "truncated": false,
+      "latency_ms": 1041
+    },
+    {
+      "id": "A-03",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000152,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1018,
+        "out": 23
+      },
+      "truncated": false,
+      "latency_ms": 929
+    },
+    {
+      "id": "A-04",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 3.6e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1022,
+        "out": 34
+      },
+      "truncated": false,
+      "latency_ms": 1403
+    },
+    {
+      "id": "A-05",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 5.5e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1025,
+        "out": 80
+      },
+      "truncated": false,
+      "latency_ms": 1368
+    },
+    {
+      "id": "A-06",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 3.2e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1017,
+        "out": 26
+      },
+      "truncated": false,
+      "latency_ms": 812
+    },
+    {
+      "id": "A-07",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 9.1e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1014,
+        "out": 169
+      },
+      "truncated": false,
+      "latency_ms": 3090
+    },
+    {
+      "id": "A-08",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 3.8e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1014,
+        "out": 43
+      },
+      "truncated": false,
+      "latency_ms": 895
+    },
+    {
+      "id": "A-09",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 3.3e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1016,
+        "out": 30
+      },
+      "truncated": false,
+      "latency_ms": 1464
+    },
+    {
+      "id": "A-10",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 4.3e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1018,
+        "out": 53
+      },
+      "truncated": false,
+      "latency_ms": 1694
+    },
+    {
+      "id": "A-11",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 4.5e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1024,
+        "out": 55
+      },
+      "truncated": false,
+      "latency_ms": 1707
+    },
+    {
+      "id": "A-12",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 5.7e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1024,
+        "out": 84
+      },
+      "truncated": false,
+      "latency_ms": 1476
+    },
+    {
+      "id": "A-13",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 5.6e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1026,
+        "out": 82
+      },
+      "truncated": false,
+      "latency_ms": 1567
+    },
+    {
+      "id": "A-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 4.1e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1009,
+        "out": 51
+      },
+      "truncated": false,
+      "latency_ms": 1365
+    },
+    {
+      "id": "A-15",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 3.1e-05,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 1012,
+        "out": 26
+      },
+      "truncated": false,
+      "latency_ms": 695
+    }
+  ]
+}

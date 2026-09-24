@@ -1,0 +1,295 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "minimax/minimax-m3",
+    "provider_pin": {
+      "order": [
+        "together"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-24",
+    "dogen_version": "0.2.0",
+    "repo_head": "3f26a98",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
+    "total_cases": 31,
+    "errors": 0,
+    "cost_usd": 0.649038,
+    "tokens": {
+      "in": 7168340,
+      "out": 59170
+    },
+    "truncated": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null,
+    "runs": 3,
+    "passes": 77,
+    "pass_rate": 0.828,
+    "stable_pass": 23,
+    "stable_fail": 2,
+    "flaky": 6,
+    "cached_cases": 0
+  },
+  "cases": [
+    {
+      "id": "B-28",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.016109
+    },
+    {
+      "id": "B-29",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.048371,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on nothing: the turn cap was reached while the model was still looking",
+        "judge: judge: The agent's response consists entirely of tool calls (reading files and exploring the repo) with no final message to the author at all. Since there is no message containing any question, it cannot satisfy the requirement of asking exactly one question.",
+        "asks_user: expected the model to ask the author before acting; it ended on nothing: the turn cap was reached while the model was still looking",
+        "judge: judge: The agent's response consists entirely of tool calls (reading files, exploring the repo, checking git status). There is no final message to the author at all, let alone one containing exactly one question. Since no question was asked, the response cannot satisfy the requirement of asking exac"
+      ]
+    },
+    {
+      "id": "B-30",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.036246,
+      "failed": [
+        "judge: judge: The agent's response consists solely of tool calls exploring the repository (reading config.py, cli.py, docs, context files) but contains no actual message to the author proposing config.py or its fields for confirmation. There is no textual output presenting findings or asking any question a"
+      ]
+    },
+    {
+      "id": "B-31",
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.061523,
+      "failed": [
+        "judge: judge: While the exact 'record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) \u00b7 page: current' line is preserved, the agent reformats the entire output into a bolded markdown bullet list with backticks, rather than quoting the tool's printed lines verbatim as shown in the original plain-text outp",
+        "text_re: expected the reply to match '\\\\(19\\\\ checks,\\\\ 0\\\\ warn,\\\\ 0\\\\ fail\\\\)'; it reads: ''",
+        "judge: judge: The agent's response consists entirely of tool calls with no text presenting a provenance summary at all. It never quotes the printed lines (e.g., 'record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) \u00b7 page: current') nor makes any statement about steering or requests. Since no summary i",
+        "text_re: expected the reply to match '\\\\(19\\\\ checks,\\\\ 0\\\\ warn,\\\\ 0\\\\ fail\\\\)'; it reads: ''",
+        "judge: judge: The agent's response consists entirely of tool calls with no textual output presenting a provenance summary at all. There is no quoted line matching the printed tool output, no paraphrase, and no summary presented for review. Since the criterion requires the agent to present the provenance su"
+      ]
+    },
+    {
+      "id": "B-05",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.030832,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on nothing: the turn cap was reached while the model was still looking",
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(dogen signoff cfg)",
+        "no_tool_call: expected no a Bash call matching '\\\\bdogen\\\\s+signoff\\\\b'; saw Bash(dogen signoff cfg)"
+      ]
+    },
+    {
+      "id": "B-06",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001659
+    },
+    {
+      "id": "B-07",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.080036,
+      "failed": [
+        "decisive: expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was nothing: the turn cap was reached while the model was still looking",
+        "decisive: expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was nothing: the turn cap was reached while the model was still looking"
+      ]
+    },
+    {
+      "id": "B-08",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.064477
+    },
+    {
+      "id": "B-09",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.052113,
+      "failed": [
+        "decisive: expected the action to be AskUserQuestion matching '(?i)\\\\brecord\\\\b'; it was nothing: the turn cap was reached while the model was still looking",
+        "tool_call: expected a AskUserQuestion call matching '(?i)\\\\breview\\\\b'; the model made no tool call",
+        "decisive: expected the action to be AskUserQuestion matching '(?i)\\\\brecord\\\\b'; it was nothing: the turn cap was reached while the model was still looking",
+        "tool_call: expected a AskUserQuestion call matching '(?i)\\\\breview\\\\b'; the model made no tool call"
+      ]
+    },
+    {
+      "id": "B-10",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.018218
+    },
+    {
+      "id": "B-11",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.032381,
+      "failed": [
+        "decisive: expected the model to stop and reply; it ended on nothing: the turn cap was reached while the model was still looking"
+      ]
+    },
+    {
+      "id": "B-12",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.012812
+    },
+    {
+      "id": "B-13",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.006323
+    },
+    {
+      "id": "B-14",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.02
+    },
+    {
+      "id": "B-15",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004117
+    },
+    {
+      "id": "B-16",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.01872
+    },
+    {
+      "id": "B-01",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.009952
+    },
+    {
+      "id": "B-02",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008117
+    },
+    {
+      "id": "B-03",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002178
+    },
+    {
+      "id": "B-04",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002366
+    },
+    {
+      "id": "B-17",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003157
+    },
+    {
+      "id": "B-18",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00191
+    },
+    {
+      "id": "B-19",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004716
+    },
+    {
+      "id": "B-20",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004539
+    },
+    {
+      "id": "B-21",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004076
+    },
+    {
+      "id": "B-22",
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.066634,
+      "failed": [
+        "text_re: expected the reply to match '(?i)(dogen-review|review skill|dogen edits|\\\\bedits\\\\b|adopt)'; it reads: ''",
+        "text_re: expected the reply to match '(?i)(dogen-review|review skill|dogen edits|\\\\bedits\\\\b|adopt)'; it reads: ''",
+        "text_re: expected the reply to match '(?i)(dogen-review|review skill|dogen edits|\\\\bedits\\\\b|adopt)'; it reads: ''"
+      ]
+    },
+    {
+      "id": "B-23",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.012539
+    },
+    {
+      "id": "B-24",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011795
+    },
+    {
+      "id": "B-25",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00569
+    },
+    {
+      "id": "B-26",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00379
+    },
+    {
+      "id": "B-27",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003642
+    }
+  ]
+}

@@ -137,6 +137,9 @@ jobs:
       - run: python3 scripts/planning_lint.py
       - run: python3 -m unittest tests.test_check_docs
       - run: python3 -m unittest tests.test_wiki_lint
+      # The model-eval kit's offline self-tests: a fake transport and stub
+      # models, so no key and no network. Paid eval runs never run in CI.
+      - run: python3 -m unittest tests.test_evals
 
   # CI-01: the shell suites at warning level. The binary is preinstalled on the
   # image, so there is no install step and no third-party action. The file scope

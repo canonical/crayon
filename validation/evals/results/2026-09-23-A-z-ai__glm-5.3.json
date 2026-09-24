@@ -1,0 +1,291 @@
+{
+  "meta": {
+    "lane": "A",
+    "lane_title": "skill selection",
+    "model": "z-ai/glm-5.3",
+    "provider_pin": {
+      "order": [
+        "z-ai"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-23",
+    "dogen_version": "0.2.0",
+    "repo_head": "d2026c6",
+    "skills_sha256": "7700e1092749c067b274978a43b11aacdf0c7b025971f695c04c4421e98135a3",
+    "total_cases": 15,
+    "passed": 15,
+    "failed": 0,
+    "errors": 0,
+    "pass_rate": 1.0,
+    "cost_usd": 0.021594,
+    "tokens": {
+      "in": 14673,
+      "out": 2792
+    },
+    "truncated": 0,
+    "cached_cases": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null
+  },
+  "cases": [
+    {
+      "id": "A-01",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001819,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 991,
+        "out": 98
+      },
+      "truncated": false,
+      "latency_ms": 3391
+    },
+    {
+      "id": "A-02",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.0022,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 968,
+        "out": 192
+      },
+      "truncated": false,
+      "latency_ms": 4201
+    },
+    {
+      "id": "A-03",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001981,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 978,
+        "out": 139
+      },
+      "truncated": false,
+      "latency_ms": 3453
+    },
+    {
+      "id": "A-04",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001736,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 982,
+        "out": 82
+      },
+      "truncated": false,
+      "latency_ms": 2947
+    },
+    {
+      "id": "A-05",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000852,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 983,
+        "out": 113
+      },
+      "truncated": false,
+      "latency_ms": 3515
+    },
+    {
+      "id": "A-06",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001059,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 977,
+        "out": 162
+      },
+      "truncated": false,
+      "latency_ms": 4570
+    },
+    {
+      "id": "A-07",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001865,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 974,
+        "out": 346
+      },
+      "truncated": false,
+      "latency_ms": 9404
+    },
+    {
+      "id": "A-08",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001558,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 975,
+        "out": 276
+      },
+      "truncated": false,
+      "latency_ms": 6077
+    },
+    {
+      "id": "A-09",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001055,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 977,
+        "out": 161
+      },
+      "truncated": false,
+      "latency_ms": 3907
+    },
+    {
+      "id": "A-10",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001395,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 978,
+        "out": 238
+      },
+      "truncated": false,
+      "latency_ms": 5330
+    },
+    {
+      "id": "A-11",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001311,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 984,
+        "out": 217
+      },
+      "truncated": false,
+      "latency_ms": 5215
+    },
+    {
+      "id": "A-12",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001175,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 984,
+        "out": 186
+      },
+      "truncated": false,
+      "latency_ms": 5717
+    },
+    {
+      "id": "A-13",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001552,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 983,
+        "out": 272
+      },
+      "truncated": false,
+      "latency_ms": 6088
+    },
+    {
+      "id": "A-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001066,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 969,
+        "out": 166
+      },
+      "truncated": false,
+      "latency_ms": 4251
+    },
+    {
+      "id": "A-15",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00097,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 970,
+        "out": 144
+      },
+      "truncated": false,
+      "latency_ms": 3832
+    }
+  ]
+}

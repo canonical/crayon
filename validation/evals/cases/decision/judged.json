@@ -1,0 +1,225 @@
+{
+  "lane": "B",
+  "_comment": "The judgement calls a regex cannot make, graded by the pinned judge on top of their deterministic checks.",
+  "cases": [
+    {
+      "id": "B-28",
+      "skill": "dogen-review",
+      "ask": "cfg",
+      "sandbox": "fixed",
+      "history": [
+        "tool/version_json",
+        "drafted/show_json",
+        {
+          "user": "Record a fix: explain what happens when max_retries is exceeded."
+        },
+        "drafted/fix_json"
+      ],
+      "why": "routing voice: the next step is named as a skill, never as a raw dogen command to type",
+      "assert": [
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "text_re",
+          "re": "dogen-write"
+        },
+        {
+          "kind": "judge",
+          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the dogen-write skill (for example /dogen-write cfg), and the agent does NOT tell the author to type a raw `dogen draft` or other `dogen` command themselves. Any commit id it quotes must be db7b3f4, the one the tool printed."
+        }
+      ],
+      "oracle": [
+        {
+          "content": "Recorded your fix request (commit db7b3f4); it is pending. Next, invoke /dogen-write cfg to redraft the page with it."
+        }
+      ],
+      "foil": [
+        {
+          "content": "Recorded. Now run `dogen draft cfg` yourself to regenerate the page."
+        }
+      ]
+    },
+    {
+      "id": "B-29",
+      "skill": "dogen-plan",
+      "ask": "I want a page about how toyq retries failed jobs.",
+      "history": [
+        "tool/version_json",
+        "context_recorded/show_json"
+      ],
+      "why": "Socratic intake: after grounding, exactly one question per turn; nothing declared yet",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bdogen\\s+unit\\s+new\\b"
+        },
+        {
+          "kind": "judge",
+          "rubric": "The agent is starting a documentation intake. PASS only if its final message to the author asks exactly ONE question (a single question, possibly with options). FAIL if it asks two or more questions in the same turn, or lists a questionnaire."
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Read",
+              "arguments": {
+                "file_path": ".dogen/context/doc-style.md"
+              }
+            }
+          ]
+        },
+        {
+          "content": "What should a reader be able to do after reading this page?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen unit new retries --intent reference --audience operators --title Retries --target reference/retries.md --body-file -"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-30",
+      "skill": "dogen-plan",
+      "ask": "I want a page about how toyq retries failed jobs.",
+      "history": [
+        "tool/version_json",
+        "context_recorded/show_json",
+        {
+          "assistant": "What should a reader be able to do after reading this page?"
+        },
+        {
+          "user": "Tune retries: know the settings, their defaults and how to override them."
+        },
+        {
+          "assistant": "Who is the page for?"
+        },
+        {
+          "user": "Operators running toyq on servers."
+        },
+        {
+          "assistant": "Is this a reference page to look settings up in, or a how-to for changing retry behaviour?"
+        },
+        {
+          "user": "A reference page."
+        }
+      ],
+      "why": "propose, don't ask: a field the repository answers (the source) is proposed, not asked for",
+      "assert": [
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bdogen\\s+unit\\s+new\\b"
+        },
+        {
+          "kind": "judge",
+          "rubric": "The repository contains src/toyq/config.py, which defines the retry settings (max_retries, retry_backoff_seconds) with their defaults and TOYQ_* overrides. PASS only if the agent PROPOSES this file (or proposes it among fields for confirmation) instead of asking the author open-endedly which source files, code or settings to use. FAIL if it asks the author where the retry logic or settings live."
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "retr",
+                "path": "src"
+              }
+            }
+          ]
+        },
+        {
+          "content": "I propose src/toyq/config.py as the source: it defines max_retries and retry_backoff_seconds with their defaults and TOYQ_* overrides. Does that match what you want covered?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen unit new retries --intent reference --audience operators --title Retries --target reference/retries.md --body-file -"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-31",
+      "skill": "dogen-review",
+      "ask": "cfg",
+      "history": [
+        "tool/version_json",
+        "drafted/show_json",
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary"
+      ],
+      "why": "record mode: the provenance summary quotes the tool's lines verbatim",
+      "assert": [
+        {
+          "kind": "text_re",
+          "re": "\\(19\\ checks,\\ 0\\ warn,\\ 0\\ fail\\)"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)steering (was |has been )?applied"
+        },
+        {
+          "kind": "judge",
+          "context": "Earlier in the session `dogen summary cfg` printed:\nConfiguration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current",
+          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example 'record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current') rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
+        }
+      ],
+      "oracle": [
+        {
+          "content": "Provenance, as dogen summary printed it:\n\n    files changed: reference/config.md\n    record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current\n\nWhat is your verdict: accept, fix or redraft?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "The draft looks fine and all steering was applied. What is your verdict?"
+        }
+      ]
+    }
+  ]
+}
