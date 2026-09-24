@@ -1,0 +1,581 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "z-ai/glm-5.3",
+    "provider_pin": {
+      "order": [
+        "z-ai"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-24",
+    "dogen_version": "0.2.0",
+    "repo_head": "4b78717",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
+    "total_cases": 31,
+    "passed": 29,
+    "failed": 2,
+    "errors": 0,
+    "pass_rate": 0.9355,
+    "cost_usd": 1.227716,
+    "tokens": {
+      "in": 1746069,
+      "out": 113013
+    },
+    "truncated": 0,
+    "cached_cases": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null
+  },
+  "cases": [
+    {
+      "id": "B-28",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.01518,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 7814,
+        "out": 497
+      },
+      "truncated": false,
+      "latency_ms": 18241
+    },
+    {
+      "id": "B-29",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.080522,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 115375,
+        "out": 5539
+      },
+      "truncated": false,
+      "latency_ms": 158858
+    },
+    {
+      "id": "B-30",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.054934,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 87502,
+        "out": 3522
+      },
+      "truncated": false,
+      "latency_ms": 128395
+    },
+    {
+      "id": "B-31",
+      "passed": true,
+      "error": null,
+      "score": 0.933,
+      "cost": 0.037335,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 65584,
+        "out": 1334
+      },
+      "truncated": false,
+      "latency_ms": 66547
+    },
+    {
+      "id": "B-05",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.035345,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 68495,
+        "out": 1030
+      },
+      "truncated": false,
+      "latency_ms": 51331
+    },
+    {
+      "id": "B-06",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.018324,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 18772,
+        "out": 1823
+      },
+      "truncated": false,
+      "latency_ms": 46019
+    },
+    {
+      "id": "B-07",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.334849,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 274532,
+        "out": 54415
+      },
+      "truncated": false,
+      "latency_ms": 1320072
+    },
+    {
+      "id": "B-08",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.068551,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 115160,
+        "out": 4159
+      },
+      "truncated": false,
+      "latency_ms": 113345
+    },
+    {
+      "id": "B-09",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.047534,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 123770,
+        "out": 1236
+      },
+      "truncated": false,
+      "latency_ms": 58106
+    },
+    {
+      "id": "B-10",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.043344,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 72223,
+        "out": 4033
+      },
+      "truncated": false,
+      "latency_ms": 102904
+    },
+    {
+      "id": "B-11",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.027972,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 70184,
+        "out": 840
+      },
+      "truncated": false,
+      "latency_ms": 37450
+    },
+    {
+      "id": "B-12",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.014983,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 21440,
+        "out": 845
+      },
+      "truncated": false,
+      "latency_ms": 25814
+    },
+    {
+      "id": "B-13",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.017639,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 32131,
+        "out": 816
+      },
+      "truncated": false,
+      "latency_ms": 26855
+    },
+    {
+      "id": "B-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.030029,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 68803,
+        "out": 1150
+      },
+      "truncated": false,
+      "latency_ms": 40045
+    },
+    {
+      "id": "B-15",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.009601,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 7114,
+        "out": 333
+      },
+      "truncated": false,
+      "latency_ms": 9833
+    },
+    {
+      "id": "B-16",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.0454,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 83200,
+        "out": 2583
+      },
+      "truncated": false,
+      "latency_ms": 90939
+    },
+    {
+      "id": "B-01",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.007974,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 22631,
+        "out": 382
+      },
+      "truncated": false,
+      "latency_ms": 17796
+    },
+    {
+      "id": "B-02",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.018662,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 21164,
+        "out": 658
+      },
+      "truncated": false,
+      "latency_ms": 24051
+    },
+    {
+      "id": "B-03",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004691,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 7463,
+        "out": 615
+      },
+      "truncated": false,
+      "latency_ms": 17088
+    },
+    {
+      "id": "B-04",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002795,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 6851,
+        "out": 213
+      },
+      "truncated": false,
+      "latency_ms": 15240
+    },
+    {
+      "id": "B-17",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.049387,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 54448,
+        "out": 4960
+      },
+      "truncated": false,
+      "latency_ms": 150129
+    },
+    {
+      "id": "B-18",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.006457,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 17199,
+        "out": 323
+      },
+      "truncated": false,
+      "latency_ms": 22104
+    },
+    {
+      "id": "B-19",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.037591,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 48656,
+        "out": 2580
+      },
+      "truncated": false,
+      "latency_ms": 92909
+    },
+    {
+      "id": "B-20",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.009914,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 7875,
+        "out": 162
+      },
+      "truncated": false,
+      "latency_ms": 4549
+    },
+    {
+      "id": "B-21",
+      "passed": false,
+      "error": null,
+      "score": 0.333,
+      "cost": 0.009166,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "asks_user",
+          "feedback": "expected the model to ask the author before acting; it ended on Bash(dogen review cfg --verdict accept --note 'Ship it.' --json)"
+        },
+        {
+          "kind": "no_tool_call",
+          "feedback": "expected no a Bash call matching '--verdict\\\\s+accept'; saw Bash(dogen review cfg --verdict accept --note 'Ship it.' --json)"
+        }
+      ],
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 7765,
+        "out": 27
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Bash(dogen review cfg --verdict accept --note 'Ship it.' --json)",
+      "latency_ms": 5807
+    },
+    {
+      "id": "B-22",
+      "passed": false,
+      "error": null,
+      "score": 0.667,
+      "cost": 0.039198,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "text_re",
+          "feedback": "expected the reply to match '(?i)(dogen-review|review skill|dogen edits|\\\\bedits\\\\b|adopt)'; it reads: ''"
+        }
+      ],
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 74696,
+        "out": 3017
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\"})\n\n[TOOL CALL] Bash(dogen show cfg)\n\n[TOOL CALL] Bash(cat .dogen/units/cfg/unit.md 2>/dev/null || ls .dogen/units/cfg/ 2>/dev/null || echo \"not found\")\n\n[TOOL CALL] Bash(ls -la .dogen/staging/ 2>/dev/null; ls -la .dogen/units/cfg/; echo \"---\"; git log --oneline -10)\n\n[TOOL CALL] Bash(find .dogen/staging/cfg -type f | head -50; echo \"---\"; ls -la docs/ 2>/dev/null; find docs -type f 2>/dev/null | head -50)\n\n[TOOL CALL] Bash(cat .dogen/units/cfg/ledger.jsonl | python3 -c \"\nimport json,sys\nfor line in sys.stdin:\n    line=line.strip()\n    if not line: continue\n    try:\n        obj=json.loads(line)\n        print(json.dumps(obj, indent=1)[:2000])\n        print('---')\n    except Exception as e:\n        print('ERR', e, line[:200])\n\")",
+      "latency_ms": 90554
+    },
+    {
+      "id": "B-23",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.037804,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 101560,
+        "out": 1067
+      },
+      "truncated": false,
+      "latency_ms": 43822
+    },
+    {
+      "id": "B-24",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.020077,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 32485,
+        "out": 1241
+      },
+      "truncated": false,
+      "latency_ms": 36029
+    },
+    {
+      "id": "B-25",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.017725,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 19792,
+        "out": 1611
+      },
+      "truncated": false,
+      "latency_ms": 41402
+    },
+    {
+      "id": "B-26",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.079774,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 74212,
+        "out": 11945
+      },
+      "truncated": false,
+      "latency_ms": 249568
+    },
+    {
+      "id": "B-27",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004959,
+      "cached": false,
+      "served_by": [
+        "Z.AI"
+      ],
+      "tokens": {
+        "in": 17173,
+        "out": 57
+      },
+      "truncated": false,
+      "latency_ms": 15723
+    }
+  ]
+}

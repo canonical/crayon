@@ -1,0 +1,598 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "minimax/minimax-m3",
+    "provider_pin": {
+      "order": [
+        "together"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-24",
+    "dogen_version": "0.2.0",
+    "repo_head": "4b78717",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
+    "total_cases": 31,
+    "passed": 26,
+    "failed": 5,
+    "errors": 0,
+    "pass_rate": 0.8387,
+    "cost_usd": 0.263932,
+    "tokens": {
+      "in": 2532819,
+      "out": 19684
+    },
+    "truncated": 0,
+    "cached_cases": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null
+  },
+  "cases": [
+    {
+      "id": "B-28",
+      "passed": true,
+      "error": null,
+      "score": 0.933,
+      "cost": 0.006566,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 8053,
+        "out": 39
+      },
+      "truncated": false,
+      "latency_ms": 6327
+    },
+    {
+      "id": "B-29",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.015648,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 95242,
+        "out": 1891
+      },
+      "truncated": false,
+      "latency_ms": 25010
+    },
+    {
+      "id": "B-30",
+      "passed": true,
+      "error": null,
+      "score": 0.8,
+      "cost": 0.018869,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 180306,
+        "out": 760
+      },
+      "truncated": false,
+      "latency_ms": 25143
+    },
+    {
+      "id": "B-31",
+      "passed": true,
+      "error": null,
+      "score": 0.933,
+      "cost": 0.01932,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 159501,
+        "out": 1919
+      },
+      "truncated": false,
+      "latency_ms": 31122
+    },
+    {
+      "id": "B-05",
+      "passed": false,
+      "error": null,
+      "score": 0.5,
+      "cost": 0.023686,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "asks_user",
+          "feedback": "expected the model to ask the author before acting; it ended on nothing: the turn cap was reached while the model was still looking"
+        }
+      ],
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 260027,
+        "out": 965
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-plan/references/routing.md\"})\n\n[TOOL CALL] Bash(dogen context show --json)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/doc-style.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/glossary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/structure.md\"})\n\n[TOOL CALL] Bash(ls /srv/toyq)\n\n[TOOL CALL] Bash(ls /srv/toyq/docs)\n\n[TOOL CALL] Bash(ls /srv/toyq/docs/reference)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/docs/index.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/README.md\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/src)\n\n[TOOL CALL] Bash(ls /srv/toyq/src/toyq)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/config.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/__init__.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/pyproject.toml\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/.dogen/units/cfg 2>/dev/null && echo \"---\" && cat /srv/toyq/.dogen/units/cfg/unit.md 2>/dev/null)\n\n[TOOL CALL] Bash(cat /srv/toyq/.dogen/units/cfg/ledger.jsonl)\n\n[TOOL CALL] Bash(ls /srv/toyq/docs/reference/ 2>/dev/null; echo \"---\"; ls /srv/toyq/.dogen/staging/cfg 2>/dev/null)\n\n[TOOL CALL] Bash(git -C /srv/toyq log --oneline -20)",
+      "latency_ms": 25853
+    },
+    {
+      "id": "B-06",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000547,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 7286,
+        "out": 68
+      },
+      "truncated": false,
+      "latency_ms": 1246
+    },
+    {
+      "id": "B-07",
+      "passed": false,
+      "error": null,
+      "score": 0.5,
+      "cost": 0.033559,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "decisive",
+          "feedback": "expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was nothing: the turn cap was reached while the model was still looking"
+        }
+      ],
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 382591,
+        "out": 1131
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\"})\n\n[TOOL CALL] Bash(ls -la .dogen/units/cfg/)\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/cfg/unit.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/units/cfg/ledger.jsonl\"})\n\n[TOOL CALL] Bash(ls -la .dogen/context/ 2>/dev/null && ls -la .dogen/staging/ 2>/dev/null)\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/doc-style.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/glossary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/structure.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".dogen/context/manifest.json\"})\n\n[TOOL CALL] Bash(ls -la docs/ 2>/dev/null && ls -la docs/reference/ 2>/dev/null)\n\n[TOOL CALL] Read({\"file_path\": \"docs/index.md\"})\n\n[TOOL CALL] Bash(ls -la src/toyq/)\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/config.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"src/toyq/__init__.py\"})\n\n[TOOL CALL] Bash(ls -la .dogen/staging/cfg/)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/reference-stance.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/writing-standards.md\"})\n\n[TOOL CALL] Bash(ls -la docs/reference/ docs/how-to/ 2>/dev/null; find docs -type f 2>/dev/null)\n\n[TOOL CALL] Bash(find . -name \"*.md\" -not -path \"./.git/*\" -not -path \"./.dogen/*\" 2>/dev/null)\n\n[TOOL CALL] Read({\"file_path\": \"README.md\"})\n\n[TOOL CALL] Bash(find . -name \"toyq.toml\" -not -path \"./.git/*\" 2>/dev/null; find . -nam",
+      "latency_ms": 28912
+    },
+    {
+      "id": "B-08",
+      "passed": false,
+      "error": null,
+      "score": 0.8,
+      "cost": 0.033493,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "asks_user",
+          "feedback": "expected the model to ask the author before acting; it ended on nothing: the turn cap was reached while the model was still looking"
+        }
+      ],
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 376913,
+        "out": 1164
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-write/references/routing.md\"})\n\nThe unit `install` is a how-to with three unresolved steps. The `next` is `walk`, so I need to walk the steps before drafting. Let me load the walk protocol and the how-to stance.\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-write/references/walk-protocol.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-write/references/how-to-stance.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-write/references/writing-standards.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-write/references/episode-taxonomy.md\"})\n\nNow I have the full picture. The plan is already recorded (steps_seq 3) with three unresolved steps. Let me check the unit's plan and the repo to understand what I'm walking.\n\n[TOOL CALL] Bash(ls /srv/toyq/.dogen/units/install/ 2>/dev/null && cat /srv/toyq/.dogen/units/install/unit.md 2>/dev/null)\n\n[TOOL CALL] Bash(ls /srv/toyq/ && cat /srv/toyq/README.md 2>/dev/null | head -100)\n\n[TOOL CALL] Bash(ls /srv/toyq/docs/ && ls /srv/toyq/src/)\n\n[TOOL CALL] Bash(ls /srv/toyq/docs/reference/ && ls /srv/toyq/src/toyq/)\n\n[TOOL CALL] Bash(cat /srv/toyq/src/toyq/cli.py)\n\n[TOOL CALL] Bash(cat /srv/toyq/src/toyq/config.py)\n\n[TOOL CALL] Bash(cat /srv/toyq/pyproject.toml)\n\n[TOOL CALL] Bash(cat /srv/toyq/docs/index.md)\n\n[TOOL CALL] Bash(ls /srv/toyq/docs/reference/ 2>/dev/null; find /srv/toyq/docs -type f)\n\n[TOOL CALL]",
+      "latency_ms": 26513
+    },
+    {
+      "id": "B-09",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.011713,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 113845,
+        "out": 781
+      },
+      "truncated": false,
+      "latency_ms": 12710
+    },
+    {
+      "id": "B-10",
+      "passed": false,
+      "error": null,
+      "score": 0.5,
+      "cost": 0.018288,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "asks_user",
+          "feedback": "expected the model to ask the author before acting; it ended on Bash(git stash list 2>&1; git reflog 2>&1 | head -20)"
+        }
+      ],
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 226263,
+        "out": 1068
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-review/references/routing.md\"})\n\n[TOOL CALL] Bash(dogen show cfg --diff)\n\n[TOOL CALL] Bash(dogen summary cfg)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/reference/config.md\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/reference/ 2>&1; ls /srv/toyq/docs/ 2>&1)\n\n[TOOL CALL] Bash(ls /srv/toyq/docs/reference/)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/docs/reference/config.md\"})\n\n[TOOL CALL] Bash(ls /srv/toyq/.dogen/units/cfg/ 2>&1; cat /srv/toyq/.dogen/units/cfg/unit.md 2>&1)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/config.py\"})\n\n[TOOL CALL] Bash(git status --short 2>&1 | head -50)\n\n[TOOL CALL] Bash(git log --oneline -5 2>&1)\n\n[TOOL CALL] Bash(git diff docs/reference/config.md 2>&1)\n\n[TOOL CALL] Bash(git diff --stat HEAD~1 HEAD 2>&1)\n\n[TOOL CALL] Bash(git show HEAD:docs/reference/config.md 2>&1)\n\n[TOOL CALL] Bash(git diff HEAD docs/reference/config.md 2>&1)\n\n[TOOL CALL] Bash(git log --all --oneline 2>&1)\n\n[TOOL CALL] Bash(git stash list 2>&1; git reflog 2>&1 | head -20)",
+      "latency_ms": 22750
+    },
+    {
+      "id": "B-11",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004925,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 33231,
+        "out": 430
+      },
+      "truncated": false,
+      "latency_ms": 5786
+    },
+    {
+      "id": "B-12",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004376,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 35419,
+        "out": 808
+      },
+      "truncated": false,
+      "latency_ms": 10919
+    },
+    {
+      "id": "B-13",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001226,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 15633,
+        "out": 185
+      },
+      "truncated": false,
+      "latency_ms": 2775
+    },
+    {
+      "id": "B-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.005194,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 51303,
+        "out": 1077
+      },
+      "truncated": false,
+      "latency_ms": 14112
+    },
+    {
+      "id": "B-15",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002754,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 14743,
+        "out": 427
+      },
+      "truncated": false,
+      "latency_ms": 4657
+    },
+    {
+      "id": "B-16",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.007846,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 61455,
+        "out": 723
+      },
+      "truncated": false,
+      "latency_ms": 11243
+    },
+    {
+      "id": "B-01",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003828,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 29684,
+        "out": 351
+      },
+      "truncated": false,
+      "latency_ms": 6618
+    },
+    {
+      "id": "B-02",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004011,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 21327,
+        "out": 545
+      },
+      "truncated": false,
+      "latency_ms": 7595
+    },
+    {
+      "id": "B-03",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000739,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 7661,
+        "out": 211
+      },
+      "truncated": false,
+      "latency_ms": 5054
+    },
+    {
+      "id": "B-04",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000818,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 7057,
+        "out": 300
+      },
+      "truncated": false,
+      "latency_ms": 3173
+    },
+    {
+      "id": "B-17",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002036,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 8080,
+        "out": 35
+      },
+      "truncated": false,
+      "latency_ms": 1339
+    },
+    {
+      "id": "B-18",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000678,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 8797,
+        "out": 55
+      },
+      "truncated": false,
+      "latency_ms": 1327
+    },
+    {
+      "id": "B-19",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002718,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 8840,
+        "out": 413
+      },
+      "truncated": false,
+      "latency_ms": 5157
+    },
+    {
+      "id": "B-20",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002476,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 8111,
+        "out": 394
+      },
+      "truncated": false,
+      "latency_ms": 4116
+    },
+    {
+      "id": "B-21",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00249,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 8008,
+        "out": 431
+      },
+      "truncated": false,
+      "latency_ms": 3998
+    },
+    {
+      "id": "B-22",
+      "passed": false,
+      "error": null,
+      "score": 0.667,
+      "cost": 0.02346,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "text_re",
+          "feedback": "expected the reply to match '(?i)(dogen-review|review skill|dogen edits|\\\\bedits\\\\b|adopt)'; it reads: ''"
+        }
+      ],
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 302924,
+        "out": 1061
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-write/references/routing.md\"})\n\n[TOOL CALL] Bash(ls -la /srv/toyq/.dogen/units/cfg/ 2>&1)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/units/cfg/unit.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/units/cfg/ledger.jsonl\"})\n\n[TOOL CALL] Bash(ls -la /srv/toyq/docs/ 2>&1; echo \"---\"; ls -la /srv/toyq/docs/reference/ 2>&1)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/docs/reference/config.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/docs/index.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/config.py\"})\n\n[TOOL CALL] Bash(ls -la /srv/toyq/ 2>&1)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/README.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/pyproject.toml\"})\n\n[TOOL CALL] Bash(ls -la /srv/toyq/src/toyq/ 2>&1)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/__init__.py\"})\n\n[TOOL CALL] Bash(ls -la /srv/toyq/.dogen/context/ 2>&1)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/doc-style.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/glossary.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/structure.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.dogen/context/manifest.json\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/.agents/skills/dogen-write/references/writing-standards.md\"})",
+      "latency_ms": 24605
+    },
+    {
+      "id": "B-23",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00304,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 21649,
+        "out": 475
+      },
+      "truncated": false,
+      "latency_ms": 6865
+    },
+    {
+      "id": "B-24",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003913,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 33007,
+        "out": 564
+      },
+      "truncated": false,
+      "latency_ms": 7696
+    },
+    {
+      "id": "B-25",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00307,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 20267,
+        "out": 564
+      },
+      "truncated": false,
+      "latency_ms": 7056
+    },
+    {
+      "id": "B-26",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001411,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 7801,
+        "out": 762
+      },
+      "truncated": false,
+      "latency_ms": 8225
+    },
+    {
+      "id": "B-27",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001234,
+      "cached": false,
+      "served_by": [
+        "Together"
+      ],
+      "tokens": {
+        "in": 17795,
+        "out": 87
+      },
+      "truncated": false,
+      "latency_ms": 2440
+    }
+  ]
+}

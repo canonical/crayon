@@ -1,0 +1,226 @@
+{
+  "lane": "B",
+  "_comment": "The session opening and the stop rule: version first, then the state read; a contract or tool the skill does not support stops everything.",
+  "cases": [
+    {
+      "id": "B-01",
+      "skill": "dogen-review",
+      "ask": "cfg",
+      "max_turns": 3,
+      "sandbox": "drafted",
+      "why": "every unit session opens on version, then show --json",
+      "assert": [
+        {
+          "kind": "bash_sequence",
+          "prefix": [
+            "^dogen version --json$",
+            "^dogen show cfg --json$"
+          ]
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen version --json"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen show cfg --json"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "Which review mode?",
+                    "options": [
+                      {
+                        "label": "record"
+                      },
+                      {
+                        "label": "review"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen show cfg --json"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-02",
+      "skill": "dogen-onboard",
+      "ask": "",
+      "max_turns": 3,
+      "sandbox": "context_empty",
+      "why": "a context skill opens on version, then context show --json",
+      "assert": [
+        {
+          "kind": "bash_sequence",
+          "prefix": [
+            "^dogen version --json$",
+            "^dogen context show --json$"
+          ]
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen version --json"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen context show --json"
+              }
+            }
+          ]
+        },
+        {
+          "content": "No context is recorded yet. Which docs and code should I walk?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen context show --json"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-03",
+      "skill": "dogen-review",
+      "ask": "cfg",
+      "sandbox": "drafted",
+      "why": "stop rule: a contract other than 1 stops the session before show",
+      "history": [
+        {
+          "cmd": "dogen version --json",
+          "exit": 0,
+          "output": "{\"tool\": \"0.2.0\", \"contract\": 2}"
+        }
+      ],
+      "assert": [
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "^dogen\\s+(?!version\\b)"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)contract"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "The installed dogen implements contract 2; this skill is written for contract 1, so I have to stop here. Install a dogen that speaks contract 1, or skills for contract 2."
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen show cfg --json"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-04",
+      "skill": "dogen-plan",
+      "ask": "cfg",
+      "sandbox": "declared",
+      "why": "stop rule: a tool older than min_tool 0.2.0 stops the session",
+      "history": [
+        {
+          "cmd": "dogen version --json",
+          "exit": 0,
+          "output": "{\"tool\": \"0.1.9\", \"contract\": 1}"
+        }
+      ],
+      "assert": [
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "^dogen\\s+(?!version\\b)"
+        },
+        {
+          "kind": "text_re",
+          "re": "0\\.1\\.9|0\\.2\\.0"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "dogen 0.1.9 is older than the 0.2.0 this skill needs, so I have to stop. Upgrade dogen and invoke /dogen-plan again."
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "dogen show cfg --json"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

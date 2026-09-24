@@ -68,6 +68,7 @@ python3 scripts/planning_lint.py                 # the anonymization gate over .
 python3 tests/size_guard.py                      # VERB-09's line budget, reported and enforced
 python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
 python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
+python3 -m unittest tests.test_evals             # the model-eval kit's offline self-tests
 ```
 
 Set `GIT_CONFIG_GLOBAL=/dev/null` for any fixture that shells out to git. Both invocation forms
@@ -162,7 +163,22 @@ validation/                        ← the validation kit: the evidence apparatu
 ├── fixtures.sh                    ← V-01…V-04: four corruptions built from real verbs, and the
 │                                     oracle that catches each one
 ├── runmeta.sh                     ← records a leg's RUN metadata alongside its drafts
-└── rubric.md                      ← the scoring bar a leg's drafts are read against
+├── rubric.md                      ← the scoring bar a leg's drafts are read against
+└── evals/                         ← the model evals: one neutral loop, many OpenRouter models;
+    │                                 paid runs by hand only, never in the gate
+    ├── README.md                  ← lanes, running, where results go, adding a case
+    ├── run.py                     ← the runner: a lane × a model or the roster, --dry-run offline
+    ├── openrouter.py              ← the one transport: pinned backend, retries, cache, spend cap
+    ├── skills.py                  ← the catalog and /skill invocation, shared by every model
+    ├── lanes.py                   ← each lane's case loader, live call and oracle
+    ├── agent.py                   ← the seven tools, the replayed history, the decisive action
+    ├── sandbox.py                 ← real snapshots of the recorded states, copied per episode
+    ├── grade.py                   ← the assertion kinds and the pinned judge
+    ├── record_states.py           ← records the real tool's output for lane B; --check for drift
+    ├── models.json                ← the roster: candidates, gate, judge, author, caps
+    ├── fixtures/                  ← states.sh (the recorder, on tests/lib.sh) and the toyq project
+    ├── cases/                     ← the case files, one set per lane
+    └── results/                   ← committed clean summaries; raw/ is gitignored
 
 tests/
 ├── test_dogen_unit.py             ← the unit suite; also the home of the line budget, of the
@@ -171,6 +187,8 @@ tests/
 ├── test_planning_lint.py          ← the anonymization lint's own tests
 ├── test_check_docs.py             ← the docs-accuracy checker's own tests
 ├── test_wiki_lint.py              ← the wiki lint's own tests
+├── test_evals.py                  ← the model-eval kit's offline self-tests: transport, kinds,
+│                                     every case against its own oracle
 ├── test_dogen_lifecycle.sh        ← the lifecycle / recovery suite (hermetic temp git repos)
 ├── test_dogen_acceptance.sh       ← the acceptance suite, A-01 … A-38
 ├── lib.sh                         ← the fixtures both bash suites share; ONE definition site

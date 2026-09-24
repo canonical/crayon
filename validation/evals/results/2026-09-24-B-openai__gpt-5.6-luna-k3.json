@@ -1,0 +1,271 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "openai/gpt-5.6-luna",
+    "provider_pin": {
+      "order": [
+        "azure"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-24",
+    "dogen_version": "0.2.0",
+    "repo_head": "3f26a98",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
+    "total_cases": 31,
+    "errors": 0,
+    "cost_usd": 0.216767,
+    "tokens": {
+      "in": 1939873,
+      "out": 29846
+    },
+    "truncated": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null,
+    "runs": 3,
+    "passes": 86,
+    "pass_rate": 0.9247,
+    "stable_pass": 27,
+    "stable_fail": 1,
+    "flaky": 3,
+    "cached_cases": 0
+  },
+  "cases": [
+    {
+      "id": "B-28",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.013956
+    },
+    {
+      "id": "B-29",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.019408
+    },
+    {
+      "id": "B-30",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.025112
+    },
+    {
+      "id": "B-31",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.033853,
+      "failed": [
+        "judge: judge: The agent reformatted the tool's output into new bullet fields ('Record provenance:', 'Page provenance:') with separate backtick-quoted fragments, rather than quoting the actual printed line verbatim (e.g. 'record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) \u00b7 page: current'). This is a "
+      ]
+    },
+    {
+      "id": "B-05",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011938
+    },
+    {
+      "id": "B-06",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002587
+    },
+    {
+      "id": "B-07",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.012433,
+      "failed": [
+        "decisive: expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was Bash(mkdir -p .dogen/staging/cfg/draft .dogen/staging/cfg/scratch)",
+        "decisive: expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was Bash(mkdir -p .dogen/staging/cfg/draft .dogen/staging/cfg/scratch && test ! -e .dogen/staging/cfg/draft/reference/config.md && echo ready)"
+      ]
+    },
+    {
+      "id": "B-08",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.007648
+    },
+    {
+      "id": "B-09",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008667
+    },
+    {
+      "id": "B-10",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008305
+    },
+    {
+      "id": "B-11",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004808
+    },
+    {
+      "id": "B-12",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.006211
+    },
+    {
+      "id": "B-13",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005105
+    },
+    {
+      "id": "B-14",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00682
+    },
+    {
+      "id": "B-15",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00239
+    },
+    {
+      "id": "B-16",
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.006325,
+      "failed": [
+        "any_of: none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(set -o pipefail\nprintf '%s\\n' '--- metadata ---'\nstat --format='path=%n\\nsize=%s\\nmodified=%y\\nmode=%A' exports/style-guide.pdf\nprintf '%s\\n' '--- pdfinfo ---'\npdfinfo exports/style-guide.pd",
+        "any_of: none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(mkdir -p /tmp/toyq-dogen-fetch && pdftotext -layout exports/style-guide.pdf /tmp/toyq-dogen-fetch/style-guide.txt && wc -l -c /tmp/toyq-dogen-fetch/style-guide.txt) | expected the reply to m",
+        "any_of: none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(set -o pipefail\nprintf '%s\\n' '--- metadata ---'\nstat --format='path=%n\\nsize=%s bytes\\nmodified=%y\\nmode=%A' exports/style-guide.pdf\nprintf '%s\\n' '--- pdf text ---'\npdftotext -layout expor"
+      ]
+    },
+    {
+      "id": "B-01",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003903
+    },
+    {
+      "id": "B-02",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.002695,
+      "failed": [
+        "bash_sequence: expected shell command 2 to match '^dogen context show --json$'; only 1 command(s) ran: dogen version --json"
+      ]
+    },
+    {
+      "id": "B-03",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000619
+    },
+    {
+      "id": "B-04",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001808
+    },
+    {
+      "id": "B-17",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002091
+    },
+    {
+      "id": "B-18",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000932
+    },
+    {
+      "id": "B-19",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002383
+    },
+    {
+      "id": "B-20",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002529
+    },
+    {
+      "id": "B-21",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002551
+    },
+    {
+      "id": "B-22",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004872
+    },
+    {
+      "id": "B-23",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.006078
+    },
+    {
+      "id": "B-24",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002929
+    },
+    {
+      "id": "B-25",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003139
+    },
+    {
+      "id": "B-26",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003445
+    },
+    {
+      "id": "B-27",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001227
+    }
+  ]
+}

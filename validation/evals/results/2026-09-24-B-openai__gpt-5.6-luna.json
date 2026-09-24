@@ -1,0 +1,574 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "openai/gpt-5.6-luna",
+    "provider_pin": {
+      "order": [
+        "azure"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-24",
+    "dogen_version": "0.2.0",
+    "repo_head": "4b78717",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
+    "total_cases": 31,
+    "passed": 30,
+    "failed": 1,
+    "errors": 0,
+    "pass_rate": 0.9677,
+    "cost_usd": 0.100722,
+    "tokens": {
+      "in": 663274,
+      "out": 10769
+    },
+    "truncated": 0,
+    "cached_cases": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null
+  },
+  "cases": [
+    {
+      "id": "B-28",
+      "passed": false,
+      "error": null,
+      "score": 0.467,
+      "cost": 0.006753,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "text_re",
+          "feedback": "expected the reply to match 'dogen-write'; it reads: 'Recorded the fix request:\\n\\n> Explain what happens when `max_retries` is exceeded.\\n\\nDogen committed the review as `db7b3f4`. The unit is routed to `draft` for the requested update.'"
+        },
+        {
+          "kind": "judge",
+          "feedback": "judge: The commit id db7b3f4 matches the tool output, which is correct. However, the response never tells the author to invoke the dogen-write skill (e.g., '/dogen-write cfg'); it only vaguely states the unit is 'routed to draft', which does not satisfy the requirement that next steps be expressed as an explicit skill invocation."
+        }
+      ],
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 7507,
+        "out": 49
+      },
+      "truncated": false,
+      "answer": "Recorded the fix request:\n\n> Explain what happens when `max_retries` is exceeded.\n\nDogen committed the review as `db7b3f4`. The unit is routed to `draft` for the requested update.",
+      "latency_ms": 7301
+    },
+    {
+      "id": "B-29",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.006584,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 28087,
+        "out": 651
+      },
+      "truncated": false,
+      "latency_ms": 17330
+    },
+    {
+      "id": "B-30",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.007706,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 33935,
+        "out": 846
+      },
+      "truncated": false,
+      "latency_ms": 17427
+    },
+    {
+      "id": "B-31",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.010719,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 51335,
+        "out": 910
+      },
+      "truncated": false,
+      "latency_ms": 23450
+    },
+    {
+      "id": "B-05",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004611,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 44237,
+        "out": 853
+      },
+      "truncated": false,
+      "latency_ms": 15459
+    },
+    {
+      "id": "B-06",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002747,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 27804,
+        "out": 556
+      },
+      "truncated": false,
+      "latency_ms": 11061
+    },
+    {
+      "id": "B-07",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.007229,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 75859,
+        "out": 1230
+      },
+      "truncated": false,
+      "latency_ms": 26924
+    },
+    {
+      "id": "B-08",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003976,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 22400,
+        "out": 452
+      },
+      "truncated": false,
+      "latency_ms": 7781
+    },
+    {
+      "id": "B-09",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001719,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 7382,
+        "out": 135
+      },
+      "truncated": false,
+      "latency_ms": 3309
+    },
+    {
+      "id": "B-10",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00384,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 21407,
+        "out": 397
+      },
+      "truncated": false,
+      "latency_ms": 7595
+    },
+    {
+      "id": "B-11",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003152,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 19494,
+        "out": 220
+      },
+      "truncated": false,
+      "latency_ms": 6246
+    },
+    {
+      "id": "B-12",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003993,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 22867,
+        "out": 349
+      },
+      "truncated": false,
+      "latency_ms": 32156
+    },
+    {
+      "id": "B-13",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003394,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 31292,
+        "out": 226
+      },
+      "truncated": false,
+      "latency_ms": 9600
+    },
+    {
+      "id": "B-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002916,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 18042,
+        "out": 187
+      },
+      "truncated": false,
+      "latency_ms": 5427
+    },
+    {
+      "id": "B-15",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001655,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 6793,
+        "out": 204
+      },
+      "truncated": false,
+      "latency_ms": 4262
+    },
+    {
+      "id": "B-16",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003692,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 27034,
+        "out": 712
+      },
+      "truncated": false,
+      "latency_ms": 38914
+    },
+    {
+      "id": "B-01",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002153,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 21659,
+        "out": 252
+      },
+      "truncated": false,
+      "latency_ms": 7104
+    },
+    {
+      "id": "B-02",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001504,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 14822,
+        "out": 259
+      },
+      "truncated": false,
+      "latency_ms": 7327
+    },
+    {
+      "id": "B-03",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.000215,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 7142,
+        "out": 50
+      },
+      "truncated": false,
+      "latency_ms": 1925
+    },
+    {
+      "id": "B-04",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001408,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 6518,
+        "out": 56
+      },
+      "truncated": false,
+      "latency_ms": 1881
+    },
+    {
+      "id": "B-17",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001659,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 7535,
+        "out": 53
+      },
+      "truncated": false,
+      "latency_ms": 1474
+    },
+    {
+      "id": "B-18",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00035,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 8234,
+        "out": 102
+      },
+      "truncated": false,
+      "latency_ms": 2424
+    },
+    {
+      "id": "B-19",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00184,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 8293,
+        "out": 46
+      },
+      "truncated": false,
+      "latency_ms": 2448
+    },
+    {
+      "id": "B-20",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001829,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 7566,
+        "out": 188
+      },
+      "truncated": false,
+      "latency_ms": 3345
+    },
+    {
+      "id": "B-21",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00179,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 7463,
+        "out": 177
+      },
+      "truncated": false,
+      "latency_ms": 4117
+    },
+    {
+      "id": "B-22",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003409,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 20656,
+        "out": 303
+      },
+      "truncated": false,
+      "latency_ms": 6444
+    },
+    {
+      "id": "B-23",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00381,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 33546,
+        "out": 389
+      },
+      "truncated": false,
+      "latency_ms": 9432
+    },
+    {
+      "id": "B-24",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001723,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 19182,
+        "out": 183
+      },
+      "truncated": false,
+      "latency_ms": 4811
+    },
+    {
+      "id": "B-25",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001824,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 19230,
+        "out": 262
+      },
+      "truncated": false,
+      "latency_ms": 5830
+    },
+    {
+      "id": "B-26",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001892,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 19272,
+        "out": 314
+      },
+      "truncated": false,
+      "latency_ms": 6451
+    },
+    {
+      "id": "B-27",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00063,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 16681,
+        "out": 158
+      },
+      "truncated": false,
+      "latency_ms": 5897
+    }
+  ]
+}

@@ -1,0 +1,584 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "qwen/qwen3.8-27b",
+    "provider_pin": {
+      "order": [
+        "deepinfra/bf16"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-24",
+    "dogen_version": "0.2.0",
+    "repo_head": "4b78717",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
+    "total_cases": 31,
+    "passed": 28,
+    "failed": 3,
+    "errors": 0,
+    "pass_rate": 0.9032,
+    "cost_usd": 0.26338,
+    "tokens": {
+      "in": 1382649,
+      "out": 69670
+    },
+    "truncated": 0,
+    "cached_cases": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null
+  },
+  "cases": [
+    {
+      "id": "B-28",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003906,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 8335,
+        "out": 213
+      },
+      "truncated": false,
+      "latency_ms": 41512
+    },
+    {
+      "id": "B-29",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.015408,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 79619,
+        "out": 3978
+      },
+      "truncated": false,
+      "latency_ms": 221221
+    },
+    {
+      "id": "B-30",
+      "passed": true,
+      "error": null,
+      "score": 0.9,
+      "cost": 0.010314,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 53892,
+        "out": 1079
+      },
+      "truncated": false,
+      "latency_ms": 76522
+    },
+    {
+      "id": "B-31",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004117,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 8375,
+        "out": 349
+      },
+      "truncated": false,
+      "latency_ms": 50613
+    },
+    {
+      "id": "B-05",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00847,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 46949,
+        "out": 1608
+      },
+      "truncated": false,
+      "latency_ms": 96458
+    },
+    {
+      "id": "B-06",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001171,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 7506,
+        "out": 118
+      },
+      "truncated": false,
+      "latency_ms": 5170
+    },
+    {
+      "id": "B-07",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.050341,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 272215,
+        "out": 16455
+      },
+      "truncated": false,
+      "latency_ms": 983955
+    },
+    {
+      "id": "B-08",
+      "passed": false,
+      "error": null,
+      "score": 0.8,
+      "cost": 0.021709,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "asks_user",
+          "feedback": "expected the model to ask the author before acting; it ended on Bash(which toyq; echo \"which:$?\"; python3 -c \"import toyq; print(toyq.__file__)\"; python3 -c \"import pip\" 2>&1; ls /usr/bin | grep -i -E '^pip|python' ; python3 -m venv --help >/dev/null 2>&1; echo \"venv-ok:$?\")"
+        }
+      ],
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 99203,
+        "out": 7311
+      },
+      "truncated": false,
+      "answer": "The tool is on contract 1, tool 0.2.0 \u2014 supported pairing. The unit is signed-off, and there are 3 recorded unresolved steps, with `next: walk`. As instructed, reading the routing table and the walking reference.\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/routing.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-write/references/walk-protocol.md\"})\n\nRouting table read \u2014 the `walk` row applies. This is a **resume**: a plan already exists (steps seq 3) with all three steps unresolved, so I will not re-propose or re-record it. Let me read the unit's declaration and the repo surface it walks, so the consent request is accurate about what each step changes.\n\n[TOOL CALL] Bash(ls -la /srv/toyq && echo --- && cat /srv/toyq/.dogen/units/install/unit.md)\n\n[TOOL CALL] Bash(ls /srv/toyq/.dogen/context/ /srv/toyq/docs 2>/dev/null; echo ---; ls /srv/toyq/.dogen/staging/install 2>/dev/null)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/README.md\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/pyproject.toml\"})\n\n[TOOL CALL] Bash(find /srv/toyq/src /srv/toyq/docs -type f | sort)\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/cli.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/src/toyq/config.py\"})\n\n[TOOL CALL] Read({\"file_path\": \"/srv/toyq/docs/index.md\"})\n\n[TOOL CALL] Bash(ls -la /srv/toyq/docs/reference/ 2>/dev/null; echo ---; cat /srv/toyq/.dogen/context/doc-style.md; echo ---; cat /srv/toyq/.dogen/context/glossary.md)\n\nI've read the unit and the repo",
+      "latency_ms": 297293
+    },
+    {
+      "id": "B-09",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.007739,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 64668,
+        "out": 1071
+      },
+      "truncated": false,
+      "latency_ms": 56226
+    },
+    {
+      "id": "B-10",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.010776,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 47849,
+        "out": 2860
+      },
+      "truncated": false,
+      "latency_ms": 129313
+    },
+    {
+      "id": "B-11",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.005196,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 21153,
+        "out": 2020
+      },
+      "truncated": false,
+      "latency_ms": 81286
+    },
+    {
+      "id": "B-12",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003572,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 22557,
+        "out": 618
+      },
+      "truncated": false,
+      "latency_ms": 23643
+    },
+    {
+      "id": "B-13",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003292,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 33679,
+        "out": 755
+      },
+      "truncated": false,
+      "latency_ms": 27159
+    },
+    {
+      "id": "B-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.02074,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 61114,
+        "out": 6831
+      },
+      "truncated": false,
+      "latency_ms": 482657
+    },
+    {
+      "id": "B-15",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.013189,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 87798,
+        "out": 3021
+      },
+      "truncated": false,
+      "latency_ms": 97328
+    },
+    {
+      "id": "B-16",
+      "passed": false,
+      "error": null,
+      "score": 0.667,
+      "cost": 0.007552,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "any_of",
+          "feedback": "none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(command -v pdftotext; command -v python3; python3 -c \"import pypdf; print('pypdf', pypdf.__version__)\" 2>/dev/null; python3 -c \"import PyPDF2; print('PyPDF2', PyPDF2.__version__)\" 2>/dev/null; python3 -c \"import fitz; print('pymupdf', fitz.__doc__)\" 2>/dev/null; echo done) | expected the reply to match '(?i)(not found|no such file|missing|unavailable|does not exist|doesn.t exist|could not|couldn.t|cannot find|can.t find|isn.t there|is not there)'; it reads: \"Both opening checks pass: tool `0.2.0` with contract `1` (supported pairing), and `context show` reports no context recorded yet \u2014 `next: onboard`, which per the skill's routing note means the reposit\""
+        }
+      ],
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 16834,
+        "out": 2681
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/routing.md\"})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/source-contract.md\"})\n\nBoth opening checks pass: tool `0.2.0` with contract `1` (supported pairing), and `context show` reports no context recorded yet \u2014 `next: onboard`, which per the skill's routing note means the repository holds nothing and my job is to add the artefact your declared source supports.\n\n**Source declaration** (per `source-contract.md`, before any retrieval):\n\n| field | value |\n|---|---|\n| source_id | `style-guide-pdf` |\n| source_type | `local-export` |\n| origin (locator) | `exports/style-guide.pdf` |\n| retrieval_method | local filesystem inspection + PDF text extraction (inferred \u2014 you named no specific integration; I'll use whatever extractor the box has, e.g. `pdftotext`) |\n| content_preserved | no \u2014 you did not ask for preservation and I will not copy the file; it already lives at its declared path (recorded, not assumed) |\n| allowed fallbacks | none declared \u2014 if the PDF is unreadable, this source fails visibly and nothing replaces it |\n| artefact served | `doc-style.md` only |\n\nNow retrieving through the declared method:\n\n[TOOL CALL] Bash(ls -la exports/style-guide.pdf && stat -c 'size=%s bytes, mtime=%y' exports/style-guide.pdf && file exports/style-guide.pdf)\n\n[TOOL CALL] Bash(command -v pdftotext; command -v python3; python3 -c \"import pypdf; print('pypdf', pypdf.__version__)\" 2>/dev/null; python3",
+      "latency_ms": 116201
+    },
+    {
+      "id": "B-01",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004301,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 29185,
+        "out": 853
+      },
+      "truncated": false,
+      "latency_ms": 21848
+    },
+    {
+      "id": "B-02",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003169,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 22025,
+        "out": 681
+      },
+      "truncated": false,
+      "latency_ms": 17315
+    },
+    {
+      "id": "B-03",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001599,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 7902,
+        "out": 691
+      },
+      "truncated": false,
+      "latency_ms": 18218
+    },
+    {
+      "id": "B-04",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001588,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 7272,
+        "out": 265
+      },
+      "truncated": false,
+      "latency_ms": 8737
+    },
+    {
+      "id": "B-17",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.004007,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 21525,
+        "out": 509
+      },
+      "truncated": false,
+      "latency_ms": 15125
+    },
+    {
+      "id": "B-18",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001533,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 9083,
+        "out": 91
+      },
+      "truncated": false,
+      "latency_ms": 4440
+    },
+    {
+      "id": "B-19",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002186,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 9162,
+        "out": 433
+      },
+      "truncated": false,
+      "latency_ms": 42870
+    },
+    {
+      "id": "B-20",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.006263,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 25715,
+        "out": 2318
+      },
+      "truncated": false,
+      "latency_ms": 68077
+    },
+    {
+      "id": "B-21",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00278,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 8272,
+        "out": 821
+      },
+      "truncated": false,
+      "latency_ms": 72410
+    },
+    {
+      "id": "B-22",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.022232,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 142368,
+        "out": 5407
+      },
+      "truncated": false,
+      "latency_ms": 253128
+    },
+    {
+      "id": "B-23",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.008071,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 64461,
+        "out": 1782
+      },
+      "truncated": false,
+      "latency_ms": 66142
+    },
+    {
+      "id": "B-24",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.006694,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 52876,
+        "out": 1598
+      },
+      "truncated": false,
+      "latency_ms": 60727
+    },
+    {
+      "id": "B-25",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.007217,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 33904,
+        "out": 2360
+      },
+      "truncated": false,
+      "latency_ms": 68810
+    },
+    {
+      "id": "B-26",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002754,
+      "cached": false,
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 8045,
+        "out": 825
+      },
+      "truncated": false,
+      "latency_ms": 19131
+    },
+    {
+      "id": "B-27",
+      "passed": false,
+      "error": null,
+      "score": 0.5,
+      "cost": 0.001494,
+      "cached": false,
+      "failed": [
+        {
+          "kind": "tool_call",
+          "feedback": "expected a Bash call matching '^dogen show cfg\\\\b'; saw Bash(dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json)"
+        }
+      ],
+      "served_by": [
+        "DeepInfra"
+      ],
+      "tokens": {
+        "in": 9108,
+        "out": 68
+      },
+      "truncated": false,
+      "answer": "[TOOL CALL] Bash(dogen draft cfg .dogen/staging/cfg/draft/ --model-origin unknown --report .dogen/staging/cfg/report.json)",
+      "latency_ms": 2148
+    }
+  ]
+}
