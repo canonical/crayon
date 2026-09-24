@@ -11,19 +11,19 @@
       "zdr": true
     },
     "judge": "anthropic/claude-sonnet-5",
-    "date": "2026-09-23",
+    "date": "2026-09-24",
     "dogen_version": "0.2.0",
-    "repo_head": "801b507",
-    "skills_sha256": "efb12fbeb37aa284f1e5c1397d214d52c94a79fce3f2d9ea434a15a435c4ce93",
+    "repo_head": "4b78717",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
     "total_cases": 31,
-    "passed": 27,
-    "failed": 4,
+    "passed": 30,
+    "failed": 1,
     "errors": 0,
-    "pass_rate": 0.871,
-    "cost_usd": 0.097197,
+    "pass_rate": 0.9677,
+    "cost_usd": 0.100722,
     "tokens": {
-      "in": 679976,
-      "out": 11093
+      "in": 663274,
+      "out": 10769
     },
     "truncated": 0,
     "cached_cases": 0,
@@ -34,142 +34,272 @@
   "cases": [
     {
       "id": "B-28",
-      "passed": true,
+      "passed": false,
       "error": null,
-      "score": 0.933,
-      "cost": 0.005895,
+      "score": 0.467,
+      "cost": 0.006753,
       "cached": false,
+      "failed": [
+        {
+          "kind": "text_re",
+          "feedback": "expected the reply to match 'dogen-write'; it reads: 'Recorded the fix request:\\n\\n> Explain what happens when `max_retries` is exceeded.\\n\\nDogen committed the review as `db7b3f4`. The unit is routed to `draft` for the requested update.'"
+        },
+        {
+          "kind": "judge",
+          "feedback": "judge: The commit id db7b3f4 matches the tool output, which is correct. However, the response never tells the author to invoke the dogen-write skill (e.g., '/dogen-write cfg'); it only vaguely states the unit is 'routed to draft', which does not satisfy the requirement that next steps be expressed as an explicit skill invocation."
+        }
+      ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 7437,
-        "out": 45
+        "in": 7507,
+        "out": 49
       },
       "truncated": false,
-      "latency_ms": 7259
+      "answer": "Recorded the fix request:\n\n> Explain what happens when `max_retries` is exceeded.\n\nDogen committed the review as `db7b3f4`. The unit is routed to `draft` for the requested update.",
+      "latency_ms": 7301
     },
     {
       "id": "B-29",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.006999,
+      "cost": 0.006584,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 34719,
-        "out": 790
+        "in": 28087,
+        "out": 651
       },
       "truncated": false,
-      "latency_ms": 16439
+      "latency_ms": 17330
     },
     {
       "id": "B-30",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.006956,
+      "cost": 0.007706,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 44731,
-        "out": 959
+        "in": 33935,
+        "out": 846
       },
       "truncated": false,
-      "latency_ms": 21298
+      "latency_ms": 17427
     },
     {
       "id": "B-31",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.007427,
+      "cost": 0.010719,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 37104,
-        "out": 731
+        "in": 51335,
+        "out": 910
       },
       "truncated": false,
-      "latency_ms": 20285
+      "latency_ms": 23450
     },
     {
       "id": "B-05",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004785,
+      "cost": 0.004611,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 44479,
-        "out": 861
+        "in": 44237,
+        "out": 853
       },
       "truncated": false,
-      "latency_ms": 16697
+      "latency_ms": 15459
     },
     {
       "id": "B-06",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001099,
+      "cost": 0.002747,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 14468,
-        "out": 440
+        "in": 27804,
+        "out": 556
       },
       "truncated": false,
-      "latency_ms": 9572
+      "latency_ms": 11061
     },
     {
       "id": "B-07",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.007567,
+      "cost": 0.007229,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 88130,
-        "out": 1590
+        "in": 75859,
+        "out": 1230
       },
       "truncated": false,
-      "latency_ms": 29382
+      "latency_ms": 26924
     },
     {
       "id": "B-08",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.004326,
+      "cost": 0.003976,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 24241,
-        "out": 347
+        "in": 22400,
+        "out": 452
       },
       "truncated": false,
-      "latency_ms": 7851
+      "latency_ms": 7781
     },
     {
       "id": "B-09",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001719,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 7382,
+        "out": 135
+      },
+      "truncated": false,
+      "latency_ms": 3309
+    },
+    {
+      "id": "B-10",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.00384,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 21407,
+        "out": 397
+      },
+      "truncated": false,
+      "latency_ms": 7595
+    },
+    {
+      "id": "B-11",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003152,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 19494,
+        "out": 220
+      },
+      "truncated": false,
+      "latency_ms": 6246
+    },
+    {
+      "id": "B-12",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003993,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 22867,
+        "out": 349
+      },
+      "truncated": false,
+      "latency_ms": 32156
+    },
+    {
+      "id": "B-13",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.003394,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 31292,
+        "out": 226
+      },
+      "truncated": false,
+      "latency_ms": 9600
+    },
+    {
+      "id": "B-14",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.002916,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 18042,
+        "out": 187
+      },
+      "truncated": false,
+      "latency_ms": 5427
+    },
+    {
+      "id": "B-15",
+      "passed": true,
+      "error": null,
+      "score": 1.0,
+      "cost": 0.001655,
+      "cached": false,
+      "served_by": [
+        "Azure"
+      ],
+      "tokens": {
+        "in": 6793,
+        "out": 204
+      },
+      "truncated": false,
+      "latency_ms": 4262
+    },
+    {
+      "id": "B-16",
       "passed": true,
       "error": null,
       "score": 1.0,
@@ -179,413 +309,266 @@
         "Azure"
       ],
       "tokens": {
-        "in": 21140,
-        "out": 314
+        "in": 27034,
+        "out": 712
       },
       "truncated": false,
-      "latency_ms": 8098
-    },
-    {
-      "id": "B-10",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.004337,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 35251,
-        "out": 569
-      },
-      "truncated": false,
-      "latency_ms": 12254
-    },
-    {
-      "id": "B-11",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.003087,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 19354,
-        "out": 182
-      },
-      "truncated": false,
-      "latency_ms": 5669
-    },
-    {
-      "id": "B-12",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.003229,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 20716,
-        "out": 147
-      },
-      "truncated": false,
-      "latency_ms": 4992
-    },
-    {
-      "id": "B-13",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.003312,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 31022,
-        "out": 187
-      },
-      "truncated": false,
-      "latency_ms": 9260
-    },
-    {
-      "id": "B-14",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.001506,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 6585,
-        "out": 123
-      },
-      "truncated": false,
-      "latency_ms": 4223
-    },
-    {
-      "id": "B-15",
-      "passed": true,
-      "error": null,
-      "score": 1.0,
-      "cost": 0.001663,
-      "cached": false,
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 6722,
-        "out": 226
-      },
-      "truncated": false,
-      "latency_ms": 4859
-    },
-    {
-      "id": "B-16",
-      "passed": false,
-      "error": null,
-      "score": 0.667,
-      "cost": 0.003063,
-      "cached": false,
-      "failed": [
-        {
-          "kind": "any_of",
-          "feedback": "none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(set -o pipefail\nprintf '%s\\n' '--- metadata ---'\nstat --format='path=%n\\nsize=%s\\nmodified=%y\\nmode=%A' exports/style-guide.pdf\nprintf '%s\\n' '--- extraction ---'\npdftotext -layout exports/style-guide.pdf -) | expected the reply to match '(?i)(not found|no such file|missing|unavailable|does not exist|doesn.t exist|could not|couldn.t|cannot find|can.t find|isn.t there|is not there)'; it reads: 'Source declaration (inferred from your request):\\n\\n- `style-guide`: type `local-export`; locator `exports/style-guide.pdf`; retrieval method: filesystem metadata inspection followed by local PDF text e'"
-        }
-      ],
-      "served_by": [
-        "Azure"
-      ],
-      "tokens": {
-        "in": 15535,
-        "out": 461
-      },
-      "truncated": false,
-      "answer": "[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/source-contract.md\", \"limit\": 240, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-fetch/references/style-stance.md\", \"limit\": 240, \"offset\": 1})\n\nSource declaration (inferred from your request):\n\n- `style-guide`: type `local-export`; locator `exports/style-guide.pdf`; retrieval method: filesystem metadata inspection followed by local PDF text extraction with `pdftotext`; preservation: not requested, so `false`; allowed fallback: none; output: `doc-style.md`.\n- The source is accepted only if the file is readable and its text can be extracted.\n\n[TOOL CALL] Bash(set -o pipefail\nprintf '%s\\n' '--- metadata ---'\nstat --format='path=%n\\nsize=%s\\nmodified=%y\\nmode=%A' exports/style-guide.pdf\nprintf '%s\\n' '--- extraction ---'\npdftotext -layout exports/style-guide.pdf -)",
-      "latency_ms": 9830
+      "latency_ms": 38914
     },
     {
       "id": "B-01",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.0,
-      "cost": 0.002151,
+      "score": 1.0,
+      "cost": 0.002153,
       "cached": false,
-      "failed": [
-        {
-          "kind": "bash_sequence",
-          "feedback": "expected shell command 2 to match '^dogen show cfg --json$'; it was 'dogen show \"cfg\" --json'"
-        }
-      ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 21446,
-        "out": 268
+        "in": 21659,
+        "out": 252
       },
       "truncated": false,
-      "answer": "[TOOL CALL] Bash(dogen version --json)\n\n[TOOL CALL] Bash(dogen show \"cfg\" --json)\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/routing.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \".agents/skills/dogen-review/references/provenance-summary.md\", \"limit\": 200, \"offset\": 1})\n\n[TOOL CALL] Read({\"file_path\": \"reference/config.md\", \"limit\": 240, \"offset\": 1})",
-      "latency_ms": 8753
+      "latency_ms": 7104
     },
     {
       "id": "B-02",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001502,
+      "cost": 0.001504,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 14619,
-        "out": 273
+        "in": 14822,
+        "out": 259
       },
       "truncated": false,
-      "latency_ms": 8192
+      "latency_ms": 7327
     },
     {
       "id": "B-03",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000208,
+      "cost": 0.000215,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 7072,
-        "out": 46
+        "in": 7142,
+        "out": 50
       },
       "truncated": false,
-      "latency_ms": 2124
+      "latency_ms": 1925
     },
     {
       "id": "B-04",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001395,
+      "cost": 0.001408,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 6447,
-        "out": 60
+        "in": 6518,
+        "out": 56
       },
       "truncated": false,
-      "latency_ms": 2253
+      "latency_ms": 1881
     },
     {
       "id": "B-17",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001783,
+      "cost": 0.001659,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 7469,
-        "out": 170
+        "in": 7535,
+        "out": 53
       },
       "truncated": false,
-      "latency_ms": 3818
+      "latency_ms": 1474
     },
     {
       "id": "B-18",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000331,
+      "cost": 0.00035,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 8164,
-        "out": 87
+        "in": 8234,
+        "out": 102
       },
       "truncated": false,
-      "latency_ms": 3028
+      "latency_ms": 2424
     },
     {
       "id": "B-19",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.667,
-      "cost": 0.001819,
+      "score": 1.0,
+      "cost": 0.00184,
       "cached": false,
-      "failed": [
-        {
-          "kind": "asks_user",
-          "feedback": "expected the model to ask the author before acting; it ended on a reply with no tool call"
-        }
-      ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 8223,
-        "out": 43
+        "in": 8293,
+        "out": 46
       },
       "truncated": false,
-      "answer": "Stopped: `cfg` is `unsteered`. The tool requires a recorded change before drafting again.\n\nPlease tell me, in your own words, what you want changed in the configuration reference.",
-      "latency_ms": 1657
+      "latency_ms": 2448
     },
     {
       "id": "B-20",
-      "passed": false,
+      "passed": true,
       "error": null,
-      "score": 0.5,
-      "cost": 0.001715,
+      "score": 1.0,
+      "cost": 0.001829,
       "cached": false,
-      "failed": [
-        {
-          "kind": "asks_user",
-          "feedback": "expected the model to ask the author before acting; it ended on a reply with no tool call"
-        }
-      ],
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 7479,
-        "out": 111
+        "in": 7566,
+        "out": 188
       },
       "truncated": false,
-      "answer": "Request 4 is still pending:\n\n> \u201cExplain what happens when max_retries is exceeded.\u201d\n\nBefore acceptance, should this request be recorded as:\n\n- **Resolved** \u2014 the draft satisfies it; or\n- **Withdrawn** \u2014 it no longer applies (please provide the reason).",
-      "latency_ms": 3012
+      "latency_ms": 3345
     },
     {
       "id": "B-21",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001704,
+      "cost": 0.00179,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 7393,
-        "out": 120
+        "in": 7463,
+        "out": 177
       },
       "truncated": false,
-      "latency_ms": 3842
+      "latency_ms": 4117
     },
     {
       "id": "B-22",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.005168,
+      "cost": 0.003409,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 48804,
-        "out": 787
+        "in": 20656,
+        "out": 303
       },
       "truncated": false,
-      "latency_ms": 18415
+      "latency_ms": 6444
     },
     {
       "id": "B-23",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.003239,
+      "cost": 0.00381,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 20538,
-        "out": 175
+        "in": 33546,
+        "out": 389
       },
       "truncated": false,
-      "latency_ms": 5668
+      "latency_ms": 9432
     },
     {
       "id": "B-24",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001736,
+      "cost": 0.001723,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 19042,
-        "out": 196
+        "in": 19182,
+        "out": 183
       },
       "truncated": false,
-      "latency_ms": 5792
+      "latency_ms": 4811
     },
     {
       "id": "B-25",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.00324,
+      "cost": 0.001824,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 24323,
-        "out": 354
+        "in": 19230,
+        "out": 262
       },
       "truncated": false,
-      "latency_ms": 6130
+      "latency_ms": 5830
     },
     {
       "id": "B-26",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.001882,
+      "cost": 0.001892,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 19132,
-        "out": 308
+        "in": 19272,
+        "out": 314
       },
       "truncated": false,
-      "latency_ms": 6840
+      "latency_ms": 6451
     },
     {
       "id": "B-27",
       "passed": true,
       "error": null,
       "score": 1.0,
-      "cost": 0.000381,
+      "cost": 0.00063,
       "cached": false,
       "served_by": [
         "Azure"
       ],
       "tokens": {
-        "in": 8191,
-        "out": 123
+        "in": 16681,
+        "out": 158
       },
       "truncated": false,
-      "latency_ms": 4815
+      "latency_ms": 5897
     }
   ]
 }
