@@ -1,0 +1,286 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "z-ai/glm-5.3",
+    "provider_pin": {
+      "order": [
+        "z-ai"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-24",
+    "dogen_version": "0.2.0",
+    "repo_head": "3f26a98",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
+    "total_cases": 31,
+    "errors": 0,
+    "cost_usd": 3.591351,
+    "tokens": {
+      "in": 5419989,
+      "out": 367990
+    },
+    "truncated": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null,
+    "runs": 3,
+    "passes": 80,
+    "pass_rate": 0.8602,
+    "stable_pass": 23,
+    "stable_fail": 1,
+    "flaky": 7,
+    "cached_cases": 0
+  },
+  "cases": [
+    {
+      "id": "B-28",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.033772
+    },
+    {
+      "id": "B-29",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.19009
+    },
+    {
+      "id": "B-30",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.119648
+    },
+    {
+      "id": "B-31",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.106663,
+      "failed": [
+        "judge: judge: The agent does quote the exact record line in backticks, but it recomposes the rest of the tool output into a bulleted list with bolded labels (e.g., 'Files changed:', 'Intent:') rather than quoting the tool's raw printed lines verbatim. It also introduces fields (Recorded requests, Reviewer "
+      ]
+    },
+    {
+      "id": "B-05",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.096708
+    },
+    {
+      "id": "B-06",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.032237
+    },
+    {
+      "id": "B-07",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.46157,
+      "failed": [
+        "decisive: expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was Bash(cd /tmp && rm -rf toyq-verify && mkdir toyq-verify && cd toyq-verify && PYTHONPATH=/srv/toyq/src python3 - <<'EOF'\nfrom toyq.config import load\nprint(load({}, {}))\nprint(load({\"db_path\": \"a.sqlite\", \"max_retries\": 5",
+        "decisive: expected the action to be a call matching '\\\\.dogen/staging/cfg/draft/'; it was Bash(ls /srv/toyq/.agents/skills/ && find / -name \"contract.md\" -path \"*dogen*\" 2>/dev/null | head; which dogen; python3 -c \"import dogen, os; print(os.path.dirname(dogen.__file__))\" 2>/dev/null)"
+      ]
+    },
+    {
+      "id": "B-08",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.152187,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(dogen show install --json 2>/dev/null | python3 -c \"import json,sys; d=json.load(sys.stdin); print(json.dumps(d, indent=2))\" | head -100)"
+      ]
+    },
+    {
+      "id": "B-09",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.118363
+    },
+    {
+      "id": "B-10",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.227793
+    },
+    {
+      "id": "B-11",
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.052483,
+      "failed": [
+        "decisive: expected the model to stop and reply; it ended on Bash(cat .dogen/units/cfg/ledger.jsonl | python3 -c \"\nimport json,sys\nfor line in sys.stdin:\n    line=line.strip()\n    if not line: continue\n    e=json.loads(line)\n    print(e.get('seq'), e.get('kind'), json.dumps(e.get('data', e), ensure_ascii=False",
+        "decisive: expected the model to stop and reply; it ended on Bash(dogen review cfg --verdict accept --note \"placeholder\" 2>&1; echo \"---exit: $?\")",
+        "no_tool_call: expected no a Bash call matching '\\\\bdogen\\\\s+(unit\\\\s+(new|edit|retire)|context\\\\s+(stage|record)|signoff|steer|plan-steps|step|draft|edits|review|resume(?![^\\\\n]*--dry-run))\\\\b'; saw Bash(dogen review cfg --verdict accept --note \"placeholder\" 2>&1; echo \"---exit: $?\")",
+        "decisive: expected the model to stop and reply; it ended on Bash(tail -1 .dogen/units/cfg/ledger.jsonl | python3 -c \"import json,sys; d=json.load(sys.stdin); print(json.dumps({k:v for k,v in d.items() if k in ('seq','kind','verdict','note','commit','ts')}, indent=2))\")"
+      ]
+    },
+    {
+      "id": "B-12",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.043794
+    },
+    {
+      "id": "B-13",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.040452
+    },
+    {
+      "id": "B-14",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.158131
+    },
+    {
+      "id": "B-15",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.068746
+    },
+    {
+      "id": "B-16",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.094405,
+      "failed": [
+        "any_of: none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(command -v pdftotext pdfinfo python3 2>/dev/null; echo \"---\"; pdftotext -v 2>&1 | head -2) | expected the reply to match '(?i)(not found|no such file|missing|unavailable|does not exist|doesn",
+        "any_of: none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(date -u +\"%Y-%m-%dT%H:%M:%SZ\"; echo \"--- exports/ ---\"; ls -la exports/ 2>&1; echo \"--- stat ---\"; stat exports/style-guide.pdf 2>&1; echo \"--- sha256 ---\"; sha256sum exports/style-guide.pdf"
+      ]
+    },
+    {
+      "id": "B-01",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.0408
+    },
+    {
+      "id": "B-02",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.037595
+    },
+    {
+      "id": "B-03",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011094
+    },
+    {
+      "id": "B-04",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.010293
+    },
+    {
+      "id": "B-17",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.015558
+    },
+    {
+      "id": "B-18",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.007784
+    },
+    {
+      "id": "B-19",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.049735,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(rm -f .dogen/staging/cfg/draft/reference/config.md; ls -R .dogen/staging/cfg/draft/)"
+      ]
+    },
+    {
+      "id": "B-20",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.193079
+    },
+    {
+      "id": "B-21",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.321416
+    },
+    {
+      "id": "B-22",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.20442,
+      "failed": [
+        "no_tool_call: expected no a Bash call matching '\\\\bdogen\\\\s+draft\\\\b'; saw Bash(dogen draft cfg .dogen/staging/cfg/draft/ 2>&1; echo \"exit:$?\")",
+        "text_re: expected the reply to match '(?i)(dogen-review|review skill|dogen edits|\\\\bedits\\\\b|adopt)'; it reads: ''"
+      ]
+    },
+    {
+      "id": "B-23",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.065113
+    },
+    {
+      "id": "B-24",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.061906
+    },
+    {
+      "id": "B-25",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.071721
+    },
+    {
+      "id": "B-26",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.213125
+    },
+    {
+      "id": "B-27",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.29067,
+      "failed": [
+        "decisive: expected the action to be Bash matching '(^|(;|&&)\\\\s*)dogen\\\\ draft\\\\ cfg\\\\ \\\\.dogen/staging/cfg/draft/\\\\ \\\\-\\\\-model\\\\-origin\\\\ unknown\\\\ \\\\-\\\\-report\\\\ \\\\.dogen/staging/cfg/report\\\\.json( --json)?\\\\s*$'; it was nothing: the turn cap was reached while the model was still looking"
+      ]
+    }
+  ]
+}

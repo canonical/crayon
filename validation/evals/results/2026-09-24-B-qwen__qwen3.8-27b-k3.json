@@ -1,0 +1,268 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "qwen/qwen3.8-27b",
+    "provider_pin": {
+      "order": [
+        "deepinfra/bf16"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-09-24",
+    "dogen_version": "0.2.0",
+    "repo_head": "3f26a98",
+    "skills_sha256": "471bb1b16e21520260674ad8ddf9b1297f1a4c9447fe1a827dc1ec45c28d3789",
+    "total_cases": 31,
+    "errors": 0,
+    "cost_usd": 0.687455,
+    "tokens": {
+      "in": 3883645,
+      "out": 158653
+    },
+    "truncated": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null,
+    "runs": 3,
+    "passes": 88,
+    "pass_rate": 0.9462,
+    "stable_pass": 28,
+    "stable_fail": 1,
+    "flaky": 2,
+    "cached_cases": 0
+  },
+  "cases": [
+    {
+      "id": "B-28",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.01188
+    },
+    {
+      "id": "B-29",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.02982,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(find src -type f -name '*.py' | xargs ls -la; echo ---; grep -rin \"retry\\|backoff\" src/ | head -30)",
+        "judge: judge: The agent's response consists entirely of tool calls with no final message to the author at all. Since there is no textual message asking any question, the criterion of asking exactly ONE question cannot be satisfied."
+      ]
+    },
+    {
+      "id": "B-30",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.033153
+    },
+    {
+      "id": "B-31",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.033205
+    },
+    {
+      "id": "B-05",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.031498
+    },
+    {
+      "id": "B-06",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005411
+    },
+    {
+      "id": "B-07",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.072724
+    },
+    {
+      "id": "B-08",
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.064577,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(cat /srv/toyq/.gitignore; git -C /srv/toyq check-ignore -v .dogen/staging/install/scratch 2>&1; ls /srv/toyq/.venv 2>/dev/null || echo \"no .venv\")",
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(echo \"=== os ===\" && cat /etc/os-release 2>/dev/null | head -3; echo \"=== python3 ===\" && python3 --version 2>&1; echo \"=== venv? ===\" && python3 -c \"import sys; print(sys.prefix)\" 2>&1; echo \"=== HOME ===\" && echo \"$HOME\"; echo \"=",
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(command -v pip3 pip python3.12 python3.11 uv 2>/dev/null; echo \"---\"; ls /usr/lib/python3.12/ 2>/dev/null | grep -i pip | head; echo \"---\"; python3 -m ensurepip --version 2>&1; echo \"ensurepip-exit:$?\"; echo \"---\"; ls /usr/local/bi"
+      ]
+    },
+    {
+      "id": "B-09",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.027026
+    },
+    {
+      "id": "B-10",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.031536
+    },
+    {
+      "id": "B-11",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.025313
+    },
+    {
+      "id": "B-12",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.020549
+    },
+    {
+      "id": "B-13",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.010973
+    },
+    {
+      "id": "B-14",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.035224
+    },
+    {
+      "id": "B-15",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.026323
+    },
+    {
+      "id": "B-16",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.015236,
+      "failed": [
+        "any_of: none of the acceptable actions happened: expected the model to ask the author before acting; it ended on Bash(command -v pdftotext; command -v python3; python3 -c \"import pypdf\" 2>&1; python3 -c \"import pdfminer\" 2>&1) | expected the reply to match '(?i)(not found|no such file|missing|unavailable|do"
+      ]
+    },
+    {
+      "id": "B-01",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.016873
+    },
+    {
+      "id": "B-02",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.010143
+    },
+    {
+      "id": "B-03",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004358
+    },
+    {
+      "id": "B-04",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004751
+    },
+    {
+      "id": "B-17",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008949
+    },
+    {
+      "id": "B-18",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004793
+    },
+    {
+      "id": "B-19",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.006367
+    },
+    {
+      "id": "B-20",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005099
+    },
+    {
+      "id": "B-21",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008746
+    },
+    {
+      "id": "B-22",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.049087
+    },
+    {
+      "id": "B-23",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.025636
+    },
+    {
+      "id": "B-24",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.017538
+    },
+    {
+      "id": "B-25",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.018746
+    },
+    {
+      "id": "B-26",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.026464
+    },
+    {
+      "id": "B-27",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005457
+    }
+  ]
+}
