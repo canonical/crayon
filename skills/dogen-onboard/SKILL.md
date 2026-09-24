@@ -36,7 +36,8 @@ dogen context show --json            # what is present, staged, drifted; the rou
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
 `tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed, ordered or rounded as versions. Any other answer means the pairing is
+never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 
 The second call is the only source of direction.
@@ -44,8 +45,10 @@ The second call is the only source of direction.
 `onboard` means at least one of the three artefacts is absent — this skill's own
 work; `record` means artefacts are already staged and not yet recorded — record them
 before walking again; `plan` means the context is recorded and current — offer a
-refresh only if the author asks for one, otherwise route to `/dogen-plan`. A refusal
-carries its own `next` in the JSON line — route on that the same way.
+refresh only if the author asks for one, otherwise route to `/dogen-plan`.
+A refusal is one JSON line with `error`, `hint` and `next`: act on the routing row
+for its `error` first — that row says what to do now — and route on `next` only
+after it. The `hint` is a reminder, never the whole route.
 
 **The ledger is never hand-edited.** This skill touches no unit and no ledger at all;
 the context record it makes is `.dogen/context/manifest.json`, which the tool writes
