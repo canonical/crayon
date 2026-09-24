@@ -95,7 +95,8 @@ skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copi
 - **Contract**: [[contract]] the normative specification, frozen . [[architecture]] the shape,
   the non-negotiables, the constraints . [[conventions]] markup, ledger, commit seam, documents
 - **Developing**: [[development]] gate, suites, checkers, what pins what, driving the verbs by
-  hand . [[shellcheck]] the pinned analyzer and the version rule
+  hand . [[shellcheck]] the pinned analyzer and the version rule . [[evals]] the model evals:
+  lanes, the jail, reading results
 
 ## The tree
 
@@ -125,6 +126,7 @@ docs/                              ← the wiki: flat, one page per slug, bracke
 ├── development.md                 ← tooling, testing and verification for contributors;
 │                                     the gate's second pinned home
 ├── upgrade.md                     ← upgrading the tool, the skills and existing records
+├── evals.md                       ← the model evals: what they measure, reading results
 └── context.md                     ← the five context files, who produces them, the two verbs
 
 skills/                            ← the human-facing surface

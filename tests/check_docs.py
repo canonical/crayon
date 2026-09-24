@@ -83,6 +83,7 @@ DOC_FILES = (
     "docs/conventions.md",
     "docs/upgrade.md",
     "docs/context.md",
+    "docs/evals.md",
     "CHANGELOG.md",
     "skills/README.md",
     "skills/dogen-fetch/SKILL.md",
