@@ -5625,8 +5625,9 @@ def cmd_review(args):
                     unit=unit,
                     detail="pending request(s) with no recorded disposition: %s"
                     % ", ".join(str(seq) for seq in outstanding),
-                    hint="--resolves <seq> records the judgment that a request is "
-                    'satisfied; --withdraw <seq> "<reason>" drops it',
+                    hint="put each pending seq to the reviewer, then dogen review %s "
+                    '--verdict accept --note "…" with --resolves <seq> or --withdraw '
+                    '<seq> "<reason>" for every one' % unit,
                     next_token=route(state),
                 )
         elif not note:

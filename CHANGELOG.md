@@ -74,6 +74,11 @@ significance still have one order a reader can predict.
   `dogen steer <id> --note "<their words>"`; `--unsteered-reason` only for an authorised
   redraft with nothing to change. `dogen-write` says a bare "draft it again" is not a note,
   and that a step marked `stateful` takes the author's yes every time, on resume too.
+- `unapplied_steering`'s `hint` leads with putting each pending seq to the reviewer. Every
+  skill now acts on a refusal's routing row for its `error` before routing on `next`, and the
+  `hint` is a reminder, never the whole route. The version stop rule gives a concrete case
+  (`0.1.9` is older than `0.2.0`) instead of saying the numbers are never ordered.
+  `dogen-fetch` records nothing when no declared source was accepted.
 - The source file is `dogen.py`; the installed command is still `dogen`. `install.sh` copies or
   links it under that name, and every in-tree pin names `dogen.py`.
 - The surface is harness-agnostic: no agent harness is named, detected or preferred in the
