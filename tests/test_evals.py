@@ -648,6 +648,33 @@ class TestJail(unittest.TestCase):
         self.assertIn("inside", out)
         self.assertIn('"contract"', out)
 
+    def test_a_read_only_python_script_looks_only_inside_the_jail(self):
+        (Path(self.repo.root) / "l.jsonl").write_text('{"seq": 7}\n', encoding="utf-8")
+        reads = (
+            "cat l.jsonl | python3 -c \"import json,sys\nfor l in sys.stdin: print(json.loads(l)['seq'])\"",
+            "python3 -c 'import json; print([json.loads(l)[\"seq\"] for l in open(\"l.jsonl\")])'",
+            "python3 -c \"import os, sys; print(os.path.basename(sys.prefix))\"",
+        )
+        for command in reads:
+            with self.subTest(command=command):
+                out, code = self.run_looking(command)
+                self.assertEqual(code, 0, out)
+        self.assertIn("7", self.run_looking(reads[0])[0])
+        acts = (
+            "python3 -c \"open('a.txt', 'w').write('x')\"",
+            "python3 -c \"import os; os.remove('a.txt')\"",
+            "python3 -c \"import subprocess; subprocess.run(['rm', 'a.txt'])\"",
+            "python3 -c \"from pathlib import Path; Path('a.txt').write_text('x')\"",
+            "python3 -c \"exec('print(1)')\"",
+            "python3 -c \"import shutil; shutil.rmtree('.')\"",
+        )
+        for command in acts:
+            with self.subTest(command=command):
+                self.assertIsNone(self.repo.bash(command))
+        self.assertEqual((Path(self.repo.root) / "a.txt").read_text(encoding="utf-8"), "inside\n")
+        host = agent.SandboxRepo(self.repo.root, sandbox.bin_dir())
+        self.assertIsNone(host.bash(reads[1]), "on the host, python3 -c stays consequential")
+
     def test_a_live_model_is_refused_a_sandbox_without_a_jail(self):
         class Live(object):
             def complete(self, *args, **kwargs):
