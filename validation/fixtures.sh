@@ -195,6 +195,51 @@ test_v01_gate_bypass_flags() {
     cleanup
 }
 
+# The independent audit must not read a ledger outside --root before dogen's own
+# unit-id check runs. A valid id can also lead through a symlinked ledger path.
+test_score_audit_rejects_traversing_unit_id_before_reading() {
+    setup_repo
+    setup_sealed_unit demo-unit reference/demo.rst
+    mkdir -p "$TEST_DIR/docs/.dogen/units"
+
+    local output rc
+    output=$(python3 "$SCORE" audit '../../../.dogen/units/demo-unit' \
+        --root "$TEST_DIR/docs" 2>&1)
+    rc=$?
+    assert_eq "audit: traversal is rejected" "1" "$rc"
+    assert_contains "audit: invalid id is named" "$output" "FLAG [io] invalid unit id"
+    assert_not_contains "audit: outside ledger was not read" \
+        "$output" "chain recomputes clean"
+    cleanup
+}
+
+test_score_audit_rejects_ledger_symlink_leaving_root() {
+    setup_repo
+    setup_sealed_unit demo-unit reference/demo.rst
+    mkdir -p "$TEST_DIR/audit-root/.dogen/units"
+    ln -s "$TEST_DIR/.dogen/units/demo-unit" \
+        "$TEST_DIR/audit-root/.dogen/units/demo-unit"
+
+    local output rc
+    output=$(python3 "$SCORE" audit demo-unit --root "$TEST_DIR/audit-root" 2>&1)
+    rc=$?
+    assert_eq "audit: outside symlink is rejected" "1" "$rc"
+    assert_contains "audit: escape is named" "$output" "leaves audit root"
+    assert_not_contains "audit: linked ledger was not read" \
+        "$output" "chain recomputes clean"
+    cleanup
+}
+
+test_score_audit_unit_alphabet_matches_the_tool() {
+    local tool_pattern audit_pattern
+    tool_pattern=$(sed -n 's/^_UNIT_ID_RE = re.compile(r"\(.*\)")$/\1/p' "$DOGEN")
+    audit_pattern=$(sed -n 's/^UNIT_ID_RE = re.compile(r"\(.*\)")$/\1/p' "$SCORE")
+    assert_not_eq "audit: the tool declares an id alphabet" "" "$tool_pattern"
+    assert_not_eq "audit: the scorer declares an id alphabet" "" "$audit_pattern"
+    assert_eq "audit: the scorer mirrors the tool's id alphabet" \
+        "$tool_pattern" "^${audit_pattern}\$"
+}
+
 # --- V-02 ------------------------------------------------------------------------------
 
 # V-02 tamper-ledger: the canonical head-to-head. One character of one recorded digest is
