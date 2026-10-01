@@ -107,6 +107,24 @@ unsteered redraft and an unresolved pending request, each reached from a valid u
 real verbs and each caught by `validation/score.py audit`, an oracle that shares no code with the
 tool. The kit is evidence apparatus, not product code; it reports as its own CI job.
 
+**`validation/runmeta.sh`** records a dogfood leg's before/after Sphinx builds and provenance
+in the candidate repository. Before an external harness reads a candidate, check its repository
+visibility without authentication: an authenticated clone is not evidence that its contents are
+public. Stop if a source is internal or private, even if it is already checked out locally.
+For a harness without an automatic transcript resolver, including Copilot CLI, capture its session
+transcript to a local file and pass
+`--transcript-file <path>` to `runmeta.sh end`. The script refuses a missing file and records its
+resolved path, but intentionally leaves `transcript.sha256` null: compute and fill that digest
+*outside* the measured session after the last interaction. Do not commit private transcripts or
+mistake a captured final answer for a complete session transcript.
+The writer's `--report` JSON uses `origins` and `gaps` as arrays of plain strings; unknown keys
+and structured entries are refused as `bad_draft_path` rather than recorded as stringified
+objects or silently dropped. Each `origins` string must be a repository-relative path to a
+readable file, without a revision suffix. The validation scorer flags paths it cannot read
+instead of passing a comparison of two digests over absent files. Record external source
+revisions in the unit or context provenance and disclose what the local-file comparison
+cannot cover.
+
 **`tests/test_evals.py`** — the offline half of the model evals under `validation/evals/`. The
 evals measure a model driving the skills, not the tool: every model gets the same skill text
 through the same neutral loop, and OpenRouter serves each one. Paid runs are started by hand

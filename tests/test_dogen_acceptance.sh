@@ -661,8 +661,16 @@ test_a23_review_invalid_verdict() {
 
     "$DOGEN" review demo-unit --verdict reject --note "no" >/dev/null 2>err.txt
     assert_eq "review invalid verdict exit code" "2" "$?"
-    assert_contains "the refusal names the three verdicts" "$(cat err.txt)" \
-        "'accept', 'fix', 'redraft'"
+    # argparse quotes each choice on some Python versions, but not on 3.14.
+    local choices
+    choices=$(python3 -c '
+import json, re, sys
+detail = json.load(sys.stdin)["detail"]
+match = re.search(r"choose from (.*)\)$", detail)
+print(" ".join(re.findall(r"[a-z]+", match.group(1))) if match else "")
+' <err.txt)
+    assert_eq "the refusal names exactly the three verdicts" \
+        "accept fix redraft" "$choices"
     assert_eq "the refusal appends nothing" "$ledger_before" "$(ledger_digest demo-unit)"
     cleanup
 }
@@ -1155,4 +1163,3 @@ test_a38_context_verbs_stage_record_and_show_end_to_end() {
 
 
 main "$@"
-

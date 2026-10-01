@@ -1802,13 +1802,28 @@ def protocol(directory: Path = ROOT / "validation") -> int:
                          "is no source set to digest on either side: both digests are sha256 of "
                          "the empty list and comparing them asserts nothing")
     else:
-        violation |= not _flag(
-            baseline_digest == context_digest, "context",
-            "the origins digest over %d path(s) is %r at the baseline and %r in the working tree"
-            % (len(origins), baseline_digest, context_digest)
-            if baseline_digest != context_digest
-            else "the origins digest over %d path(s) is %r on both sides"
-                 % (len(origins), baseline_digest))
+        repo = directory.resolve().parent
+        unreadable = [
+            origin for origin in origins
+            if not isinstance(origin, str) or not origin or Path(origin).is_absolute()
+            or "\n" in origin
+            or (path := _resolved_under(repo, origin)) is None
+            or not path.is_file()
+        ]
+        if unreadable:
+            violation |= not _flag(
+                False, "context",
+                "origins[] contains %d path(s) that are not readable repository files "
+                "in the working tree: %s; matching digests of absent paths prove nothing"
+                % (len(unreadable), ", ".join(repr(path) for path in unreadable)))
+        else:
+            violation |= not _flag(
+                baseline_digest == context_digest, "context",
+                "the origins digest over %d path(s) is %r at the baseline and %r in the working tree"
+                % (len(origins), baseline_digest, context_digest)
+                if baseline_digest != context_digest
+                else "the origins digest over %d path(s) is %r on both sides"
+                     % (len(origins), baseline_digest))
 
     # --- check 5 of 6: the leg file and its headings --------------------------------------
     leg_path, searched = _leg_file(directory, leg)
