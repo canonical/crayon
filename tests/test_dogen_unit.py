@@ -131,6 +131,110 @@ class TempRepoTestCase(unittest.TestCase):
         )
 
 
+class TestRunmetaTranscriptFile(TempRepoTestCase):
+    def test_explicit_copilot_transcript_is_recorded_and_missing_file_refused(self):
+        docs = self.repo / "docs"
+        docs.mkdir()
+        (docs / "index.rst").write_text("Test\n====\n", encoding="utf-8")
+        self.git("add", "docs/index.rst")
+        self.git("commit", "-q", "-m", "add docs")
+
+        sphinx = self.repo / "fake-sphinx"
+        sphinx.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        sphinx.chmod(0o755)
+        ledger = self.repo / ".dogen" / "units" / "example" / "ledger.jsonl"
+        ledger.parent.mkdir(parents=True)
+        ledger.write_text(
+            json.dumps({"kind": "generation", "origins": ["source.md"]}) + "\n",
+            encoding="utf-8",
+        )
+        transcript = self.repo / "copilot session.jsonl"
+        transcript.write_text('{"event":"run"}\n', encoding="utf-8")
+
+        env = dict(self.env, DOGEN=str(DOGEN_PATH), SPHINX_BUILD=str(sphinx))
+        command = ["bash", str(ROOT / "validation" / "runmeta.sh")]
+
+        def run(*args):
+            return subprocess.run(
+                command + list(args), cwd=self.repo, env=env,
+                capture_output=True, text=True,
+            )
+
+        invalid_begin = run(
+            "begin", "--leg", "copilot", "--repo", str(self.repo),
+            "--baseline-ref", "HEAD", "--transcript-file", str(transcript),
+        )
+        self.assertEqual(invalid_begin.returncode, 1)
+        self.assertIn("only valid with end", invalid_begin.stderr)
+
+        begun = run(
+            "begin", "--leg", "copilot", "--repo", str(self.repo),
+            "--baseline-ref", "HEAD", "--harness", "copilot-cli",
+        )
+        self.assertEqual(begun.returncode, 0, begun.stderr)
+        recorded = self.repo / "validation" / "RUN-copilot.json"
+        before = recorded.read_bytes()
+        metrics = [
+            "--metric", "install=1",
+            "--metric", "time_to_usable_draft=2",
+            "--metric", "avoidable_questions=0",
+            "--metric", "manual_dogen_commands=0",
+            "--metric", "help_requests=0",
+            "--metric", "resume_invocations=0",
+        ]
+        end = [
+            "end", "--leg", "copilot", "--repo", str(self.repo),
+            "--unit", "example", *metrics,
+        ]
+
+        missing = run(*end, "--transcript-file", str(self.repo / "absent.jsonl"))
+        self.assertEqual(missing.returncode, 1)
+        self.assertIn("not a readable file", missing.stderr)
+        self.assertEqual(recorded.read_bytes(), before)
+
+        empty = run(*end, "--transcript-file", "")
+        self.assertEqual(empty.returncode, 1)
+        self.assertIn("needs a nonempty path", empty.stderr)
+        self.assertEqual(recorded.read_bytes(), before)
+
+        completed = run(*end, "--transcript-file", str(transcript))
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        data = json.loads(recorded.read_text(encoding="utf-8"))
+        self.assertEqual(data["transcript"]["path"], str(transcript.resolve()))
+        self.assertEqual(data["transcript"]["searched"], "explicit --transcript-file")
+        self.assertIsNone(data["transcript"]["sha256"])
+
+
+class TestReportClaims(unittest.TestCase):
+    def test_plain_string_provenance_is_preserved(self):
+        claims = {
+            "origins": ["internal/mount.go", "docs/reference/mount.rst"],
+            "gaps": ["SDKcraft string input not confirmed"],
+            "gaps_note": "Scoped to workshop.yaml",
+        }
+        self.assertEqual(
+            dogen.report_claims(claims, "mount-values"),
+            (claims["origins"], claims["gaps"], claims["gaps_note"], None),
+        )
+        self.assertEqual(dogen.report_claims({}, "mount-values"), ([], [], "", None))
+
+    def test_malformed_or_misnamed_provenance_is_refused(self):
+        cases = (
+            ({"files_read": ["internal/mount.go"]}, "files_read"),
+            ({"origins": [{"path": "internal/mount.go", "commit": "edae26b"}]}, "origins"),
+            ({"gaps": [{"claim": "unsupported"}]}, "gaps"),
+            ({"origins": "internal/mount.go"}, "origins"),
+            ({"origins": None}, "origins"),
+            ({"gaps_note": {"reason": "unknown"}}, "gaps_note"),
+        )
+        for report, field in cases:
+            with self.subTest(field=field, report=report):
+                with self.assertRaises(dogen.Refusal) as caught:
+                    dogen.report_claims(report, "mount-values")
+                self.assertEqual(caught.exception.reason, "bad_draft_path")
+                self.assertIn(field, caught.exception.detail)
+
+
 class TestScaffold(unittest.TestCase):
     """The file itself: executable, 3.9 syntax, stdlib-only, no gate code yet."""
 
