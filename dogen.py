@@ -4835,19 +4835,38 @@ def read_report(spec, unit=""):
 
 def report_claims(report, unit=""):
     """``(origins, gaps, gaps_note, steps_seq)`` out of a ``--report`` payload."""
-    origins = []
-    for entry in report.get("origins") or []:
-        origins.append(_scalar(str(entry), "sources", unit))
-    check_count_cap("origins", origins, MAX_ORIGINS)
-    gaps = []
-    for entry in report.get("gaps") or []:
-        gaps.append(_scalar(str(entry), "notes", unit))
-    check_count_cap("gaps", gaps, MAX_ORIGINS)
-    gaps_note = report.get("gaps_note")
+    unknown = sorted(set(report) - {"origins", "gaps", "gaps_note", "steps_seq"})
+    if unknown:
+        raise Refusal(
+            "bad_draft_path",
+            unit=unit,
+            detail="the report has unknown key(s): %s" % ", ".join(unknown),
+            hint="use origins, gaps, gaps_note and steps_seq only",
+        )
+    claims = {}
+    for key, field in (("origins", "sources"), ("gaps", "notes")):
+        entries = report.get(key, [])
+        if not isinstance(entries, list) or any(
+            not isinstance(entry, str) for entry in entries
+        ):
+            raise Refusal(
+                "bad_draft_path",
+                unit=unit,
+                detail="the report's %s must be a list of plain strings" % key,
+                hint="list each %s entry as one string, not an object" % key,
+            )
+        claims[key] = [_scalar(entry, field, unit) for entry in entries]
+        check_count_cap(key, claims[key], MAX_ORIGINS)
+    gaps_note = report.get("gaps_note", "")
+    if not isinstance(gaps_note, str):
+        raise Refusal(
+            "bad_draft_path",
+            unit=unit,
+            detail="the report's gaps_note must be a string",
+            hint="write a plain-text gaps_note or omit it",
+        )
     if gaps_note:
-        gaps_note = validate_note(str(gaps_note), unit, "gaps_note")
-    else:
-        gaps_note = ""
+        gaps_note = validate_note(gaps_note, unit, "gaps_note")
     steps_seq = report.get("steps_seq")
     if steps_seq is not None and not _is_seq(steps_seq):
         raise Refusal(
@@ -4856,7 +4875,7 @@ def report_claims(report, unit=""):
             detail="the report's steps_seq is not an integer",
             hint="steps_seq names a steps-planned event's seq",
         )
-    return origins, gaps, gaps_note, steps_seq
+    return claims["origins"], claims["gaps"], gaps_note, steps_seq
 
 
 def step_resolves(event):

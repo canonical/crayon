@@ -29,7 +29,6 @@ OUT="${1:?usage: states.sh OUT.jsonl}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 case "$OUT" in /*) ;; *) OUT="$PWD/$OUT" ;; esac
 : >"$OUT"
-FIXTURE="$ROOT/validation/evals/fixtures/toyq"
 export DOGEN="$ROOT/dogen.py"
 # shellcheck source=../../../tests/lib.sh
 source "$ROOT/tests/lib.sh"
@@ -88,9 +87,27 @@ stage_context() {
 # base_bare : the toyq project with the skills installed, and no context yet.
 base_bare() {
     setup_repo
-    cp -R "$FIXTURE/." .
-    mkdir -p .agents/skills
-    cp -R "$ROOT"/skills/dogen-* .agents/skills/
+    python3 - "$ROOT" <<'PY'
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+source = Path(sys.argv[1])
+tracked = subprocess.check_output([
+    "git", "-C", str(source), "ls-files", "-z", "--",
+    "validation/evals/fixtures/toyq", "skills/dogen-*",
+])
+for name in tracked.split(b"\0"):
+    if not name:
+        continue
+    path = Path(os.fsdecode(name))
+    target = (Path(".agents") / path if path.parts[0] == "skills"
+              else Path(*path.parts[4:]))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source / path, target)
+PY
     printf '.dogen/staging/\n' >.gitignore
     git add -A
     git commit -q -m "toyq project, dogen skills installed"

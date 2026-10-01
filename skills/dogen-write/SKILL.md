@@ -360,9 +360,35 @@ multi-target unit, stage the directory so that it holds exactly the signed targe
 the tool refuses `bad_draft_path` (exit 2) for anything outside that directory or for
 a directory whose contents are not exactly the target set.
 
-Write a context report to `.dogen/staging/<id>/report.json` listing every file read
-(with its commit stamp or honestly empty) and any confidence gaps; an empty gaps list
-needs a one-line justification.
+Write a context report to `.dogen/staging/<id>/report.json` listing the repository
+files used as factual sources for the page and any confidence gaps; an empty
+gaps list needs a one-line justification. Skill instructions, staged evidence
+and generated context are tracked by their own skill digest, step records and
+context manifest rather than counted as baseline source files.
+
+The report is one JSON object with **only** these keys: `origins`, `gaps`,
+`gaps_note`, and, for an actionable unit, `steps_seq`. Both `origins` and `gaps`
+are arrays of plain strings, not objects. Each `origins` entry is a plain
+repository-relative file path, without a revision suffix: the validation kit
+uses the path to compare the file at the baseline commit with the working tree.
+Record the source revision in the unit's source notes or context provenance,
+not by appending it to the path. If a declared external source cannot be
+compared against a repository file, name its origin and revision in the
+unit/context record and disclose the coverage gap rather than treating it as
+a locally verified file.
+
+```json
+{
+  "origins": ["internal/interfaces/builtin/mount.go", "docs/reference/mount.rst"],
+  "gaps": [],
+  "gaps_note": "No unresolved claims after checking the implementation and tests."
+}
+```
+
+Do not use `files_read` instead of `origins`, or objects such as
+`{"path": "...", "commit": "..."}` as entries. `dogen draft` refuses
+misnamed keys and non-string entries instead of silently losing provenance.
+For an actionable unit, add `steps_seq` as the integer from `plan-steps`.
 
 These staging files are the ONLY files this skill writes. Never write to `docs/` —
 the tool owns that placement, and it places nothing until the record is on disk.

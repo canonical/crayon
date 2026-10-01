@@ -2149,6 +2149,41 @@ test_protocol_a_real_origins_digest_names_how_many_paths_it_covers() {
     cleanup
 }
 
+# A path with a stamp is still a string, but no file has that name. `runmeta.sh` digests
+# `absent` on both sides and the equal hashes used to make this check PASS without reading
+# the source. The report must contain plain repository-relative paths.
+test_protocol_stamped_or_missing_origins_never_pass_on_two_absent_digests() {
+    complete_run_file
+    patch_run_file '
+data["baseline"]["origins"] = ["notes/source-a.md @ baseline"]
+data["context"]["origins"] = data["baseline"]["origins"]
+data["baseline"]["origins_sha256"] = "a" * 64
+data["context"]["origins_sha256"] = "a" * 64
+'
+
+    protocol_output
+    assert_eq "context: matching absent-source digests cannot pass" "1" "$PROTOCOL_RC"
+    assert_contains "context: rejects the revision-stamped origin" \
+        "$PROTOCOL_OUT" "FLAG [context]"
+    assert_contains "context: identifies the missing source" \
+        "$PROTOCOL_OUT" "notes/source-a.md @ baseline"
+    assert_not_contains "context: no vacuous pass" "$PROTOCOL_OUT" "PASS [context]"
+    cleanup
+}
+
+test_protocol_absolute_origin_even_inside_repo_cannot_pass() {
+    complete_run_file
+    patch_run_file '
+data["baseline"]["origins"] = [__import__("os").getcwd() + "/notes/source-a.md"]
+data["context"]["origins"] = data["baseline"]["origins"]
+'
+
+    protocol_output
+    assert_eq "context: requires repo-relative origin paths" "1" "$PROTOCOL_RC"
+    assert_contains "context: absolute paths FLAG" "$PROTOCOL_OUT" "FLAG [context]"
+    cleanup
+}
+
 # --- checks 5 and 6: the leg file ---------------------------------------------------------------
 
 # The v1 `RESULTS.md` heading check, retargeted: `validation/legs/<leg>.md` is the v2.0 home of
