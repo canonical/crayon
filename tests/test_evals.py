@@ -829,6 +829,15 @@ class TestLaneBCases(unittest.TestCase):
         self.assertEqual(code, 0, "states.json drifted from the tool: run "
                          "python3 validation/evals/record_states.py and review the diff")
 
+    def test_untracked_fixture_files_do_not_change_recorded_states(self):
+        original_digest = sandbox.digest()
+        fixture = EVALS / "fixtures" / "toyq"
+        with tempfile.TemporaryDirectory(prefix="eval-untracked-", dir=str(fixture)) as stray:
+            (Path(stray) / "bytecode.pyc").write_bytes(b"local cache")
+            self.assertEqual(sandbox.digest(), original_digest)
+            self.assertEqual(record_states.dump(record_states.record()),
+                             record_states.STATES.read_text(encoding="utf-8"))
+
 
 class TestRosterAndRunner(unittest.TestCase):
     """E-05 — the roster's pins and roles, and where a run's results may land."""

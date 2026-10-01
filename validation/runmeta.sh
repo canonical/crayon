@@ -5,6 +5,7 @@
 #                                         [--baseline-ref <ref>] [--harness <name>]
 #                                         [--model <id>]
 #        bash validation/runmeta.sh end   --leg <leg> --repo <dir> --unit <id> [--unit <id>]…
+#                                         [--transcript-file <path>]
 #                                         --metric <key>=<value> … [--attribute <item>=<account>]…
 #
 # (run from anywhere; paths resolve from $0)
@@ -119,11 +120,13 @@ usage: runmeta.sh begin --leg <leg> --repo <dir> [--baseline-ref <ref>]
                         [--harness <name>] [--model <id>]
        runmeta.sh end   --leg <leg> --repo <dir> --unit <id> [--unit <id>]...
                         --metric <key>=<value> ... [--attribute <item>=<account>]...
+                        [--transcript-file <path>]
 
   begin  writes <repo>/validation/RUN-<leg>.json with the harness, model, tool, skills and
          baseline records plus the BEFORE Sphinx build.
   end    adds the AFTER Sphinx build, the D-08 origins digests, the transcript record and the
-         six rev8 3.2 metrics.
+         six rev8 3.2 metrics. Use --transcript-file when the harness has no
+         automatic transcript resolver (for example, Copilot CLI).
 USAGE
 }
 
@@ -158,6 +161,8 @@ MODEL=""
 UNITS=()
 METRICS=()
 ATTRIBUTES=()
+TRANSCRIPT_FILE=""
+TRANSCRIPT_FILE_GIVEN=0
 
 parse_args() {
     while [ "$#" -gt 0 ]; do
@@ -170,6 +175,7 @@ parse_args() {
             --unit)         [ "$#" -ge 2 ] || refuse "--unit needs a value"; UNITS+=("$2"); shift 2 ;;
             --metric)       [ "$#" -ge 2 ] || refuse "--metric needs a key=value"; METRICS+=("$2"); shift 2 ;;
             --attribute)    [ "$#" -ge 2 ] || refuse "--attribute needs an item=account"; ATTRIBUTES+=("$2"); shift 2 ;;
+            --transcript-file) [ "$#" -ge 2 ] && [ -n "$2" ] || refuse "--transcript-file needs a nonempty path"; TRANSCRIPT_FILE="$2"; TRANSCRIPT_FILE_GIVEN=1; shift 2 ;;
             *)              refuse "unknown argument: $1" ;;
         esac
     done
@@ -334,6 +340,15 @@ print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())
 # directory belonged to a harness that did not run. Now the RUN file records WHY nothing was
 # found.
 resolve_transcript() {
+    if [ -n "$TRANSCRIPT_FILE" ]; then
+        [ -f "$TRANSCRIPT_FILE" ] && [ -r "$TRANSCRIPT_FILE" ] ||
+            refuse "--transcript-file $TRANSCRIPT_FILE is not a readable file"
+        TRANSCRIPT_PATH=$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$TRANSCRIPT_FILE") ||
+            refuse "could not resolve --transcript-file $TRANSCRIPT_FILE"
+        TRANSCRIPT_DIR="explicit --transcript-file"
+        return 0
+    fi
+
     # The RUN file already records WHICH harness drove the leg, so the resolver honours it
     # rather than assuming one. `begin` is the authoring site for `harness`; reading it back
     # here keeps a single source of truth, and an `end` run against a RUN file written by a
@@ -424,6 +439,7 @@ print(best[1])
 
 do_begin() {
     parse_args "$@"
+    [ "$TRANSCRIPT_FILE_GIVEN" -eq 0 ] || refuse "--transcript-file is only valid with end"
     resolve_target
 
     # One RUN file per working tree is `dogen:7209-7243`'s constraint, not a convention: with

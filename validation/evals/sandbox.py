@@ -52,8 +52,11 @@ _LOCK = threading.Lock()
 
 def _inputs():
     paths = [RECORDER, REPO / "tests" / "lib.sh", REPO / "dogen.py"]
-    for root in (HERE / "fixtures" / "toyq", REPO / "skills"):
-        paths.extend(sorted(p for p in root.rglob("*") if p.is_file()))
+    tracked = subprocess.check_output([
+        "git", "-C", str(REPO), "ls-files", "-z", "--",
+        "validation/evals/fixtures/toyq", "skills/dogen-*",
+    ])
+    paths.extend(REPO / os.fsdecode(name) for name in tracked.split(b"\0") if name)
     return paths
 
 

@@ -33,6 +33,8 @@ real `dogen.py`, and records its output. `record_states.py` folds that output in
 therefore turns the gate red; lane B never replays stale bytes. A handful of refusals that
 cannot be reached without breaking a repository are written inline in their cases, using
 `dogen.py`'s own wording.
+The fixture copies tracked toyq and skill files from the working tree, not ignored or untracked
+files such as local Python bytecode, so the temporary Git commits are reproducible in CI.
 
 After the history, the model acts in a **real copy of the recorded state**. The recorder keeps a
 snapshot of its temp repository at each state, with the skills installed and the history's writes

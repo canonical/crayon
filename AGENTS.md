@@ -165,6 +165,7 @@ validation/                        ← the validation kit: the evidence apparatu
 ├── fixtures.sh                    ← V-01…V-04: four corruptions built from real verbs, and the
 │                                     oracle that catches each one
 ├── runmeta.sh                     ← records a leg's RUN metadata alongside its drafts
+├── dogfood-docpr-3002.md          ← local public-candidate dogfood findings and limits
 ├── rubric.md                      ← the scoring bar a leg's drafts are read against
 └── evals/                         ← the model evals: one neutral loop, many OpenRouter models;
     │                                 paid runs by hand only, never in the gate
