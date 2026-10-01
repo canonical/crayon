@@ -272,6 +272,7 @@ COVERAGE = [
 # ledger: the ledger is the artefact under audit, and a root taken from it would let whoever
 # rewrote the digests also choose which directory the oracle compares them against.
 DOCS_ROOT = "docs"
+UNIT_ID_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,63}")
 
 # The number of `audit` checks that run over ANY readable ledger, whatever it holds: oracle
 # check 1 (the chain recompute, which needs only bytes) and the `[verify]` arm (which needs only
@@ -1390,7 +1391,13 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
         print(f"NOTE [io] root is not a directory: {root}; NOTHING was checked")
         return 2
 
-    ledger_path = root / ".dogen" / "units" / unit_id / "ledger.jsonl"
+    if not UNIT_ID_RE.fullmatch(unit_id):
+        _flag(False, "io", f"invalid unit id {unit_id!r}; expected {UNIT_ID_RE.pattern}")
+        return 1
+    ledger_path = _resolved_under(root, f".dogen/units/{unit_id}/ledger.jsonl")
+    if ledger_path is None:
+        _flag(False, "io", f"ledger path for unit {unit_id!r} leaves audit root {root}")
+        return 1
     if not ledger_path.is_file():
         # WR-03 posture, now with a non-zero exit (D-04): a missing unit FLAGs by name and
         # returns cleanly rather than raising a traceback at the reader.

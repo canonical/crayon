@@ -107,6 +107,13 @@ unsteered redraft and an unresolved pending request, each reached from a valid u
 real verbs and each caught by `validation/score.py audit`, an oracle that shares no code with the
 tool. The kit is evidence apparatus, not product code; it reports as its own CI job.
 
+`validation/audit-docpr-3005.md` reconstructs four public dogfood ledgers and separates
+enforced transition gates from audit-only findings and self-reported provenance. Run
+`score.py audit <unit> --root <checkout>` only against a trusted checkout path: the scorer
+confines ledger reads to that root, but local Git history, model names and reviewer identity
+are not independently authenticated. A `FLAG [report]` for declared gaps or a source changed
+since signoff is informational; inspect the gating checks and exit code before claiming a pass.
+
 **`validation/runmeta.sh`** records a dogfood leg's before/after Sphinx builds and provenance
 in the candidate repository. Before an external harness reads a candidate, check its repository
 visibility without authentication: an authenticated clone is not evidence that its contents are
