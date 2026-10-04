@@ -5115,6 +5115,100 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
     #: is not one a developer runs as part of the fourteen.
     CI_EXTRA = {"shellcheck -S warning install.sh tests/*.sh validation/*.sh"}
 
+    #: One ``run:`` key of a workflow step, in EITHER key order. ``- run: …``
+    #: is the list-marker form; ``run: …`` on its own is what a NAMED step
+    #: writes, where ``name:`` is the step mapping's first key and ``run:`` is
+    #: a plain key on the line below it. ``scalar`` is the block indicator when
+    #: the body is written as ``run: |``.
+    CI_RUN_RE = re.compile(
+        r"^(?P<lead>[ \t]*(?:-[ \t]+)?)run:[ \t]*"
+        r"(?P<scalar>[|>][-+]?[0-9]*)?[ \t]*(?P<inline>.*?)[ \t]*$"
+    )
+
+    @classmethod
+    def _run_bodies(cls, workflow):
+        r"""Every ``run:`` body in ``workflow``, whatever key order its step uses.
+
+        18 CR-03 — this was ``^\s*- run:\s*(.+?)\s*$``, which requires ``run:``
+        to be the FIRST key of the step's mapping. The commonest GitHub Actions
+        idiom is a named step, which puts ``name:`` first and ``run:`` on the
+        following line, where that pattern cannot reach it. The damaging half is
+        the ``unpinned`` direction: a job added as a named step contributed
+        nothing to the parsed set, so the difference stayed empty and the mirror
+        stayed green while CI ran an undeclared command on a runner that had
+        just checked the repository out. That is fail-OPEN, and it is exactly
+        the drift this test's docstring calls "the direction nobody looks".
+
+        Both forms are parsed here, and so are block scalars: the more-indented
+        lines under ``run: |`` are joined, so a single-command block matches its
+        gate command and a multi-command one does not and is reported as
+        unpinned. Failing closed is the only safe direction for a body nobody
+        declared.
+
+        A bare ``run:`` with no value — ``defaults:``'s ``run:`` mapping is the
+        one in this workflow's vocabulary — carries no body and contributes
+        none: it is a mapping key, not a command.
+        """
+        bodies = set()
+        lines = workflow.split("\n")
+        index = 0
+        while index < len(lines):
+            match = cls.CI_RUN_RE.match(lines[index])
+            index += 1
+            if match is None:
+                continue
+            if match.group("scalar"):
+                column = len(match.group("lead"))
+                block = []
+                while index < len(lines):
+                    line = lines[index]
+                    if line.strip() and len(line) - len(line.lstrip()) <= column:
+                        break
+                    block.append(line.strip())
+                    index += 1
+                body = "\n".join(part for part in block if part).strip()
+            else:
+                body = match.group("inline").strip()
+            if body:
+                bodies.add(body)
+        return bodies
+
+    def test_the_ci_mirror_reads_a_run_that_is_not_a_steps_first_key(self):
+        """18 CR-03 — the parser's own fixture, in the forms ci.yml may grow.
+
+        ``ci.yml`` happens to write every step as ``- run:`` today, so the real
+        workflow cannot distinguish a parser that handles one form from one that
+        handles three. This states which forms are covered instead of leaving
+        the next reader to infer it from a file that exercises one.
+        """
+        workflow = (
+            "defaults:\n"
+            "  run:\n"
+            "    shell: bash\n"
+            "jobs:\n"
+            "  publish:\n"
+            "    steps:\n"
+            "      - name: Publish the artefact\n"
+            "        run: bash scripts/publish.sh\n"
+            "      - run: bash scripts/other.sh\n"
+            "      - name: A block-scalar body\n"
+            "        run: |\n"
+            "          bash scripts/block.sh\n"
+            "      - uses: actions/checkout@v5\n"
+            "        with:\n"
+            "          persist-credentials: false\n"
+        )
+        self.assertEqual(
+            self._run_bodies(workflow),
+            {
+                "bash scripts/publish.sh",
+                "bash scripts/other.sh",
+                "bash scripts/block.sh",
+            },
+            "the named-step form is the one CR-03 found invisible; `defaults:`'s "
+            "`run:` mapping carries no body and must not be read as one",
+        )
+
     def test_ci_runs_every_gate_command(self):
         """CR-01 — `ci.yml` is a hand copy of the gate unless something pins it.
 
@@ -5135,7 +5229,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(
             encoding="utf-8"
         )
-        bodies = set(re.findall(r"^\s*- run:\s*(.+?)\s*$", workflow, re.MULTILINE))
+        bodies = self._run_bodies(workflow)
         # Vacuous-pass guard: a parse that finds zero bodies agrees with every
         # gate command by construction, and would read as the loudest possible
         # green. Assert the scan still matches before either comparison.
@@ -5144,6 +5238,29 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
             "parsed 0 `run:` bodies out of .github/workflows/ci.yml; the "
             "workflow shape changed and this test is asserting against an "
             "empty set",
+        )
+        # 18 WR-01: both subtracted sets are asserted against their SOURCES
+        # before either difference is taken. An exemption naming a command the
+        # gate no longer declares is inert, and an extra naming a body ci.yml
+        # no longer carries hides nothing: in both cases the set goes on being
+        # subtracted, the mirror stays green, and the thing that disappeared
+        # — the exemption, or the shellcheck job itself — is reported by
+        # nothing. Neither direction of the comparison below can catch it,
+        # because a command that is in neither the gate nor the workflow is in
+        # neither difference.
+        self.assertLessEqual(
+            self.CI_EXEMPT,
+            set(self.GATE_COMMANDS),
+            "CI_EXEMPT names a command the gate no longer declares: %s; delete "
+            "the exemption with the command it exempted"
+            % sorted(self.CI_EXEMPT - set(self.GATE_COMMANDS)),
+        )
+        self.assertLessEqual(
+            self.CI_EXTRA,
+            bodies,
+            "CI_EXTRA names a `run:` body .github/workflows/ci.yml no longer "
+            "carries: %s; CI has stopped running it and nothing else says so"
+            % sorted(self.CI_EXTRA - bodies),
         )
         missing = set(self.GATE_COMMANDS) - bodies - self.CI_EXEMPT
         self.assertEqual(
