@@ -5322,7 +5322,217 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
     SYNTHETIC_MANGLED_HOMES = (
         b"-home-redacted-",
         b"-home-user-example-com-",
+        # 18 WR-02 — `validation/runmeta.sh`'s worked example of the bug that
+        # proved the harness mangles EVERY character outside [A-Za-z0-9]: the
+        # half-mapped form a `/`-only-and-`.`-only rewrite produces, named
+        # there beside the correct one above. It is documented illustration,
+        # not a machine's path. It passed this scan before the class was
+        # aligned with the slash form's, by not matching rather than by being
+        # allow-listed — which is the whole of what WR-02 reported.
+        b"-home-user@example-com-",
     )
+
+    #: Both patterns are built as an ALTERNATION so the literal prefix they
+    #: hunt for never appears in this file. A scanner that flags its own source
+    #: teaches the next reader to widen the allow-list, which is the one move
+    #: that turns this gate into decoration.
+    #:
+    #: 18 CR-02 — the slash form used to REQUIRE a trailing separator, which
+    #: made a home path that is not followed by a further component invisible:
+    #: a `cd` line, an `echo $HOME`, an assignment at end of line, a JSON value
+    #: that IS the home directory. That is the single most common shape of the
+    #: leak this scan exists to catch, and it passed green. The terminator is
+    #: gone: the component class is greedy, so a match ends where the component
+    #: ends, whatever follows it — a separator, a quote, a comma or nothing.
+    #: 18 WR-02 — the separator is a class, not a literal ``/``: Windows
+    #: spells the same leak ``C:\\Users\\<name>\\`` and no form of it was
+    #: covered. The component class is unchanged; only what may delimit it is.
+    HOME_RE = re.compile(rb"[/\\](?:home|Users)[/\\][A-Za-z0-9._@%+-]+")
+    #: 18 WR-09 — the mangled token is ANCHORED at its leading separator. A
+    #: real one is a whole path component whose leading separator was rewritten
+    #: to a hyphen, so it never begins in the middle of a word; ordinary
+    #: hyphenated prose in a tracked markdown file does. Unanchored, a slug or
+    #: a phrase joining a plural to what follows it turned the whole unit suite
+    #: red with a message telling the reader the shipped tree "carries a home
+    #: path naming a real user" — and a gate that goes red on innocent prose
+    #: with a message that misidentifies what it found is a gate the next
+    #: reader silences by widening the allow-list, which is the one move the
+    #: allow-list's own comment warns against.
+    MANGLED_RE = re.compile(
+        rb"(?<![A-Za-z0-9])-(?:home|[Uu]sers)-[A-Za-z0-9._@%+]+"
+        rb"(?:-[A-Za-z0-9._@%+]+)*-"
+    )
+
+    @classmethod
+    def _home_leaks(cls, blob):
+        """Every home path in ``blob`` that is not an allow-listed synthetic.
+
+        One scanner, reached from the scan over the shipped tree below and from
+        that scan's NEGATIVE arm. A scan that only ever runs over a clean tree
+        cannot tell "found nothing" from "matches nothing", and 18 CR-02 was
+        exactly the second of those: the tree was green against a pattern that
+        could not see the commonest form of the leak.
+
+        The allow-list is compared on the home COMPONENT rather than on the
+        exact matched bytes. :data:`SYNTHETIC_HOMES` spells its entries with a
+        trailing separator because a prefix is what they document, and a match
+        now ends at the end of the component, so the separator is stripped for
+        the comparison rather than required of the match.
+        """
+        allowed = tuple(
+            entry.rstrip("/").encode("utf-8") for entry in cls.SYNTHETIC_HOMES
+        )
+        leaks = []
+        for match in cls.HOME_RE.findall(blob):
+            # 18 WR-02: a Windows-spelled synthetic is the same synthetic. The
+            # allow-list is written in one separator and compared in one.
+            if match.replace(b"\\", b"/") not in allowed:
+                leaks.append(match)
+        for match in cls.MANGLED_RE.findall(blob):
+            if not match.startswith(cls.SYNTHETIC_MANGLED_HOMES):
+                leaks.append(match)
+        return leaks
+
+    @staticmethod
+    def _slash_specimen(user, separator=b"/", root=b"home"):
+        """A slash-form specimen, assembled from fragments at call time.
+
+        Spelled out of pieces for the same reason the patterns above are
+        alternations: a literal specimen written into this file would be found
+        by the scan over the shipped tree, and the suite would flag its own
+        source. No fragment matches anything on its own.
+
+        ``separator`` and ``root`` are arguments because the same leak has a
+        Windows spelling — ``\\Users\\<name>`` — and 18 WR-02 found no form of
+        it covered.
+        """
+        return separator + root + separator + user
+
+    @staticmethod
+    def _mangled_specimen(user, lead=b""):
+        """A mangled-home specimen, assembled from fragments at call time.
+
+        Same reason as :meth:`_slash_specimen`: a literal one written into this
+        file would be found by the scan over the shipped tree. ``lead`` is what
+        precedes the token — a path separator for a real one, a word character
+        for the prose shape that must NOT be read as one.
+        """
+        separator = b"-"
+        return lead + separator + b"home" + separator + user + separator
+
+    def test_the_mangled_scan_reads_a_component_and_not_a_hyphenated_word(self):
+        """18 WR-09 — both directions of the anchor, on one pattern.
+
+        A real mangled home is a whole path component: the separator that
+        preceded it was rewritten to a hyphen along with every other one, so it
+        follows a path separator or starts the token. Ordinary prose that joins
+        a word to a plural does not, and reporting it as "a home path naming a
+        real user" is worse than reporting nothing — it is a red the next
+        reader clears by widening the allow-list.
+        """
+        user = b"jane-doe"
+        for lead in (b"", b"/", b".claude/projects/"):
+            with self.subTest(arm="a real component is reported", lead=lead):
+                self.assertTrue(
+                    self._home_leaks(self._mangled_specimen(user, lead)),
+                    "a mangled home following %r is invisible to the scan"
+                    % lead,
+                )
+        prose = (
+            b"for non" + b"-" + b"users" + b"-of-the-tool-and-back",
+            b"the power" + b"-" + b"users" + b"-guide-index-page",
+            b"working-from" + self._mangled_specimen(b"office"),
+        )
+        for specimen in prose:
+            with self.subTest(arm="hyphenated prose is not", specimen=specimen):
+                self.assertEqual(
+                    self._home_leaks(specimen),
+                    [],
+                    "%r is prose and the scan reports it as a real user's home "
+                    "path" % specimen,
+                )
+
+    def test_the_home_path_scan_catches_what_it_claims_to(self):
+        """18 CR-02 — the negative arm the scan below never had.
+
+        `CHANGELOG.md` states that a test over the tree that actually ships
+        "fails if either encoding returns". That was false while the slash form
+        required a trailing separator: it failed only if the returning leak
+        happened to carry a further path component. Every form below is one
+        this project demonstrably produced — the session records the release
+        later removed carried an assignment-shaped one — and each must be
+        reported.
+
+        The other direction is asserted in the same test, so this cannot pass
+        by flagging everything: the allow-listed synthetic prefixes stay clean
+        in the same four forms.
+        """
+        user = b"jane.doe@corp.com"
+        forms = (
+            ("bare, end of line", b"cd %s\n"),
+            ("bare, end of file", b"export HOME=%s"),
+            ("quoted in JSON", b'{"path": "%s"}'),
+            ("with a trailing component", b"%s/Documents/x"),
+        )
+        for label, shape in forms:
+            with self.subTest(form=label, arm="leak is reported"):
+                self.assertTrue(
+                    self._home_leaks(shape % self._slash_specimen(user)),
+                    "the %s form of a home path is invisible to the scan; the "
+                    "gate is green by not looking" % label,
+                )
+            for entry in self.SYNTHETIC_HOMES:
+                with self.subTest(form=label, arm="synthetic stays clean",
+                                  synthetic=entry):
+                    self.assertEqual(
+                        self._home_leaks(
+                            shape % entry.rstrip("/").encode("utf-8")
+                        ),
+                        [],
+                        "%s is in SYNTHETIC_HOMES and the scan flags it" % entry,
+                    )
+
+    def test_the_scan_covers_the_windows_and_the_punctuated_forms(self):
+        """18 WR-02 — the three shapes neither pattern could see.
+
+        The mangled class was ``[A-Za-z0-9]`` where the slash form's is
+        ``[A-Za-z0-9._@%+-]``, so a harness that rewrites only the separators,
+        or a username carrying an underscore or an ``@``, walked straight
+        through it; and ``C:\\Users\\<name>\\`` was not covered in any form, in
+        either pattern. Each is asserted here rather than left to be believed
+        of a tree that happens not to contain one.
+
+        The other direction rides along: a synthetic prefix spelled with the
+        other separator is the same synthetic, and stays clean.
+        """
+        windows = self._slash_specimen(b"jane", separator=b"\\", root=b"Users")
+        cases = (
+            ("a Windows home", b"cd " + windows + b"\\Documents"),
+            ("a Windows home, bare", windows),
+            ("an underscore in the mangled form",
+             self._mangled_specimen(b"jane_doe", b"/")),
+            ("an @ in the mangled form",
+             self._mangled_specimen(b"jane@corp-com", b"/")),
+        )
+        for label, specimen in cases:
+            with self.subTest(form=label):
+                self.assertTrue(
+                    self._home_leaks(specimen),
+                    "%s is invisible to the scan; the gate is green by not "
+                    "looking" % label,
+                )
+        for entry in self.SYNTHETIC_HOMES:
+            component = entry.rstrip("/").rsplit("/", 1)[-1].encode("utf-8")
+            with self.subTest(arm="the same synthetic, other separator",
+                              synthetic=entry):
+                self.assertEqual(
+                    self._home_leaks(
+                        self._slash_specimen(component, separator=b"\\")
+                    ),
+                    [],
+                    "%s is in SYNTHETIC_HOMES and its Windows spelling is "
+                    "flagged" % entry,
+                )
 
     def test_the_shipped_tree_carries_no_real_home_path(self):
         """WR-03 / T-18-70 — the tree that ships had no anonymization gate.
@@ -5355,25 +5565,13 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
             "enumerated 0 files; the scan has nothing to read and cannot be "
             "green" % ROOT,
         )
-        # Both patterns are built as an ALTERNATION so the literal prefix they
-        # hunt for never appears in this file. A scanner that flags its own
-        # source teaches the next reader to widen the allow-list, which is the
-        # one move that turns this gate into decoration.
-        home = re.compile(rb"/(?:home|Users)/[A-Za-z0-9._@%+-]+/")
-        mangled = re.compile(rb"-(?:home|[Uu]sers)-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*-")
-        allowed = tuple(entry.encode("utf-8") for entry in self.SYNTHETIC_HOMES)
         findings = []
         for name in tracked:
             path = ROOT / name.decode("utf-8", "surrogateescape")
             if not path.is_file():
                 continue  # a submodule or a broken symlink has no bytes here
-            blob = path.read_bytes()
-            for match in home.findall(blob):
-                if match not in allowed:
-                    findings.append((name, match))
-            for match in mangled.findall(blob):
-                if not match.startswith(self.SYNTHETIC_MANGLED_HOMES):
-                    findings.append((name, match))
+            for match in self._home_leaks(path.read_bytes()):
+                findings.append((name, match))
         self.assertEqual(
             findings,
             [],
