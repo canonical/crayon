@@ -219,9 +219,10 @@ release series, the release plan is the final check that every entry below is tr
   run identifier otherwise, and cancels in-progress runs only for pull requests. A cancelled run
   reports as cancelled rather than as a failure, so the previous rule left no red behind.
 - **Every `actions/checkout` step now sets `persist-credentials: false`.** All eight jobs check out
-  the repository and three of them execute repository content — the install smoke, the docs checker
-  and the validation fixtures — so leaving a credential in the runner's git config put a token
-  within reach of code the job runs by design.
+  the repository and seven of them execute branch-authored code — only `shellcheck` reads without
+  executing anything — so leaving a credential in the runner's git config put a token within reach
+  of code the job runs by design. The workflow states the rule it follows rather than a count:
+  every `run:` step after a checkout executes code authored in the branch under test.
 - **The release record was checked by nothing, which is how it came to omit what shipped.**
   `tests/check_docs.py` gained a sixth observable that reads `CHANGELOG.md`'s content rather than
   only its links: it locates the released section, refuses a changelog with no released heading at
@@ -232,10 +233,11 @@ release series, the release plan is the final check that every entry below is tr
 - **A sha256 was stated as though a reader could check it.** The transcript-digest sentence above
   is restated: the digest is an author-side tamper-evidence commitment, and nothing in this release
   lets a third party verify it. The claim is now what it was always able to support.
-- **The shipped tree carried the author's real home directory in 91 places** — in prose, in quoted
-  Sphinx error text, in diagnostics blobs and in the RUN files' transcript paths — across five
-  files. All 91 are redacted, in both encodings the paths appeared in, and a test over the tree
-  that actually ships now fails if either encoding returns. The anonymization gate that existed
+- **The shipped tree carried the author's real home directory in 90 places** — 86 in the slash
+  form and 4 in the harness-mangled form: in prose, in quoted Sphinx error text, in diagnostics
+  blobs and in the RUN files' transcript paths — across five files. All 90 are redacted, in both
+  encodings the paths appeared in, and a test over the tree that actually ships now fails if
+  either encoding returns. The anonymization gate that existed
   before this covered only the planning tree, which does not ship.
 
 ### Removed
