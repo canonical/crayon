@@ -89,11 +89,13 @@ skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copi
 
 ## Topic index
 
-- **Using**: [[install]] the installer, every choice . [[context]] the five context files, who
-  produces them, how the tool records them . [[upgrade]] tool, skills, records across releases . [[compatibility]] contract number and min_tool . [[hooks]] what a
-  formatting hook leads to
-- **Contract**: [[contract]] the normative specification, frozen . [[architecture]] the shape,
-  the non-negotiables, the constraints . [[conventions]] markup, ledger, commit seam, documents
+- **Using**: [[contents]] the reader's index of every document . [[install]] by hand or with
+  the installer, every choice, uninstall . [[context]] the five context files, who produces
+  them, how the tool records them . [[upgrade]] tool, skills, records across releases .
+  [[compatibility]] contract number and min_tool . [[hooks]] what a formatting hook leads to
+- **Contract**: [[contract]] the normative specification, frozen . [[internals]] the glossary,
+  the verb and exit-code tables, branches and the record . [[architecture]] the shape, the
+  non-negotiables, the constraints . [[conventions]] markup, ledger, commit seam, documents
 - **Developing**: [[development]] gate, suites, checkers, what pins what, driving the verbs by
   hand . [[shellcheck]] the pinned analyzer and the version rule . [[evals]] the model evals:
   lanes, the jail, reading results
@@ -104,21 +106,24 @@ skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copi
 dogen.py                           ← the gate: one stdlib-only Python file (contract-v1),
                                      installed on PATH as `dogen`
 install.sh                         ← the interactive installer; --yes takes every default,
-                                     --verify-only checks an existing install
-README.md                          ← the reader's entry point: quickstart, usage, branch
-                                     practice, glossary; carries the marked VERBS and
-                                     REASONS regions
+                                     --verify-only checks an existing install; ends by
+                                     printing the uninstall commands for the paths it used
+README.md                          ← the reader's entry point: what dogen is, install, use;
+                                     names skills only, never a `dogen` command
 AGENTS.md                          ← this file: the agent guide and the wiki's root
 CHANGELOG.md                       ← the release record
 LICENSE                            ← LGPL-3.0-only, the tool
 .github/workflows/ci.yml           ← the CI graph; each job body is a literal local command
 
 docs/                              ← the wiki: flat, one page per slug, bracket-addressed
+├── contents.md                    ← the reader's index of every document, in path links
+├── internals.md                   ← under the hood: glossary, verbs, exit codes, branches;
+│                                     carries the marked VERBS and REASONS regions
 ├── contract.md                    ← NORMATIVE. Frozen at tag `contract-v1`
 ├── architecture.md                ← the shape, the non-negotiables, the constraints
 ├── conventions.md                 ← markup, ledger, commit seam, documents, shell and Python
-├── install.md                     ← the install guide; carries the marked INSTALL region
-│                                     tests/install_smoke.sh executes
+├── install.md                     ← the install guide, manual first; carries the marked
+│                                     INSTALL region tests/install_smoke.sh executes
 ├── compatibility.md               ← the contract number and min_tool; carries the marked
 │                                     COMPAT region
 ├── hooks.md                       ← what a formatting hook on a target page leads to

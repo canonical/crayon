@@ -147,13 +147,14 @@ kit to is everything that needs no model:
 
 ## The checkers and lints
 
-**`tests/check_docs.py`** — the docs-accuracy checker. It compares observables, never prose:
-the `VERBS` region in `README.md` against `dogen --help`'s subcommand list; the compact
-`REASONS` table in `README.md` and the reason table in `docs/contract.md` §5.7 against the
-tool's `REASONS` dict, name and exit code; the `COMPAT` region (wherever in the documented set it
-sits, exactly once) and contract §5.10 against the two numbers the tool reports; every in-repo
-link and anchor across the documented set; the changelog's topmost release heading, which must
-be dated and carry no placeholder. It calls `check_traces.py` itself.
+**`tests/check_docs.py`** — the docs-accuracy checker. It compares observables, never judges
+prose: the `VERBS` region (in `docs/internals.md`, exactly once in the documented set) against
+`dogen --help`'s subcommand list; the compact `REASONS` table (likewise) and the reason table in
+`docs/contract.md` §5.7 against the tool's `REASONS` dict, name and exit code; the `COMPAT`
+region (exactly once) and contract §5.10 against the two numbers the tool reports; every
+in-repo link and anchor across the documented set; no `dogen <verb>` in the reader-facing
+documents outside a `## Under the hood` section; the changelog's topmost release heading, which
+must be dated and carry no placeholder. It calls `check_traces.py` itself.
 
 **`tests/check_traces.py`** — every row of the contract's trace table and every Mechanisms row
 that names a suite file must have a test whose function name carries the row's id. It says a
@@ -189,10 +190,12 @@ the local guard are the same code.
 | The routing table | each skill's `references/routing.md` | `test_skill_text.py` |
 | The three stance references | `dogen-fetch`'s copies of `dogen-onboard`'s | `test_skill_text.py` |
 | The five context artefact names | `docs/context.md`, the plan and onboard skills | the unit suite |
-| `README.md`'s verb rows | `dogen --help` | `check_docs.py` |
+| The verb rows in `docs/internals.md` | `dogen --help` | `check_docs.py` |
+| Reader-facing pages name skills, not tool commands | `dogen --help` | `check_docs.py` |
 | The two reason tables | `dogen.REASONS` | `check_docs.py` and the unit suite |
 | The compatibility numbers | `dogen version --json` | `check_docs.py`, `skill_lint.py`, `install.sh` |
-| The install region | an install that reaches a page | `install_smoke.sh` |
+| The install region | an install that reaches a page, then the uninstall it prints | `install_smoke.sh` |
+| The manual install lines | `mkdir -p` and `cp -r` name one directory | `test_skill_text.py` |
 | The trace table | test function names | `check_traces.py` |
 
 When one side moves, the other goes red until it catches up. That is the intended failure mode;
@@ -239,8 +242,8 @@ with `unsteered`. Every refusal is one JSON line with `error`, `unit`, `detail`,
 
 ## Changing the documented surface
 
-- A new verb or reason: change `dogen`, then the contract, then `README.md`'s region and the
-  routing table in `skills/README.md`, then re-copy the routing mirrors. `check_docs.py` and
+- A new verb or reason: change `dogen`, then the contract, then the region in
+  `docs/internals.md` and the routing table in `skills/README.md`, then re-copy the routing mirrors. `check_docs.py` and
   `test_skill_text.py` name whichever side is behind.
 - A new file under `docs/`, `scripts/`, `tests/` or `validation/`: list it in `AGENTS.md`'s tree
   block, or name it in the unit suite's `UNSHIPPED_PATHS` if it is deliberately not released.

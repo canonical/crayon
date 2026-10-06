@@ -150,7 +150,7 @@ def _region(name, body):
 
 
 def _compact_reason_table(reason_rows):
-    """README's one-table shape: a row per exit code, its reasons in the last cell.
+    """The compact one-table shape: a row per exit code, its reasons in the last cell.
 
     Built from the same ``(`name`, code)`` tuples the contract-side table takes,
     so a case mutates one tuple and both shapes follow.
@@ -173,6 +173,9 @@ def build_tree(
     reason_rows=None,
     compat=None,
     compat_in=("docs/compatibility.md",),
+    surface_in=("docs/internals.md",),
+    readme_extra="",
+    context_text="# Context\n",
     links=DEFAULT_LINKS,
     contract_reason_rows=None,
     contract_compat=None,
@@ -210,15 +213,27 @@ def build_tree(
         ("Number", "Value"),
         (("`contract`", "`%s`" % compat[0]), ("`min_tool`", "`%s`" % compat[1])),
     )
-    readme = [
-        "# Fixture\n",
-        _region("VERBS", verbs_body),
-        _region("REASONS", _compact_reason_table(reason_rows)),
-    ]
+    surface = _region("VERBS", verbs_body) + "\n" + _region(
+        "REASONS", _compact_reason_table(reason_rows)
+    )
+    readme = ["# Fixture\n"]
+    if readme_extra:
+        readme.append(readme_extra)
     readme.append(
         "".join("See [%s](%s).\n" % (text, target) for text, target in links)
     )
+    if "README.md" in surface_in:
+        readme.append(surface)
     (root / "README.md").write_text("\n".join(readme), encoding="utf-8")
+    # The VERBS and REASONS regions have exactly one reader-facing home, like
+    # COMPAT. `surface_in` names the fixture document(s) that carry both: one by
+    # default, none or two for the vacuous and the two-homes arms.
+    for relative in surface_in:
+        if relative == "README.md":
+            continue
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# Under the hood\n\n" + surface, encoding="utf-8")
     # The COMPAT region has exactly one reader-facing home. `compat_in` names
     # the fixture document(s) that carry it: one by default, none or two for
     # the cases that exercise the vacuous and the two-homes arms.
@@ -271,7 +286,7 @@ def build_tree(
         # `compat_in` may have written this one already, as a second carrier.
         (root / "docs" / "upgrade.md").write_text("# Upgrade\n", encoding="utf-8")
     (root / "skills" / "README.md").write_text("# Skills\n", encoding="utf-8")
-    (root / "docs" / "context.md").write_text("# Context\n", encoding="utf-8")
+    (root / "docs" / "context.md").write_text(context_text, encoding="utf-8")
     for skill in ("dogen-fetch", "dogen-onboard", "dogen-plan", "dogen-review", "dogen-write"):
         (root / "skills" / skill).mkdir(parents=True, exist_ok=True)
         (root / "skills" / skill / "SKILL.md").write_text(
@@ -361,12 +376,36 @@ class TestVerbs(CheckDocsCase):
         self.assertEqual(code, 2, output)
         self.assertIn("VERBS:BEGIN", output)
         self.assertIn("VERBS:END", output)
+        self.assertIn("docs/internals.md", output)
+
+    def test_verbs_and_reasons_regions_in_two_documents_are_violations(self):
+        """One reader-facing home each: a second copy is drift, not redundancy."""
+        code, output = self.run_checker(
+            self.tree(surface_in=("docs/internals.md", "README.md"))
+        )
+        self.assertEqual(code, 1, output)
+        self.assertIn("VERBS:BEGIN", output)
+        self.assertIn("REASONS:BEGIN", output)
+        self.assertIn("2 documents", output)
+        self.assertIn("README.md", output)
+
+    def test_no_verbs_or_reasons_region_anywhere_is_a_two(self):
+        code, output = self.run_checker(self.tree(surface_in=()))
+        self.assertEqual(code, 2, output)
+        self.assertIn("VERBS:BEGIN", output)
+        self.assertIn("REASONS:BEGIN", output)
+
+    def test_the_regions_are_found_wherever_their_one_home_is(self):
+        """The home is located by its markers, never by a hard-coded path."""
+        code, output = self.run_checker(self.tree(surface_in=("README.md",)))
+        self.assertEqual(code, 0, output)
+        self.assertIn("reasons (README.md)", output)
 
 
 class TestReasons(CheckDocsCase):
-    """Name and exit code, on both the README side and the contract side."""
+    """Name and exit code, on both the compact side and the contract side."""
 
-    def test_a_wrong_exit_code_in_the_readme_names_both_codes(self):
+    def test_a_wrong_exit_code_in_the_compact_table_names_both_codes(self):
         rows = [("`alpha_gate`", "1"), ("`beta_bad`", "4"), ("`gamma_busy`", "5")]
         code, output = self.run_checker(self.tree(reason_rows=rows))
         self.assertEqual(code, 1, output)
@@ -387,19 +426,19 @@ class TestReasons(CheckDocsCase):
 
     def test_a_reason_absent_from_every_compact_cell_is_a_violation(self):
         """The compact table lists reasons inside a cell, so a dropped name is
-        a missing row on the README side and must be reported as one."""
+        a missing row on the compact side and must be reported as one."""
         rows = [("`alpha_gate`", "1"), ("`beta_bad`", "2")]
         code, output = self.run_checker(self.tree(reason_rows=rows))
         self.assertEqual(code, 1, output)
         self.assertIn("gamma_busy", output)
-        self.assertIn("README.md", output)
+        self.assertIn("docs/internals.md", output)
 
     def test_the_compact_table_is_read_by_exit_code_not_by_row_order(self):
         """The same tuples in another order build the same table and pass."""
         rows = [("`gamma_busy`", "5"), ("`beta_bad`", "2"), ("`alpha_gate`", "1")]
         code, output = self.run_checker(self.tree(reason_rows=rows))
         self.assertEqual(code, 0, output)
-        self.assertIn("reasons (README.md) (3 rows)", output)
+        self.assertIn("reasons (docs/internals.md) (3 rows)", output)
 
 
 class TestCompatibility(CheckDocsCase):
@@ -467,6 +506,46 @@ class TestLinks(CheckDocsCase):
         code, output = self.run_checker(self.tree(links=()))
         self.assertEqual(code, 2, output)
         self.assertIn("links", output)
+
+
+class TestSkillsFirst(CheckDocsCase):
+    """Reader-facing documents name skills; the tool's commands live under the hood."""
+
+    def test_a_tool_command_in_the_readme_is_a_violation_naming_its_line(self):
+        code, output = self.run_checker(
+            self.tree(readme_extra="Then run `dogen beta x` to record it.\n")
+        )
+        self.assertEqual(code, 1, output)
+        self.assertIn("skills-first", output)
+        self.assertIn("dogen beta", output)
+        self.assertIn("README.md:3", output)
+
+    def test_a_tool_command_under_the_hood_is_allowed(self):
+        text = (
+            "# Context\n\nRun the skill.\n\n## Under the hood\n\n"
+            "The skill runs `dogen gamma`.\n\n### Detail\n\n`dogen alpha --json`\n"
+        )
+        code, output = self.run_checker(self.tree(context_text=text))
+        self.assertEqual(code, 0, output)
+        self.assertIn("skills-first", output)
+
+    def test_a_section_after_under_the_hood_is_reader_facing_again(self):
+        text = (
+            "# Context\n\n## Under the hood\n\n`dogen gamma`\n\n"
+            "## Next\n\nRun `dogen alpha`.\n"
+        )
+        code, output = self.run_checker(self.tree(context_text=text))
+        self.assertEqual(code, 1, output)
+        self.assertIn("dogen alpha", output)
+        self.assertIn("docs/context.md:9", output)
+        self.assertNotIn("dogen gamma` at", output)
+
+    def test_a_skill_name_or_a_non_verb_is_not_a_tool_command(self):
+        """`/dogen-beta`, `dogen betas` and `dogen never` name no registered verb."""
+        code, output = self.run_checker(
+            self.tree(readme_extra="Run `/dogen-beta`. dogen betas. dogen never pushes.\n")
+        )
+        self.assertEqual(code, 0, output)
 
 
 class TestReleaseRecord(CheckDocsCase):
