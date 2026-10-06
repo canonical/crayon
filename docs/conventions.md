@@ -41,6 +41,14 @@ pins each, are listed in [[development]].
   (`docs/<slug>.md`), never with the bracket notation.
 - The README is the reader's entry point and is written for a Technical Author, not for an
   agent; it never names a harness.
+- The reader uses dogen through the skills. `README.md` and the reader-facing pages
+  ([[contents]], [[install]], [[context]], [[upgrade]], [[hooks]]) name no `dogen <verb>`
+  outside a final section headed `## Under the hood`; tool detail lives there or on the pages
+  that are under the hood throughout, such as [[internals]]. Write them in plain, controlled
+  English: short sentences, one action per step. `tests/check_docs.py` enforces the command
+  rule.
+- [[contents]] is the reader's index. Its list uses path links (`install.md`), so it works in a
+  browser; its `Related:` line keeps it in the wiki.
 - A gate command, a tree entry or a shellcheck scope changes in every pinned place at once
   ([[development]]).
 

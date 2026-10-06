@@ -13,9 +13,10 @@
 #   3. .gitignore                --no-gitignore
 # The skills are also linked from .claude/skills/, the one discovery root some
 # agents read instead of .agents/skills/; --no-compat-links skips that.
-# Then the install is verified. Exit 0 when every check passed, 1 when one
-# failed, 2 when nothing could be checked. The script never runs git init, git
-# commit, sudo, or anything else that changes a repository's history.
+# Then the install is verified, and the commands that remove it are printed.
+# Exit 0 when every check passed, 1 when one failed, 2 when nothing could be
+# checked. The script never runs git init, git commit, sudo, or anything else
+# that changes a repository's history.
 
 set -u
 
@@ -37,7 +38,7 @@ GLOBAL_SKILLS_ROOT="$HOME/.agents/skills"
 SKILL_NAMES="dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review"
 
 usage() {
-    sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
     cat <<'EOF'
 
 Flags:
@@ -202,7 +203,7 @@ if [ "$SKILLS" = "project" ] && [ "$GITIGNORE" -eq 1 ] && [ "$VERIFY_ONLY" -eq 0
     if ! grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
         choose answer "3/3  dogen stages drafts under .dogen/staging/, which is working space. Add it to $REPO/.gitignore?" 1 \
             "yes|append the line" \
-            "no|leave .gitignore alone (dogen verify will warn, V17)"
+            "no|leave .gitignore alone (dogen's checks will warn)"
         [ "$answer" = "yes" ] || GITIGNORE=0
     fi
 fi
@@ -307,9 +308,9 @@ except Exception:
 tool_ver="$(printf '%s\n' "$tool_version" | sed -n 1p)"
 tool_contract="$(printf '%s\n' "$tool_version" | sed -n 2p)"
 if [ -n "$tool_ver" ] && [ -n "$tool_contract" ]; then
-    pass "dogen version --json answers tool $tool_ver, contract $tool_contract"
+    pass "the dogen tool runs: version $tool_ver, contract $tool_contract"
 else
-    fail "dogen version --json did not answer (is python3 on PATH for the tool?)"
+    fail "the dogen tool did not run (is python3 on PATH?)"
 fi
 
 # the skills
@@ -370,9 +371,35 @@ if [ "$SKILLS" = "project" ]; then
     if grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
         pass ".dogen/staging/ is ignored"
     else
-        warn ".dogen/staging/ is not in $REPO/.gitignore; dogen verify will warn (V17) until it is"
+        warn ".dogen/staging/ is not in $REPO/.gitignore; dogen's checks will warn until it is"
     fi
 fi
+
+# --- uninstall ---------------------------------------------------------------
+# The commands that remove what this run placed, with the paths it used. Printed
+# only after an install, never under --verify-only, and never run here.
+print_uninstall() {
+    [ "$VERIFY_ONLY" -eq 0 ] || return 0
+    local skill
+    say ""
+    say "To uninstall, run:"
+    printf '  rm -f %q\n' "$TOOL_DIR/dogen"
+    for skill in $SKILL_NAMES; do
+        printf '  rm -rf %q\n' "$SKILLS_ROOT/$skill"
+    done
+    if [ "$COMPAT_LINKS" -eq 1 ]; then
+        for skill in $SKILL_NAMES; do
+            printf '  rm -f %q\n' "$compat_base/.claude/skills/$skill"
+        done
+    fi
+    if [ "$SKILLS" = "project" ] && grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
+        say "Then delete the line .dogen/staging/ from $REPO/.gitignore."
+    fi
+    if [ "$LINK" -eq 1 ]; then
+        say "The checkout at $DOGEN_SRC is yours to keep or delete."
+    fi
+    say "Uninstalling leaves your pages and the record under .dogen/ in place."
+}
 
 # --- report ------------------------------------------------------------------
 say ""
@@ -382,11 +409,12 @@ if [ "$checks" -eq 0 ]; then
 fi
 if [ "$failures" -ne 0 ]; then
     say "install: $failures check(s) failed, $warnings warning(s)"
+    print_uninstall
     exit 1
 fi
 say "install: every check passed, $warnings warning(s)"
 say ""
-say "Next: open your agent in ${REPO:-your docs repository} and invoke /dogen-onboard once to"
-say "record the context, then /dogen-plan. /dogen-write drafts the page and /dogen-review"
-say "records your verdict."
+say "Next: open your agent in ${REPO:-your docs repository}. Run /dogen-onboard once,"
+say "then /dogen-plan, /dogen-write and /dogen-review."
+print_uninstall
 exit 0
