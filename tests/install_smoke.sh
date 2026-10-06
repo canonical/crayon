@@ -181,12 +181,14 @@ mkdir -p "$SMOKE_HOME/dotfiles/claude" && ln -s "$SMOKE_HOME/dotfiles/claude" "$
 # bytes. HOME is redirected into the temp tree so the region's documented
 # `~/.local/bin` install lands inside this smoke and nowhere else.
 echo "── running $FENCES fenced block(s) from the INSTALL region ──"
+INSTALL_OUT="$SMOKE_HOME/install.out"
 if HOME="$SMOKE_HOME" DOGEN_SRC="$REPO_ROOT" REPO="$SMOKE_REPO" \
-        bash -euo pipefail "$EXTRACTED"; then
+        bash -euo pipefail "$EXTRACTED" >"$INSTALL_OUT" 2>&1; then
     pass "a37: the INSTALL region ran end to end under set -euo pipefail"
 else
     fail "a37: the INSTALL region exited non-zero"
 fi
+cat "$INSTALL_OUT"
 
 # The installer put the tool in its own HOME; reach it the same way it did.
 SMOKE_BIN="$SMOKE_HOME/.local/bin"
@@ -341,6 +343,37 @@ print("MISSING:" + ",".join(missing) if missing else payload["error"])
 ' "$REFUSAL_ERR")
 assert_eq "a37: the refusal line is the five-key JSON object for unsteered" \
     "unsteered" "$refusal_error"
+
+# --- the uninstall the installer printed --------------------------------------
+# The installer ends by printing the commands that remove what it placed, with
+# the paths it used. Run exactly those lines — never a list kept here — and
+# check that the tool, the five skills and their links are gone, while the
+# record the walk committed stays.
+UNINSTALL="$SMOKE_HOME/uninstall.sh"
+sed -n '/^To uninstall, run:$/,/^[^ ]/p' "$INSTALL_OUT" | grep '^  rm ' >"$UNINSTALL" || true
+uninstall_lines=$(wc -l <"$UNINSTALL" | tr -d ' ')
+assert_eq "a37: the installer printed one rm line for the tool, each skill and each link" \
+    "11" "$uninstall_lines"
+if grep -qxF "Then delete the line .dogen/staging/ from $SMOKE_REPO/.gitignore." "$INSTALL_OUT"; then
+    pass "a37: the installer named the .gitignore line to delete"
+else
+    fail "a37: the installer did not name the .gitignore line to delete"
+fi
+uninstall_exit=0
+bash -eu "$UNINSTALL" >/dev/null 2>&1 || uninstall_exit=$?
+assert_eq "a37: the printed uninstall commands run cleanly" "0" "$uninstall_exit"
+left=""
+[ -e "$SMOKE_BIN/dogen" ] && left="$left $SMOKE_BIN/dogen"
+for skill in dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review; do
+    [ -e "$SMOKE_REPO/.agents/skills/$skill" ] && left="$left .agents/skills/$skill"
+    [ -L "$SMOKE_REPO/.claude/skills/$skill" ] && left="$left .claude/skills/$skill"
+done
+assert_eq "a37: nothing the installer placed is left after the uninstall" "" "$left"
+if [ -d "$SMOKE_REPO/.dogen/units/$UNIT" ]; then
+    pass "a37: the uninstall left the record under .dogen/ in place"
+else
+    fail "a37: the record under .dogen/units/$UNIT is gone after the uninstall"
+fi
 
 # --- report ------------------------------------------------------------------
 echo ""

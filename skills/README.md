@@ -179,7 +179,7 @@ result; [`docs/install.md`](../docs/install.md) explains every choice and the ma
 By hand, the skills are one copy:
 
 ```bash
-DOGEN=/path/to/dogen-mvp-1
+DOGEN=/path/to/dogen
 mkdir -p .agents/skills && cp -r "$DOGEN"/skills/dogen-* .agents/skills
 ```
 

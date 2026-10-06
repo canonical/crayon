@@ -68,12 +68,18 @@ stage` and `dogen context record`, which digest and commit it ([[context]]).
 
 ## Verbs, exit codes and refusals
 
-The verb table and the reason table each have exactly one reader-facing home — `README.md`'s
-`VERBS` and `REASONS` marked regions, under its Glossary — and one normative home, [[contract]]
-§6 and §5.7. The README's reason table is one compact row per exit code; the contract's is one
-row per reason; `tests/check_docs.py` flattens both against the authoritative machine list, the
-`REASONS` dict inside `dogen.py`. The compatibility pair has the same shape of home:
-[[compatibility]] and [[contract]] §5.10.
+The verb table and the reason table each have exactly one reader-facing home — the `VERBS` and
+`REASONS` marked regions in [[internals]] — and one normative home, [[contract]] §6 and §5.7.
+The compact reason table is one row per exit code; the contract's is one row per reason;
+`tests/check_docs.py` finds each region by its markers, requires exactly one carrier, and
+flattens both tables against the authoritative machine list, the `REASONS` dict inside
+`dogen.py`. The compatibility pair has the same shape of home: [[compatibility]] and
+[[contract]] §5.10.
+
+The reader drives dogen through the skills, never through the tool. `README.md` and the
+reader-facing pages ([[contents]], [[install]], [[context]], [[upgrade]], [[hooks]]) name no
+`dogen <verb>` outside a section headed `## Under the hood`; `tests/check_docs.py` enforces
+it.
 
 Every non-zero exit prints exactly one JSON line with the five keys `error`, `unit`, `detail`,
 `hint` and `next` (stderr; stdout under `--json`). Branch on `error`, never on the exit code —

@@ -59,7 +59,10 @@ significance still have one order a reader can predict.
   installed skill's frontmatter, the skill directories, stale discovery roots, the git identity.
   `--verify-only` runs the last part alone. It is in the shellcheck scope. Skills are installed
   once under `.agents/skills/` and linked from `.claude/skills/`, the one discovery root some
-  agents read instead; `--no-compat-links` skips the links.
+  agents read instead; `--no-compat-links` skips the links. After an install it prints the
+  commands that remove it, with the exact paths it used, and the `.gitignore` line to delete;
+  `tests/install_smoke.sh` runs those printed lines and checks that nothing is left but the
+  record.
 - `docs/` is now a wiki in the lint-enforced shape: flat, one page per slug, addressed by slug
   in double square brackets from `AGENTS.md` and between pages, every page with an H1, a
   provenance comment and a `Related:` line, every page reachable from `AGENTS.md`.
@@ -71,6 +74,15 @@ significance still have one order a reader can predict.
   guide carries the marked `INSTALL` region `tests/install_smoke.sh` executes; the compatibility
   page carries the `COMPAT` region `tests/check_docs.py` checks; the development page is the
   gate's second pinned home.
+- `docs/internals.md` — under the hood in one page: the glossary, the verb table, the exit
+  codes, how the record lives on a branch, and the repository layout. It carries the `VERBS`
+  and `REASONS` regions. `docs/contents.md` — the reader's index of every document, in path
+  links that work in a browser.
+- `tests/check_docs.py` checks that the reader-facing documents (`README.md`,
+  `docs/contents.md`, `install.md`, `context.md`, `upgrade.md`, `hooks.md`) name no
+  `dogen <verb>` outside a `## Under the hood` section, with the verbs taken from
+  `dogen --help`. It finds the `VERBS` and `REASONS` regions by their markers, as it already
+  found `COMPAT`, and reports a region carried by two documents.
 
 ### Changed
 
@@ -92,14 +104,19 @@ significance still have one order a reader can predict.
 - The surface is harness-agnostic: no agent harness is named, detected or preferred in the
   README, the installer, the docs or `AGENTS.md`; skills are invoked as `/dogen-plan`,
   `/dogen-write` and `/dogen-review` everywhere.
-- The README states that the output is Sphinx-publishable and that dogen knows nothing of any
-  Sphinx stack, theme or `conf.py`, and gains a top-level layout section.
-- `README.md` is agent-first: a five-minute quickstart (clone, `install.sh`, the three skills),
-  a plain "how you use it", a section on keeping dogen on its own branch and shipping pages from
-  a review branch popped off main, and a glossary that holds the vocabulary, the verb table and
-  the exit codes. The exit codes are one compact table, a row per code with its reasons in the
-  last cell; `tests/check_docs.py` reads that shape on the README side and the per-reason shape
-  on the contract side, flattening both against the tool's `REASONS`.
+- `README.md` is short and skills-first, in plain English: what dogen does, the requirements, a
+  manual install in five numbered steps with the installer offered second, the five skills in
+  order, a three-step note on using a separate branch, what dogen does not do (including that
+  it knows no Sphinx stack, theme or `conf.py`), and one link to `docs/contents.md`. It names
+  no `dogen` command. The glossary, the verb table, the exit codes, the branch procedure and the
+  layout moved to `docs/internals.md`; the document list moved to `docs/contents.md`. The exit
+  codes stay one compact table, a row per code with its reasons in the last cell;
+  `tests/check_docs.py` reads that shape there and the per-reason shape in the contract,
+  flattening both against the tool's `REASONS`.
+- `docs/install.md` puts the manual install first, then the installer's choices, then
+  uninstall. `docs/context.md`, `docs/upgrade.md` and `docs/hooks.md` tell the reader what to
+  do with the skills and keep the tool's commands in a final `## Under the hood` section. The
+  clone URL is `https://github.com/canonical/dogen`.
 - `docs/upgrade.md` is a forward-looking procedure — upgrade the executable, re-copy the skills,
   check the two numbers, what a contract bump does to existing records — rather than a
   before-and-after of the previous release.
