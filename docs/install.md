@@ -1,92 +1,173 @@
 # Installing dogen
 
-<!-- provenance: moved from README.md (Install and first run, Installing the skills globally, Add context files) -->
+<!-- provenance: moved from README.md (Install and first run, Installing the skills globally, Add context files); reordered to put the manual install first -->
 
-dogen is two things: one stdlib-only Python file, `dogen.py`, installed on your `PATH` as
-`dogen`, and five portable Agent Skills
-(`dogen-onboard`, `dogen-fetch`, `dogen-plan`, `dogen-write`, `dogen-review`) that your agent
-drives. Installing means putting
-the executable on your `PATH` and the skills where your agent discovers them. The script
-`install.sh` at the root of the checkout does both, asks you about every choice along the way,
-and verifies the result. This page explains each choice; if you are happy with the defaults, the
-quickstart in `README.md` is all you need.
+dogen has two parts:
+
+- the `dogen` tool: one Python file, `dogen.py`, installed on your `PATH` as `dogen`;
+- five Agent Skills: `dogen-onboard`, `dogen-fetch`, `dogen-plan`, `dogen-write` and
+  `dogen-review`. Your agent runs them, and they use the tool.
+
+To install dogen, put the tool on your `PATH` and the skills where your agent finds them. You
+can do this by hand in a few commands, or run the installer, `install.sh`.
 
 ## Requirements
 
-- Python 3.9 or newer on `PATH` as `python3`. Nothing else: no package, no venv, no dependency.
-- git, and a git identity in the repository you document (`user.name` and `user.email`), because
-  every dogen transition is a local commit.
-- Any coding agent that reads `SKILL.md` skills and can run shell commands. Most discover
-  them under `.agents/skills/`; the one common agent that reads only `.claude/skills/` is served
-  by the symlinks the installer adds there. Skills are invoked by name — `/dogen-plan` — in every
-  such agent.
+- Python 3.9 or newer, available as `python3`. Nothing else: no package, no virtual
+  environment, no dependency.
+- git. Your docs repository must have a git user name and email (`user.name` and
+  `user.email`), because dogen makes a local commit for every step.
+- A coding agent that can use Agent Skills (`SKILL.md` files) and run shell commands. Most
+  agents find skills under `.agents/skills/`. Some read only `.claude/skills/`, so step 4 below
+  links the skills there too. You run a skill by its name, for example `/dogen-plan`.
+
+## Install by hand
+
+1. Download dogen:
+
+   ```bash
+   git clone https://github.com/canonical/dogen ~/src/dogen
+   ```
+
+2. Install the tool:
+
+   ```bash
+   mkdir -p ~/.local/bin
+   cp ~/src/dogen/dogen.py ~/.local/bin/dogen
+   chmod +x ~/.local/bin/dogen
+   ```
+
+   Check it: `command -v dogen` must print a path. If it prints nothing, add this line to your
+   shell profile (for example, `~/.bashrc`) and open a new terminal:
+
+   ```bash
+   export PATH="$HOME/.local/bin:$PATH"
+   ```
+
+3. Install the skills. Choose one place.
+
+   In your docs repository (recommended). The skills travel with the repository, and your
+   collaborators get the same version:
+
+   ```bash
+   cd /path/to/your-docs-repo
+   mkdir -p .agents/skills && cp -r ~/src/dogen/skills/dogen-* .agents/skills/
+   ```
+
+   Or once for your user, so that every repository on this machine finds them:
+
+   ```bash
+   mkdir -p ~/.agents/skills && cp -r ~/src/dogen/skills/dogen-* ~/.agents/skills/
+   ```
+
+   `dogen-*` matches exactly the five skills. It does not copy `skills/README.md`, which is not
+   a skill.
+
+4. Link the skills from `.claude/skills/`, for the agents that read only that folder.
+
+   In your docs repository:
+
+   ```bash
+   mkdir -p .claude/skills
+   (cd .claude/skills && ln -sf ../../.agents/skills/dogen-* .)
+   ```
+
+   Or for your user:
+
+   ```bash
+   mkdir -p ~/.claude/skills
+   ln -sf ~/.agents/skills/dogen-* ~/.claude/skills/
+   ```
+
+   If `.claude` in your docs repository is itself a symlink, use the installer instead. It
+   computes links that work from where `.claude` really is.
+
+5. In your docs repository, tell git to ignore the folder where dogen keeps unfinished drafts:
+
+   ```bash
+   echo '.dogen/staging/' >> .gitignore
+   ```
+
+6. If you installed the skills in the docs repository, commit `.agents/skills/`,
+   `.claude/skills/` and `.gitignore`, so that your collaborators get them.
+
+7. Check the install. Run this in your docs repository. It changes nothing:
+
+   ```bash
+   ~/src/dogen/install.sh --verify-only --yes
+   ```
+
+   For skills installed for your user, add `--skills global`.
 
 ## Install with the script
 
+The installer does the same steps as the manual install. Run it from your docs repository:
+
 ```bash
-git clone https://github.com/akcano/dogen-mvp-1 ~/src/dogen
-cd ~/src/dogen
-./install.sh
+cd /path/to/your-docs-repo
+~/src/dogen/install.sh
 ```
 
-The script walks through three decisions as numbered menus: type the number, or the option's
-word. Enter takes the default at every prompt, and `./install.sh --yes` takes every default
-without asking.
+It asks three questions. Type the number or the word of an option. Enter takes the default.
+`--yes` takes every default without asking.
 
 ### 1. Where the skills go
 
-- **project** (default) copies the five skills into `<repo>/.agents/skills/`, so they travel
-  with the docs repository and every collaborator gets the same version, and links each one
-  from `<repo>/.claude/skills/` for the agents that read only that root (commit the links too).
-  The links are relative and computed between physical paths, so they resolve even when `.claude`
-  is itself a symlink into a dotfiles checkout. The script asks for the
-  repository (default: the current directory) and requires it to be a git repository already; it
-  never runs `git init` for you. Re-run the install in each repository you document, and again
-  after upgrading dogen.
-- **global** copies them once into `~/.agents/skills/`, linked from `~/.claude/skills/`, so
-  every repository on this machine discovers them. Choose this when you document many repositories alone and want one copy to
-  upgrade.
+- **project** (default): copies the five skills into `<repo>/.agents/skills/` and links each
+  one from `<repo>/.claude/skills/`. The skills travel with the docs repository, and every
+  collaborator gets the same version; commit the copies and the links. The links are relative
+  and computed between physical paths, so they work even when `.claude` is a symlink into a
+  dotfiles checkout. The script asks for the repository (default: the current directory). The
+  repository must already be a git repository; the script never runs `git init`. Run the
+  install again in each repository you document, and again after you upgrade dogen.
+- **global**: copies the skills once into `~/.agents/skills/` and links them from
+  `~/.claude/skills/`. Every repository on this machine finds them. Choose this when you
+  document many repositories alone and want one copy to upgrade.
 
-Flags: `--skills project|global`, `--repo DIR`, `--skills-root DIR` for an agent that discovers
+Flags: `--skills project|global`, `--repo DIR`, `--skills-root DIR` for an agent that finds
 skills somewhere else, and `--no-compat-links` to skip the `.claude/skills/` links.
 
-### 2. Where the executable goes
+### 2. Where the tool goes
 
-- `~/.local/bin` (default): a copy, no `sudo`, the usual place for a user's own tools. The script
-  warns if that directory is not on your `PATH` and prints the line to add.
-- `/usr/local/bin`: a copy for every user on the machine. The script does not run `sudo`; if
-  the directory is not writable it says so and stops.
-- **link**: a symlink from `~/.local/bin/dogen` into the checkout. `git pull` in the checkout
-  upgrades the tool with no re-install, at the cost of a tool that changes underneath you when
-  the checkout does. Good for trying dogen; use a copy for a repository other people rely on.
-- Any other directory of your own.
+- `~/.local/bin` (default): a copy. No `sudo`. This is the usual place for your own tools. The
+  script warns if this folder is not on your `PATH` and prints the line to add.
+- `/usr/local/bin`: a copy for every user on the machine. The script does not run `sudo`. If
+  you cannot write to the folder, the script says so and stops.
+- **link**: a symlink from `~/.local/bin/dogen` to the file in your checkout. `git pull` in the
+  checkout then upgrades the tool without a new install. The tool also changes whenever the
+  checkout changes, so use a copy for a repository other people rely on.
+- Any other folder of your own.
 
 Flags: `--tool-dir DIR`, `--link`.
 
 ### 3. `.gitignore`
 
-dogen stages drafts under `.dogen/staging/`, which is working space and belongs in the
-repository's `.gitignore`. With project-scoped skills the script offers to append that line;
-`--no-gitignore` declines. Without it, `dogen verify` ends on a warning (V17) rather than a clean
-verdict.
+dogen keeps unfinished drafts under `.dogen/staging/`. This folder is working space and
+belongs in the repository's `.gitignore`. For project skills, the script offers to add the
+line. `--no-gitignore` declines. Without the line, dogen's checks report a warning.
 
-### Verification
+### What the script checks
 
-The script always ends by checking the install and prints one line per check:
+At the end, the script checks the install and prints one line per check:
 
 - `python3` is 3.9 or newer;
-- `dogen` is where you asked, and `dogen` on `PATH` resolves to that file rather than to an
-  older copy earlier on `PATH`;
-- `dogen version --json` answers, and its `contract` number is the one each installed skill was
-  written against (`metadata.dogen_contract` in its `SKILL.md`), compared as literal strings;
-- each skill directory holds a `SKILL.md` and its `references/routing.md`;
-- each `.claude/skills/` link resolves to the installed skill;
-- no stale real copy of a skill sits in another discovery root (`.claude/skills/`,
-  `.github/skills/`, `.opencode/skills/`), which an agent may find first;
-- the repository has a git identity, and `.dogen/staging/` is ignored.
+- the `dogen` tool is where you asked, and the `dogen` found on your `PATH` is that file, not
+  an older copy earlier on your `PATH`;
+- the tool runs and reports its version and contract number, and the contract number is the one
+  each installed skill was written for (`metadata.dogen_contract` in its `SKILL.md`, compared
+  as a literal string);
+- each skill folder holds its `SKILL.md` and `references/routing.md`;
+- each link in `.claude/skills/` points to the installed skill;
+- no old copy of a skill sits in another skills folder (`.claude/skills/`, `.github/skills/`,
+  `.opencode/skills/`), where an agent may find it first;
+- the repository has a git user name and email, and `.dogen/staging/` is ignored.
 
-Failures exit 1; warnings do not. `./install.sh --verify-only` runs only this part against an
-existing install, which is the thing to run when a skill stops on a version check.
+A failed check makes the script exit with code 1. A warning does not.
+`install.sh --verify-only` runs only the checks. Run it when a skill stops on a version check.
+
+Last, the script prints the commands that remove what it installed, with your exact paths.
+Keep them if you may want to uninstall later. The generic form is under
+[Uninstall](#uninstall).
 
 ## The scripted install, as the test suite runs it
 
@@ -109,59 +190,40 @@ bash "$DOGEN_SRC/install.sh" --yes --repo "$REPO" --tool-dir "$HOME/.local/bin"
 
 <!-- INSTALL:END -->
 
-## Manual install
-
-The script does nothing you cannot do by hand. The executable is one file; the skills are five
-directories under `skills/`, and `cp -r skills/dogen-*` copies exactly those five and never
-`skills/README.md`.
-
-```bash
-DOGEN_SRC=~/src/dogen
-
-# The executable, onto your PATH, under its command name:
-mkdir -p "$HOME/.local/bin" && cp "$DOGEN_SRC/dogen.py" "$HOME/.local/bin/dogen" && chmod +x "$HOME/.local/bin/dogen"
-
-# The skills, project-scoped (run inside the docs repository):
-mkdir -p .agents/skills && cp -r "$DOGEN_SRC"/skills/dogen-* .agents/skills
-
-# ... or global:
-mkdir -p "$HOME/.agents/skills" && cp -r "$DOGEN_SRC"/skills/dogen-* "$HOME/.agents/skills"
-
-# For agents that read only .claude/skills/ (project form shown; use ~ for global):
-mkdir -p .claude/skills && for s in dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review; do ln -sfn "../../.agents/skills/$s" ".claude/skills/$s"; done
-
-# Keep staging out of the record:
-grep -qxF '.dogen/staging/' .gitignore 2>/dev/null || printf '.dogen/staging/\n' >> .gitignore
-```
-
-Then `./install.sh --verify-only` in the checkout, or `dogen version --json` by hand.
-
 ## Add context files (recommended)
 
-Context files teach the skills your house style, vocabulary and where facts live. They are read
-from `.dogen/context/` in the docs repository, and they reach it through the tool, which digests
-and commits them. The quickest start is `/dogen-onboard` in your agent, which walks the docs you
-already have and records `doc-style.md`, `glossary.md` and `structure.md`. A style guide or
-glossary you already trust is recorded by hand in two commands:
+Context files teach the skills your house style, your terms and where facts live. To create
+them, open your agent in the docs repository and run `/dogen-onboard`. It reads the docs you
+already have.
 
-```bash
-dogen context stage doc-style.md --body-file path/to/your-style-guide.md
-dogen context stage glossary.md --body-file path/to/glossary.md
-dogen context record --note "house style and glossary, supplied by hand"
-```
-
-The five names, who produces each, `/dogen-fetch` for material outside the repository, and what
-`/dogen-plan` does when the files are missing are all in [[context]].
+If you already have a style guide or a glossary, run `/dogen-fetch` and give it the file path
+or the URL. The five context files, and what `/dogen-plan` does when they are missing, are in
+[[context]].
 
 ## Uninstall
 
+The installer prints these commands with your exact paths. For the default places, they are:
+
 ```bash
-rm -f "$HOME/.local/bin/dogen"                  # or wherever you put it
-rm -rf .agents/skills/dogen-*                   # project-scoped skills, per repository
-rm -rf "$HOME/.agents/skills"/dogen-*           # global skills
+rm -f ~/.local/bin/dogen
 ```
 
-The record under `.dogen/units/` is yours and stays: it is committed history, not part of the
-install.
+For skills in a docs repository, run this in the repository, then delete the line
+`.dogen/staging/` from its `.gitignore`:
+
+```bash
+rm -rf .agents/skills/dogen-*
+rm -f .claude/skills/dogen-*
+```
+
+For skills installed for your user:
+
+```bash
+rm -rf ~/.agents/skills/dogen-*
+rm -f ~/.claude/skills/dogen-*
+```
+
+Uninstalling leaves your pages and the record under `.dogen/` in place. They are committed
+history, not part of the install.
 
 Related: [[context]], [[upgrade]], [[compatibility]], [[development]].

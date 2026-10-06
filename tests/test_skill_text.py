@@ -324,13 +324,19 @@ class TestProjectReadmeInstallCommands(unittest.TestCase):
     repo — the state the heading "Project-scoped (recommended)" describes — the
     copy fails. Checked as a relation between the two halves of each line,
     because the defect was that they named different paths.
+
+    Both manual install blocks are checked: the guide's, which carries the
+    project and the global form, and the root README's, which carries the
+    project form a stranger meets first.
     """
 
-    PROJECT_README = ROOT / "docs" / "install.md"
+    #: Each document with its vacuous-pass floor: the guide carries one line
+    #: per scope, the README the project line only.
+    INSTALL_DOCS = ((ROOT / "docs" / "install.md", 2), (ROOT / "README.md", 1))
 
-    def install_lines(self):
-        """Every `mkdir … && cp -r …` line in the install guide's manual section."""
-        text = self.PROJECT_README.read_text(encoding="utf-8")
+    def install_lines(self, path):
+        """Every `mkdir … && cp -r …` line in one document's manual install."""
+        text = path.read_text(encoding="utf-8")
         return [
             line.strip()
             for line in text.splitlines()
@@ -338,24 +344,24 @@ class TestProjectReadmeInstallCommands(unittest.TestCase):
         ]
 
     def test_every_certified_install_line_creates_what_it_copies_into(self):
-        lines = self.install_lines()
-        # Vacuous-pass guard: the block is two lines, one per scope.
-        self.assertGreaterEqual(
-            len(lines),
-            2,
-            "found %d install lines in %s; the scan has stopped matching and "
-            "every assertion below would be vacuous" % (len(lines), self.PROJECT_README),
-        )
-        for line in lines:
-            with self.subTest(line=line):
-                made = line.split("mkdir -p ", 1)[1].split(" &&", 1)[0].strip()
-                into = line.rsplit(" ", 1)[1].rstrip("/")
-                self.assertEqual(
-                    made.rstrip("/"),
-                    into,
-                    "the line creates %r and copies into %r; in a fresh repo "
-                    "the copy fails" % (made, into),
-                )
+        for path, floor in self.INSTALL_DOCS:
+            lines = self.install_lines(path)
+            self.assertGreaterEqual(
+                len(lines),
+                floor,
+                "found %d install lines in %s; the scan has stopped matching and "
+                "every assertion below would be vacuous" % (len(lines), path),
+            )
+            for line in lines:
+                with self.subTest(document=path.name, line=line):
+                    made = line.split("mkdir -p ", 1)[1].split(" &&", 1)[0].strip()
+                    into = line.rsplit(" ", 1)[1].rstrip("/")
+                    self.assertEqual(
+                        made.rstrip("/"),
+                        into,
+                        "the line creates %r and copies into %r; in a fresh repo "
+                        "the copy fails" % (made, into),
+                    )
 
 
 class TestS03RoutingCopies(unittest.TestCase):

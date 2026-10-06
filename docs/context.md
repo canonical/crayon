@@ -2,33 +2,75 @@
 
 <!-- provenance: new page; the context-file prose moved here from docs/install.md (Add context files) and README.md (Glossary, context files) -->
 
-Context files teach the skills your house style, vocabulary, and where facts live. They are
-read from `.dogen/context/` in the docs repository by `dogen-plan` when it grounds a
-declaration and by `dogen-write` when it drafts, and they reach that directory through the tool,
-which digests and commits them like everything else it records. This page is the one home for
-what they are, who produces them, and how they are recorded.
+Context files teach the skills your house style, your terms and where facts live. They live in
+`.dogen/context/` in your docs repository. `/dogen-plan` reads them when it plans a page, and
+`/dogen-write` reads them when it drafts one. No skill writes them directly: the skills hand
+them to the `dogen` tool, which records them with a commit. This page is the one home for what
+they are, who produces them and how they are recorded.
 
 ## The five names
 
-The tool recognises exactly five artefacts; anything else is refused. The set is defined once,
-in `dogen.py`, and the skills and this page name the same five.
+dogen recognises exactly five context files. Any other name is refused.
 
 | Name | What it carries | Produced by |
 |---|---|---|
 | `doc-style.md` | how the project writes: voice, audience, formatting, completeness habits, drift | `/dogen-onboard` from a walk of the repository's docs; `/dogen-fetch` from a declared source such as a house style guide |
 | `glossary.md` | the project's terms as its prose uses them, with aliases and inconsistency flags | `/dogen-onboard`; `/dogen-fetch` from a terminology document held elsewhere |
 | `structure.md` | the docs' information architecture, Diátaxis balance, structural risks, and the code-versus-docs coverage gaps tagged `[CODE↔DOCS GAP]` | `/dogen-onboard`; `/dogen-fetch` from an exported docs set |
-| `code-to-docs-map.md` | which code areas each page documents | tooling outside dogen (below); recorded by you |
-| `doc-gaps.md` | prioritized units the docs are missing, derived from the map | tooling outside dogen; recorded by you |
+| `code-to-docs-map.md` | which code areas each page documents | tooling outside dogen (below); recorded with `/dogen-fetch` |
+| `doc-gaps.md` | prioritized units the docs are missing, derived from the map | tooling outside dogen; recorded with `/dogen-fetch` |
 
-`dogen-plan` treats the first three as the context: while any of them is absent, `dogen context
-show` routes `onboard` and the plan skill offers you the bootstrap choice described below. The
-last two are optional and never route on their own.
+The first three are the context. While any of them is missing, `/dogen-plan` offers you the
+choice described in [When they are missing](#when-they-are-missing). The last two are optional.
 
-## How they are recorded
+## Producing them
 
-No skill writes `.dogen/context/`. Every artefact is handed to the tool as text, and the tool
-places it, digests it and commits it:
+**`/dogen-onboard`** walks the repository you run it in. It reads the docs tree, the README and
+other prose, sorts each page by its Diátaxis type, and compares the docs with the product
+surface (CLI flags, public API, configuration, environment variables) to find coverage gaps.
+Then it writes `doc-style.md`, `glossary.md` and `structure.md`. Each claim points to a page or
+a symbol. Run it once to create the context. Run it again when the docs or the product have
+changed enough that the files are out of date.
+
+**`/dogen-fetch`** does the same from sources outside the repository: a local file or export,
+another checkout, a page at a URL, or a document your agent already holds. You declare each
+source before it is read. The skill records where each source came from, when it was read and
+its revision. If a source cannot be reached, the skill reports it as failed and never replaces
+it with another source. Use it when the material that should guide the docs is not in the
+repository, or when `/dogen-onboard` finds such a source and hands it over to you.
+
+**From a file you already have.** A style guide or a glossary you already trust needs no walk.
+Run `/dogen-fetch` and give it the file path. It writes `doc-style.md` or `glossary.md` from
+the file and records the path as the source.
+
+**`code-to-docs-map.md` and `doc-gaps.md`** come from tooling outside dogen. The
+[Code to docs mapper](https://code.launchpad.net/code-to-docs-mapper) produces a deterministic
+map and the gaps derived from it. It reads the code and the docs from two collections in a
+vector database built with [Wide scope RAG](https://code.launchpad.net/wide-scope-rag). dogen
+neither depends on nor understands either tool. Record their output with `/dogen-fetch`, so it
+carries a digest. Without a map, `/dogen-plan` reads the sources around the page for one
+planning session instead (see below), which is less repeatable.
+
+## When they are missing
+
+`/dogen-plan` checks for the context first. If `doc-style.md`, `glossary.md` or `structure.md`
+is missing, it asks you once and offers three answers:
+
+- **I'll add them**: you supply the files yourself, for example with `/dogen-fetch` from a
+  style guide you already have. The plan waits until they are there.
+- **Run `/dogen-onboard` first**: the plan stops and sends you to the onboarding walk. When the
+  walk has recorded the files, start the plan again.
+- **Ground this intake dynamically**: the plan skill reads the declared sources and the pages
+  around them in memory, for this one plan, and saves nothing. The next plan starts again from
+  nothing.
+
+The third answer is faster but not repeatable. It suits a quick page in a repository you will
+not document again. The first two leave a record.
+
+## Under the hood
+
+Every context file is handed to the tool as text, and the tool places it, digests it and
+commits it:
 
 ```bash
 printf '%s\n' "$DOC_STYLE" | dogen context stage doc-style.md --body-file - --source docs/index.md
@@ -49,30 +91,13 @@ and the staged copies are discarded.
 `dogen context show` derives the state rather than storing it: which of the five are present,
 which the manifest records, which are `drifted` (edited by hand since the record) and which are
 `unrecorded` (placed by hand and never recorded). Drift is reported, never refused; restore the
-recorded bytes from git or re-record the edit through the two verbs. The normative rules are in
-[[contract]] §5.1, §5.5, §5.6, §5.7 and §6.
+recorded bytes from git or re-record the edit through the two verbs. While any of the first
+three is absent, `dogen context show` routes `onboard`; `dogen-plan` opens with
+`dogen context show --json`. The normative rules are in [[contract]] §5.1, §5.5, §5.6, §5.7
+and §6.
 
-## Producing them
-
-**`/dogen-onboard`** walks the repository dogen is run in: it reads the docs tree, the README and
-supplementary prose, classifies each page by its Diátaxis direction, cross-reads the product
-surface (CLI flags, public API, config, environment variables) for coverage gaps, and authors
-`doc-style.md`, `glossary.md` and `structure.md` from what it read, each claim grounded in a page
-or a symbol. Run it once to seed the context and again when the docs or the product drift far
-enough that the artefacts go stale. It holds no write tool: the three artefacts reach disk
-through the two verbs above.
-
-**`/dogen-fetch`** does the same from sources you declare that live outside the repository — a
-local export, another checkout, a page at a URL, or a document your agent already holds. Each
-source is declared before it is retrieved (type, locator, retrieval method, preservation,
-fallbacks), retrieved only through the declared method, and recorded with its origin, retrieval
-time and revision; a source that cannot be reached is reported as failed, never replaced by one
-you did not declare. The artefacts it produces carry their sources as `--source` locators in the
-manifest. Use it occasionally, when the material that should steer the docs is not in the
-repository, or when `/dogen-onboard` meets such a source and hands you over.
-
-**By hand.** A style guide or glossary you already trust needs no walk. Stage it through the
-tool and record it, so it is digested and committed like the rest:
+The skills hold no write tool for `.dogen/context/`. A file you trust can also be recorded
+without a skill, in the same two verbs:
 
 ```bash
 dogen context stage doc-style.md --body-file path/to/your-style-guide.md
@@ -80,32 +105,8 @@ dogen context stage glossary.md --body-file path/to/glossary.md
 dogen context record --note "house style and glossary, supplied by hand"
 ```
 
-Copying files straight into `.dogen/context/` and committing them yourself also works; `context
-show` then reports them as `unrecorded`, and the next `context record` that touches the set
-freezes their digests too.
+Copying files straight into `.dogen/context/` and committing them yourself also works;
+`context show` then reports them as `unrecorded`, and the next `context record` that touches
+the set freezes their digests too.
 
-**`code-to-docs-map.md` and `doc-gaps.md`** come from tooling outside dogen. A deterministic map
-and the gaps derived from it are produced by the
-[Code to docs mapper](https://code.launchpad.net/code-to-docs-mapper), which reads the code and
-the docs from two collections in a vector database built with
-[Wide scope RAG](https://code.launchpad.net/wide-scope-rag); dogen neither depends on nor
-understands either. Record their output through the two verbs so it carries a digest. Without a
-map, `dogen-plan`'s ephemeral crawl (below) stands in for it, less repeatably, for one intake.
-
-## When they are missing
-
-`dogen-plan` opens with `dogen context show --json`. When any of `doc-style.md`, `glossary.md`
-or `structure.md` is absent it asks you once, and offers three answers:
-
-- **I'll add them** — you supply the files, by hand or through the two verbs; the intake
-  pauses until they are there.
-- **Run `/dogen-onboard` first** — the plan stops and routes you to the onboarding walk; when it
-  has recorded the artefacts, start the plan again.
-- **Ground this intake dynamically** — the plan skill reads the declared sources and their
-  neighbourhood in memory, for this one intake, and persists nothing; the next session grounds
-  again from scratch.
-
-The third answer trades repeatability for speed and is the right one for a quick unit in a
-repository you will not document twice. The first two leave a record.
-
-Related: [[install]], [[architecture]], [[contract]], [[conventions]].
+Related: [[install]], [[architecture]], [[contract]], [[conventions]], [[internals]].

@@ -1,4 +1,4 @@
-"""Documentation-accuracy gate: five observables, one release check, one delegation.
+"""Documentation-accuracy gate: the observables, one release check, one delegation.
 
 Everything else this phase ships can be true on the day it lands and quietly
 false a month later — a verb renamed, a reason added, a file moved. This is the
@@ -7,11 +7,13 @@ compared.
 
 What it claims, and nothing wider:
 
-1. **Verbs** — the rows in ``README.md``'s ``VERBS`` region are exactly the
-   subcommands the tool registers. The oracle is ``dogen --help``'s own
+1. **Verbs** — the rows in the ``VERBS`` region, carried by exactly one
+   document of the documented set (``docs/internals.md`` today), are exactly
+   the subcommands the tool registers. The oracle is ``dogen --help``'s own
    subcommand list, never a list kept here, so a wrong document cannot be made
    green by editing this file (T-18-30).
-2. **Reasons** — ``README.md``'s ``REASONS`` region is ONE compact table, one
+2. **Reasons** — the ``REASONS`` region, carried by exactly one document of the
+   documented set (``docs/internals.md`` today), is ONE compact table, one
    row per exit code with that code's reasons listed in its last cell; the
    rows in ``docs/contract.md``'s reason table are one per reason. Each side,
    flattened to ``{reason: exit}``, equals ``dogen.REASONS`` by name and code.
@@ -29,10 +31,16 @@ What it claims, and nothing wider:
 6. **Traces** — ``tests/check_traces.py``'s ``main()`` is called and folded into
    the tally. There is exactly one trace-table parser in this repository and it
    is not here (17 D-09).
+7. **Skills first** — the reader-facing documents in ``SKILLS_FIRST_DOCS`` name
+   no ``dogen <verb>`` outside a ``## Under the hood`` section. The verbs are
+   ``dogen --help``'s, the same oracle as observable 1. The reader drives dogen
+   through the skills; the tool's commands belong to the pages that say they
+   are looking underneath.
 
-What it does **not** claim: nothing here reads prose. A section can be wrong,
+What it does **not** claim: nothing here judges prose. A section can be wrong,
 stale or misleading in every word and this gate stays green, because it compares
-the five named observables and only those. The release record is no exception:
+the named observables and only those. Observable 7 reads prose lines, but only
+for one literal shape. The release record is no exception:
 it asserts that the section is dated and does not announce its own
 incompleteness, and nothing about whether what it says is true. There is deliberately no general
 "every module constant must have a doc row" rule and nothing walks the tool's
@@ -68,11 +76,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-#: The documented set. Every file here is scanned for links; the two that carry
-#: observables (``README.md`` and ``docs/contract.md``) are also parsed for them.
+#: The documented set. Every file here is scanned for links; the ones that carry
+#: observables (the region carriers and ``docs/contract.md``) are also parsed for
+#: them.
 DOC_FILES = (
     "README.md",
     "AGENTS.md",
+    "docs/contents.md",
+    "docs/internals.md",
     "docs/contract.md",
     "docs/install.md",
     "docs/compatibility.md",
@@ -116,6 +127,20 @@ _SECTION_RE = re.compile(r"^##\s")
 #: readers are pinned to one anchor on purpose so they cannot drift apart.
 REASON_TABLE_ANCHOR = "Reason table:"
 COMPAT_HEADING = "## 5.10 Compatibility"
+
+#: The reader-facing documents: the ones a Technical Author follows to install
+#: and use dogen through its skills. Every other document in the set is under
+#: the hood by definition. In these, a ``dogen <verb>`` may appear only in a
+#: section headed exactly ``UNDER_THE_HOOD_HEADING``.
+SKILLS_FIRST_DOCS = (
+    "README.md",
+    "docs/contents.md",
+    "docs/install.md",
+    "docs/context.md",
+    "docs/upgrade.md",
+    "docs/hooks.md",
+)
+UNDER_THE_HOOD_HEADING = "## Under the hood"
 
 #: The literal markers that mean a release-time slot was never filled. Their
 #: presence in the TOPMOST released section is a violation and never a vacuous
@@ -199,6 +224,31 @@ def region_in_documents(documents, name):
     if len(carriers) == 1:
         return carriers[0]
     return None, [relative for relative, _ in carriers]
+
+
+def one_home(documents, name, observable, report):
+    """The one carrier of the ``name`` region, as ``(path, body)``.
+
+    ``(None, None)`` when no document carries it, and also when two or more
+    do — reported here as a violation, because a reader-facing table with two
+    homes is the drift this file exists against. The caller's own ``2`` arm
+    then reports that nothing was checked.
+    """
+    carrier, body = region_in_documents(documents, name)
+    if carrier is None:
+        if body:
+            report.violation(
+                observable,
+                "the <!-- %s:BEGIN --> / <!-- %s:END --> region is carried by "
+                "%d documents; it has exactly one reader-facing home"
+                % (name, name, len(body)),
+                "carriers",
+                body,
+                "allowed",
+                ["one document"],
+            )
+        return None, None
+    return carrier, body
 
 
 def heading_section(text, heading):
@@ -350,11 +400,14 @@ class Report:
         self.checked.append("%s (%d %s)" % (observable, count, noun))
 
 
-def check_verbs(root, readme, report):
-    """README's VERBS region against the subcommands the tool registers."""
+def check_verbs(root, documents, report):
+    """The one VERBS region against the subcommands the tool registers."""
     observable = "verbs"
-    markers = "README.md's <!-- VERBS:BEGIN --> / <!-- VERBS:END --> region"
-    documented = [row[0] for row in table_rows(marked_region(readme, "VERBS"), VERB_ROW_RE)]
+    carrier, body = one_home(documents, "VERBS", observable, report)
+    markers = "a <!-- VERBS:BEGIN --> / <!-- VERBS:END --> region in %s" % (
+        carrier or "one of the documented set"
+    )
+    documented = [row[0] for row in table_rows(body, VERB_ROW_RE)]
     if not documented:
         report.nothing_checked(observable, markers)
         return
@@ -418,25 +471,28 @@ def _compare_reasons(report, side, documented, tool):
             )
 
 
-def check_reasons(readme, contract, tool_reasons, report):
+def check_reasons(documents, contract, tool_reasons, report):
     """Both documented reason tables against ``dogen.REASONS``, name and code."""
     observable = "reasons"
     if not tool_reasons:
         report.nothing_checked(observable, "the tool's REASONS table")
         return
-    readme_rows = compact_reason_rows(marked_region(readme, "REASONS"))
-    if not readme_rows:
+    carrier, body = one_home(documents, "REASONS", observable, report)
+    compact_rows = compact_reason_rows(body)
+    if not compact_rows:
         report.nothing_checked(
-            observable, "README.md's <!-- REASONS:BEGIN --> / <!-- REASONS:END --> region"
+            observable,
+            "a <!-- REASONS:BEGIN --> / <!-- REASONS:END --> region in %s"
+            % (carrier or "one of the documented set"),
         )
     else:
         _compare_reasons(
             report,
-            "README.md",
-            dict((name, int(code)) for name, code in readme_rows),
+            carrier,
+            dict((name, int(code)) for name, code in compact_rows),
             tool_reasons,
         )
-        report.ok("reasons (README.md)", len(readme_rows), "rows")
+        report.ok("reasons (%s)" % carrier, len(compact_rows), "rows")
     contract_rows = table_rows(anchored_slice(contract, REASON_TABLE_ANCHOR), REASON_ROW_RE)
     if not contract_rows:
         report.nothing_checked(
@@ -484,19 +540,8 @@ def _compare_compat(report, side, documented, expected):
 def check_compat(documents, contract, expected, report):
     """The one COMPAT region in the documented set, and contract 5.10, against the tool."""
     observable = "compatibility"
-    carrier, body = region_in_documents(documents, "COMPAT")
-    if carrier is None and body:
-        report.violation(
-            observable,
-            "the <!-- COMPAT:BEGIN --> / <!-- COMPAT:END --> region is carried by "
-            "%d documents; it has exactly one reader-facing home" % len(body),
-            "carriers",
-            body,
-            "allowed",
-            ["one document"],
-        )
-        body = None
-    doc_rows = table_rows(body, COMPAT_ROW_RE) if carrier else []
+    carrier, body = one_home(documents, "COMPAT", observable, report)
+    doc_rows = table_rows(body, COMPAT_ROW_RE)
     if not doc_rows:
         report.nothing_checked(
             observable,
@@ -588,6 +633,53 @@ def check_links(root, documents, report):
         )
         return
     report.ok(observable, resolved, "in-repo links")
+
+
+def user_facing_lines(text):
+    """``(line number, line)`` for every line outside an under-the-hood section.
+
+    A section runs from its ``## `` heading to the next one, so a ``### ``
+    subsection inside ``## Under the hood`` stays inside it.
+    """
+    inside = False
+    for number, line in enumerate(text.splitlines(), 1):
+        if _SECTION_RE.match(line):
+            inside = line.strip() == UNDER_THE_HOOD_HEADING
+        if not inside:
+            yield number, line
+
+
+def check_skills_first(root, documents, report):
+    """No ``dogen <verb>`` in a reader-facing document outside an under-the-hood section."""
+    observable = "skills-first"
+    verbs = registered_verbs(root)
+    if not verbs:
+        report.nothing_checked(observable, "`dogen --help`'s subcommand list")
+        return
+    # Longest first, so `plan-steps` is never read as a shorter verb.
+    alternatives = "|".join(re.escape(verb) for verb in sorted(verbs, key=len, reverse=True))
+    command = re.compile(r"\bdogen[ \t]+(?:%s)\b" % alternatives)
+    scanned = []
+    for relative in SKILLS_FIRST_DOCS:
+        text = documents.get(relative)
+        if text is None:
+            continue
+        scanned.append(relative)
+        for number, line in user_facing_lines(text):
+            for match in command.finditer(line):
+                report.violation(
+                    observable,
+                    "`%s` at %s:%d is outside a `%s` section"
+                    % (match.group(0), relative, number, UNDER_THE_HOOD_HEADING),
+                    "found",
+                    [match.group(0)],
+                    "allowed",
+                    ["skill names; tool commands only under `%s`" % UNDER_THE_HOOD_HEADING],
+                )
+    if not scanned:
+        report.nothing_checked(observable, ", ".join(SKILLS_FIRST_DOCS))
+        return
+    report.ok(observable, len(scanned), "reader-facing documents")
 
 
 def check_release_record(changelog, report):
@@ -691,10 +783,9 @@ def read_documents(root):
 
 def run_checks(root, documents, tool, report):
     """Every observable, in one place, against one tool and one documented set."""
-    readme = documents.get("README.md", "")
     contract = documents.get("docs/contract.md", "")
-    check_verbs(root, readme, report)
-    check_reasons(readme, contract, dict(getattr(tool, "REASONS", {})), report)
+    check_verbs(root, documents, report)
+    check_reasons(documents, contract, dict(getattr(tool, "REASONS", {})), report)
     check_compat(
         documents,
         contract,
@@ -705,6 +796,7 @@ def run_checks(root, documents, tool, report):
         report,
     )
     check_links(root, documents, report)
+    check_skills_first(root, documents, report)
     check_release_record(documents.get("CHANGELOG.md", ""), report)
     check_traces(root, report)
 
