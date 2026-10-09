@@ -1,4 +1,4 @@
-"""Documentation-accuracy gate: the observables, one release check, one delegation.
+"""Documentation-accuracy gate: the observables, release checks, one delegation.
 
 Everything else this phase ships can be true on the day it lands and quietly
 false a month later — a verb renamed, a reason added, a file moved. This is the
@@ -25,9 +25,11 @@ What it claims, and nothing wider:
 4. **Links** — every in-repo markdown link in the documented set resolves to a
    path that exists, and every ``#anchor`` to a heading in the target file.
 5. **Release record** — ``CHANGELOG.md``'s topmost ``## [x.y.z]`` section
-   carries an ISO date and none of ``RELEASE_PLACEHOLDERS``. A file with no
-   versioned heading scanned nothing and is a ``2``, never a clean run, so an
-   unfilled release-time slot cannot ship green (REL-02, CI-03).
+   carries an ISO date and none of ``RELEASE_PLACEHOLDERS``. The 0.2.0 section
+   also carries each actual-delivery fact in ``RELEASE_020_REQUIRED_FACTS`` and
+   none of the abandoned-plan claims in ``RELEASE_020_FORBIDDEN_CLAIMS``. A
+   file with no versioned heading scanned nothing and is a ``2``, never a clean
+   run (REL-02, CI-03).
 6. **Traces** — ``tests/check_traces.py``'s ``main()`` is called and folded into
    the tally. There is exactly one trace-table parser in this repository and it
    is not here (17 D-09).
@@ -37,12 +39,11 @@ What it claims, and nothing wider:
    through the skills; the tool's commands belong to the pages that say they
    are looking underneath.
 
-What it does **not** claim: nothing here judges prose. A section can be wrong,
-stale or misleading in every word and this gate stays green, because it compares
-the named observables and only those. Observable 7 reads prose lines, but only
-for one literal shape. The release record is no exception:
-it asserts that the section is dated and does not announce its own
-incompleteness, and nothing about whether what it says is true. There is deliberately no general
+What it does **not** claim: this is not a general prose judge. A section can be
+wrong, stale or misleading outside the named observables and this gate stays
+green. Observable 7 reads prose lines for one literal shape; the release record
+reads only the dated heading, placeholder markers and the bounded 0.2.0
+delivery facts below. There is deliberately no general
 "every module constant must have a doc row" rule and nothing walks the tool's
 namespace: the tool's own step-count backstop constant has no contract row
 behind it by design — section 5.2 caps the step plan in bytes and names no count
@@ -150,16 +151,45 @@ UNDER_THE_HOOD_HEADING = "## Under the hood"
 #: the second is the reserved-slot wording plan 18-04 introduced when it wrote
 #: the section, and the last two are the generic debt markers — a released
 #: section is the one place in this repository where either is never a note to
-#: self but a gap in the record the tag is cut against.
+#: self but a gap in the published release record.
 #:
 #: Matched as substrings against the section body only. A marker in
 #: ``## [Unreleased]`` or in an older release below the topmost one is not a
-#: finding: this observable is about the section the tag is cut against.
+#: finding: this observable is about the topmost released section.
 RELEASE_PLACEHOLDERS = (
     "it is **not** filled",
     "PLACEHOLDER, not final",
     "TBD",
     "TODO",
+)
+
+#: The facts that distinguish the 0.2.0 tree that was delivered from the
+#: reviewed PR/merge/tag process that had been planned. These are deliberately
+#: literal and local: the checker pins the repository's historical record and
+#: never contacts GitHub.
+RELEASE_020_REQUIRED_FACTS = (
+    "The record was finalized on 2026-09-18.",
+    "The 0.2.0 product tree reached `main` by force-push on 2026-10-01.",
+    "No reviewed release pull request or merge produced that state.",
+    "No `v0.2.0` tag was created.",
+    "No GitHub Release was published.",
+    "GitHub Actions run `37534038841` at `edec520` is green.",
+    "CI is not a required status check on the default branch.",
+)
+
+#: Exact fragments from the superseded future-tense release story. A general
+#: wording lint would be guesswork; these are the known false claims this
+#: reconciliation removes and must not silently reintroduce.
+RELEASE_020_FORBIDDEN_CLAIMS = (
+    "every entry below is true at the tag",
+    "`v0.2.0` is the only tag on main's line",
+    (
+        "The merge commit, the run identifier and the tag are recorded in "
+        "this section at the tag"
+    ),
+    "The release branch is therefore re-carved",
+    "The pull request, the review, the merge and the tag are still ahead",
+    "It is merged as a merge commit",
 )
 
 #: A released heading — ``## [x.y.z]`` with an optional ``- YYYY-MM-DD`` suffix.
@@ -683,14 +713,13 @@ def check_skills_first(root, documents, report):
 
 
 def check_release_record(changelog, report):
-    """REL-02 / CI-03: the released section is dated and carries no unfilled slot.
+    """REL-02 / CI-03: the released section is dated and historically bounded.
 
-    The topmost ``## [x.y.z]`` heading is the section the tag is cut against and
-    the one a reader diffs the tag against. Two things are asserted about it and
-    nothing wider: that it carries a date, and that no marker in
-    :data:`RELEASE_PLACEHOLDERS` survives in its body. Nothing here reads the
-    section's prose — an entry can be wrong in every word and this stays green,
-    exactly as the four table observables do.
+    The topmost ``## [x.y.z]`` heading is the latest published release record.
+    Every version must carry a date and no marker in
+    :data:`RELEASE_PLACEHOLDERS`. The 0.2.0 record has one additional bounded
+    check: its body must retain the actual delivery facts and must not restore
+    the exact abandoned-plan claims.
 
     A changelog with no versioned heading at all is a ``2``, never a ``0``: an
     absent, empty or unreleased-only file has no released section, so reporting
@@ -724,6 +753,7 @@ def check_release_record(changelog, report):
             break
         body_lines.append(line)
     body = "\n".join(body_lines)
+    prose = " ".join(body.split())
     for marker in RELEASE_PLACEHOLDERS:
         if marker in body:
             report.violation(
@@ -735,6 +765,29 @@ def check_release_record(changelog, report):
                 [marker],
             )
             fired = True
+    if heading.group(1) == "0.2.0":
+        for fact in RELEASE_020_REQUIRED_FACTS:
+            if fact not in prose:
+                report.violation(
+                    observable,
+                    "the 0.2.0 section omits an actual-delivery fact",
+                    "required",
+                    [fact],
+                    "found",
+                    ["absent"],
+                )
+                fired = True
+        for claim in RELEASE_020_FORBIDDEN_CLAIMS:
+            if claim in prose:
+                report.violation(
+                    observable,
+                    "the 0.2.0 section restores a superseded release claim",
+                    "forbidden",
+                    [claim],
+                    "found",
+                    [claim],
+                )
+                fired = True
     if not fired:
         report.ok(observable, 1, "released section")
 
