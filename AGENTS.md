@@ -170,6 +170,7 @@ validation/                        ← the validation kit: the evidence apparatu
 ├── fixtures.sh                    ← V-01…V-04: four corruptions built from real verbs, and the
 │                                     oracle that catches each one
 ├── audit-docpr-3005.md            ← public-run accountability audit and guarantee table
+├── closeout-docpr-3008.md         ← slim-cycle dispositions, release truth and known limits
 ├── runmeta.sh                     ← records a leg's RUN metadata alongside its drafts
 ├── dogfood-docpr-3002.md          ← local public-candidate dogfood findings and limits
 ├── rubric.md                      ← the scoring bar a leg's drafts are read against
