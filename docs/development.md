@@ -114,6 +114,11 @@ confines ledger reads to that root, but local Git history, model names and revie
 are not independently authenticated. A `FLAG [report]` for declared gaps or a source changed
 since signoff is informational; inspect the gating checks and exit code before claiming a pass.
 
+`validation/closeout-docpr-3008.md` consolidates the slim-cycle disposition,
+the release delivery that actually occurred, the landed hardening evidence and
+the known limitations. Its Jira snapshot is dated: read any non-terminal item
+as a stop condition, not as evidence that the portfolio has already closed.
+
 **`validation/runmeta.sh`** records a dogfood leg's before/after Sphinx builds and provenance
 in the candidate repository. Before an external harness reads a candidate, check its repository
 visibility without authentication: an authenticated clone is not evidence that its contents are
