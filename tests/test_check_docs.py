@@ -549,14 +549,12 @@ class TestSkillsFirst(CheckDocsCase):
 
 
 class TestReleaseRecord(CheckDocsCase):
-    """REL-02 / CI-03: the topmost released section is dated and carries no slot.
+    """REL-02 / CI-03: the released section is dated and historically bounded.
 
-    The section the tag is cut against is the one a reader diffs the tag
-    against. Before this observable existed, ``CHANGELOG.md`` was read by this
-    checker for link resolution only, so a released section could ship undated
-    and carrying an explicitly unfilled slot and every gate stayed green — the
-    "silently green" shape the rest of this phase's infrastructure was built
-    against.
+    Before this observable existed, ``CHANGELOG.md`` was read by this checker
+    for link resolution only, so a released section could ship undated,
+    carrying an explicitly unfilled slot or narrating a delivery that did not
+    happen while every gate stayed green.
     """
 
     def test_an_undated_released_heading_is_a_violation(self):
@@ -594,6 +592,39 @@ class TestReleaseRecord(CheckDocsCase):
                 self.assertIn("release record", output)
                 self.assertIn(marker, output)
 
+    def test_020_requires_each_actual_delivery_fact(self):
+        """Removing any one pinned fact turns the 0.2.0 record red."""
+        release = (
+            "# Changelog\n\n"
+            "## [Unreleased]\n\nNothing unreleased.\n\n"
+            "## [0.2.0] - 2026-09-18\n\n%s\n"
+            % "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        )
+        for fact in check_docs.RELEASE_020_REQUIRED_FACTS:
+            with self.subTest(fact=fact):
+                mutated = release.replace(fact, "")
+                self.assertNotEqual(mutated, release)
+                code, output = self.run_checker(self.tree(changelog=mutated))
+                self.assertEqual(code, 1, output)
+                self.assertIn("release record", output)
+                self.assertIn(fact, output)
+
+    def test_020_rejects_each_superseded_release_claim(self):
+        """Each known false future-tense claim is independently refused."""
+        release = (
+            "# Changelog\n\n"
+            "## [Unreleased]\n\nNothing unreleased.\n\n"
+            "## [0.2.0] - 2026-09-18\n\n%s\n"
+            % "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        )
+        for claim in check_docs.RELEASE_020_FORBIDDEN_CLAIMS:
+            with self.subTest(claim=claim):
+                mutated = release + "\n" + claim + ".\n"
+                code, output = self.run_checker(self.tree(changelog=mutated))
+                self.assertEqual(code, 1, output)
+                self.assertIn("release record", output)
+                self.assertIn(claim, output)
+
     def test_a_changelog_with_no_versioned_heading_is_a_two(self):
         """The vacuous-pass guard: nothing to scan is 2, never 0.
 
@@ -615,7 +646,7 @@ class TestReleaseRecord(CheckDocsCase):
 
         ``## [Unreleased]`` sits directly above the released heading and an
         older release sits directly below it. The observable is about the
-        section the tag is cut against: a marker in either neighbour is not a
+        topmost released section: a marker in either neighbour is not a
         finding, and mistaking ``[Unreleased]`` for the released section is the
         failure ``RELEASED_HEADING_RE``'s semantic-version requirement prevents.
         """
@@ -642,9 +673,9 @@ class TestReleaseRecord(CheckDocsCase):
     def test_the_real_repository_tree_is_clean_on_the_release_record(self):
         """This checkout's own ``CHANGELOG.md``, not a fixture.
 
-        The other direction, so the four cases above cannot pass by refusing
-        every tree: the repository's released section is dated and carries no
-        marker, and the observable reports it as checked.
+        The other direction, so the cases above cannot pass by refusing every
+        tree: this repository's 0.2.0 section is dated, carries no marker,
+        retains every delivery fact and carries none of the stale claims.
         """
         code, output = self.run_checker(ROOT)
         self.assertEqual(code, 0, output)

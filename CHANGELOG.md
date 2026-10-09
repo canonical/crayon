@@ -18,6 +18,10 @@ across. The contract number stays `1`.
 
 ### Added
 
+- `validation/closeout-docpr-3008.md` — the slim-cycle disposition, landed
+  evidence, release truth and known limitations in one record. It separates
+  the current Jira stop condition from shipped product evidence and from the
+  non-gating follow-up in canonical/crayon#39.
 - `validation/evals/` — model evals. They measure how well a model drives the five skills
   under the same skill text and a neutral loop, through OpenRouter. Lane A checks skill
   selection (15 cases). Lane B checks the next action after real, recorded `crayon` output
@@ -93,6 +97,11 @@ across. The contract number stays `1`.
 
 ### Changed
 
+- The 0.2.0 release record now matches the delivery that occurred rather than
+  the abandoned release plan: the product tree reached `main` by force-push,
+  without a reviewed release merge, `v0.2.0` tag or GitHub Release. The
+  release-record check pins those facts and rejects the superseded
+  future-tense merge/run/tag claims.
 - `internal_error`'s `hint` names the whole route its routing row prescribes: run `crayon show`
   on the unit, then re-run the same command unchanged and report the detail. The old hint
   said only "re-run … and report", and models followed it past the `show`. `error`, `next`
@@ -150,8 +159,14 @@ One stdlib-only `dogen` executable over a hash-chained JSONL ledger replaces the
 written by the old scripts was archive-and-redeclare, the policy [docs/upgrade.md](docs/upgrade.md)
 still states for any record under another contract number.
 
-Entries describe the release as a whole. Where an entry names a file that lands later in the
-release series, the release plan is the final check that every entry below is true at the tag.
+The record was finalized on 2026-09-18. The 0.2.0 product tree reached `main`
+by force-push on 2026-10-01. No reviewed release pull request or merge
+produced that state. No `v0.2.0` tag was created. No GitHub Release was
+published.
+
+Entries describe the delivered product tree as a whole. The delivery record
+near the end of this section distinguishes that tree from the reviewed
+pull-request, merge and tag process that had been planned but did not occur.
 
 ### Added
 
@@ -276,9 +291,9 @@ release series, the release plan is the final check that every entry below is tr
 ### Where the frozen contract lives
 
 `docs/contract.md` was reviewed and frozen at the signed tag `contract-v1`, on the `gsd` branch at
-commit `30fe9a5`. That tag is deliberately **not** moved or duplicated onto `main`: `v0.2.0` is the
-only tag on main's line. The freeze record stays where it was made, so it records a moment rather
-than a decision made later.
+commit `30fe9a5`. The tag remains on that planning lineage and was not moved or duplicated onto
+published `main`. It records the contract freeze where it happened; it is not evidence of a
+`v0.2.0` release tag.
 
 The claim is checkable rather than asserted:
 
@@ -305,61 +320,31 @@ that lands the row.
 
 ### Release-time evidence
 
-**No GitHub Actions execution of this workflow exists as of the date on the `## [0.2.0]` heading
-above.** That is the design rather than an omission: the workflow's first execution on a runner is
-the release pull request itself, so there is no runner result to cite here, and this section says
-so rather than implying otherwise. The evidence for "CI green at release" is the pull request's
-eight independent job verdicts, each the same command a developer already runs locally.
+GitHub Actions run `37534038841` at `edec520` is green. It is the 2026-10-06
+push run for the current published `main` at this close-out snapshot, with all
+ten jobs successful. It is later validation of the delivered tree, not
+evidence of a tagged release or of a reviewed release merge.
 
-**CI is not a required status check on the default branch.** The branch ruleset requires one
-approving review and forbids deletion and non-fast-forward pushes; it carries no
-required-status-checks rule, and one actor may bypass it unconditionally. "CI green at release" is
-therefore evidence by inspection of a named run, not a condition the platform holds. Making it
-machine-true is a repository settings change, prepared and deliberately not applied as part of
-this release; a later push to the default branch can falsify the claim with nothing to catch it,
-and the bypass actor survives the rule even once it is added.
+CI is not a required status check on the default branch. The green run is
+therefore evidence by inspection of a named run, not a condition the platform
+held for the force-push or holds for every later change.
 
-**The merge commit, the run identifier and the tag are recorded in this section at the tag.** They
-are facts that do not exist before the release lands. What this record states are the three facts
-it can state: that no run exists, why that is by design, and what "green" is evidence of.
+The release has no merge commit, release pull request, `v0.2.0` tag or GitHub
+Release object to cite. The named commit and run above are the current
+published-tree evidence that does exist.
 
-### How this release is cut, and which build was abandoned
+### How the product tree was delivered
 
-A release branch for `v0.2.0` was built at `f83145a` and was locally green on the whole gate. It
-was deliberately **not** pushed, tagged or opened as a pull request, and it is **superseded**: it
-predates the validation kit under `validation/` and the eighth CI job that runs it. Naming the abandoned build here is the point — a later reader can tell
-which one was dropped and on what grounds, instead of inferring it from a gap in the history.
+Two abandoned local builds remain historical evidence. `f83145a` was locally
+green before the validation kit and its CI job were added. `9308949` was ten
+signed commits and locally green before the later gap-closure changes. Neither
+build was pushed, tagged or opened as a pull request, and both were superseded;
+they do not identify the tree published on `main`.
 
-The release branch is therefore re-carved **once**, from `main`, to include the kit, the eighth CI
-job and the claims above. The decisive reason is that CI has never executed on a runner: its first
-real run should land on the final eight-job workflow rather than on a seven-job one that changes
-immediately afterwards, which would make the first green result stale on arrival.
-
-The re-cut places the kit among the release's deliverable commits so that each commit is still
-green on its own, and nothing from the planning branch enters the release tree — the release
-carries real work only.
-
-**A second build was abandoned, for the same reason and on the same grounds.** The re-cut branch
-was built at `9308949` — ten signed commits, locally green on the whole gate, never pushed, never
-tagged and never opened as a pull request — and it too is **superseded**: the gap-closure work
-recorded under `### Changed` and `### Fixed` above changed the tree its first CI run would have
-landed on. The argument that abandoned `f83145a` applies unchanged to `9308949`: a first green
-runner result on a tree that changes immediately afterwards is stale on arrival. So the branch is
-carved a third and final time, over the gap-closure tree, and both dropped builds are named here
-rather than left as gaps in the history for a later reader to infer. The pull request, the review,
-the merge and the tag are still ahead of this record at the time it is written; what is recorded
-here is the carve and the two abandonments.
-
-**A wording deviation, recorded rather than left to be noticed.** The requirement this release
-discharges names a pull request from the frozen `slim` branch into `main`. This release is instead
-cut **from `main`**, and the v2.0 tree replaces the slim tree there. The substance is the same and
-the frozen commit is untouched: `slim` remains an ancestor of `main`, so every citation of it in
-the contract, the docs and the tests keeps resolving. The reason for the deviation is that a pull
-request from `slim` would have carried the planning branch's process artefacts into the published
-history; cutting from `main` and adding real work path by path carries the product and none of the
-process. The same deviation is recorded in the pull request description and on the ticket.
-
-**The series is the artefact.** The release is carved by deliverable, each commit green on the
-gate on its own, so any commit can be checked out and the gate run against it. It is merged as a
-merge commit rather than squashed or rebased, because a squash would discard exactly the ordering
-that makes the change reviewable.
+The final product tree was assembled without the planning branch's process
+artefacts and replaced `main` by force-push on 2026-10-01. This differed from
+the original requirement's proposed pull request from `slim` into `main`.
+That deviation is historical fact, not an equivalent reviewed merge. The
+frozen `slim` and `contract-v1` references remain useful provenance where
+available, while the published delivery is identified by the `main` history
+and the later named CI run.
