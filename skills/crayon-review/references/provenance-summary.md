@@ -2,7 +2,7 @@ Load this file at workflow step 3 (Present the provenance summary).
 
 # Field map
 
-The record of truth is `.crayon/units/<id>/ledger.jsonl` — hash-chained JSONL, one
+The record of truth is `.crayon/units/<id>/ledger.jsonl` — chained JSONL, one
 canonical line per event. **Do not read it by hand.** Every field below is derived
 state, and deriving it is the tool's job, not yours: two verbs already compute it
 from that one file and print it.
@@ -13,7 +13,10 @@ crayon show "$UNIT_ID" --json       # the whole derived state, as an object
 ```
 
 Use the non-`--json` form when you are reading it yourself, and the `--json` form
-when you need a specific field. Present the fields in plain language. Quote what
+when you need a specific field. Present the fields in plain language: the author
+hears "accepted" for the `sealed` state, "the pages as accepted" for the basis, and
+"request <n>" for a request; a seq, a digest and a check count are never read out.
+Quote what
 the tool printed; never recompute a number, never total a tally yourself, and
 never turn a recorded request into "steering applied" — whether a request was
 acted on is not something the record knows.
@@ -29,8 +32,8 @@ acted on is not something the record knows.
 | `gaps` | the drafter's declared known gaps (`gaps[]` plus `gaps_note` from the generation) |
 | `steps` | the step tally for an actionable unit, `null` for a step-free one |
 | `model`, `model_origin` | what drafted it, and where that name came from |
-| `provenance` | two halves: `record: verify <verdict> at <head> (<n> checks, <n> warn, <n> fail)` and `page: current` / `drifted since <sha>` / `missing` / `no basis recorded` |
-| `state`, `next` | the derived state (`declared`, `signed-off`, `drafted`, `reviewed`, `sealed`, `retired`) and the routed next token |
+| `provenance` | two halves: `record: verify <verdict> at <head> (<n> checks, <n> warn, <n> fail)` and `page: current` / `drifted since <sha>` / `missing` / `no basis recorded`. The `--json` value keeps that counted form; what you present is the human line `crayon summary` prints, `record: intact at <sha7>` or what it names as needing a look, so the counts are never read out |
+| `state`, `next` | the derived state (`declared`, `signed-off`, `drafted`, `reviewed`, `sealed`, `retired`) and the routed next token; `sealed` is presented as accepted |
 
 `page: current` compares the recorded digest with the bytes on disk and says nothing
 about git: a page the author hand-edited and `crayon edits` then adopted reads
@@ -42,9 +45,12 @@ see step 4 for who commits the page before an accept is recorded.
 - `qualifier` — free prose, not a token: the comma-joined list of whatever would
   otherwise mislead, from `accepted at seq N` (an accept a later amendment or request
   overtook), `plan amended at seq N`, `unit.md edited since the signoff at seq N` and
-  `N request(s) pending`. Empty when the state alone is honest. Read it out rather
-  than skimming past it: the reviewer may want the plan re-approved before judging
-  the draft.
+  `N request(s) pending`. Empty when the state alone is honest. The `--json`
+  qualifier names seqs, so it is never read out: read out the human `crayon show`
+  qualifier instead, which names the commit (`accepted in <sha7>`) and says
+  `plan amended since the draft` or `unit.md edited since the signoff`. Read it out
+  rather than skimming past it: the reviewer may want the plan re-approved before
+  judging the draft.
 - `paths` — one row per path with `status`, `recorded_sha` and `current_sha`. The
   status is one of `current`, `new`, `missing`, `drifted (uncommitted)`,
   `drifted (committed in <sha7>)`, `no longer a target (file kept)` or
@@ -56,7 +62,8 @@ see step 4 for who commits the page before an accept is recorded.
 - `orphans` — paths still in the basis that are no longer signed targets. Reported,
   never deleted.
 - `seqs` — the signoff / generation / reviewer-edit / review / basis / tip sequence
-  numbers, when you need to point at one event precisely.
+  numbers, when you need to point at one event precisely on a command line. They are
+  never read out to the author.
 
 ## The declared-vs-read gap
 
@@ -65,7 +72,7 @@ actually read is the generation's `origins[]`, recorded from the context report 
 `draft` verb was given (`.crayon/staging/<id>/report.json`, passed with `--report`).
 
 This is the one pair of fields no verb surfaces, so read the two events — and only
-read them; the ledger is append-only and hash-chained, and a hand edit invalidates
+read them; the ledger is append-only and chained, and a hand edit invalidates
 every line after it:
 
 ```bash
@@ -88,7 +95,7 @@ present it as missing or empty.
 ## Presentation
 
 Fold these into the `### Provenance` block presented in both modes, ahead of the
-verdict. Keep it to: the state and its qualifier, the two-part provenance line, the
+verdict, every field in plain words, as the plain-words block says. Keep it to: the state and its qualifier, the two-part provenance line, the
 recorded requests with their dispositions, the reviewer edits with their notes, the
 declared-vs-read comparison, the known gaps, and the model with its origin.
 

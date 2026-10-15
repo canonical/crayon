@@ -82,6 +82,32 @@ These three rules hold at every question this skill puts to the author.
 </author_rules>
 <!-- author-rules:end -->
 
+<!-- plain-words:begin -->
+<plain_words>
+What the author reads from this skill is in plain words. The record's own words stay in
+`--json`, in the ledger and on every command line, and never reach your prose.
+
+- **Accepted, the pages as accepted, request N.** Say "accepted" where the record says
+  sealed, "the pages as accepted" where it says basis, and "request 7" where it says
+  seq 7 for a request. Give no other record entry a number, neither "event 7" nor
+  "ledger line 7": say what is already recorded and name its commit. These record
+  words stay out of your own prose altogether, not even as an English idiom: say
+  "on what grounds", not "on what basis".
+- **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
+  a sha256, a digest, and a verify or check count never appear in what you say;
+  name a commit by its id, never as a hash. Quote the tallies:
+  the walk tally and the findings tally are the tool's and the rubric's own lines.
+- **The success line, verbatim.** Echo each verb's success response line exactly as the
+  tool printed it; it is already plain. These rules cover what you say around it.
+- **Refusals in plain words, commands exact.** Tell the author in plain words what a
+  refusal means, for example "request 4 is still open". A command you run or show keeps
+  its real flags and values, in a code span. Tool output you show verbatim goes in a
+  fenced code block, never inside a sentence. That covers what a step or a routing row
+  says to show, and any other line you quote beyond the success line, such as a
+  diagnostic a verb prints.
+</plain_words>
+<!-- plain-words:end -->
+
 <hard_gate>
 Do NOT invoke crayon-write, write any documentation, or take any drafting action
 until:
@@ -108,7 +134,8 @@ bypass it, and you never need to: every refusal names the verb that clears it.
    feature the TA points at.
 4. Open the Socratic intake with the Why. Ask exactly one question per turn.
 5. Draw out the judgment fields first (reader's problem, then audience), then collect
-   the mechanical fields directly (unit id, title, source paths, target placement).
+   the mechanical fields directly (unit id, title, source paths, target placement),
+   then ask the arrival-or-next question and what the page can leave out.
 6. Confirm the Diataxis direction and route on it (step 4).
 7. Take ONE confirmation for the whole ceremony, then record it (step 6) and route.
 </quick_start>
@@ -188,7 +215,7 @@ anything yet. Give your view of the audience only when the TA asks for it, state
 evidence — what the siblings or the change show — and never as a marked option. A
 vague answer gets a narrower probe, not a proposal.
 
-Every intake asks at least one open question. One of two fixed questions is always
+Every intake asks at least two open questions. One of two fixed questions is always
 among them, written exactly as:
 
 - **"What is the reader doing just before they land here?"**
@@ -199,6 +226,15 @@ equally thin or equally full, ask the first. When the brief already fills every
 field — the reader's problem, the audience, the direction, the id, the title, the
 target, the sources and the outline — this question is still asked, before recording
 anything. Its answer is recorded in the TA's words (step 6).
+
+The second fixed question is asked in every intake, after the arrival-or-next question
+and before anything is recorded, even when the brief fills every field. It is written
+exactly as:
+
+- **"What can this page leave out?"**
+
+Its answer is recorded in the TA's words (step 6), and a "nothing" answer records
+nothing for it.
 </step_2>
 
 <step_3 name="Propose the mechanical fields; ask only for what you cannot infer">
@@ -255,11 +291,12 @@ outcome-framed, and **never a step list**. Enumerating steps is crayon-write's j
 
 <step_6 name="One confirmation, then record the declaration and the gate act">
 **J1 — batch the whole ceremony behind ONE confirmation.** Read back the settled
-plan in a single block — id, title, intent, audience, targets, sources, outline —
-and ask once: "record this and sign it off?" Do not confirm the fields one at a time,
-and do not ask again between the two verbs below. Only an explicit yes to that
-question is the go: "looks good" about the outline is not a go, and "yes, but …"
-means make the change, read the plan back, and ask again.
+plan in a single block — id, title, intent, audience, targets, sources, outline, and
+the notes as they will be recorded — and ask once: "record this and sign it off?" Do
+not confirm the fields one at a time, and do not ask again between the two verbs
+below. Only an explicit yes to that question is the go: "looks good" about the
+outline is not a go, and "yes, but …" means make the change, read the plan back, and
+ask again.
 
 **Record the declaration.** Compose the frontmatter fields as flags and pipe the
 approved body on stdin. This is the only path `unit.md` has to disk: the skill holds
@@ -281,11 +318,13 @@ printf '%s\n' "$APPROVED_BODY" | crayon unit new "$UNIT_ID" \
 
 `--also-target` and `--source` repeat, once per additional page or source. `--notes` is
 the TA's own words given in answer to an open question during the intake — at least
-their answer to step 2's arrival-or-next question — verbatim, replies joined in order,
-one per line. Settled terms and the outline go into the body, which the TA approves;
-the skill writes no note of its own. Omit `--notes` only when the TA gave no such
-words. The tool writes `unit.md` in its own frontmatter shape, so never compose the
-frontmatter block yourself — pass the fields as flags and let the tool render them.
+their answers to step 2's arrival-or-next question and to the leave-out question —
+verbatim, replies joined in order, one per line. A "nothing" answer to the leave-out
+question records nothing for it. Settled terms and the outline go into the body,
+which the TA approves; the skill writes no note of its own. Omit `--notes` only when
+the TA gave no such words. The tool writes `unit.md` in its own frontmatter shape, so
+never compose the frontmatter block yourself — pass the fields as flags and let the
+tool render them.
 
 **Record the gate act.**
 
@@ -343,8 +382,8 @@ back to drafting. Say that plainly rather than presenting it as an error.
 <step_8 name="J7 — the target is claimed by another unit">
 `target_claimed` (exit 1) means another unit that is not retired still lists this
 target in its current signoff. The refusal's own JSON line already names the holding
-unit and the command that releases it — echo the `detail` and `hint` verbatim rather
-than paraphrasing them.
+unit and the command that releases it — show the `detail` and `hint` verbatim, in a
+code block, rather than paraphrasing them.
 
 Then tell the TA what the refusal means — the target is still spoken for by that
 unit's record — and offer to release it. Retire only on an explicit yes: it is
@@ -385,16 +424,17 @@ narrowing probes, say plainly that the answer is still open, and ask whether the
 your view on it; give your view only when the TA asks for it.
 
 **Jump-ahead TA:** bank everything they gave and continue only for what is genuinely
-open. Never re-ask what they already answered. One of step 2's two fixed questions is
-always open, so a brief that answers everything still gets that one question before
+open. Never re-ask what they already answered. One of step 2's two arrival-or-next
+questions is always open, and so is the question of what the page can leave out, so a
+brief that answers everything still gets those two questions, one per turn, before
 anything is recorded.
 
 **`unit_exists` (exit 2):** that id is already declared. Show it with
 `crayon show <id>` and continue on it, or agree a new id with the TA.
 
-**`already_signed` (exit 3):** the plan is already signed at that hash. Nothing is
-wrong — report the existing seq and commit from the payload and act on the `next` it
-carries.
+**`already_signed` (exit 3):** the plan is already signed as it stands. Nothing is
+wrong — say so, give the commit from the payload, naming no record number, and act on
+the `next` it carries.
 
 **`unit_invalid` (exit 2):** the recorded plan is not the declared shape. The refusal
 names the offending line AND the flag that owns that field. Fix it through that flag
@@ -423,8 +463,9 @@ one), and act on the routing row for `next`.
   nothing from a dynamic crawl.
 - Ask exactly one question per turn during the Socratic intake.
 - Draw out the judgment fields (reader problem, audience) before recording anything.
-- Ask at least one open question before recording anything — one of step 2's two
-  fixed questions — even when the brief fills every field.
+- Ask at least two open questions before recording anything — one of step 2's two
+  arrival-or-next questions, then what the page can leave out — even when the brief
+  fills every field.
 - Propose every field the repo can answer; ask only for what it cannot.
 - Batch the declaration ceremony behind ONE confirmation.
 - Ground the target placement in the docs tree (siblings, toctree slots); the
@@ -463,8 +504,8 @@ one), and act on the routing row for `next`.
 - [ ] When the context was missing, the TA was offered the bootstrap choice once, and
       any dynamic crawl persisted nothing.
 - [ ] The intake ran one question at a time, drawing out intent and audience first.
-- [ ] The intake asked at least one open question before anything was recorded, even
-      when the brief filled every field.
+- [ ] The intake asked at least two open questions before anything was recorded,
+      including what the page can leave out, even when the brief filled every field.
 - [ ] Every derivable field was proposed, not asked.
 - [ ] The whole ceremony was confirmed once.
 - [ ] `crayon unit new … --body-file -` recorded the plan and `crayon signoff` exited 0.

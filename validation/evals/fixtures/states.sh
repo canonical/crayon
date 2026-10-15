@@ -123,7 +123,12 @@ base() {
     "$CRAYON" context record --note "toyq context" >/dev/null 2>&1
 }
 
+# declare_cfg [NOTES] : the reference unit cfg, declared. NOTES, when given, are
+# the author's intake notes, passed as --notes; without them the declaration is
+# the one every earlier state recorded.
 declare_cfg() {
+    local notes=()
+    [ $# -gt 0 ] && notes=(--notes "$1")
     printf '%s\n' \
         '# Plan' '' \
         'A reference page for every toyq setting: its key in toyq.toml, its TOYQ_*' \
@@ -135,7 +140,7 @@ declare_cfg() {
         "$CRAYON" unit new "$UNIT" --intent reference \
             --audience "operators configuring toyq on a server" \
             --title "Configuration reference" --target "$TARGET" \
-            --source src/toyq/config.py --body-file - >/dev/null 2>&1
+            --source src/toyq/config.py ${notes[@]+"${notes[@]}"} --body-file - >/dev/null 2>&1
 }
 
 stage_page() {
@@ -262,15 +267,16 @@ scenario_closing() {
 # --force-dir) is genuinely absent from it, so the closure's question is real.
 INSTALL_PAGE='# Install toyq\n\nInstall toyq from the checkout:\n\n```console\n$ python3 -m pip install /srv/toyq\n```\n\nCreate the configuration:\n\n```console\n$ toyq init\n```\n\nQueue and run a first job:\n\n```console\n$ toyq add "echo hi" && toyq run --once\n```\n'
 
-# A walked how-to accepted with one deviated step, one skipped step and one
-# request the reviewer judged without a redraft: four things open at handover
-# once the reader's arrival is counted.
-scenario_closing_walk() {
+# walked_install : the one definition of the walked how-to. The unit `install`,
+# declared and signed off, walked with one passing step, one deviated step
+# (`init`) and one skipped step (`first-job`), and drafted. Both
+# scenario_closing_walk and scenario_walk_drafted start here.
+walked_install() {
     base
     declare_install
     printf '%s' '[{"id":"install","text":"Install toyq from the checkout: python3 -m pip install /srv/toyq","mode":"agent","stateful":false},{"id":"init","text":"Create the configuration: toyq init","mode":"agent","stateful":false},{"id":"first-job","text":"Queue and run a job: toyq add \"echo hi\" && toyq run --once","mode":"ta","stateful":false}]' |
         "$CRAYON" plan-steps install --steps-file - >/dev/null 2>&1
-    local seq request
+    local seq
     seq=$(last_plan_seq install)
     record_step install install "$seq" pass "Successfully installed toyq\n" >/dev/null 2>&1
     record_step install init "$seq" deviated "Created toyq.toml\n" agent \
@@ -278,6 +284,14 @@ scenario_closing_walk() {
     skip_step install first-job "$seq" "no network in CI" >/dev/null 2>&1
     stage_draft install how-to/install.md "$INSTALL_PAGE"
     "$CRAYON" draft install "$(draft_path install how-to/install.md)" >/dev/null 2>&1
+}
+
+# A walked how-to accepted with one deviated step, one skipped step and one
+# request the reviewer judged without a redraft: four things open at handover
+# once the reader's arrival is counted.
+scenario_closing_walk() {
+    local request
+    walked_install
     "$CRAYON" review install --verdict fix \
         --note "Say which Python version toyq needs." >/dev/null 2>&1
     request=$(tail -n 1 .crayon/units/install/ledger.jsonl | json_field seq)
@@ -286,6 +300,57 @@ scenario_closing_walk() {
     rec closing_walk handover_json show install --json
     rec closing_walk summary_md summary install --md
     snap closing_walk
+}
+
+# A walked how-to drafted and not yet reviewed: its routed `next` is `review`,
+# and both the deviated and the skipped step are in `handover.steps` before any
+# accept. walk_accepted is the same unit after a bare accept, with no request
+# pending, so a closure on it has only the steps and the reader's arrival open.
+scenario_walk_drafted() {
+    walked_install
+    rec walk_drafted show_json show install --json
+    rec walk_drafted summary summary install
+    snap walk_drafted
+    rec walk_accepted accept review install --verdict accept
+    rec walk_accepted handover_json show install --json
+    snap walk_accepted
+}
+
+# The author's intake notes for the reported states: where the reader arrives
+# from, and what the page leaves out.
+REPORTED_NOTES='They have just installed toyq and opened toyq.toml.
+Leave out db_path; storage gets its own page.'
+
+# The writer's context report, with one gap recorded, and its twin with none.
+REPORT_GAPS='{"origins": ["src/toyq/config.py"], "gaps": ["No source lists the accepted log_level values; the page gives only the default."]}'
+REPORT_CLEAN='{"origins": ["src/toyq/config.py"], "gaps": [], "gaps_note": "Every setting on the page is read from src/toyq/config.py."}'
+
+# reported_unit STATE REPORT : a reference unit drafted by a named model with
+# intake notes and a context report, so review can weigh who drafted it and
+# write can voice its gaps. reported and reported_clean differ only in REPORT.
+reported_unit() {
+    local state="$1" report="$2" staged=".crayon/staging/$UNIT/report.json"
+    base
+    declare_cfg "$REPORTED_NOTES"
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
+    rec "$state" signed_show_json show "$UNIT" --json
+    stage_page "$PAGE_V1"
+    printf '%s\n' "$report" >"$staged"
+    rec_file "$state" "$staged"
+    rec "$state" draft draft "$UNIT" "$(draft_path "$UNIT" "$TARGET")" \
+        --model example/drafting-model-1 --model-origin session --report "$staged"
+    rec_file "$state" "$PAGE"
+    rec "$state" show_json show "$UNIT" --json
+    rec "$state" summary summary "$UNIT"
+    snap "$state"
+}
+
+scenario_reported() {
+    reported_unit reported "$REPORT_GAPS"
+}
+
+scenario_reported_clean() {
+    reported_unit reported_clean "$REPORT_CLEAN"
 }
 
 scenario_edited() {
@@ -444,7 +509,7 @@ scenario_context() {
 }
 
 for scenario in declared signed drafted accepted closing_linked closing_nested closing closing_walk \
-    edited missing target_exists stale retired walk crashed diverged no_material \
-    docs_outside context; do
+    walk_drafted reported reported_clean edited missing target_exists stale retired walk crashed \
+    diverged no_material docs_outside context; do
     ("scenario_$scenario"; cleanup)
 done

@@ -84,7 +84,9 @@ the line budget's two thresholds, the Python 3.9 hazard scan and the no-dependen
 `references/routing.md`; every reason and every `next` token has exactly one row; the
 author-rules block, the three rules authored once in `skills/README.md` between the
 `author-rules` sentinels, is carried byte for byte in the plan, write and review SKILL.md
-bodies (S-15); the manual install lines in [[install]] create the directory they copy into.
+bodies (S-15); the plain-words block, authored once in `skills/README.md` between the
+`plain-words` sentinels, is carried byte for byte in all five SKILL.md bodies (S-20); the
+manual install lines in [[install]] create the directory they copy into.
 
 **`tests/test_crayon_lifecycle.sh`** — the N-series: lifecycle walks, negative paths, recovery
 situations and the contract's trace table, each test driving the real executable in a hermetic
@@ -148,6 +150,12 @@ kit to is everything that needs no model:
 - the transport's request shape, retries, cache and spend cap, against a fake opener;
 - every assertion kind, against hand-built turns;
 - every case file, against its own known-good reply;
+- the always-on plain-words check on every Lane B case, and the rule that every foil fails one
+  of its own assertions, not only that check;
+- the kit's own guards: every oracle passes every other case in its conversation, so no reply
+  is both an oracle and a foil there; quoted tool output in a known-good reply sits in a fenced
+  block; a prelude holds recorded refs, user and assistant turns only; and the plain-words rule
+  and the check name the same forms;
 - the rule that no prompt or kit file names an agent harness.
 
 [[evals]] explains what the evals measure and how to read their results;
@@ -198,6 +206,7 @@ the local guard are the same code.
 | The routing table | each skill's `references/routing.md` | `test_skill_text.py` |
 | The three stance references | `crayon-fetch`'s copies of `crayon-onboard`'s | `test_skill_text.py` |
 | The author-rules block | the plan, write and review `SKILL.md` bodies | `test_skill_text.py` |
+| The plain-words block | all five `SKILL.md` bodies | `test_skill_text.py` |
 | The five context artefact names | `docs/context.md`, the plan and onboard skills | the unit suite |
 | The verb rows in `docs/internals.md` | `crayon --help` | `check_docs.py` |
 | Reader-facing pages name skills, not tool commands | `crayon --help` | `check_docs.py` |

@@ -1,6 +1,6 @@
 ---
 name: crayon-review
-description: Surfaces a drafted documentation unit for human review through two modes — record (compact provenance summary + verdict) and review (additionally runs a five-dimension findings review). Records the verdict by calling crayon review for all verdicts — accept seals the recorded basis, fix and redraft record the note as steering. Never edits the draft. Use when a TA is ready to review a drafted unit.
+description: Surfaces a drafted documentation unit for human review through two modes — record (compact provenance summary + verdict) and review (additionally runs a six-dimension findings review). Records the verdict by calling crayon review for all verdicts — accept seals the recorded basis, fix and redraft record the note as steering. Never edits the draft. Use when a TA is ready to review a drafted unit.
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 metadata:
   crayon_contract: 1
@@ -11,7 +11,7 @@ Surface a drafted documentation unit for human review and record the reviewer's
 structured verdict — without changing anything the reviewer will publish. The
 reviewer chooses one of two modes: **record** (present the provenance summary the
 tool produced, then record the verdict) or **review** (additionally run a
-five-dimension findings review grounded by re-checking claims against the recorded
+six-dimension findings review grounded by re-checking claims against the recorded
 sources).
 
 This skill also owns two flows that are not verdicts: adopting bytes the record has
@@ -79,12 +79,41 @@ These three rules hold at every question this skill puts to the author.
 </author_rules>
 <!-- author-rules:end -->
 
+<!-- plain-words:begin -->
+<plain_words>
+What the author reads from this skill is in plain words. The record's own words stay in
+`--json`, in the ledger and on every command line, and never reach your prose.
+
+- **Accepted, the pages as accepted, request N.** Say "accepted" where the record says
+  sealed, "the pages as accepted" where it says basis, and "request 7" where it says
+  seq 7 for a request. Give no other record entry a number, neither "event 7" nor
+  "ledger line 7": say what is already recorded and name its commit. These record
+  words stay out of your own prose altogether, not even as an English idiom: say
+  "on what grounds", not "on what basis".
+- **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
+  a sha256, a digest, and a verify or check count never appear in what you say;
+  name a commit by its id, never as a hash. Quote the tallies:
+  the walk tally and the findings tally are the tool's and the rubric's own lines.
+- **The success line, verbatim.** Echo each verb's success response line exactly as the
+  tool printed it; it is already plain. These rules cover what you say around it.
+- **Refusals in plain words, commands exact.** Tell the author in plain words what a
+  refusal means, for example "request 4 is still open". A command you run or show keeps
+  its real flags and values, in a code span. Tool output you show verbatim goes in a
+  fenced code block, never inside a sentence. That covers what a step or a routing row
+  says to show, and any other line you quote beyond the success line, such as a
+  diagnostic a verb prints.
+</plain_words>
+<!-- plain-words:end -->
+
 <quick_start>
 1. Run the two-verb opening above and act on the routing row for `next`.
 2. Read the shown state and the drafted page(s) under `docs/`.
 3. Select the review mode with `AskUserQuestion`: **record** or **review**.
-4. Present the provenance summary (both modes), quoting the tool's own lines.
-5. In review mode, run the five-dimension findings review.
+4. Present the provenance summary (both modes), quoting the tool's own lines, and
+   end it with every deviated or skipped step put to the author as a question
+   (step 3a), before any finding and before the verdict question; when the
+   reviewer already authorised the accept, the closure asks them instead.
+5. In review mode, run the six-dimension findings review.
 6. Ask for the verdict with the one open question and record it with `crayon review`.
    After an accept, close with at most three questions drawn from the record, then
    STOP.
@@ -128,7 +157,7 @@ Ask the reviewer, with `AskUserQuestion`, which mode they want:
 
 - **record** — "I have already read it; just record my verdict." Skips the findings
   review; goes straight to the provenance summary and the verdict.
-- **review** — "Do a full review and show me findings." Runs the five-dimension
+- **review** — "Do a full review and show me findings." Runs the six-dimension
   findings review before the verdict.
 
 The raw page source is not dumped by default in either mode — offer it only if the
@@ -149,11 +178,45 @@ was applied is not something the record knows.
 
 Two lines deserve to be read out rather than skimmed past:
 
-- **`plan_stale`** — `unit.md` moved after the signature that froze it. The reviewer
-  may want the plan re-approved before judging the draft.
+- **the plan was edited after it was signed** (what the tool calls `plan_stale`) —
+  `unit.md` moved after the signature that froze it. The reviewer may want the plan
+  re-approved before judging the draft.
 - **a `drifted` or `missing` page** — the bytes under review are not the bytes the
   record cites. Handle that before the verdict, in step 4 or step 6.
 </step_3>
+
+<step_3a name="Put deviated and skipped steps to the author">
+Both modes. After the provenance summary and before any findings or the verdict,
+read `handover.steps` from the opening's `crayon show "$UNIT_ID" --json`; run it again
+if this conversation no longer holds it. Each entry is a step of the walk that
+deviated or was skipped, with its id and its recorded reason.
+
+When the reviewer already authorised the accept, step 3a is skipped; the closure asks
+the steps instead, because none was put to the author in this conversation.
+
+With no entry, ask nothing about steps and go on.
+
+Otherwise end the provenance-summary message with every entry as a question about
+the page, in one numbered list, in the order `handover.steps` lists them, with
+no cap. Each question names its step and its reason in plain words, for example
+"Step install-deps was skipped: no network in CI. Does the page need to say so?" or
+"Step init deviated: <its reason>. Does the page need to say so?". Quote each id and
+reason as the tool gives them, and add no count of your own: the tally stays the
+tool's own line. The questions are plain text, not options in a question tool.
+
+The author may answer any, all or none. Nothing is recorded from an answer: no steer and no note.
+When an answer asks for a page change, say in one line that it is not recorded until
+the verdict, and that a fix or redraft verdict with those words records it.
+The review then moves on, to the findings in review mode (step 5) and to the verdict
+question in record mode (step 6). The author's answer to the verdict question is the
+note. A fix or redraft given with no words still gets "What should the next draft
+change?".
+
+The closure after an accept in this conversation does not ask again a step whose
+answer asked for no page change, and a step left unanswered is not asked again. A step
+whose answer asked for one comes back there, named with the change the author asked
+for (step 6).
+</step_3a>
 
 <step_4 name="On record_edits — adopt the bytes before judging them">
 `record_edits` means a basis page on disk no longer holds the recorded bytes
@@ -217,7 +280,21 @@ the drafted page(s):
 Each hit is either promoted into the findings as a prioritized finding marked
 `(pre-pass)`, or dismissed with a one-line reason.
 
-Then assess the five dimensions, presenting findings grouped by dimension:
+**Self-review.** Before the findings, decide whether this is a self-review. It is one
+when this conversation ran `crayon draft` for this unit, or when the `model` line of
+`crayon summary` names the model you run as. Establish your own model the way you would
+record it on a draft, from what you are told about the model you run as, never guessed;
+when you cannot, only the first ground applies. When neither holds, because the
+recorded model is another one, or is empty with the origin `unknown`, and the draft ran
+in another session, there are no grounds: say nothing about it. With grounds, put one
+line in the first person directly before the findings, for example:
+
+> I drafted this page, so this is a self-review; I'm likely to miss what I got wrong the first time. Weigh these findings with that in mind.
+
+Record mode has no findings and no such line, and the line is never repeated at the
+verdict.
+
+Then assess the six dimensions, presenting findings grouped by dimension:
 
 1. **writing-approach** (always on, assessed first) — stance contract violations,
    researcher register, implementation identifiers in prose.
@@ -225,14 +302,25 @@ Then assess the five dimensions, presenting findings grouped by dimension:
    sources. Open the files; don't judge only on internal coherence.
 3. **completeness** — does the draft satisfy every `## Outline / acceptance` item?
    An objective-check failure is must-fix by definition.
-4. **structure-fit** — format hygiene (MyST/rST), cross-page consistency for
+4. **focus** — the mirror of completeness: what is on the page that the reader does
+   not need. Material the reader's problem does not call for, anything the author's
+   intake notes say to leave out (must-fix), and a complete page whose sections do not
+   build toward the reader's problem, meet the reader where they arrive or hand them
+   their next step.
+5. **structure-fit** — format hygiene (MyST/rST), cross-page consistency for
    multi-file units, relative link paths resolve from the page's location.
-5. **clarity** — sentence-level clarity, jargon, forward references.
+6. **clarity** — sentence-level clarity, jargon, forward references.
 
 Number findings `F-1`, `F-2`, … Each carries: page path, the verbatim offending
 text, a concrete suggested action, and a priority tag (must-fix / should-fix / nit).
 Ground source-fidelity and completeness by re-checking claims against the recorded
 sources.
+
+A finding you could not fully verify says so inside the finding, in the first person,
+naming what you looked for or inferred from, for example "I found no source for the
+30-second default" or "I inferred the retry order from queue.py". A verified finding
+carries no hedge. There is never a section of doubts and never a general caveat about
+the review.
 </step_5>
 
 <step_6 name="Elicit the verdict and record it">
@@ -292,8 +380,9 @@ words, exactly as they typed them, are the note: add
 Accept seals the basis, and it has two preconditions this skill must be ready for.
 
 **`unapplied_steering` (exit 1)** — requests are still pending, and the refusal's
-`detail` lists their seqs. Nothing is closed by silence: put each seq to the reviewer
-one at a time, take one disposition for each, and re-run accept carrying all of them:
+`detail` lists the pending requests' numbers. Nothing is closed by silence:
+put each pending request to the reviewer one at a time, as "request <n>" with its note,
+then take one disposition for each, and re-run accept carrying all of them:
 
 ```bash
 crayon review "$UNIT_ID" --verdict accept [--note '<their words beyond the verdict>'] --resolves 7,9 --withdraw 12 '<why it no longer applies>'
@@ -324,9 +413,13 @@ to the page. After an accept, the closure below is that STOP.
    crayon show "$UNIT_ID" --json
    ```
 
-   Each `handover.steps` entry (a deviated or skipped step) is open, and so is each
-   `handover.judged` entry (a request accepted without a page change).
-   `withdrawn` entries are not.
+   Each `handover.steps` entry (a deviated or skipped step) is open,
+   except a step this conversation already put to the author in step 3a, unless its
+   answer asked for a page change; a step left unanswered is not asked again. A step
+   whose answer asked for a page change is open: its question names the change the author asked for, in their
+   words. In a later session, every step counts again, because the asking is not on
+   the record. Each `handover.judged` entry (a request accepted without a page change) is
+   open too. `withdrawn` entries are not.
 2. Findings count only when review mode ran in this same conversation. Each
    must-fix or should-fix finding the author did not speak to in the verdict
    exchange is open. Nits never count. In a later session this source is absent,
@@ -427,9 +520,9 @@ how this skill reads the situation before it changes it.
 Some file on disk differs from what the interrupted run intended. The tool wrote
 nothing: both the pages and the record are byte-identical to how it found them.
 
-Show its stdout verbatim, including the per-file diffs — that is what the author
-needs to decide, and paraphrasing a diff loses the decision. Then offer exactly the
-two choices the contract names, and no third:
+Show its stdout verbatim, in a code block, including the per-file diffs — that is
+what the author needs to decide, and paraphrasing a diff loses the decision. Then
+offer exactly the two choices the contract names, and no third:
 
 - **discard the on-disk bytes**, taking the interrupted run's intended bytes:
   `crayon resume <id> --overwrite`
@@ -457,9 +550,9 @@ which is the author's to make.
 </step_9>
 
 <step_10 name="On recovery_unsupported — the honest limit">
-Show the tool's printed findings verbatim, then branch on the refusal's `detail`.
-There are two different situations under this one reason and they have opposite
-answers.
+Show the tool's printed findings verbatim, in a code block, then branch on the
+refusal's `detail`. There are two different situations under this one reason and they
+have opposite answers.
 
 **`detail: commit_rejected` or `detail: stage_rejected` — the write path's own limit.**
 Here the batch *was* appended to the record and the files *were* placed; git failed to
@@ -506,8 +599,8 @@ unit directory and every file the tool could not attribute are preserved exactly
 they are, which is the point of stopping.
 
 The stage-a answer also holds for `ledger_corrupt`, `ledger_diverged`,
-`ledger_version_unsupported` and `unit_id_mismatch`: show the refusal verbatim, and
-stop.
+`ledger_version_unsupported` and `unit_id_mismatch`: show the refusal verbatim, in a
+code block, and stop.
 </step_10>
 </workflow>
 
@@ -520,11 +613,12 @@ recorded paths: the reviewer edits the file themselves and the change is adopted
 `crayon edits <id> --note "…"`, or the change is recorded as a fix/redraft verdict and
 crayon-write applies it. Never offer to edit the page yourself.
 
-**`already_accepted` (exit 3):** the unit is already sealed on this basis with
-nothing recorded since. Report the existing seq and commit from the payload — a
-second accept is neither needed nor recorded.
+**`already_accepted` (exit 3):** the unit is already accepted on these pages with
+nothing recorded since. Say that it is already accepted and
+give the commit from the payload, naming no record number — a second accept is
+neither needed nor recorded.
 
-**The unit is already accepted (`publish`):** the session opens on a sealed unit
+**The unit is already accepted (`publish`):** the session opens on an accepted unit
 with nothing recorded since. Say in one plain line that the unit is already accepted
 and that crayon stops here. Then ask the questions step 6's closure asks, drawn from
 the record, without the findings source, because no review ran in this conversation.
@@ -555,9 +649,16 @@ unchanged.
   act on the routing row for `next`.
 - Offer two selectable modes up front (record vs review) via `AskUserQuestion`.
 - Present the provenance summary in both modes, quoting the tool's own lines.
+- After the provenance summary, in both modes, put every deviated or skipped step in
+  `handover.steps` to the author as a question, in one numbered list, before any
+  findings or the verdict, unless the reviewer already authorised the accept, when the
+  closure asks them; record nothing from an answer, and when an answer asks for a page
+  change, say in one line that it is not recorded until the verdict.
 - In review mode, run the deterministic pre-pass before judgment, then present
-  five-dimension findings grouped by dimension, numbered F-N with
+  six-dimension findings grouped by dimension, numbered F-N with
   must-fix/should-fix/nit tags.
+- In review mode, when this conversation ran the draft or the recorded model is yours,
+  say in one line before the findings that this is a self-review.
 - Ground source-fidelity/completeness findings by re-checking claims against the
   recorded sources.
 - On `record_edits`, show `crayon show <id> --diff`, ask "record these as your edits?",
@@ -601,9 +702,14 @@ unchanged.
 - Never offer publishing, a pull request or a build as a next step.
 - Never record anything from a closure answer that asks for no page change, and never
   put a change request in words other than the author's.
+- Never record a steer or a note from an answer to a step question.
+- Never let a page change asked for in a step answer pass without saying it is not
+  recorded until the verdict.
 - Never offer a recovery step the tool did not print, and never suggest that
   committing an interrupted tail makes the situation go away.
 - Never recompose or reword the tool's own summary and tally lines.
+- Never call a review a self-review without grounds in this conversation or the
+  record, and never repeat that line at the verdict.
 - Never dump the raw page source into the conversation by default; offer only on
   request.
 </must_not>
@@ -613,8 +719,15 @@ unchanged.
 - [ ] The session opened on `crayon version --json` and `crayon show <id> --json`.
 - [ ] The review mode (record or review) was selected up front.
 - [ ] The provenance summary was presented from the tool's own lines before the verdict.
-- [ ] In review mode, the pre-pass and five-dimension findings ran, grounded against
+- [ ] Every deviated or skipped step was put to the author as a question after the
+      provenance summary, in both modes, unless the reviewer already authorised the accept,
+      when the closure asked them. Nothing was recorded from an answer; a change asked
+      for in a step answer was said to be not recorded until the verdict, and was asked
+      again at the closure after an accept.
+- [ ] In review mode, the pre-pass and six-dimension findings ran, grounded against
       the recorded sources; in record mode, findings were skipped.
+- [ ] A self-review was named in one line before the findings when, and only when,
+      this conversation ran the draft or the recorded model was the reviewer's.
 - [ ] `record_edits` showed the diff, asked "record these as your edits?", and
       recorded the author's own words.
 - [ ] The verdict was asked with the one open question, and the lean appeared only

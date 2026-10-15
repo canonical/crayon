@@ -541,12 +541,14 @@ class SandboxRepo(object):
             handle.write(content)
 
 
-def history_messages(steps):
+def history_messages(steps, prefix="h"):
     """Resolved steps -> the assistant/tool/user messages that replay them.
 
     A step is ``{"user": text}``, ``{"assistant": text}``, a shell step
     ``{"cmd", "exit", "output"}``, or any other tool call
-    ``{"call": {"name", "arguments"}, "result": text}``.
+    ``{"call": {"name", "arguments"}, "result": text}``. Call ids are the
+    prefix and the step's index, so two replays with different prefixes (a
+    prelude's ``p``, a history's ``h``) never pair a result with the wrong call.
     """
     messages = []
     for index, step in enumerate(steps):
@@ -561,7 +563,7 @@ def history_messages(steps):
         else:
             name, args = "Bash", {"command": step["cmd"]}
             result = render_output(step["output"], step["exit"])
-        call_id = "h%d" % index
+        call_id = "%s%d" % (prefix, index)
         messages.append({
             "role": "assistant",
             "content": step.get("say", ""),

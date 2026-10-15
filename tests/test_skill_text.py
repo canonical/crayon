@@ -41,7 +41,9 @@ Coverage:
   S-08  recovery presentation — the dry run before the real ``crayon resume``,
         exactly contract 5.8's two choices on ``resume_ambiguous``, the printed
         findings shown verbatim on ``recovery_unsupported``, no restore recipe
-        of the skill's own, and dispositions on accept
+        of the skill's own, and dispositions on accept; and D-14's pre-pass and
+        six-dimension findings list carried byte for byte (``SIX_DIMENSIONS``,
+        with ``focus`` as item 4 since D-20)
   S-09  T34a/T34b, ``target_missing`` — the restore-or-amend question, the
         never-a-second-accept statement, an explicit restore instruction
         recorded through ``crayon steer`` without reconfirming, and no invented
@@ -103,9 +105,10 @@ Coverage:
         routes to ``/crayon-plan`` with the author's first pick in their own
         words, or with none, never one of its own (CLOSE-02, D-05)
   S-18  the intake is the author's (JUDG-04, D-08, D-12, D-16) — every intake asks
-        at least one open question, one of two fixed questions (where the reader
-        arrives from, what they do next) even when the brief fills every field,
-        and the jump-ahead scripts keep one of them always open; a view on the
+        at least two open questions, the leave-out question always among them:
+        one of two fixed questions (where the reader arrives from, what they do
+        next) even when the brief fills every field, and the jump-ahead scripts
+        keep one of them always open; a view on the
         audience or the direction is given only when the TA asks for it, as
         evidence, never as a marked option, and a vague answer gets a narrower
         probe; ``--notes`` carries only the TA's own words given in answer to an
@@ -117,6 +120,86 @@ Coverage:
         walk protocol; the permission gate, the ``--keep-evidence`` ask and a
         failed step or genuine fork are step choices put with no option marked,
         and resuming at the first unresolved step is a mechanical default
+  S-20  what the author reads is in plain words (VOICE-03, D-01 to D-04, D-07) —
+        a pending request is put to the reviewer one at a time as "request <n>",
+        never by the record's own name for its number; the plain-words block,
+        authored once in ``skills/README.md``, is carried byte for byte in all
+        five bodies, names no tool and no verb, and sits where it binds: after
+        the author-rules block in plan, write and review, after ``</opening>``
+        in onboard and fetch; the routing rows name a pending request as
+        "request <n>", name no other record number (a no-op gives the commit
+        from its payload), and put output shown verbatim in a code block; the
+        body and reference sites read the plan-stale qualifier plainly, give
+        the commit for a no-op, put verbatim output in a code block, and the
+        provenance reference presents the human lines, never the ``--json``
+        counts and seqs; no routing row's what-to-do cell carries a record word
+        the grader reads, outside code (22-14: WR-03); a commit is named by its
+        id, never as a hash, and the relayed references say chained and Git
+        commit id (22-14: WR-03); the block quotes the tallies
+        and names every form the check reads, and write step 5 echoes the
+        response line the tool prints after its ``git: committed`` line (22-09)
+  S-21  uncertainty is said in the first person, only where the record grounds it
+        (VOICE-01, D-10) — write step 6 states each entry of the staged
+        ``report.json``'s ``gaps`` as one first-person line, reads them from
+        ``report.json`` and not from ``crayon summary``, and adds nothing when
+        ``gaps`` is empty; review step 5 and the rubric's verification discipline
+        put what a finding could not verify inside the finding, in the first
+        person, and a verified finding carries no hedge; the rubric no longer
+        admits only verified findings and still calls hedged prose in the page a
+        violation; and no skill text asks for a section of doubts or a general
+        caveat
+  S-22  the reviewer says when it reviews its own draft, and only then (VOICE-02,
+        D-08, D-09) — review step 5 names the two grounds, this conversation ran
+        ``crayon draft`` or the ``model`` line of ``crayon summary`` names the
+        reviewer's own model, established and never guessed; with neither there
+        are no grounds and nothing is said; with grounds one first-person line
+        sits directly before the findings, record mode has none, and it is never
+        repeated at the verdict; the pinned pre-pass and dimension blocks are
+        intact around it, and ``<must>``, ``<must_not>`` and
+        ``<success_criteria>`` name the rule
+  S-23  deviated and skipped steps reach the author during review (CLOSE-03,
+        D-12 to D-14) — the review skill's ``<step_3a>`` sits between steps 3 and
+        4, and in both modes, after the provenance summary and before any
+        findings or the verdict, reads ``handover.steps`` from ``crayon show
+        --json`` and puts every entry to the author as a question about the page,
+        in one numbered list, in the order the tool lists them, with no cap;
+        nothing is recorded from an answer, no steer and no note, and an answer
+        that asks for a page change is told in one line that it is not recorded
+        until the verdict, and that a fix or redraft verdict with those words
+        records it (CR-01); when the reviewer already authorised the accept,
+        step 3a is skipped and the closure asks the steps instead (WR-05, D-12
+        amended); quick-start item 4, ``<must>``, ``<must_not>`` and
+        ``<success_criteria>`` name it, quick-start item 4 puts the step
+        questions before any finding and before the verdict question and moves
+        them to the closure when the reviewer already authorised the accept
+        (22-15: G-22-2, IN-03), and quick-start item 6 still closes on at
+        most three questions; and the closure after an accept (D-15, amended for
+        CR-01) counts no step this conversation already put to the author in
+        step 3a unless its answer asked for a page change, and a step left
+        unanswered is not asked again (22-15: WR-04), a step whose answer asked
+        for one is open again and its question names the change in the author's
+        words, and a later session counts every step again, with the source
+        order and the cap unchanged
+  S-24  scope is the author's (JUDG-05, D-16, D-17) — step 2 of ``crayon-plan``
+        asks ``What can this page leave out?`` after the arrival-or-next
+        question in every intake, even when the brief fills every field, and the
+        jump-ahead entries keep it always open; step 6 records the answer in the
+        TA's words, and a "nothing" answer records nothing; ``crayon-write`` step 2
+        reads the intake notes (``crayon summary`` author decisions) and keeps
+        what the author said to leave out off the page, as scope, and step 3's
+        coverage check does not count it as missing; review's sixth dimension,
+        ``focus``, sits between ``completeness`` and ``structure-fit`` in the
+        rubric and its findings layout, mirrors completeness (what is present that
+        the reader does not need), and makes material the author said to leave
+        out a ``[must-fix]`` in the dimension and the priority table (D-18, D-19);
+        no five-dimension wording remains in the review skill or the README, and
+        the rubric counts five generalized dimensions (D-20); the leave-out notes
+        narrow the plan's inventory and a later recorded request outranks them,
+        stated once in write step 2 and once in the rubric, and plan's quick start
+        and read-back name the leave-out answer (22-09: WR-02, IN-06); write's
+        ``<must>`` and ``<success_criteria>`` owe every promised inventory less
+        what the author's leave-out notes exclude, unless a later recorded
+        request asks for it (22-15: IN-03)
 """
 
 from __future__ import annotations
@@ -127,6 +210,7 @@ import importlib.util
 import itertools
 import pathlib
 import re
+import sys
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -134,6 +218,9 @@ SKILLS_ROOT = ROOT / "skills"
 README = SKILLS_ROOT / "README.md"
 CONTRACT = ROOT / "docs" / "contract.md"
 SKILL_LINT_PATH = ROOT / "scripts" / "skill_lint.py"
+#: WR-03 (22-14): the grader whose record-word regex the S-20 row scan reuses.
+EVALS_ROOT = ROOT / "validation" / "evals"
+GRADE_PATH = EVALS_ROOT / "grade.py"
 
 #: The five skills the family ships. Hardcoded on purpose: it is the quantity
 #: the vacuous-pass guard below compares the discovered set against, so a
@@ -194,6 +281,15 @@ _RULES_END = b"author-rules:end"
 #: The context skills are out: their `context record --note` is the agent's
 #: own summary of the scope it walked.
 RULE_SKILLS = ("crayon-plan", "crayon-review", "crayon-write")
+
+#: D-01: the plain-words block's sentinels. Like the author rules, the block
+#: sits inside larger SKILL.md bodies, so the copy is asserted as a substring.
+_PLAIN_BEGIN = b"plain-words:begin"
+_PLAIN_END = b"plain-words:end"
+
+#: D-01: unlike the author rules, the plain-words block binds all five skills,
+#: because every one of them says something to the author.
+PLAIN_SKILLS = tuple(sorted(CONTEXT_SKILLS + RULE_SKILLS))
 _REASON_ROW_RE = re.compile(r"^\| `([a-z_]+)` \| [0-9] \|$")
 
 
@@ -213,6 +309,33 @@ def _load_skill_lint():
 
 
 skill_lint = _load_skill_lint()
+
+
+def _load_grade():
+    """Import ``validation/evals/grade.py`` by path, for its record-word regex.
+
+    WR-03 (22-14): the S-20 row scan reads a row through the same
+    ``LEDGER_WORDS_RE`` and ``_CODE_RE`` the always-on ``plain_words`` check
+    runs, so the words have one definition site and no copy here can drift.
+    ``grade`` imports its siblings ``agent`` and ``openrouter`` (stdlib only, no
+    ``crayon``), so their directory goes on ``sys.path``. A ``grade`` another
+    suite in the same process already imported is reused, never replaced, so a
+    patch that suite applies by module name still reaches its own object.
+    """
+    if str(EVALS_ROOT) not in sys.path:
+        sys.path.insert(0, str(EVALS_ROOT))
+    loaded = sys.modules.get("grade")
+    if loaded is not None and pathlib.Path(getattr(loaded, "__file__", "")).resolve() == GRADE_PATH:
+        return loaded
+    loader = importlib.machinery.SourceFileLoader("grade", str(GRADE_PATH))
+    spec = importlib.util.spec_from_loader("grade", loader)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["grade"] = module
+    loader.exec_module(module)
+    return module
+
+
+grade = _load_grade()
 
 
 def skill_dirs():
@@ -288,32 +411,47 @@ def routing_row(signal, block="reasons"):
     raise AssertionError("no %s row for %r in the routing block" % (block, signal))
 
 
-def author_rules_bytes():
-    """The README's author-rules block, sentinel lines included, as bytes.
+def sentinel_block_bytes(begin, end):
+    """A README block from its ``begin`` line through its ``end`` line, as bytes.
 
-    No trailing newline: the block is compared as a substring of a SKILL.md
-    body, where the line after the end sentinel is the body's own.
+    Sentinel lines included, and no trailing newline: the block is compared as
+    a substring of a SKILL.md body, where the line after the end sentinel is
+    the body's own.
     """
     lines = README.read_bytes().split(b"\n")
-    begins = [i for i, line in enumerate(lines) if _RULES_BEGIN in line]
-    ends = [i for i, line in enumerate(lines) if _RULES_END in line]
+    begins = [i for i, line in enumerate(lines) if begin in line]
+    ends = [i for i, line in enumerate(lines) if end in line]
     if len(begins) != 1 or len(ends) != 1 or begins[0] >= ends[0]:
         raise AssertionError(
             "skills/README.md must carry exactly one %r line followed by exactly "
             "one %r line; found %d and %d"
-            % (
-                _RULES_BEGIN.decode(),
-                _RULES_END.decode(),
-                len(begins),
-                len(ends),
-            )
+            % (begin.decode(), end.decode(), len(begins), len(ends))
         )
     return b"\n".join(lines[begins[0] : ends[0] + 1])
+
+
+def author_rules_bytes():
+    """The README's author-rules block, sentinel lines included, as bytes."""
+    return sentinel_block_bytes(_RULES_BEGIN, _RULES_END)
+
+
+def plain_words_bytes():
+    """The README's plain-words block, sentinel lines included, as bytes."""
+    return sentinel_block_bytes(_PLAIN_BEGIN, _PLAIN_END)
 
 
 def row_cells(row):
     """A routing row's cells, split on the unescaped pipes, each stripped."""
     return [cell.strip() for cell in re.split(r"(?<!\\)\|", row)[1:-1]]
+
+
+def record_word_outside_code(cell):
+    """The first record word the grader reads in ``cell``, outside code, or None.
+
+    Code spans and fenced blocks are removed first, through the grader's own
+    ``_CODE_RE``: a command line quoted in code keeps its real flags (WR-03).
+    """
+    return grade.LEDGER_WORDS_RE.search(grade._CODE_RE.sub("", cell))
 
 
 def carries_block_once(text, block):
@@ -659,8 +797,19 @@ vague answer gets a narrower probe, not a proposal."""
 ARRIVAL_QUESTION = "What is the reader doing just before they land here?"
 NEXT_QUESTION = "What do they do right after?"
 
-#: JUDG-04: the sentence that opens step 2's minimum-intake paragraph.
-ONE_OPEN_QUESTION = "Every intake asks at least one open question."
+#: JUDG-04, D-16: the sentence that opens step 2's minimum-intake paragraph —
+#: the arrival-or-next question and the leave-out question make two.
+TWO_OPEN_QUESTIONS = "Every intake asks at least two open questions."
+
+#: D-16: the second fixed question, asked in every intake. A literal, so a
+#: paraphrase goes red.
+LEAVE_OUT_QUESTION = "What can this page leave out?"
+
+#: D-16: where the leave-out question sits — after the arrival-or-next question.
+LEAVE_OUT_ORDER = "after the arrival-or-next question"
+
+#: D-17: a "nothing" answer to the leave-out question puts nothing in ``--notes``.
+NOTHING_RECORDS_NOTHING = 'A "nothing" answer to the leave-out question records nothing'
 
 #: D-12: a view on a judgment field is given on request, never volunteered.
 VIEW_ON_REQUEST = "only when the TA asks for"
@@ -674,6 +823,13 @@ PROBES_RUN_OUT = (
 
 #: D-08, D-17: what ``--notes`` carries, and nothing else.
 NOTES_ARE_THEIRS = "the TA's own words given in answer to an open question"
+
+#: WR-02 (22-09): the precedence between the author's leave-out notes and a
+#: signed inventory, and between the notes and a later request. Stated once in
+#: crayon-write step 2 and once in review-rubric.md, so the writer and the
+#: reviewer settle B-74's own state the same way.
+NOTES_NARROW_INVENTORY = "leave-out notes narrow the plan's inventory"
+LATER_REQUEST_OUTRANKS = "A later recorded request outranks the intake notes"
 
 
 def body_of(skill_dir):
@@ -1309,6 +1465,13 @@ INVENTS_NO_NOTE = "The skill invents no steering note."
 #: note; the skill never supplies one.
 BARE_ACCEPT = "A bare accept records no note."
 
+#: D-01, D-03: a pending request reaches the reviewer as "request <n>", the
+#: number the author can say back; the record's own name for it stays on the
+#: command line (`--resolves`, `--withdraw`).
+PENDING_AS_REQUESTS = (
+    'put each pending request to the reviewer one at a time, as "request <n>"'
+)
+
 #: D-09: the verdict is asked as one open question that also asks for anything the
 #: author wants on the record; their words beyond the verdict are the note.
 VERDICT_QUESTION = (
@@ -1357,9 +1520,9 @@ INVENTED_NOTE_TELLS = (
 
 
 #: D-14's verbatim carry-over for ``crayon-review``: the deterministic pre-pass and
-#: the five-dimension findings rubric, byte for byte as the dogfooded file had
-#: them. Literals on purpose — reading them back out of the file under test would
-#: make the assertion vacuous.
+#: the findings rubric, byte for byte as the dogfooded file had them — six
+#: dimensions since D-20 added ``focus`` as item 4. Literals on purpose — reading
+#: them back out of the file under test would make the assertion vacuous.
 PRE_PASS = """**Deterministic pre-pass (before any judgment):** run cheap read-only greps over
 the drafted page(s):
 - changelog-framing tells ("previously", "now supports", "starting with")
@@ -1369,7 +1532,7 @@ the drafted page(s):
 Each hit is either promoted into the findings as a prioritized finding marked
 `(pre-pass)`, or dismissed with a one-line reason."""
 
-FIVE_DIMENSIONS = """Then assess the five dimensions, presenting findings grouped by dimension:
+SIX_DIMENSIONS = """Then assess the six dimensions, presenting findings grouped by dimension:
 
 1. **writing-approach** (always on, assessed first) — stance contract violations,
    researcher register, implementation identifiers in prose.
@@ -1377,9 +1540,14 @@ FIVE_DIMENSIONS = """Then assess the five dimensions, presenting findings groupe
    sources. Open the files; don't judge only on internal coherence.
 3. **completeness** — does the draft satisfy every `## Outline / acceptance` item?
    An objective-check failure is must-fix by definition.
-4. **structure-fit** — format hygiene (MyST/rST), cross-page consistency for
+4. **focus** — the mirror of completeness: what is on the page that the reader does
+   not need. Material the reader's problem does not call for, anything the author's
+   intake notes say to leave out (must-fix), and a complete page whose sections do not
+   build toward the reader's problem, meet the reader where they arrive or hand them
+   their next step.
+5. **structure-fit** — format hygiene (MyST/rST), cross-page consistency for
    multi-file units, relative link paths resolve from the page's location.
-5. **clarity** — sentence-level clarity, jargon, forward references.
+6. **clarity** — sentence-level clarity, jargon, forward references.
 
 Number findings `F-1`, `F-2`, … Each carries: page path, the verbatim offending
 text, a concrete suggested action, and a priority tag (must-fix / should-fix / nit).
@@ -1516,9 +1684,9 @@ class TestS08JudgmentCarryOver(unittest.TestCase):
 
     def test_s08_the_findings_rubric_is_carried_over_verbatim(self):
         body = body_of(SKILLS_ROOT / "crayon-review")
-        assert_contains(self, body, "five dimensions", "crayon-review")
+        assert_contains(self, body, "six dimensions", "crayon-review")
         assert_contains(self, body, PRE_PASS, "crayon-review")
-        assert_contains(self, body, FIVE_DIMENSIONS, "crayon-review")
+        assert_contains(self, body, SIX_DIMENSIONS, "crayon-review")
 
 
 class TestS09TargetMissing(unittest.TestCase):
@@ -1908,7 +2076,7 @@ def labelled_entry(text, label):
 
 
 class TestS18TheIntake(unittest.TestCase):
-    """S-18 — the intake is the author's: one open question always, a view only when asked, notes in their words (JUDG-04, D-08, D-12, D-16)."""
+    """S-18 — the intake is the author's: two open questions always, a view only when asked, notes in their words (JUDG-04, D-08, D-12, D-16)."""
 
     def setUp(self):
         self.body = body_of(PLAN_SKILL)
@@ -1917,7 +2085,8 @@ class TestS18TheIntake(unittest.TestCase):
     def test_s18_every_intake_asks_one_of_two_fixed_questions(self):
         step = skill_step_body(self.body, 2)
         self.assertIsNotNone(step, "crayon-plan has no step 2")
-        for literal in (ONE_OPEN_QUESTION, ARRIVAL_QUESTION, NEXT_QUESTION):
+        for literal in (TWO_OPEN_QUESTIONS, ARRIVAL_QUESTION, NEXT_QUESTION,
+                        LEAVE_OUT_QUESTION):
             with self.subTest(literal=literal):
                 assert_contains(self, step, literal, "crayon-plan step 2")
                 self.assertEqual(
@@ -1943,7 +2112,7 @@ class TestS18TheIntake(unittest.TestCase):
             with self.subTest(section=tag):
                 self.assertIsNotNone(section, "crayon-plan has no <%s>" % tag)
                 assert_contains(
-                    self, " ".join(section.split()), "at least one open question",
+                    self, " ".join(section.split()), "at least two open questions",
                     "crayon-plan <%s>" % tag,
                 )
 
@@ -2068,6 +2237,716 @@ class TestS19TheWriter(unittest.TestCase):
                 self.assertIsNotNone(section, "crayon-write has no <%s>" % tag)
                 assert_contains(self, folded(section), "the author's answer, verbatim",
                                 "crayon-write <%s>" % tag)
+
+
+#: D-02, P-22-01: a no-op refusal (`identical_draft`, `already_*`) names the
+#: commit its payload carries and no record number; the seq stays in `--json`.
+NO_RECORD_NUMBER = "naming no record number"
+
+#: D-02, D-03: a pending request is read out by the number the author can say
+#: back; `--resolves` and `--withdraw <seq>` stay exact in the verb cell.
+REQUEST_N = 'as "request <n>"'
+
+#: D-03, D-07: the rows whose tool output is shown verbatim, so it goes in a
+#: code block and the always-on plain-words check reads it as code.
+VERBATIM_REASONS = (
+    "bad_write_path",
+    "legacy_unit",
+    "ledger_corrupt",
+    "ledger_diverged",
+    "resume_ambiguous",
+    "recovery_unsupported",
+    "internal_error",
+)
+
+#: D-02, P-22-01: a no-op names the commit its refusal payload carries, at the
+#: body and reference sites as in the routing rows.
+GIVE_THE_COMMIT = "give the commit from the payload"
+
+#: D-02: the plan-stale qualifier read out as what happened, not as its token.
+PLAN_EDITED = "the plan was edited after it was signed"
+
+#: D-02, RESEARCH Pitfall 7: the `--json` provenance and qualifier keep counts and
+#: seqs for a command line; what the reviewer hears is the human line.
+NEVER_READ_OUT = "never read out"
+
+#: The vacuous-pass floor for the whole-tree scan: five SKILL.md bodies, the
+#: README and 26 references.
+MIN_SKILL_MARKDOWN = 30
+
+PROVENANCE_REFERENCE = SKILLS_ROOT / "crayon-review" / "references" / "provenance-summary.md"
+
+#: WR-03 (22-14): the fetch reference a model reads a source's revision from.
+SOURCE_CONTRACT = SKILLS_ROOT / "crayon-fetch" / "references" / "source-contract.md"
+
+#: The no-op rows, each of whose payloads carries `seq` and `commit`.
+NO_OP_REASONS = (
+    "identical_draft",
+    "already_signed",
+    "already_accepted",
+    "already_recorded",
+    "already_retired",
+)
+
+
+class TestS20PlainWords(unittest.TestCase):
+    """S-20 — what the author reads is in plain words (VOICE-03, D-01 to D-04, D-07)."""
+
+    #: Typed on purpose, as in S-15: read back from the README, the non-vacuity
+    #: check would pass over whatever the block happens to say.
+    LITERALS = (
+        "**Accepted, the pages as accepted, request N.**",
+        "**No hashes, digests or verify counts.**",
+        "**The success line, verbatim.**",
+        "**Refusals in plain words, commands exact.**",
+        "the pages as accepted",
+        "plan_hash",
+        "--json",
+        "code span",
+        "fenced code block",
+        # WR-06, IN-05, WR-04 (22-09): the tallies are quoted, the idiom is out,
+        # and the block names every form grade.LEDGER_WORDS_RE reads.
+        "not even as an English idiom",
+        "walk tally and the findings tally",
+        "seq 7",
+        "sha256",
+        "event 7",
+        "ledger line 7",
+        # WR-03 (22-14): a commit is named by its id, which the no-op rows ask
+        # for, and the hashes the rule bans are a file's or the record's.
+        "name a commit by its id, never as a hash",
+        "a file or record hash",
+    )
+
+    #: Where the block binds: the line it follows in each skill.
+    ANCHORS = dict(
+        [(name, b"<!-- author-rules:end -->") for name in RULE_SKILLS]
+        + [(name, b"</opening>") for name in CONTEXT_SKILLS]
+    )
+
+    def test_s20_each_skill_carries_the_block_byte_for_byte(self):
+        block = plain_words_bytes()
+        self.assertEqual(len(PLAIN_SKILLS), 5, "the block binds all five skills")
+        for name in PLAIN_SKILLS:
+            text = (SKILLS_ROOT / name / "SKILL.md").read_bytes()
+            with self.subTest(skill=name):
+                self.assertTrue(
+                    carries_block_once(text, block),
+                    "%s/SKILL.md does not carry the plain-words block of %s "
+                    "exactly once; re-copy the bytes from the begin sentinel "
+                    "through the end sentinel rather than hand-editing the copy"
+                    % (name, README),
+                )
+                self.assertEqual(
+                    sum(1 for line in text.split(b"\n") if _PLAIN_BEGIN in line),
+                    1,
+                    "%s/SKILL.md carries more than one plain-words block" % name,
+                )
+
+    def test_s20_the_block_sits_where_it_binds(self):
+        for name in PLAIN_SKILLS:
+            text = (SKILLS_ROOT / name / "SKILL.md").read_bytes()
+            anchor = self.ANCHORS[name]
+            with self.subTest(skill=name):
+                self.assertEqual(text.count(anchor), 1, "%s has no single %r" % (name, anchor))
+                self.assertTrue(_PLAIN_BEGIN in text, "%s has no plain-words block" % name)
+                after = text.index(anchor) + len(anchor)
+                begin = text.rfind(b"\n", 0, text.index(_PLAIN_BEGIN)) + 1
+                self.assertGreaterEqual(begin, after, "%s: the block precedes %r" % (name, anchor))
+                self.assertEqual(
+                    text[after:begin].strip(),
+                    b"",
+                    "%s: the plain-words block must follow %r directly" % (name, anchor),
+                )
+
+    def test_s20_the_block_is_not_vacuous(self):
+        text = plain_words_bytes().decode("utf-8")
+        for literal in self.LITERALS:
+            with self.subTest(literal=literal):
+                assert_contains(self, text, literal, "the plain-words block")
+
+    def test_s20_the_block_allows_a_commit_id(self):
+        # WR-03 (22-14): "or any other hash" banned the commit id that every
+        # no-op row asks the model to give, so the rule contradicted the rows.
+        text = folded(plain_words_bytes().decode("utf-8"))
+        assert_omits(self, text, "any other hash", "the plain-words block")
+
+    def test_s20_the_relayed_references_name_no_hash(self):
+        # WR-03 (22-14): a model explains the record and a source's revision from
+        # these two references, and the always-on check fails "hash" in prose.
+        provenance = folded(PROVENANCE_REFERENCE.read_text(encoding="utf-8"))
+        assert_contains(self, provenance, "append-only and chained", "provenance-summary.md")
+        assert_omits(self, provenance, "hash-chained", "provenance-summary.md")
+        source = folded(SOURCE_CONTRACT.read_text(encoding="utf-8"))
+        assert_contains(self, source, "Git commit id", "source-contract.md")
+        assert_omits(self, source, "commit hash", "source-contract.md")
+
+    def test_s20_the_headline_forbids_no_tally(self):
+        # WR-06: a bold headline that bans counts outright contradicts the walk
+        # and findings tallies the skills require the model to quote.
+        text = plain_words_bytes().decode("utf-8")
+        self.assertIsNone(
+            re.search(r"\*\*[^*\n]*or counts\.\*\*", text),
+            "the plain-words block has a bold headline banning counts outright; "
+            "it bans verify counts only, and the tallies are quoted",
+        )
+
+    def test_s20_the_block_names_no_tool_and_no_verb(self):
+        text = plain_words_bytes().decode("utf-8")
+        for absent in ("AskUserQuestion", "author-rules", "[[", "]("):
+            with self.subTest(absent=absent):
+                assert_omits(self, text, absent, "the plain-words block")
+        self.assertIsNone(
+            re.search(r"crayon [a-z]", text),
+            "the plain-words block carries a `crayon <verb>`; the rule is about words",
+        )
+        tools = set()
+        for skill_dir in skill_dirs():
+            tools.update(tool_list(frontmatter_of(skill_dir)))
+        self.assertTrue(tools, "no allowed-tools read: the scan would be vacuous")
+        for tool in sorted(tools):
+            with self.subTest(tool=tool):
+                assert_omits(self, text, "`%s`" % tool, "the plain-words block")
+
+    def test_s20_a_one_byte_drift_is_detected(self):
+        # The negative keystone: a copy that differs by one byte must fail the
+        # same check the positive gate runs.
+        block = plain_words_bytes()
+        text = (SKILLS_ROOT / "crayon-onboard" / "SKILL.md").read_bytes()
+        self.assertTrue(carries_block_once(text, block))
+        start = text.index(block) + len(block) // 2
+        flipped = b"X" if text[start:start + 1] != b"X" else b"Y"
+        drifted = text[:start] + flipped + text[start + 1:]
+        self.assertFalse(carries_block_once(drifted, block))
+
+    def test_s20_pending_requests_are_put_as_requests(self):
+        step = skill_step_body(body_of(SKILLS_ROOT / "crayon-review"), 6)
+        self.assertIsNotNone(step, "crayon-review has no step 6")
+        assert_contains(self, folded(step), PENDING_AS_REQUESTS, "crayon-review step 6")
+        assert_omits(self, folded(step), "put each seq to the reviewer", "crayon-review step 6")
+
+    def test_s20_the_no_op_rows_name_no_record_number(self):
+        for reason in NO_OP_REASONS:
+            cell = row_cells(routing_row(reason))[1]
+            with self.subTest(reason=reason):
+                assert_contains(self, cell, NO_RECORD_NUMBER, "the %s row" % reason)
+                assert_contains(self, cell, "commit", "the %s row" % reason)
+                assert_omits(self, folded(cell).lower(), "existing seq", "the %s row" % reason)
+
+    def test_s20_no_routing_row_says_a_record_word(self):
+        # WR-03 (22-14): a model relays the "what the skill does" cell, and the
+        # always-on check fails a reply carrying any word grade.LEDGER_WORDS_RE
+        # reads. Every row, reasons and next tokens alike, read outside its code
+        # spans, through the grader's own regex, so a later row cannot bring a
+        # record word back. This supersedes the basis-only scan (IN-03, 22-09).
+        text = routing_block_bytes().decode("utf-8")
+        rows = [ln for ln in text.splitlines() if ln.startswith("| `")]
+        self.assertGreaterEqual(
+            len(rows), 50, "the routing scan read %d row(s); it would pass over nothing" % len(rows))
+        for row in rows:
+            signal = row.split("`")[1]
+            match = record_word_outside_code(row_cells(row)[1])
+            with self.subTest(signal=signal):
+                self.assertIsNone(
+                    match,
+                    "the %s row tells the model %r, a record word the plain_words check "
+                    "fails; say it plainly, or keep it inside a code span"
+                    % (signal, match.group(0) if match else None),
+                )
+
+    def test_s20_the_row_scan_reads_prose_not_code(self):
+        # The scan's own keystone: a record word in prose is flagged, the same
+        # word inside a code span is quoted output, and plain words pass.
+        match = record_word_outside_code("record the evidence the tool hashes")
+        self.assertIsNotNone(match, "the row scan missed a record word in prose")
+        self.assertEqual(match.group(0), "hashes")
+        self.assertIsNone(record_word_outside_code("pass `--steps-seq N`"),
+                          "the row scan read a flag inside a code span as prose")
+        self.assertIsNone(record_word_outside_code("the pages as accepted"),
+                          "the row scan flagged the plain words the rule asks for")
+
+    def test_s20_the_adoption_rows_speak_plainly(self):
+        # IN-03: the two rows the review named take its words exactly.
+        for reason, literal in (("target_exists", "adopt the file as the page on record"),
+                                ("target_missing", "an accepted page is absent")):
+            with self.subTest(reason=reason):
+                assert_contains(self, row_cells(routing_row(reason))[1], literal,
+                                "the %s row" % reason)
+
+    def test_s20_the_request_rows_speak_of_requests(self):
+        for reason in ("unapplied_steering", "bad_resolution"):
+            cells = row_cells(routing_row(reason))
+            with self.subTest(reason=reason):
+                assert_contains(self, cells[1], REQUEST_N, "the %s row" % reason)
+                assert_omits(self, cells[1], "seqs", "the %s row" % reason)
+                assert_contains(self, cells[-1], "--resolves", "the %s verb" % reason)
+                assert_contains(self, cells[-1], "--withdraw <seq>", "the %s verb" % reason)
+
+    def test_s20_verbatim_rows_say_code_block(self):
+        self.assertEqual(len(VERBATIM_REASONS), 7)
+        for reason in VERBATIM_REASONS:
+            cell = row_cells(routing_row(reason))[1]
+            with self.subTest(reason=reason):
+                assert_contains(self, cell, "verbatim", "the %s row" % reason)
+                assert_contains(self, cell, "code block", "the %s row" % reason)
+
+    def test_s20_no_skill_file_asks_for_a_record_number(self):
+        files = sorted(SKILLS_ROOT.rglob("*.md"))
+        self.assertGreaterEqual(
+            len(files), MIN_SKILL_MARKDOWN,
+            "the skills/ scan read %d file(s); it would pass over nothing" % len(files),
+        )
+        for path in files:
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                assert_omits(self, folded(path.read_text(encoding="utf-8")).lower(),
+                             "existing seq", str(path.relative_to(ROOT)))
+
+    def test_s20_a_no_op_gives_the_commit(self):
+        review = body_of(SKILLS_ROOT / "crayon-review")
+        plan = body_of(SKILLS_ROOT / "crayon-plan")
+        write = body_of(SKILLS_ROOT / "crayon-write")
+        sites = {
+            "crayon-review <edge_cases> already_accepted": labelled_entry(
+                tagged_section(review, "edge_cases") or "", "`already_accepted`"),
+            "crayon-plan <edge_cases> already_signed": labelled_entry(
+                tagged_section(plan, "edge_cases") or "", "`already_signed`"),
+            "crayon-write step 5": skill_step_body(write, 5),
+            "walk-protocol.md": WALK_PROTOCOL.read_text(encoding="utf-8"),
+        }
+        for what, text in sites.items():
+            with self.subTest(site=what):
+                self.assertIsNotNone(text, "%s is missing" % what)
+                assert_contains(self, folded(text), GIVE_THE_COMMIT, what)
+
+    def test_s20_write_echoes_the_response_line_after_the_git_line(self):
+        # IN-02 (22-09): the tool prints its git line, then the response line;
+        # the report echoes the response line, never a claim of a single line.
+        write = body_of(SKILLS_ROOT / "crayon-write")
+        step = skill_step_body(write, 5)
+        self.assertIsNotNone(step, "crayon-write has no step 5")
+        for literal in ("`git: committed", "Echo the response line verbatim"):
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(step), literal, "crayon-write step 5")
+        assert_omits(self, folded(write), "The response is one line", "crayon-write")
+        report = skill_step_body(write, 6)
+        self.assertIsNotNone(report, "crayon-write has no step 6")
+        assert_contains(self, report, "- Recorded: <the response line, verbatim>",
+                        "crayon-write step 6's template")
+
+    def test_s20_the_plan_stale_qualifier_is_read_out_plainly(self):
+        step = skill_step_body(body_of(SKILLS_ROOT / "crayon-review"), 3)
+        self.assertIsNotNone(step, "crayon-review has no step 3")
+        assert_contains(self, folded(step), PLAN_EDITED, "crayon-review step 3")
+        assert_omits(self, step, "**`plan_stale`**", "crayon-review step 3")
+
+    def test_s20_verbatim_output_goes_in_a_code_block(self):
+        review = body_of(SKILLS_ROOT / "crayon-review")
+        plan = body_of(SKILLS_ROOT / "crayon-plan")
+        for what, step in (("crayon-review step 9", skill_step_body(review, 9)),
+                           ("crayon-review step 10", skill_step_body(review, 10)),
+                           ("crayon-plan step 8", skill_step_body(plan, 8))):
+            with self.subTest(step=what):
+                self.assertIsNotNone(step, "%s is missing" % what)
+                assert_contains(self, folded(step), "in a code block", what)
+        assert_contains(self, review, RECOVERY_UNSUPPORTED_SENTENCE, "crayon-review")
+
+    def test_s20_the_provenance_reference_presents_the_human_lines(self):
+        text = folded(PROVENANCE_REFERENCE.read_text(encoding="utf-8"))
+        for literal in ("record: intact at", "accepted in",
+                        "plan amended since the draft", '"request <n>"', NEVER_READ_OUT):
+            with self.subTest(literal=literal):
+                assert_contains(self, text, literal, "provenance-summary.md")
+
+
+#: D-12, D-13: each deviated or skipped step is put to the author as a question
+#: about the page, in the closure's own words.
+STEP_QUESTION = "Does the page need to say so?"
+
+#: D-14: an answer to a step question becomes nothing on the record; only the
+#: verdict answer is a note.
+STEP_ANSWER_RECORDS_NOTHING = "no steer and no note"
+
+#: D-15 (amended, CR-01; WR-04): the closure after an accept does not ask a step
+#: again that review already put to the author in this conversation, unless its
+#: answer asked for a page change; a later session asks every step again.
+STEPS_ASKED_ONCE = ("except a step this conversation already put to the author in step 3a, "
+                    "unless its answer asked for a page change")
+
+#: WR-04, D-15 amended: an unanswered step counts as asking for no page change,
+#: so the closure does not ask it again; said in step 3a and in step 6 item 1.
+STEP_LEFT_UNANSWERED = "a step left unanswered is not asked again"
+
+#: CR-01: the clause D-15 used to carry, which skipped a step whatever its answer.
+STEPS_SKIPPED_WHATEVER_THE_ANSWER = "answered or not"
+
+#: CR-01, D-14 unchanged: a step answer that asks for a page change is told at
+#: once that it is not on the record yet.
+STEP_CHANGE_NOTICE = "say in one line that it is not recorded until the verdict"
+
+#: CR-01: the notice names how the change reaches the record.
+FIX_OR_REDRAFT_RECORDS = "a fix or redraft verdict with those words records it"
+
+#: CR-01, D-15 amended: a step whose answer asked for a page change is open at
+#: the closure, and its question names the change.
+CHANGE_REQUEST_REOPENS = "A step whose answer asked for a page change"
+
+#: WR-05, D-12 amended: a pre-authorised accept runs in the same turn, so no
+#: step is put to the author in step 3a and the closure asks them all.
+PREAUTHORISED_SKIPS_3A = "When the reviewer already authorised the accept, step 3a is skipped"
+
+#: WR-05: the exception, as the lists carry it.
+UNLESS_PREAUTHORISED = "unless the reviewer already authorised the accept"
+
+
+#: D-10: an empty ``gaps`` list in the writer's report adds nothing to the report.
+EMPTY_GAPS_ADD_NOTHING = "With an empty `gaps` list the report adds nothing"
+
+#: D-10: the rubric's old opening, which admitted only verified findings.
+ONLY_VERIFIED = "Only verified findings reach the report"
+
+#: D-09: the one first-person line review mode puts directly before the
+#: findings when this conversation or the record grounds a self-review.
+SELF_REVIEW_LINE = ("I drafted this page, so this is a self-review; I'm likely to miss what I "
+                    "got wrong the first time. Weigh these findings with that in mind.")
+
+
+def step_3a_body(text):
+    """The body of ``<step_3a …>``, or ``None`` when the skill has no such step."""
+    match = re.search(r"<step_3a\b[^>]*>(.*?)</step_3a>", text, re.DOTALL)
+    return match.group(1) if match else None
+
+
+def quick_start_item(text, number):
+    """Quick-start item ``number`` with its continuation lines folded, or ``None``."""
+    section = tagged_section(text, "quick_start")
+    if section is None:
+        return None
+    match = re.search(r"^%d\. .*(?:\n   .*)*" % number, section, re.MULTILINE)
+    return folded(match.group(0)) if match else None
+
+
+class TestS23StepQuestions(unittest.TestCase):
+    """S-23 — deviated and skipped steps reach the author as questions during review (CLOSE-03, D-12 to D-15)."""
+
+    def setUp(self):
+        self.body = body_of(SKILLS_ROOT / "crayon-review")
+
+    def test_s23_step_3a_sits_between_steps_3_and_4(self):
+        end_3 = self.body.find("</step_3>")
+        open_3a = self.body.find("<step_3a ")
+        close_3a = self.body.find("</step_3a>")
+        open_4 = self.body.find("<step_4 ")
+        for what, at in (("</step_3>", end_3), ("<step_3a ", open_3a),
+                         ("</step_3a>", close_3a), ("<step_4 ", open_4)):
+            with self.subTest(tag=what):
+                self.assertGreaterEqual(at, 0, "crayon-review has no %s" % what)
+        self.assertTrue(end_3 < open_3a < close_3a < open_4,
+                        "crayon-review's <step_3a> must sit between </step_3> and <step_4")
+
+    def test_s23_both_modes_ask_every_step_after_the_summary(self):
+        step = step_3a_body(self.body)
+        self.assertIsNotNone(step, "crayon-review has no <step_3a>")
+        step = folded(step)
+        for literal in (
+            "Both modes.",
+            "handover.steps",
+            'crayon show "$UNIT_ID" --json',
+            "one numbered list",
+            "no cap",
+            "in the order `handover.steps` lists them",
+            STEP_QUESTION,
+            STEP_ANSWER_RECORDS_NOTHING,
+            STEP_CHANGE_NOTICE,
+            FIX_OR_REDRAFT_RECORDS,
+            PREAUTHORISED_SKIPS_3A,
+            "the closure asks the steps instead",
+            STEP_LEFT_UNANSWERED,
+        ):
+            with self.subTest(literal=literal):
+                assert_contains(self, step, literal, "crayon-review <step_3a>")
+
+    def test_s23_the_lists_name_the_step_questions(self):
+        item = quick_start_item(self.body, 4)
+        self.assertIsNotNone(item, "crayon-review <quick_start> has no item 4")
+        # G-22-2, IN-03 (22-15): the skim-first site states the order B-63
+        # checks and the pre-authorised exception B-77 checks.
+        for literal in ("deviated or skipped step",
+                        "before any finding and before the verdict question",
+                        "already authorised the accept",
+                        "the closure asks them instead"):
+            with self.subTest(item=4, literal=literal):
+                assert_contains(self, item, literal, "crayon-review <quick_start> item 4")
+        item = quick_start_item(self.body, 6)
+        self.assertIsNotNone(item, "crayon-review <quick_start> has no item 6")
+        assert_contains(self, item, AT_MOST_THREE, "crayon-review <quick_start> item 6")
+        for tag, literal in (
+            ("must", "deviated or skipped step"),
+            ("must", "not recorded until the verdict"),
+            ("must", UNLESS_PREAUTHORISED),
+            ("must_not", "from an answer to a step question"),
+            ("must_not", "not recorded until the verdict"),
+            ("success_criteria", "deviated or skipped step"),
+            ("success_criteria", "not recorded until the verdict"),
+            ("success_criteria", UNLESS_PREAUTHORISED),
+        ):
+            section = tagged_section(self.body, tag)
+            with self.subTest(section=tag):
+                self.assertIsNotNone(section, "crayon-review has no <%s>" % tag)
+                assert_contains(self, folded(section), literal, "crayon-review <%s>" % tag)
+
+    def test_s23_the_closure_does_not_ask_a_step_twice(self):
+        step = skill_step_body(self.body, 6)
+        self.assertIsNotNone(step, "crayon-review has no step 6")
+        for literal in (STEPS_ASKED_ONCE, STEP_LEFT_UNANSWERED,
+                        "In a later session, every step counts again",
+                        AT_MOST_THREE, CLOSURE_ORDER, "handover.steps", "handover.judged"):
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(step), literal, "crayon-review step 6")
+
+    def test_s23_a_change_request_comes_back_at_the_closure(self):
+        # CR-01: a page change asked for at a step question is open at the
+        # closure after an accept, so it is asked again, never dropped.
+        step = skill_step_body(self.body, 6)
+        self.assertIsNotNone(step, "crayon-review has no step 6")
+        step = folded(step)
+        assert_contains(self, step, CHANGE_REQUEST_REOPENS, "crayon-review step 6")
+        assert_contains(self, step, "in their words", "crayon-review step 6")
+        assert_omits(self, step, STEPS_SKIPPED_WHATEVER_THE_ANSWER, "crayon-review step 6")
+        # S-17's closure is otherwise unchanged: the cap, the order, the sources.
+        for literal in (AT_MOST_THREE, CLOSURE_ORDER, "handover.steps", "handover.judged",
+                        "in this same conversation", "Nits never count.",
+                        "plain text, not options in a question tool", "Author decisions",
+                        'crayon summary "$UNIT_ID" --md', 'crayon steer "$UNIT_ID" --note'):
+            with self.subTest(literal=literal):
+                assert_contains(self, step, literal, "crayon-review step 6")
+
+
+class TestS21Uncertainty(unittest.TestCase):
+    """S-21 — uncertainty is said in the first person, only where the record grounds it (VOICE-01, D-10)."""
+
+    def setUp(self):
+        self.write = body_of(SKILLS_ROOT / "crayon-write")
+        self.review = body_of(SKILLS_ROOT / "crayon-review")
+        self.rubric = (SKILLS_ROOT / "crayon-review" / "references" /
+                       "review-rubric.md").read_text(encoding="utf-8")
+
+    def test_s21_the_writer_voices_each_gap_and_only_gaps(self):
+        step = skill_step_body(self.write, 6)
+        self.assertIsNotNone(step, "crayon-write has no step 6")
+        step = folded(step)
+        for literal in (
+            "first person",
+            "report.json",
+            "gaps",
+            "not from `crayon summary`",
+            EMPTY_GAPS_ADD_NOTHING,
+            "I didn't run `toyq migrate`; the page describes it from cli.py.",
+        ):
+            with self.subTest(literal=literal):
+                assert_contains(self, step, literal, "crayon-write step 6")
+
+    def test_s21_a_reviewer_says_what_it_could_not_verify_inside_the_finding(self):
+        step = skill_step_body(self.review, 5)
+        self.assertIsNotNone(step, "crayon-review has no step 5")
+        for where, text in (("crayon-review step 5", folded(step)),
+                            ("review-rubric.md", folded(self.rubric))):
+            for literal in ("I found no source for", "I inferred",
+                            "A verified finding carries no hedge"):
+                with self.subTest(where=where, literal=literal):
+                    assert_contains(self, text, literal, where)
+        self.assertFalse(ONLY_VERIFIED in folded(self.rubric),
+                         "review-rubric.md still admits only verified findings")
+        assert_contains(self, folded(self.rubric), "hedged prose is a violation",
+                        "review-rubric.md")
+
+    def test_s21_no_standing_section_of_doubts(self):
+        for where, text in (("crayon-write", self.write), ("crayon-review", self.review),
+                            ("review-rubric.md", self.rubric)):
+            with self.subTest(where=where):
+                self.assertFalse("what i'm not sure of" in folded(text).lower(),
+                                 "%s asks for a section of doubts" % where)
+        for where, text in (("crayon-write", self.write), ("crayon-review", self.review)):
+            with self.subTest(where=where, literal="never a general caveat"):
+                assert_contains(self, folded(text), "never a general caveat", where)
+
+
+class TestS22SelfReview(unittest.TestCase):
+    """S-22 — the reviewer says when it is reviewing its own draft, and only then (VOICE-02, D-08, D-09)."""
+
+    def setUp(self):
+        self.body = body_of(SKILLS_ROOT / "crayon-review")
+
+    def test_s22_step_5_names_the_two_grounds_and_the_line(self):
+        step = skill_step_body(self.body, 5)
+        self.assertIsNotNone(step, "crayon-review has no step 5")
+        step = folded(step)
+        for literal in (
+            SELF_REVIEW_LINE,
+            "this conversation ran `crayon draft`",
+            "the `model` line of `crayon summary`",
+            "never guessed",
+            "there are no grounds",
+            "directly before the findings",
+            "never repeated at the verdict",
+            "Record mode has no findings and no such line",
+        ):
+            with self.subTest(literal=literal):
+                assert_contains(self, step, literal, "crayon-review step 5")
+
+    def test_s22_the_pinned_blocks_are_intact(self):
+        assert_contains(self, self.body, PRE_PASS, "crayon-review")
+        assert_contains(self, self.body, SIX_DIMENSIONS, "crayon-review")
+        pre_pass = self.body.find(PRE_PASS) + len(PRE_PASS)
+        self_review = self.body.find("**Self-review.**")
+        dimensions = self.body.find(SIX_DIMENSIONS)
+        self.assertGreaterEqual(self_review, 0, "crayon-review has no **Self-review.** paragraph")
+        self.assertTrue(pre_pass <= self_review < dimensions,
+                        "the self-review paragraph must sit between the pre-pass and the "
+                        "dimension list")
+
+    def test_s22_the_lists_name_the_rule(self):
+        for tag, literal in (
+            ("must", "self-review"),
+            ("must_not", "without grounds"),
+            ("success_criteria", "self-review"),
+        ):
+            section = tagged_section(self.body, tag)
+            with self.subTest(section=tag):
+                self.assertIsNotNone(section, "crayon-review has no <%s>" % tag)
+                assert_contains(self, folded(section), literal, "crayon-review <%s>" % tag)
+
+
+class TestS24LeaveOutAndFocus(unittest.TestCase):
+    """S-24 — scope is the author's: intake asks what the page can leave out, the writer keeps it off the page, and review's focus dimension checks it (JUDG-05, D-16 to D-20)."""
+
+    def setUp(self):
+        self.plan = body_of(PLAN_SKILL)
+        self.write = body_of(SKILLS_ROOT / "crayon-write")
+        self.socratic = SOCRATIC_REFERENCE.read_text(encoding="utf-8")
+        self.rubric = REVIEW_RUBRIC.read_text(encoding="utf-8")
+
+    def test_s24_the_leave_out_question_follows_arrival_and_is_always_asked(self):
+        step = skill_step_body(self.plan, 2)
+        self.assertIsNotNone(step, "crayon-plan has no step 2")
+        for literal in (LEAVE_OUT_ORDER, "even when the brief fills every field"):
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(step), literal, "crayon-plan step 2")
+        self.assertLess(step.find(ARRIVAL_QUESTION), step.find(LEAVE_OUT_QUESTION),
+                        "crayon-plan step 2 must ask the leave-out question after the "
+                        "arrival-or-next question")
+        edge = tagged_section(self.plan, "edge_cases")
+        self.assertIsNotNone(edge, "crayon-plan has no <edge_cases>")
+        for what, text in (
+            ("crayon-plan <edge_cases>", edge),
+            ("socratic-technique.md", self.socratic),
+        ):
+            entry = labelled_entry(text, "Jump-ahead TA")
+            with self.subTest(file=what):
+                self.assertIsNotNone(entry, "%s has no Jump-ahead TA entry" % what)
+                for literal in ("always open", "leave out"):
+                    assert_contains(self, folded(entry), literal,
+                                    "%s Jump-ahead TA" % what)
+
+    def test_s24_the_leave_out_answer_is_recorded_verbatim(self):
+        step = skill_step_body(self.plan, 6)
+        self.assertIsNotNone(step, "crayon-plan has no step 6")
+        for literal in (NOTES_ARE_THEIRS, NOTHING_RECORDS_NOTHING):
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(step), literal, "crayon-plan step 6")
+
+    def test_s24_the_writer_keeps_what_the_author_left_out_off_the_page(self):
+        ground = skill_step_body(self.write, 2)
+        self.assertIsNotNone(ground, "crayon-write has no step 2")
+        for literal in ("intake notes", "author decisions", "leave out", "scope"):
+            with self.subTest(step=2, literal=literal):
+                assert_contains(self, folded(ground), literal, "crayon-write step 2")
+        author = skill_step_body(self.write, 3)
+        self.assertIsNotNone(author, "crayon-write has no step 3")
+        assert_contains(self, folded(author), "said to leave out", "crayon-write step 3")
+
+    def test_s24_the_notes_narrow_the_inventory_and_a_later_request_outranks_them(self):
+        ground = skill_step_body(self.write, 2)
+        self.assertIsNotNone(ground, "crayon-write has no step 2")
+        for literal in (NOTES_NARROW_INVENTORY, LATER_REQUEST_OUTRANKS):
+            for what, text in (("crayon-write step 2", folded(ground)),
+                               ("crayon-write", folded(self.write)),
+                               ("review-rubric.md", folded(self.rubric))):
+                with self.subTest(literal=literal, site=what):
+                    self.assertEqual(text.count(literal), 1,
+                                     "%s must state %r exactly once" % (what, literal))
+        author = skill_step_body(self.write, 3)
+        self.assertIsNotNone(author, "crayon-write has no step 3")
+        assert_omits(self, folded(author), "never added to the page", "crayon-write step 3")
+        assert_contains(self, folded(author), "said to leave out", "crayon-write step 3")
+
+    def test_s24_the_writers_lists_exclude_what_the_notes_leave_out(self):
+        # IN-03 (22-15): the lists a model checks itself against agree with
+        # step 2's precedence, without repeating its two sentences.
+        for tag in ("must", "success_criteria"):
+            section = tagged_section(self.write, tag)
+            with self.subTest(section=tag):
+                self.assertIsNotNone(section, "crayon-write has no <%s>" % tag)
+                for literal in ("less what the author's leave-out notes exclude",
+                                "unless a later recorded request asks for it"):
+                    assert_contains(self, folded(section), literal, "crayon-write <%s>" % tag)
+
+    def test_s24_the_quick_start_and_the_read_back_name_the_leave_out_answer(self):
+        item = quick_start_item(self.plan, 5)
+        self.assertIsNotNone(item, "crayon-plan has no quick-start item 5")
+        assert_contains(self, item, "what the page can leave out", "crayon-plan quick-start item 5")
+        step = skill_step_body(self.plan, 6)
+        self.assertIsNotNone(step, "crayon-plan has no step 6")
+        assert_contains(self, folded(step), "the notes as they will be recorded",
+                        "crayon-plan step 6")
+        for literal in (LEAVE_OUT_QUESTION, ARRIVAL_QUESTION):
+            with self.subTest(literal=literal):
+                self.assertEqual(self.plan.count(literal), 1,
+                                 "crayon-plan must state %r exactly once" % literal)
+
+    def test_s24_focus_mirrors_completeness(self):
+        layout_at = self.rubric.find("## Findings layout")
+        self.assertGreaterEqual(layout_at, 0, "review-rubric.md has no findings layout")
+        for where, text in (
+            ("the dimension sections", self.rubric[:layout_at]),
+            ("the findings layout", self.rubric[layout_at:]),
+        ):
+            with self.subTest(part=where):
+                marks = [re.search(r"(?m)^### %s$" % name, text)
+                         for name in ("completeness", "focus", "structure-fit")]
+                self.assertTrue(all(marks), "review-rubric.md %s lacks one of "
+                                "### completeness, ### focus, ### structure-fit" % where)
+                starts = [mark.start() for mark in marks]
+                self.assertEqual(starts, sorted(starts),
+                                 "review-rubric.md %s must put ### focus after "
+                                 "### completeness and before ### structure-fit" % where)
+        for literal in (
+            "## The five review dimensions",
+            "what is present that the reader does not need",
+            "said to leave out",
+        ):
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(self.rubric), literal, "review-rubric.md")
+        must_fix = [line for line in self.rubric.splitlines()
+                    if line.startswith("| `[must-fix]` |")]
+        self.assertEqual(len(must_fix), 1, "review-rubric.md has no single [must-fix] row")
+        assert_contains(self, must_fix[0], "said to leave out",
+                        "review-rubric.md's [must-fix] row")
+
+    def test_s24_no_five_dimension_wording_remains(self):
+        review = (SKILLS_ROOT / "crayon-review" / "SKILL.md").read_text(encoding="utf-8")
+        for what, text in (("skills/crayon-review/SKILL.md", review),
+                           ("skills/README.md", README.read_text(encoding="utf-8"))):
+            for stale in ("five-dimension", "five dimensions"):
+                with self.subTest(file=what, stale=stale):
+                    assert_omits(self, folded(text), stale, what)
+        for stale in ("four review dimensions", "the four dimensions", "four generalized"):
+            with self.subTest(file="review-rubric.md", stale=stale):
+                assert_omits(self, folded(self.rubric), stale, "review-rubric.md")
+        description = [line for line in review.splitlines()
+                       if line.startswith("description:")]
+        self.assertEqual(len(description), 1, "crayon-review has no single description line")
+        assert_contains(self, description[0], "six-dimension", "crayon-review's description")
+
 
 # ---------------------------------------------------------------------------
 # S-10 — the ``references/`` tree, which no gate could see (CR-02)

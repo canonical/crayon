@@ -14,7 +14,8 @@ Grading reads a *trace*: ``{"turns": [normalised assistant turns]}``, plus, for
 an episode, ``decisive`` — the action that ended it (``agent.run_episode``).
 Only live turns are in ``turns``; a replayed history is never graded. The text
 kinds read everything the model *said*: every live turn's content and every
-question it put to the author through ``AskUserQuestion``.
+question it put to the author through ``AskUserQuestion``. ``plain_words`` reads
+the same parts, code removed from each, for the record's own words (D-06).
 """
 
 import json
@@ -113,8 +114,12 @@ def _args(call):
     return parsed if isinstance(parsed, dict) else {}
 
 
-def _said(trace):
-    """Every live turn's text, then the text of every question asked."""
+def _said_parts(trace):
+    """Every live turn's text, then every question asked and each of its options.
+
+    Unjoined, so a check can read each part on its own: a fence left open in one
+    part never swallows the next.
+    """
     if not trace.get("turns"):
         raise GradeError("the trace holds no assistant turn to grade")
     parts = [turn["content"] for turn in trace["turns"] if turn["content"]]
@@ -128,7 +133,12 @@ def _said(trace):
                     if isinstance(option, dict):
                         parts.append("%s %s" % (option.get("label", ""),
                                                 option.get("description", "")))
-    return "\n".join(parts)
+    return parts
+
+
+def _said(trace):
+    """Every live turn's text, then the text of every question asked."""
+    return "\n".join(_said_parts(trace))
 
 
 def _matches(call, spec, text=call_text):
@@ -313,10 +323,36 @@ def check_asks_user(spec, trace, ctx):
                   "ended on %s" % describe_decisive(decisive))
 
 
-#: Code in a reply: a fenced block (three backticks to three backticks, across
-#: lines) or an inline span (one backtick to the next, on one line). A question
-#: mark inside either is quoted output, not a question put to the author.
-_CODE_RE = re.compile(r"```.*?```|`[^`\n]*`", re.DOTALL)
+#: Code in a reply: a fenced block (three backticks to three backticks, or three
+#: tildes to three tildes, across lines) or an inline span (one backtick to the
+#: next, on one line). A question mark or a record word inside any of them is
+#: quoted output, not something said to the author. An indented block is not
+#: code to the grader: it is read as prose.
+_CODE_RE = re.compile(r"```.*?```|~~~.*?~~~|`[^`\n]*`", re.DOTALL)
+
+#: WR-04: the plain-words rule's own forms, exactly these, which the author never
+#: reads in prose: seal, seals, sealed; basis; seq, seqs; plan_hash or plan hash;
+#: hash, hashes; sha256 or sha-256; digest, digests; event N; ledger line N. Whole
+#: words in any case; in code they are quoted output.
+LEDGER_WORDS_RE = re.compile(
+    r"(?i)\b(seal(?:s|ed)?|basis|seqs?|plan[_ ]hash|hash(?:es)?|sha-?256|digests?|"
+    r"event\s+#?\d+|ledger\s+line\s+#?\d+)\b")
+
+
+def check_plain_words(spec, trace, ctx):
+    """What the agent says to the author names none of the record's words.
+
+    Every said part is read on its own, with its fenced blocks and inline code
+    spans removed first, so tool output quoted in code passes and a fence left
+    open in one part never hides the next part's prose (D-05, D-06, D-07).
+    """
+    for part in _said_parts(trace):
+        match = LEDGER_WORDS_RE.search(_CODE_RE.sub("", part))
+        if match:
+            return result(False, "the reply uses %r, a word from the record the author "
+                          "does not read; say it plainly (accepted, the pages as accepted, "
+                          "request N) or put the tool's output in code" % match.group(0))
+    return result(True, "no record word in prose")
 
 
 def check_question_count(spec, trace, ctx):
@@ -465,6 +501,7 @@ KINDS = {
     "before": check_before,
     "any_of": check_any_of,
     "judge": check_judge,
+    "plain_words": check_plain_words,
 }
 
 

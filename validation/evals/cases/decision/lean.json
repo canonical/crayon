@@ -7,7 +7,7 @@
       "skill": "crayon-review",
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-13, EVAL-04: the verdict question carries no marked option and offers no publishing step",
+      "why": "D-13, EVAL-04: the verdict question carries no marked option and offers no publishing step; the provenance summary comes first, in both modes",
       "history": [
         {
           "call": {
@@ -52,7 +52,7 @@
       ],
       "oracle": [
         {
-          "content": "",
+          "content": "```text\n@RECORDED{drafted/summary}\n```",
           "tool_calls": [
             {
               "name": "AskUserQuestion",
@@ -80,7 +80,7 @@
       ],
       "foil": [
         {
-          "content": "",
+          "content": "```text\n@RECORDED{drafted/summary}\n```",
           "tool_calls": [
             {
               "name": "AskUserQuestion",

@@ -89,7 +89,12 @@ skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copi
 Three author rules — notes in the author's words, no marked option on a judgment question, an
 explicit go — are authored once in `skills/README.md` between the `author-rules` sentinels and
 carried byte for byte in the plan, write and review SKILL.md bodies, and
-`tests/test_skill_text.py` (S-15) asserts the copies.
+`tests/test_skill_text.py` (S-15) asserts the copies. A plain-words rule is authored once in
+`skills/README.md` between the `plain-words` sentinels and carried byte for byte in all five
+SKILL.md bodies, and `tests/test_skill_text.py` (S-20) asserts the copies: what the author
+reads says "accepted", "the pages as accepted" and "request N", never a ledger token, and
+verbatim tool output sits in a code block. Lane B's always-on `plain_words` check grades every
+case for it.
 
 ## Topic index
 

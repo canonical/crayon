@@ -1,0 +1,266 @@
+{
+  "lane": "B",
+  "_comment": "Grounded first-person voice, pinned in both directions: review names a self-review in one line before the findings only when this conversation ran the draft or the recorded model is the reviewer's, and the writer's report states each gap it recorded in the first person and adds nothing when it recorded none (D-08 to D-11). No case may pass on a blanket disclaimer.",
+  "cases": [
+    {
+      "id": "B-67",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "prelude": [
+        {
+          "user": "/crayon-write cfg"
+        },
+        "tool/version_json",
+        "reported/signed_show_json",
+        "reported/draft",
+        {
+          "assistant": "## crayon-write: cfg\n\n- Draft: .crayon/staging/cfg/draft/reference/config.md\n- Recorded: drafted cfg · reference/config.md · 1 file(s) written · Next: review\n- Progress: drafted\n- I found no source that lists the accepted log_level values, so the page gives only the default.\n\nNext: /crayon-review — review the draft."
+        }
+      ],
+      "opening": "reported",
+      "why": "VOICE-02, D-08, D-09: this conversation ran the draft, so review mode says in one line, before the findings, that this is a self-review",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "reported/summary"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\bself-review\\b"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\bweigh\\b"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?is)self-review.*?(\\bF-\\d|findings:\\s*cfg)"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@HEDGE"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "```text\n@RECORDED{reported/summary}\n```\n\nI drafted this page, so this is a self-review; I'm likely to miss what I got wrong the first time. Weigh these findings with that in mind.\n\n## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### focus\n- F-3 [must-fix] the settings table lists `db_path` (reference/config.md:7), which the author's intake notes say to leave out\n  → remove the db_path row; storage gets its own page\n\n### structure-fit\n- (none)\n\n### clarity\n- F-4 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 4 total — 2 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "```text\n@RECORDED{reported/summary}\n```\n\n## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### focus\n- F-3 [must-fix] the settings table lists `db_path` (reference/config.md:7), which the author's intake notes say to leave out\n  → remove the db_path row; storage gets its own page\n\n### structure-fit\n- (none)\n\n### clarity\n- F-4 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 4 total — 2 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ]
+    },
+    {
+      "id": "B-68",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "reported",
+      "why": "VOICE-02, D-08 absence: the record names example/drafting-model-1, which is not the reviewer, and nothing ran in this session, so nothing is said",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "reported/summary"
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)\\bself[- ]review\\b|\\bI\\s+(drafted|wrote)\\s+(this|the)\\s+page\\b"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@HEDGE"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "```text\n@RECORDED{reported/summary}\n```\n\n## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### focus\n- F-3 [must-fix] the settings table lists `db_path` (reference/config.md:7), which the author's intake notes say to leave out\n  → remove the db_path row; storage gets its own page\n\n### structure-fit\n- (none)\n\n### clarity\n- F-4 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 4 total — 2 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "```text\n@RECORDED{reported/summary}\n```\n\nI drafted this page, so this is a self-review; I'm likely to miss what I got wrong the first time. Weigh these findings with that in mind.\n\n## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### focus\n- F-3 [must-fix] the settings table lists `db_path` (reference/config.md:7), which the author's intake notes say to leave out\n  → remove the db_path row; storage gets its own page\n\n### structure-fit\n- (none)\n\n### clarity\n- F-4 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 4 total — 2 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ]
+    },
+    {
+      "id": "B-69",
+      "skill": "crayon-write",
+      "ask": "cfg",
+      "sandbox": "reported",
+      "why": "VOICE-01, D-10, D-11: the staged report records one gap, so the report states it in the first person and names log_level, with no blanket disclaimer",
+      "history": [
+        "tool/version_json",
+        "reported/signed_show_json",
+        {
+          "call": {
+            "name": "Write",
+            "arguments": {
+              "file_path": ".crayon/staging/cfg/draft/reference/config.md",
+              "content": "@RECORDED{reported/file:docs/reference/config.md}"
+            }
+          },
+          "result": "File written."
+        },
+        {
+          "call": {
+            "name": "Write",
+            "arguments": {
+              "file_path": ".crayon/staging/cfg/report.json",
+              "content": "@RECORDED{reported/file:.crayon/staging/cfg/report.json}"
+            }
+          },
+          "result": "File written."
+        },
+        "reported/draft"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\bI\\b[^\\n]*\\b(found no|did(n't| not)|could(n't| not)|inferred)\\b[^\\n]*log_level"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@HEDGE"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "## crayon-write: cfg\n\n- Draft: .crayon/staging/cfg/draft/reference/config.md\n- Recorded: drafted cfg · reference/config.md · 1 file(s) written · Next: review\n- Progress: drafted\n- I found no source that lists the accepted log_level values, so the page gives only the default.\n\nNext: /crayon-review — review the draft."
+        }
+      ],
+      "foil": [
+        {
+          "content": "## crayon-write: cfg\n\n- Draft: .crayon/staging/cfg/draft/reference/config.md\n- Recorded: drafted cfg · reference/config.md · 1 file(s) written · Next: review\n- Progress: drafted\n\nNext: /crayon-review — review the draft.\n\nPlease double-check the page before publishing."
+        }
+      ]
+    },
+    {
+      "id": "B-70",
+      "skill": "crayon-write",
+      "ask": "cfg",
+      "sandbox": "reported_clean",
+      "why": "VOICE-01, D-10, D-11 absence: the report's gaps list is empty, so no uncertainty line and no hedge appears; an agent that disclaims by default fails",
+      "history": [
+        "tool/version_json",
+        "reported_clean/signed_show_json",
+        {
+          "call": {
+            "name": "Write",
+            "arguments": {
+              "file_path": ".crayon/staging/cfg/draft/reference/config.md",
+              "content": "@RECORDED{reported_clean/file:docs/reference/config.md}"
+            }
+          },
+          "result": "File written."
+        },
+        {
+          "call": {
+            "name": "Write",
+            "arguments": {
+              "file_path": ".crayon/staging/cfg/report.json",
+              "content": "@RECORDED{reported_clean/file:.crayon/staging/cfg/report.json}"
+            }
+          },
+          "result": "File written."
+        },
+        "reported_clean/draft"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@HEDGE"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)\\bI\\s+(found no source|did(n't| not) run|could(n't| not) (verify|confirm)|inferred)\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "## crayon-write: cfg\n\n- Draft: .crayon/staging/cfg/draft/reference/config.md\n- Recorded: drafted cfg · reference/config.md · 1 file(s) written · Next: review\n- Progress: drafted\n\nNext: /crayon-review — review the draft."
+        }
+      ],
+      "foil": [
+        {
+          "content": "## crayon-write: cfg\n\n- Draft: .crayon/staging/cfg/draft/reference/config.md\n- Recorded: drafted cfg · reference/config.md · 1 file(s) written · Next: review\n- Progress: drafted\n\nNext: /crayon-review — review the draft.\n\nI couldn't verify everything; please double-check the page before you review it."
+        }
+      ]
+    }
+  ]
+}

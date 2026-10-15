@@ -1,0 +1,654 @@
+{
+  "lane": "B",
+  "_comment": "Review depth. A deviated or skipped step of a walk is put to the author as a question about the page during review, in both modes, after the provenance summary and before any findings or the verdict, and nothing is recorded from the answer (CLOSE-03, D-12 to D-15); and focus, review's sixth dimension, makes material the author's intake notes say to leave out a must-fix (JUDG-05, D-18, D-19). Every case opens on walk_drafted unless it says otherwise, and replays the mode answer as B-41 does. A step answer that asks for a page change is told in one line that it is not recorded until the verdict, and after a bare accept the closure asks that step again (CR-01, D-15 amended); B-65 and B-75 pin the notice in two conversations. When the reviewer already authorised the accept, step 3a is skipped and the accept runs at once; the closure asks the steps (WR-05, D-12 amended).",
+  "cases": [
+    {
+      "id": "B-62",
+      "skill": "crayon-review",
+      "ask": "install",
+      "opening": "walk_drafted",
+      "why": "CLOSE-03, D-12, D-13: after the provenance summary in record mode, both steps are asked in one numbered list before the verdict",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review install?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "walk_drafted/summary"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "question_count",
+          "min": 2,
+          "max": 2
+        },
+        {
+          "kind": "text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?1[.)][^\\n]*\\binit\\b[^\\n]*\\?"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?2[.)][^\\n]*\\bfirst-job\\b[^\\n]*\\?"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)what'?s your verdict"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "```text\n@RECORDED{walk_drafted/summary}\n```\n\nTwo steps of the walk did not go as planned:\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Step first-job was skipped: no network in CI. Does the page need to say so?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "```text\n@RECORDED{walk_drafted/summary}\n```\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ]
+    },
+    {
+      "id": "B-63",
+      "skill": "crayon-review",
+      "ask": "install",
+      "opening": "walk_drafted",
+      "why": "D-12, D-13: in review mode the step questions come before any finding",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review install?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "walk_drafted/summary"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "question_count",
+          "min": 2,
+          "max": 2
+        },
+        {
+          "kind": "text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?1[.)][^\\n]*\\binit\\b[^\\n]*\\?"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?2[.)][^\\n]*\\bfirst-job\\b[^\\n]*\\?"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)what'?s your verdict"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "\\bF-\\d"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "```text\n@RECORDED{walk_drafted/summary}\n```\n\nTwo steps of the walk did not go as planned:\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Step first-job was skipped: no network in CI. Does the page need to say so?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "```text\n@RECORDED{walk_drafted/summary}\n```\n\n## crayon-review — findings: install\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"$ toyq init\" (how-to/install.md:13) shows plain `toyq init`, which fails on a fresh checkout without --force-dir.\n  → show `toyq init --force-dir` for a fresh checkout\n\n### completeness\n- (none)\n\n### structure-fit\n- (none)\n\n### clarity\n- (none)\n\nFindings: 1 total — 1 must-fix, 0 should-fix, 0 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ]
+    },
+    {
+      "id": "B-64",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "CLOSE-03 empty edge: a reference unit has no handover.steps, so no step question is asked and the verdict question follows",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary"
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)verdict"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)\\bsteps?\\b[^\\n]*\\b(skipped|deviated)\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "```text\n@RECORDED{drafted/summary}\n```\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "```text\n@RECORDED{drafted/summary}\n```\n\nDid any step of the walk get skipped or deviate? Does the page need to say so?"
+        }
+      ]
+    },
+    {
+      "id": "B-65",
+      "skill": "crayon-review",
+      "ask": "install",
+      "opening": "walk_drafted",
+      "why": "D-14: nothing is recorded from a step answer, even one that asks for a change; CR-01: the author is told in one line that it is not recorded until the verdict, then the verdict question follows, and its answer is the note",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review install?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "walk_drafted/summary",
+        {
+          "assistant": "```text\n@RECORDED{walk_drafted/summary}\n```\n\nTwo steps of the walk did not go as planned:\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Step first-job was skipped: no network in CI. Does the page need to say so?"
+        },
+        {
+          "user": "Yes, the page should say toyq init needs --force-dir."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)verdict"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\b(not|nothing|isn['’]t)\\b[^\\n]{0,60}\\brecorded\\b"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_NOTE"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "Nothing is recorded from that answer yet: a fix or redraft verdict with those words records it.\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon steer install --note 'Yes, the page should say toyq init needs --force-dir.'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-66",
+      "skill": "crayon-review",
+      "ask": "install",
+      "opening": "walk_drafted",
+      "why": "D-15, CLOSE-03 adjacency: both steps were put to the author during this review, so the closure does not count them; nothing else is open but where a reader arrives from",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review install?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "walk_drafted/summary",
+        {
+          "assistant": "```text\n@RECORDED{walk_drafted/summary}\n```\n\nTwo steps of the walk did not go as planned:\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Step first-job was skipped: no network in CI. Does the page need to say so?"
+        },
+        {
+          "user": "Leave the page as it is."
+        },
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept."
+        },
+        "walk_accepted/accept",
+        "walk_accepted/handover_json"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "question_count",
+          "min": 1,
+          "max": 1
+        },
+        {
+          "kind": "text_re",
+          "re": "crayon stops here"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)link|toctree|arriv|come from"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?\\d[.)][^\\n]*\\b(init|first-job)\\b[^\\n]*\\?"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "how-to/install",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "reviewed install: accept · accepted how-to/install.md · Next: yours — crayon stops here\n\n1. Nothing links to how-to/install.md yet; where should a reader come from?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "reviewed install: accept · accepted how-to/install.md · Next: yours — crayon stops here\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Step first-job was skipped: no network in CI. Does the page need to say so?\n3. Nothing links to how-to/install.md yet; where should a reader come from?"
+        }
+      ]
+    },
+    {
+      "id": "B-74",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "reported",
+      "why": "JUDG-05, D-18, D-19: the author's intake notes say to leave out db_path and the page lists it, so the focus dimension carries a must-fix; a review that runs only the old dimensions misses it. The intake notes narrow the plan's every-setting inventory, so db_path is not owed by the coverage-vs-outline check, and a later recorded request would outrank the notes; the page carries db_path, so focus makes it a must-fix (WR-02)",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "reported/summary"
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?im)^#{2,4}\\s*focus\\b"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)must-fix[^\\n]*db_path"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "```text\n@RECORDED{reported/summary}\n```\n\n## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### focus\n- F-3 [must-fix] the settings table lists `db_path` (reference/config.md:7), which the author's intake notes say to leave out\n  → remove the db_path row; storage gets its own page\n\n### structure-fit\n- (none)\n\n### clarity\n- F-4 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 4 total — 2 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "```text\n@RECORDED{reported/summary}\n```\n\n## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### structure-fit\n- (none)\n\n### clarity\n- F-3 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 3 total — 1 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ]
+    },
+    {
+      "id": "B-75",
+      "skill": "crayon-review",
+      "ask": "install",
+      "opening": "walk_drafted",
+      "why": "CR-01 with mixed answers, D-14 unchanged, D-15 amended: init is left as it is and first-job's answer asks for a page change, so one line says it is not recorded until the verdict and that a fix or redraft verdict with those words records it, then the verdict question; the bare verdict question lets the request pass unremarked",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review install?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "walk_drafted/summary",
+        {
+          "assistant": "```text\n@RECORDED{walk_drafted/summary}\n```\n\nTwo steps of the walk did not go as planned:\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Step first-job was skipped: no network in CI. Does the page need to say so?"
+        },
+        {
+          "user": "init is fine as it is. For first-job, the page should say the first job needs network access."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\b(not|nothing|isn['’]t)\\b[^\\n]{0,60}\\brecorded\\b"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_NOTE"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "Nothing from your answer about first-job is recorded yet: a fix or redraft verdict with those words records it.\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "What's your verdict, and is there anything you want on the record with it?"
+        }
+      ]
+    },
+    {
+      "id": "B-76",
+      "skill": "crayon-review",
+      "ask": "install",
+      "opening": "walk_drafted",
+      "why": "CR-01, D-15 amended: the answer to step init asked for a page change, so after a bare accept the closure brings init back as its first question; first-job got no change request, its question left unanswered, so it is not asked again; the cap and the source order are unchanged, so the closure asks two questions, the step first and where a reader arrives from second; a closure that asks only where a reader arrives from drops the request",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review install?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "walk_drafted/summary",
+        {
+          "assistant": "```text\n@RECORDED{walk_drafted/summary}\n```\n\nTwo steps of the walk did not go as planned:\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Step first-job was skipped: no network in CI. Does the page need to say so?"
+        },
+        {
+          "user": "Yes, the page should say toyq init needs --force-dir."
+        },
+        {
+          "assistant": "Nothing is recorded from that answer yet: a fix or redraft verdict with those words records it.\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept."
+        },
+        "walk_accepted/accept",
+        "walk_accepted/handover_json"
+      ],
+      "assert": [
+        {
+          "kind": "text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?1[.)][^\\n]*\\binit\\b[^\\n]*\\?"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?\\d[.)][^\\n]*\\bfirst-job\\b[^\\n]*\\?"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bcrayon\\s+(review|draft|edits|signoff|unit)\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bcrayon\\s+steer\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "how-to/install",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "reviewed install: accept · accepted how-to/install.md · Next: yours — crayon stops here\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. You said \"the page should say toyq init needs --force-dir\", and that is not recorded yet. Should the page say so?\n2. Nothing links to how-to/install.md yet; where should a reader come from?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "how-to/install",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "reviewed install: accept · accepted how-to/install.md · Next: yours — crayon stops here\n\n1. Nothing links to how-to/install.md yet; where should a reader come from?"
+        }
+      ]
+    },
+    {
+      "id": "B-77",
+      "skill": "crayon-review",
+      "ask": "install - accept it.",
+      "opening": "walk_drafted",
+      "why": "WR-05, D-12 amended: the reviewer already authorised the accept, so it runs in this turn with no step question before it; step 3a is skipped and the closure asks the steps afterwards, because none was put to the author in this conversation (B-45 pins that half); a reply that holds the accept to ask the steps first contradicts the pre-authorised accept",
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "^crayon\\s+review\\s+[\"']?install[\"']?\\s+--verdict(?:=|\\s+)[\"']?accept[\"']?(?:\\s+--json)?$"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?\\d[.)][^\\n]*\\b(init|first-job)\\b[^\\n]*\\?"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review install --verdict accept"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Step first-job was skipped: no network in CI. Does the page need to say so?"
+        }
+      ]
+    }
+  ]
+}
