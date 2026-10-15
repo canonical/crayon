@@ -3,7 +3,7 @@
 Every case builds its own fixture tree in a temp directory and points the
 checker's ``--root`` at it, so the suite never reads the real documents except
 in the one test that asserts the real tree is clean. The fixture tree carries a
-fixture ``dogen`` — a real ``argparse`` program with three subcommands and its
+fixture ``crayon`` — a real ``argparse`` program with three subcommands and its
 own ``REASONS``, ``CONTRACT`` and ``__version__`` — because the checker's oracle
 is whatever tool sits at its root, not a hard-coded list (T-18-30).
 
@@ -60,7 +60,7 @@ def _load_check_docs():
 check_docs, LOAD_ERROR = _load_check_docs()
 
 #: The fixture tool's surfaces. Deliberately unlike the real tool's, so a
-#: checker that quietly fell back to the repository's own dogen would fail
+#: checker that quietly fell back to the repository's own crayon would fail
 #: every case here instead of passing by coincidence.
 FIXTURE_VERBS = ("alpha", "beta", "gamma")
 FIXTURE_REASONS = (("alpha_gate", 1), ("beta_bad", 2), ("gamma_busy", 5))
@@ -78,7 +78,7 @@ REASONS = {"alpha_gate": 1, "beta_bad": 2, "gamma_busy": 5}
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="dogen", description="fixture tool")
+    parser = argparse.ArgumentParser(prog="crayon", description="fixture tool")
     sub = parser.add_subparsers(dest="verb")
     for verb in ("alpha", "beta", "gamma"):
         sub.add_parser(verb, help="fixture verb")
@@ -109,7 +109,7 @@ DEFAULT_MECHANISM_ROWS = (
         "another fixture journey",
         "another fixture experience",
         "another fixture mechanism",
-        "N-01 (`tests/test_dogen_unit.py`)",
+        "N-01 (`tests/test_crayon_unit.py`)",
     ),
 )
 
@@ -193,7 +193,7 @@ def build_tree(
     (root / "tests").mkdir(parents=True, exist_ok=True)
     (root / "skills").mkdir(parents=True, exist_ok=True)
 
-    (root / "dogen.py").write_text(FIXTURE_TOOL, encoding="utf-8")
+    (root / "crayon.py").write_text(FIXTURE_TOOL, encoding="utf-8")
 
     if verb_rows is None:
         verb_rows = [(("`%s`" % verb), "does %s" % verb) for verb in FIXTURE_VERBS]
@@ -287,7 +287,7 @@ def build_tree(
         (root / "docs" / "upgrade.md").write_text("# Upgrade\n", encoding="utf-8")
     (root / "skills" / "README.md").write_text("# Skills\n", encoding="utf-8")
     (root / "docs" / "context.md").write_text(context_text, encoding="utf-8")
-    for skill in ("dogen-fetch", "dogen-onboard", "dogen-plan", "dogen-review", "dogen-write"):
+    for skill in ("crayon-fetch", "crayon-onboard", "crayon-plan", "crayon-review", "crayon-write"):
         (root / "skills" / skill).mkdir(parents=True, exist_ok=True)
         (root / "skills" / skill / "SKILL.md").write_text(
             "# %s\n" % skill, encoding="utf-8"
@@ -305,11 +305,11 @@ def build_tree(
     # where.
     unit_body = ["def test_n01_the_fixture_row_is_cleared():\n    pass\n"]
     fixtures_body = ["test_a_fixture_carrying_no_row_id() {\n  :\n}\n"]
-    if v01_suite == "tests/test_dogen_unit.py":
+    if v01_suite == "tests/test_crayon_unit.py":
         unit_body.append("def test_v01_the_fixture_row_is_cleared():\n    pass\n")
     else:
         fixtures_body.append("test_v01_the_fixture_row_is_cleared() {\n  :\n}\n")
-    (root / "tests" / "test_dogen_unit.py").write_text(
+    (root / "tests" / "test_crayon_unit.py").write_text(
         "".join(unit_body), encoding="utf-8"
     )
     (root / "validation").mkdir(parents=True, exist_ok=True)
@@ -355,7 +355,7 @@ class TestCleanTree(CheckDocsCase):
 
 
 class TestVerbs(CheckDocsCase):
-    """`dogen --help`'s subcommands are the oracle, in both directions."""
+    """`crayon --help`'s subcommands are the oracle, in both directions."""
 
     def test_a_registered_verb_with_no_row_is_a_violation(self):
         rows = [("`%s`" % verb, "does it") for verb in ("alpha", "beta")]
@@ -513,17 +513,17 @@ class TestSkillsFirst(CheckDocsCase):
 
     def test_a_tool_command_in_the_readme_is_a_violation_naming_its_line(self):
         code, output = self.run_checker(
-            self.tree(readme_extra="Then run `dogen beta x` to record it.\n")
+            self.tree(readme_extra="Then run `crayon beta x` to record it.\n")
         )
         self.assertEqual(code, 1, output)
         self.assertIn("skills-first", output)
-        self.assertIn("dogen beta", output)
+        self.assertIn("crayon beta", output)
         self.assertIn("README.md:3", output)
 
     def test_a_tool_command_under_the_hood_is_allowed(self):
         text = (
             "# Context\n\nRun the skill.\n\n## Under the hood\n\n"
-            "The skill runs `dogen gamma`.\n\n### Detail\n\n`dogen alpha --json`\n"
+            "The skill runs `crayon gamma`.\n\n### Detail\n\n`crayon alpha --json`\n"
         )
         code, output = self.run_checker(self.tree(context_text=text))
         self.assertEqual(code, 0, output)
@@ -531,19 +531,19 @@ class TestSkillsFirst(CheckDocsCase):
 
     def test_a_section_after_under_the_hood_is_reader_facing_again(self):
         text = (
-            "# Context\n\n## Under the hood\n\n`dogen gamma`\n\n"
-            "## Next\n\nRun `dogen alpha`.\n"
+            "# Context\n\n## Under the hood\n\n`crayon gamma`\n\n"
+            "## Next\n\nRun `crayon alpha`.\n"
         )
         code, output = self.run_checker(self.tree(context_text=text))
         self.assertEqual(code, 1, output)
-        self.assertIn("dogen alpha", output)
+        self.assertIn("crayon alpha", output)
         self.assertIn("docs/context.md:9", output)
-        self.assertNotIn("dogen gamma` at", output)
+        self.assertNotIn("crayon gamma` at", output)
 
     def test_a_skill_name_or_a_non_verb_is_not_a_tool_command(self):
-        """`/dogen-beta`, `dogen betas` and `dogen never` name no registered verb."""
+        """`/crayon-beta`, `crayon betas` and `crayon never` name no registered verb."""
         code, output = self.run_checker(
-            self.tree(readme_extra="Run `/dogen-beta`. dogen betas. dogen never pushes.\n")
+            self.tree(readme_extra="Run `/crayon-beta`. crayon betas. crayon never pushes.\n")
         )
         self.assertEqual(code, 0, output)
 
@@ -694,13 +694,13 @@ class TestTraceDelegation(CheckDocsCase):
         has them.
         """
         code, output = self.run_checker(
-            self.tree(v01_suite="tests/test_dogen_unit.py")
+            self.tree(v01_suite="tests/test_crayon_unit.py")
         )
         self.assertEqual(code, 1, output)
         self.assertIn("points at validation/fixtures.sh", output)
         self.assertIn("v01", output)
         # Where it IS, so the report is actionable and not only a refusal.
-        self.assertIn("tests/test_dogen_unit.py", output)
+        self.assertIn("tests/test_crayon_unit.py", output)
 
     def test_a_row_whose_test_is_in_the_file_it_names_is_cleared(self):
         """The other direction, so the check above cannot pass by refusing

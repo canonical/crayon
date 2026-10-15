@@ -210,7 +210,7 @@ class OpenRouter:
                 headers={
                     "Authorization": "Bearer %s" % self.key,
                     "Content-Type": "application/json",
-                    "X-Title": "dogen evals",
+                    "X-Title": "crayon evals",
                 },
             )
             try:

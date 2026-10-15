@@ -89,8 +89,8 @@ DECISION = CASES / "decision"
 
 #: Patterns a case names by macro, so the same rule reads the same everywhere.
 MACROS = {
-    # A dogen verb that records anything (resume --dry-run only looks).
-    "@MUTATING": r"\bdogen\s+(unit\s+(new|edit|retire)|context\s+(stage|record)|"
+    # A crayon verb that records anything (resume --dry-run only looks).
+    "@MUTATING": r"\bcrayon\s+(unit\s+(new|edit|retire)|context\s+(stage|record)|"
                  r"signoff|steer|plan-steps|step|draft|edits|review|"
                  r"resume(?![^\n]*--dry-run))\b",
     # git writes, builds and publishing: never the skill's to run.
@@ -161,7 +161,7 @@ def _overrides(history):
     it answers the same, and after a later step changed the state it answers
     with the state as it is now, which is what a real repository would do. A
     step written into a case (a refusal no recorded state prints) must win over
-    the sandbox for the whole verb on that unit — ``dogen show cfg`` with or
+    the sandbox for the whole verb on that unit — ``crayon show cfg`` with or
     without ``--json`` — or a model re-running it would see the history
     contradicted.
     """

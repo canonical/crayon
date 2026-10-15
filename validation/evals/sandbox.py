@@ -4,7 +4,7 @@ Dev-time evaluation material. ``fixtures/states.sh`` builds every state in a
 hermetic temp repo from ``tests/lib.sh``; with ``SNAPDIR`` set it also keeps a
 copy of the repo at each ``snap`` point. ``ensure()`` runs it once per input
 digest into the gitignored ``.cache/snapshots/<digest>/``, so a change to the
-recorder, the fixture, the skills or ``dogen.py`` rebuilds them, and nothing
+recorder, the fixture, the skills or ``crayon.py`` rebuilds them, and nothing
 else does. ``materialise()`` copies one snapshot to a fresh temp directory for
 one episode; ``discard()`` removes it. ``jail()`` is where a model's looking
 commands run in that copy: a bubblewrap jail, or None where there is none.
@@ -51,10 +51,10 @@ _LOCK = threading.Lock()
 
 
 def _inputs():
-    paths = [RECORDER, REPO / "tests" / "lib.sh", REPO / "dogen.py"]
+    paths = [RECORDER, REPO / "tests" / "lib.sh", REPO / "crayon.py"]
     tracked = subprocess.check_output([
         "git", "-C", str(REPO), "ls-files", "-z", "--",
-        "validation/evals/fixtures/toyq", "skills/dogen-*",
+        "validation/evals/fixtures/toyq", "skills/crayon-*",
     ])
     paths.extend(REPO / os.fsdecode(name) for name in tracked.split(b"\0") if name)
     return paths
@@ -70,10 +70,10 @@ def digest():
 
 
 def bin_dir():
-    """A directory holding a ``dogen`` shim onto this checkout's ``dogen.py``."""
+    """A directory holding a ``crayon`` shim onto this checkout's ``crayon.py``."""
     directory = CACHE / "bin"
-    shim = directory / "dogen"
-    body = '#!/bin/sh\nexec "%s" "%s" "$@"\n' % (sys.executable, REPO / "dogen.py")
+    shim = directory / "crayon"
+    body = '#!/bin/sh\nexec "%s" "%s" "$@"\n' % (sys.executable, REPO / "crayon.py")
     with _LOCK:
         if not shim.is_file() or shim.read_text(encoding="utf-8") != body:
             directory.mkdir(parents=True, exist_ok=True)
@@ -89,7 +89,7 @@ def jail():
     """The :class:`agent.Jail` for this machine, or None when bwrap cannot run.
 
     Probed once per process: a jail that starts, sees ``/srv/toyq`` and runs
-    the ``dogen`` shim. A live model is never given a sandbox without one.
+    the ``crayon`` shim. A live model is never given a sandbox without one.
     """
     import agent
 
@@ -100,19 +100,19 @@ def jail():
         bwrap = shutil.which("bwrap")
         if bwrap:
             directory = CACHE / "jail-bin"
-            shim = directory / "dogen"
-            body = '#!/bin/sh\nexec /usr/bin/python3 /opt/dogen/dogen.py "$@"\n'
+            shim = directory / "crayon"
+            body = '#!/bin/sh\nexec /usr/bin/python3 /opt/crayon/crayon.py "$@"\n'
             if not shim.is_file() or shim.read_text(encoding="utf-8") != body:
                 directory.mkdir(parents=True, exist_ok=True)
                 shim.write_text(body, encoding="utf-8")
                 shim.chmod(0o755)
-            candidate = agent.Jail(directory, REPO / "dogen.py", bwrap)
-            holder = tempfile.mkdtemp(prefix="dogen-jail-probe-")
+            candidate = agent.Jail(directory, REPO / "crayon.py", bwrap)
+            holder = tempfile.mkdtemp(prefix="crayon-jail-probe-")
             try:
                 os.mkdir(os.path.join(holder, "repo"))
                 argv = candidate.argv(os.path.join(holder, "repo"),
                                       {"PATH": agent.Jail.PATH},
-                                      "pwd && dogen version --json")
+                                      "pwd && crayon version --json")
                 done = subprocess.run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT, timeout=30)
                 out = done.stdout.decode("utf-8", "replace")
@@ -132,7 +132,7 @@ def ensure():
     with _LOCK:
         if (target / ".complete").is_file():
             return target
-        work = Path(tempfile.mkdtemp(prefix="dogen-snapshots-"))
+        work = Path(tempfile.mkdtemp(prefix="crayon-snapshots-"))
         try:
             env = dict(os.environ, SNAPDIR=str(work / "snaps"))
             (work / "snaps").mkdir()
@@ -159,7 +159,7 @@ def materialise(name):
         raise ValueError("no sandbox named %r" % name)
     base, transform = TRANSFORMS.get(name, (name, None))
     source = ensure() / base
-    holder = tempfile.mkdtemp(prefix="dogen-eval-")
+    holder = tempfile.mkdtemp(prefix="crayon-eval-")
     repo = os.path.join(holder, "repo")
     shutil.copytree(str(source), repo, symlinks=True)
     if transform is not None:

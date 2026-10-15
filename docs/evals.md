@@ -13,7 +13,7 @@ how to add a case.
 ## What they measure
 
 Every model gets the same skill text through one neutral loop. The system prompt carries the
-skill catalog; a `/dogen-<skill>` invocation appends that skill's `SKILL.md`; the model reads
+skill catalog; a `/crayon-<skill>` invocation appends that skill's `SKILL.md`; the model reads
 reference files itself, through the seven tools the skills declare. No agent harness is named,
 detected or preferred, so a score difference belongs to the model.
 
@@ -24,24 +24,24 @@ started by hand and never run in the gate or in CI. The gate's half is
 | Lane | What it asks | Status |
 |---|---|---|
 | A | which skill handles this ask? | built, 15 cases |
-| B | given this `dogen` output, what is the next action? | built, 31 cases |
+| B | given this `crayon` output, what is the next action? | built, 31 cases |
 | C | a whole journey in a sandbox, with a simulated author | planned |
 
 ## How lane B stays honest
 
-A lane B case replays a history of tool calls and what `dogen` printed back, then lets the model
+A lane B case replays a history of tool calls and what `crayon` printed back, then lets the model
 act. The history is never typed by hand: `validation/evals/fixtures/states.sh` builds each state
-with the real `dogen.py` and records its output, and the gate re-records it, so a change in the
+with the real `crayon.py` and records its output, and the gate re-records it, so a change in the
 tool's output turns the gate red rather than leaving lane B replaying stale bytes.
 
 The model then acts in a real copy of the recorded state. Looking is free and runs for real:
-reads, searches, read-only `dogen` verbs, inspection commands, a `python3 -c` script that names
+reads, searches, read-only `crayon` verbs, inspection commands, a `python3 -c` script that names
 nothing able to write. The first consequential action — a verb that records, any other command,
 a write, a question to the author, a turn with no tool call — ends the episode, is never
 carried out, and is what the case grades.
 
 Every command a model runs executes in a bubblewrap jail. The copy is mounted at `/srv/toyq`
-beside `/usr`, a `dogen` shim and an empty `/tmp`, with its own process table and no network.
+beside `/usr`, a `crayon` shim and an empty `/tmp`, with its own process table and no network.
 Nothing else of the machine running the eval exists in there. A command list alone could not
 keep a path from leaving the sandbox, and an early run proved it, so a live run refuses to
 start without the jail.
@@ -79,7 +79,7 @@ or 0/K is settled; one in between is flaky, and a change to a skill has to be me
 over repeated runs. The first three-run baseline, on 2026-09-24, had 15 of the 31 lane B cases
 passing every run of every model.
 
-## What they changed in dogen
+## What they changed in crayon
 
 The first rounds found more in the product than in the models:
 
@@ -87,12 +87,12 @@ The first rounds found more in the product than in the models:
   has to go and open. The `internal_error`, `unsteered` and `unapplied_steering` hints now lead
   with the act their row prescribes, and every skill acts on the row for a refusal's `error`
   before routing on `next`.
-- A session that had not proposed a step plan could not see it: `dogen show` now lists the
-  recorded plan, and `dogen-write` resumes from it.
+- A session that had not proposed a step plan could not see it: `crayon show` now lists the
+  recorded plan, and `crayon-write` resumes from it.
 - A step marked stateful takes the author's yes every time, on resume too.
 - The version stop rule said "older than" and "never ordered" at once; it now gives a concrete
   case.
-- `dogen-fetch` records nothing when every declared source failed.
+- `crayon-fetch` records nothing when every declared source failed.
 
 `CHANGELOG.md` records each of these.
 

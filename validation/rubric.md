@@ -1,4 +1,4 @@
-# Validation rubric — scoring dogen drafts against a reference bar
+# Validation rubric — scoring crayon drafts against a reference bar
 
 **Dev-time evaluation material only.** The reference docs — a hand-written
 reference set kept in a checkout outside the repository under test, pointed at by
@@ -111,7 +111,7 @@ this; hand-check what greps can't.)
 ## 4. Loop quality (per leg, not per draft)
 
 Graded against the v2.0 event vocabulary (contract §5.3 and §5.4): every clause below names an
-event kind or a field that exists on disk in `.dogen/units/<id>/ledger.jsonl`, so a finding here
+event kind or a field that exists on disk in `.crayon/units/<id>/ledger.jsonl`, so a finding here
 is a statement about the record rather than about a recollection.
 
 - Findings in review mode were grounded — the reviewer re-checked claims against the sources,
@@ -122,8 +122,8 @@ is a statement about the record rather than about a recollection.
   `generation` event itself — `unsteered: true` must carry an `unsteered_reason`, written with
   `draft --unsteered-reason`. A correction carried informally is a loop-quality failure even
   when the draft came out right.
-- **Reviewer edits are legitimate.** A hand edit adopted into the record through `dogen edits`
-  (or `dogen resume --adopt`) is the supported brownfield path and is **not** a finding: it
+- **Reviewer edits are legitimate.** A hand edit adopted into the record through `crayon edits`
+  (or `crayon resume --adopt`) is the supported brownfield path and is **not** a finding: it
   appends a `reviewer-edit` event whose `files[]` is the complete basis set. What *is* a finding
   is a hand edit that never reached the record — bytes on disk that no `reviewer-edit` accounts
   for. The v1 clause forbidding hand-editing from being offered is deleted; it graded a loop
@@ -132,7 +132,7 @@ is a statement about the record rather than about a recollection.
   information.** A second accept attempt that carried something new — a further `steering` note,
   a fresh `reviewer-edit`, a changed basis — is the loop working and is not flagged. A bare
   retry of an accept the tool had already sealed is the finding.
-- **Review routing stayed deterministic.** Every verdict was recorded through `dogen review`
+- **Review routing stayed deterministic.** Every verdict was recorded through `crayon review`
   rather than inferred from prose; the routing token the tool emits on its `next` key was
   followed rather than second-guessed; and every accept disposed of each pending request
   explicitly, through `--resolves` or `--withdraw <seq> "<reason>"`. Nothing was closed by
@@ -140,11 +140,11 @@ is a statement about the record rather than about a recollection.
   the seqs a later accept `resolves` or `withdraws`, so an undisposed request stays visible in
   the record.
 - **Routing voice.** Every next step the skills surfaced to the author spoke skill language
-  ("invoke dogen-write…"), never a raw `dogen …` command line; and each phase's closing summary
+  ("invoke crayon-write…"), never a raw `crayon …` command line; and each phase's closing summary
   **quoted** its committed sha from the tool's own output rather than asserting one. An
   asserted-but-unquoted commit is a blindness, not a record.
 - **Stale-plan handling.** A reviewer-ordered plan amendment went through the tool's re-sign
-  path — `dogen unit edit … --re-sign`, or an explicit `dogen signoff --re-sign` — which appends
+  path — `crayon unit edit … --re-sign`, or an explicit `crayon signoff --re-sign` — which appends
   a fresh `signoff` whose `plan_hash` matches the amended `unit.md`. Drafting on a stale plan and
   clearing it afterwards is a finding.
 - **The context report is exhaustive-looking and the gaps are honest.** `origins[]` on the
@@ -157,7 +157,7 @@ is a statement about the record rather than about a recollection.
 - **Reads converted.** An inventory the writer read and did not surface in the page is the
   flagship completeness miss.
 - **The step walk resolved.** Where the leg is actionable, every step the `steps-planned` event
-  listed reached a recorded resolution through `dogen step` — a `step-recorded` event carrying a
+  listed reached a recorded resolution through `crayon step` — a `step-recorded` event carrying a
   `verdict` and, where the contract requires one, its `reason` — and the evidence was captured
   (`output_sha256`, `output_excerpt`) rather than claimed. A `fail` never resolves a step;
   contract §5.4's `resolved ≠ executed` is the reading. A reference leg has no step plan and is
@@ -178,8 +178,8 @@ and never recorded as a gap that will close at some named time.
 What the two legs can be compared on, when both exist:
 
 - **Event shapes and trailer discipline are identical across legs** — the same event kinds in
-  the same order for the same transitions, and the same `Dogen-Unit` / `Dogen-Phase` /
-  `Dogen-Seq` / `Dogen-Head` / `Dogen-Verdict` trailer set on each commit. A divergence here is
+  the same order for the same transitions, and the same `Crayon-Unit` / `Crayon-Phase` /
+  `Crayon-Seq` / `Crayon-Head` / `Crayon-Verdict` trailer set on each commit. A divergence here is
   a finding about the tool or the skills, not about the draft.
 - **Draft-quality differences per dimension** (§1, §2, §3, §3b), attributed where possible to
   the model claim recorded on the `generation` event (`model` / `model_origin`), to the unit's

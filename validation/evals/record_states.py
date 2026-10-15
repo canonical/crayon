@@ -2,10 +2,10 @@
 """Record the real tool's output for every state lane B replays.
 
 Dev-time evaluation material. Runs ``fixtures/states.sh`` (hermetic temp repos
-from ``tests/lib.sh``, the real ``dogen.py``), folds its JSON lines into
+from ``tests/lib.sh``, the real ``crayon.py``), folds its JSON lines into
 ``cases/decision/states.json``::
 
-    {"<state>": {"<label>": {"cmd": "dogen ...", "exit": N, "output": "..."}}}
+    {"<state>": {"<label>": {"cmd": "crayon ...", "exit": N, "output": "..."}}}
 
 and writes it. ``--check`` writes nothing and exits 1 when the committed file
 differs from a fresh recording, which is how the gate notices that the tool's

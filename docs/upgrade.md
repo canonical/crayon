@@ -1,8 +1,8 @@
-# Upgrading dogen
+# Upgrading crayon
 
 <!-- provenance: rewritten as a forward-looking procedure; the previous page was a before/after of one release -->
 
-How to move a machine, a repository and its records from one dogen release to the next. What
+How to move a machine, a repository and its records from one crayon release to the next. What
 changed in a given release is in `CHANGELOG.md`. This page is the procedure.
 
 ## 1. Upgrade the tool
@@ -11,7 +11,7 @@ The tool is one file. Pull the checkout and run the installer again. It replaces
 your `PATH` and checks it:
 
 ```bash
-cd ~/src/dogen && git pull
+cd ~/src/crayon && git pull
 ./install.sh --yes            # or ./install.sh, to change any choice
 ```
 
@@ -23,7 +23,7 @@ If you installed with `--link`, the symlink already points to the new file. Run
 The skills are copies, not links, so an upgrade must reach every place where you installed
 them:
 
-- **in a docs repository**: run `~/src/dogen/install.sh` in every repository you document (or
+- **in a docs repository**: run `~/src/crayon/install.sh` in every repository you document (or
   repeat the manual copy in [[install]]), and commit the new copy so that your collaborators get
   it too;
 - **for your user**: run `./install.sh --skills global` once.
@@ -48,32 +48,32 @@ is no migration, by design: the record is append-only, and rewriting it would fo
 continue work on such a page:
 
 1. Move the unit's record aside, for example
-   `git mv .dogen/units/<id> .dogen/archive/<id>`. The old record stays readable as history.
-2. Run `/dogen-plan` for the same page again. The page already exists, so the plan hands you to
-   `/dogen-review`, which asks whether to record the current page as the starting point.
+   `git mv .crayon/units/<id> .crayon/archive/<id>`. The old record stays readable as history.
+2. Run `/crayon-plan` for the same page again. The page already exists, so the plan hands you to
+   `/crayon-review`, which asks whether to record the current page as the starting point.
 
 ## 5. What never changes across upgrades
 
 - **Your git history.** Nothing rewrites, moves or deletes a commit you already have.
 - **The docs root.** Pages are written under `docs/`.
-- **The approval gate.** dogen does not draft a page without your approval of the current
+- **The approval gate.** crayon does not draft a page without your approval of the current
   plan.
 - **The install shape.** One file on your `PATH` and five skill folders. No package, no virtual
   environment, no dependencies.
 
 ## Under the hood
 
-`dogen version --json` answers `{"tool", "contract"}`. Each skill declares `dogen_contract`
-and `dogen_min_tool` in its frontmatter; both are compared as literal strings.
+`crayon version --json` answers `{"tool", "contract"}`. Each skill declares `crayon_contract`
+and `crayon_min_tool` in its frontmatter; both are compared as literal strings.
 
 Within one `contract` number, new event kinds are ignored for derivation with one warning, and
 nothing state-affecting is added without a new contract number ([[contract]] §5.10). Records
 written under another contract are **refused on every verb, read-only ones included**
 (`ledger_version_unsupported`, exit 6), with a hint naming both numbers. There is no migration
 command and no `--migrate` flag: a ledger is hash-chained and append-only. After the record is
-moved aside, `dogen-plan` declares the unit again with `dogen unit new`, pointing at the page
-that is already on disk. The tool reports `target_exists`, `dogen-plan` hands off to
-`dogen-review`, and `dogen-review` adopts the current bytes as the new basis with `dogen edits`.
+moved aside, `crayon-plan` declares the unit again with `crayon unit new`, pointing at the page
+that is already on disk. The tool reports `target_exists`, `crayon-plan` hands off to
+`crayon-review`, and `crayon-review` adopts the current bytes as the new basis with `crayon edits`.
 
 Two more invariants hold across releases: the shape of `unit.md` (frontmatter `title`,
 `intent`, `audience`, `targets`, optional `sources` and `notes`, over a free-Markdown body), and

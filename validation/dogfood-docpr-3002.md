@@ -1,6 +1,6 @@
 # DOCPR-3002: local dogfood findings
 
-This record covers three public candidates and four local, unpushed dogen legs.
+This record covers three public candidates and four local, unpushed crayon legs.
 The candidate assessment selected the projects; each page was grounded in its
 candidate's own sources. Candidate commits and raw transcripts remain in
 separate local checkouts, not in this repository.
@@ -24,7 +24,7 @@ snippet's `workshop.yaml` string forms without misdescribing SDK and SDKcraft
 integer/boolean schema values. The first Workshop drafts needed one fix each.
 
 Test Observer's how-to needed two fixes: to keep a contributor link out of the
-Authentication group, then to replace a dogen-only scratch path with a
+Authentication group, then to replace a crayon-only scratch path with a
 portable temporary-copy demonstration. A newly approved three-step offline
 walk captured both checker outcomes and cleanup; the published commands were
 also run from a normal clone after acceptance, without changing its committed
@@ -38,10 +38,10 @@ repo-relative source path. No URL was falsely entered as a local digest path.
 
 | Leg | Sphinx before / after | Independent audit and limits |
 | --- | --- | --- |
-| Workshop / Copilot | exit 0 / 0; 101 / 97 diagnostic items; 0 new, 4 resolved | `score.py audit` exits 0; `dogen verify` warns about the signed source also being the revised target, with no failing checks. |
+| Workshop / Copilot | exit 0 / 0; 101 / 97 diagnostic items; 0 new, 4 resolved | `score.py audit` exits 0; `crayon verify` warns about the signed source also being the revised target, with no failing checks. |
 | Workshop / Claude | exit 0 / 0; 101 / 97 items; 0 new, 4 resolved | Same audit and verification outcomes; remaining confidence gaps are explicitly recorded. |
-| Test Observer / Claude | exit 0 / 0; 15 / 14 items; 0 new, 1 resolved | `score.py audit` exits 0; `dogen verify` reports `ok`. The missing-key variant and schema regeneration were not walked. |
-| Lace / Copilot | **No pre-existing Sphinx build** | With a temporary external MyST configuration, a strict Sphinx build (`-n -W`) passes; `dogen verify` reports `ok`. This is not a before/after project build. |
+| Test Observer / Claude | exit 0 / 0; 15 / 14 items; 0 new, 1 resolved | `score.py audit` exits 0; `crayon verify` reports `ok`. The missing-key variant and schema regeneration were not walked. |
+| Lace / Copilot | **No pre-existing Sphinx build** | With a temporary external MyST configuration, a strict Sphinx build (`-n -W`) passes; `crayon verify` reports `ok`. This is not a before/after project build. |
 
 The existing Sphinx diagnostics in the other three legs include shallow-clone
 warnings; zero *new* items is the checked property. The three completed
@@ -64,11 +64,11 @@ informational; its exit 0 is not a protocol pass.
 
 ## Changes established by the runs
 
-- `dogen.py` refuses unknown report keys and object/non-string entries rather
+- `crayon.py` refuses unknown report keys and object/non-string entries rather
   than dropping `files_read` or stringifying structured provenance. A fresh
   Lace run with the corrected tool deliberately received `bad_draft_path`
   (exit 2) for `files_read`, then recorded a valid plain-path report and draft.
-- `skills/dogen-write/SKILL.md` specifies the exact report shape and
+- `skills/crayon-write/SKILL.md` specifies the exact report shape and
   repo-relative paths; `validation/score.py` refuses an apparent context
   match over missing/stamped sources. The scorer regression covers the
   previously vacuous equal-digest case. The offline eval histories were
@@ -77,7 +77,7 @@ informational; its exit 0 is not a protocol pass.
   Copilot transcript path, refuses absent or empty inputs, and still leaves
   the digest for an outside-session observer. Focused regressions cover
   these cases.
-- `tests/test_dogen_acceptance.sh` checks the exact invalid-verdict choices
+- `tests/test_crayon_acceptance.sh` checks the exact invalid-verdict choices
   without depending on argparse's version-specific quotation marks; Python
   3.14 exposed that brittle gate assertion while the tool behavior remained
   correct.
@@ -88,8 +88,8 @@ informational; its exit 0 is not a protocol pass.
   included here. An authenticated clone is not proof of public visibility.
 
 To reproduce the public-unit checks from a local candidate checkout, run
-`dogen verify <unit> --json` and
-`python3 /path/to/dogen/validation/score.py audit <unit> --root <checkout>`.
+`crayon verify <unit> --json` and
+`python3 /path/to/crayon/validation/score.py audit <unit> --root <checkout>`.
 Run `score.py protocol <checkout>/validation` to see the deliberately
 unresolved older provenance and missing leg-file flags, not to claim a
 complete protocol result. The candidate commits are local-only identifiers.
