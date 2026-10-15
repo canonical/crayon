@@ -271,8 +271,29 @@ def refuse(reason, unit="", detail="", hint="", next_token="", as_json=False, ex
 # make the segment boundary unfindable by anything but a human.
 SEGMENT = " \u00b7 "
 
+# CLOSE-04 (D-01, D-02): the human words for a routing token. Only `publish` is
+# mapped, because a bare `Next: publish` reads as if crayon had a publish step;
+# the author's handover is what follows. Every other token, `retired` included,
+# prints as itself. HUMAN render only: `route()`, `--json`'s `next`, a
+# refusal's `next` and the routing mirrors keep the token byte for byte.
+HUMAN_NEXT = {"publish": "yours — crayon stops here"}
 
-def respond(segments, next_token, as_json=False, payload=None):
+# D-16: the human word for a derived state. Only `sealed` is mapped: the
+# author reads `accepted`, which is what they did. HUMAN render only: `show
+# --json`'s `state`, `derive()`, `route()` and every gate keep `sealed`.
+HUMAN_STATE = {"sealed": "accepted"}
+
+
+def next_line(token):
+    """The human ``Next:`` segment for a routed token (CLOSE-04).
+
+    Read by ``respond()``'s human branch and ``show``'s human tail, and nowhere
+    else; a token with no mapping prints as itself.
+    """
+    return "Next: %s" % HUMAN_NEXT.get(token, token)
+
+
+def respond(segments, next_token, as_json=False, payload=None, json_segments=None):
     """Print the rev8 §3.3 one-line success response on stdout.
 
     ONE line, fixed segment order: what changed · where · what remains ·
@@ -283,19 +304,33 @@ def respond(segments, next_token, as_json=False, payload=None):
     a verb with nothing remaining is expected to pass an explicit remainder
     segment rather than omit it into ambiguity.
 
+    For humans the routing segment is rendered through :func:`next_line`, so
+    ``publish`` reads as the plain handover, and that handover doubles as the
+    "what remains" segment (D-03: an accept says what it accepted and hands
+    over). ``--json`` keeps the token itself, and a ``payload`` adds keys but
+    never shadows ``ok``, ``message`` or ``next``.
+
+    ``json_segments``, when given, is what ``--json``'s ``message`` is built
+    from instead of ``segments``: it keeps a pre-existing ``message`` byte-stable
+    when a verb's human wording changes (CR-01, contract 1). Plain words reach
+    the human line only, as :func:`next_line` does for the token.
+
     Git diagnostics and hook warnings go to stderr, so this line stays exactly
     one line and stays machine-readable.
     """
+    if as_json and json_segments is not None:
+        segments = json_segments
     if isinstance(segments, str):
         segments = [segments]
-    parts = [segment for segment in segments if segment]
-    message = SEGMENT.join(parts)
+    message = SEGMENT.join(segment for segment in segments if segment)
     if as_json:
         body = {"ok": True, "message": message, "next": next_token}
-        body.update(payload or {})
+        body.update(
+            (key, value) for key, value in (payload or {}).items() if key not in body
+        )
         sys.stdout.write(json.dumps(body, ensure_ascii=False) + "\n")
     else:
-        sys.stdout.write(message + SEGMENT + "Next: %s\n" % next_token)
+        sys.stdout.write(message + SEGMENT + next_line(next_token) + "\n")
     sys.stdout.flush()
     return EXITS["success"]
 
@@ -939,22 +974,29 @@ def verify_chain(lines):
         try:
             event = json.loads(line)
         except ValueError as exc:
-            problems.append("line %d: not valid JSON (%s)" % (number, exc))
+            problems.append(said("line %d: not valid JSON (%s)", number, exc))
             previous = line
             continue
         if not isinstance(event, dict):
-            problems.append("line %d: not a JSON object" % number)
+            problems.append(said("line %d: not a JSON object", number))
             previous = line
             continue
         if event.get("seq") != index:
             problems.append(
-                "line %d: seq is %r, expected %d" % (number, event.get("seq"), index)
+                said("line %d: seq is %r, expected %d", number, event.get("seq"), index)
             )
         expected = None if previous is None else chain_prev(previous)
-        if event.get("prev") != expected:
+        prev = event.get("prev")
+        if prev != expected:
+            # The two digests are the tool's text, so the plain render may
+            # shorten them; any other value a forged `prev` holds is shown as is.
             problems.append(
-                "line %d: prev is %r, expected %r"
-                % (number, event.get("prev"), expected)
+                said(
+                    "line %d: prev is %r, expected %r",
+                    number,
+                    ToolText(prev) if isinstance(prev, str) else prev,
+                    ToolText(expected) if isinstance(expected, str) else expected,
+                )
             )
         previous = line
     return problems
@@ -1384,8 +1426,12 @@ def derive(events, fs, staging=None, uncommitted_tail=False, pending_stray=False
     warnings = []
     if unknown_kinds:
         warnings.append(
-            "ignored %d event(s) of unknown kind (%s) — derivation uses the "
-            "known kinds only" % (unknown_count, ", ".join(repr(k) for k in unknown_kinds))
+            said(
+                "ignored %d event(s) of unknown kind (%s) — derivation uses the "
+                "known kinds only",
+                unknown_count,
+                ", ".join(repr(k) for k in unknown_kinds),
+            )
         )
 
     so = _last_of(ordered, "signoff")
@@ -4344,13 +4390,22 @@ def cmd_signoff(args):
         report_hook_changes(result, repo)
 
         next_token = next_token_for(repo, unit)
+        # D-16 (P-03): the ledger path is the "where"; the plan hash stays in
+        # the signoff event, where `verify` checks it, and off the human line.
         segments = [
+            "signed off %s" % unit,
+            os.path.relpath(ledger_path(repo, unit), os.fspath(repo)),
+            "%d target(s) frozen" % len(targets),
+            describe_orphans(so, targets),
+        ]
+        # CR-01: `--json`'s message keeps its contract-1 wording.
+        json_segments = [
             "signed off %s" % unit,
             "plan_hash %s" % plan_hash[:12],
             "%d target(s) frozen" % len(targets),
             describe_orphans(so, targets),
         ]
-        return respond(segments, next_token, as_json)
+        return respond(segments, next_token, as_json, json_segments=json_segments)
 
 
 def signoff_event(repo, unit, seq, identity, head, frontmatter, targets, plan_hash, previous):
@@ -4553,7 +4608,7 @@ def cmd_unit_edit(args):
         if args.re_sign:
             segments = [
                 "re-signed %s" % unit,
-                "plan_hash %s" % plan_hash[:12],
+                os.path.relpath(ledger_path(repo, unit), root),
                 "%d target(s) frozen" % len(targets),
                 describe_orphans(so, targets),
             ]
@@ -4563,7 +4618,16 @@ def cmd_unit_edit(args):
                 os.path.relpath(unit_md_path(repo, unit), root),
                 "%d target(s) recorded, the signoff is now stale" % len(targets),
             ]
-        return respond(segments, next_token, as_json)
+        json_segments = None
+        if args.re_sign:
+            # CR-01: `--json`'s message keeps its contract-1 wording.
+            json_segments = [
+                "re-signed %s" % unit,
+                "plan_hash %s" % plan_hash[:12],
+                "%d target(s) frozen" % len(targets),
+                describe_orphans(so, targets),
+            ]
+        return respond(segments, next_token, as_json, json_segments=json_segments)
 
 
 def cmd_steer(args):
@@ -5378,19 +5442,27 @@ def cmd_edits(args):
         )
         report_hook_changes(result, repo)
 
+        orphans = describe_orphan_paths(
+            [entry["path"] for entry in files if entry["path"] not in state["targets"]]
+        )
         segments = [
             "recorded edits on %s" % unit,
             os.path.relpath(ledger_path(repo, unit), os.fspath(repo)),
-            "%d file(s) in the basis" % len(files),
-            describe_orphan_paths(
-                [
-                    entry["path"]
-                    for entry in files
-                    if entry["path"] not in state["targets"]
-                ]
-            ),
+            # D-16 (P-02): nothing has accepted these pages yet, so the line
+            # says they are recorded as they are, not that they are accepted.
+            "%d page(s) recorded as they are now" % len(files),
+            orphans,
         ]
-        return respond(segments, next_token_for(repo, unit), as_json)
+        # CR-01: `--json`'s message keeps its contract-1 wording.
+        json_segments = [
+            "recorded edits on %s" % unit,
+            segments[1],
+            "%d file(s) in the basis" % len(files),
+            orphans,
+        ]
+        return respond(
+            segments, next_token_for(repo, unit), as_json, json_segments=json_segments
+        )
 
 
 # --- review -----------------------------------------------------------------
@@ -5692,19 +5764,37 @@ def cmd_review(args):
         report_hook_changes(result, repo)
 
         if verdict == "accept":
+            # D-03: what was accepted, then the handover. The resolves and
+            # withdrawals are not counted here; they stay in `--json`, copied
+            # from the recorded event, so no decision is lost to plainer words.
             segments = [
+                "reviewed %s: accept" % unit,
+                "accepted %s" % ", ".join(entry["path"] for entry in payload["files"]),
+            ]
+            # CR-01: `--json`'s message keeps its contract-1 wording.
+            json_segments = [
                 "reviewed %s: accept" % unit,
                 "%d file(s) sealed" % len(payload["files"]),
                 "%d request(s) judged satisfied, %d withdrawn (a recorded judgment, "
                 "never proof that the bytes changed)"
                 % (len(resolves), len(withdrawals)),
             ]
-        else:
-            segments = [
-                "reviewed %s: %s" % (unit, verdict),
-                os.path.relpath(ledger_path(repo, unit), os.fspath(repo)),
-                "the request is recorded and pending",
-            ]
+            return respond(
+                segments,
+                next_token_for(repo, unit),
+                as_json,
+                json_segments=json_segments,
+                payload={
+                    "files": payload["files"],
+                    "resolves": payload["resolves"],
+                    "withdraws": payload["withdraws"],
+                },
+            )
+        segments = [
+            "reviewed %s: %s" % (unit, verdict),
+            os.path.relpath(ledger_path(repo, unit), os.fspath(repo)),
+            "the request is recorded and pending",
+        ]
         return respond(segments, next_token_for(repo, unit), as_json)
 
 
@@ -5777,6 +5867,31 @@ def state_qualifier(state):
         bits.append("plan amended at seq %s" % state["so_seq"])
     if state["plan_stale"]:
         bits.append("unit.md edited since the signoff at seq %s" % state["so_seq"])
+    count = len(state["pending"])
+    if count:
+        bits.append("%d request%s pending" % (count, "" if count == 1 else "s"))
+    return ", ".join(bits)
+
+
+def plain_state_qualifier(state, accepted_commit=None):
+    """``state_qualifier`` for the author: the same bits, in the same order, plainly.
+
+    D-16: human ``show`` names no seq. The overtaken accept is named by the
+    commit its ``Crayon-Seq`` trailer is on, which the caller looks up with
+    :func:`find_seq_commit` (never the event's ``commit`` field, its parent);
+    with no such commit, after a squash, it was ``accepted earlier``. Pure:
+    ``show --json``'s ``qualifier`` stays :func:`state_qualifier`'s (SC3).
+    """
+    bits = []
+    rev = state["rev"]
+    if rev is not None and rev.get("verdict") == "accept" and state["state"] != "sealed":
+        bits.append(
+            "accepted in %s" % accepted_commit[:7] if accepted_commit else "accepted earlier"
+        )
+    if state["generation_stale"]:
+        bits.append("plan amended since the draft")
+    if state["plan_stale"]:
+        bits.append("unit.md edited since the signoff")
     count = len(state["pending"])
     if count:
         bits.append("%d request%s pending" % (count, "" if count == 1 else "s"))
@@ -5884,20 +5999,242 @@ def describe_requests(events, floor):
         if seq <= floor:
             continue
         disposition, reason = disposed.get(seq, ("pending", ""))
-        if event.get("kind") == "review":
-            origin = "review %s" % event.get("verdict")
-        else:
-            origin = "steering (%s)" % (event.get("origin") or "manual")
         rows.append(
             {
                 "seq": seq,
-                "origin": origin,
+                "origin": _request_origin(event),
                 "note": event.get("note") or "",
                 "disposition": disposition,
                 "reason": reason,
             }
         )
     return rows
+
+
+def _request_origin(event):
+    """The plain origin of one recorded request: ``review fix``, ``steering (plan)``.
+
+    Stated once, because three read surfaces name a request's origin and must
+    name it the same way.
+    """
+    if event.get("kind") == "review":
+        return "review %s" % event.get("verdict")
+    return "steering (%s)" % (event.get("origin") or "manual")
+
+
+def _as_text(value):
+    """A payload value as text: ``None`` is ``""``, a non-string is ``str()``."""
+    if value is None:
+        return ""
+    return value if isinstance(value, str) else str(value)
+
+
+def handover_of(events):
+    """What the author left open or decided by judgment (D-09, D-10, D-11).
+
+    ``steps`` are the current plan's ``deviated`` and ``skipped`` steps, in plan
+    order, read through :func:`step_answers` so carried-forward evidence counts,
+    and populated from the moment such a step is recorded. ``judged`` are the
+    requests the latest accept resolved with no ``generation`` and no
+    ``reviewer-edit`` strictly between the request and that accept: no byte
+    answered them, only the reviewer's judgment. ``withdrawn`` are the requests
+    that accept withdrew, with the reason. A withdrawn request is never judged.
+
+    The CR-04 rule applies to every seq read from a payload: a value that is
+    not a real integer seq, names no request, or sits at or after the accept is
+    ignored. Pure over ``events`` -- no filesystem -- so the payload it joins
+    describes one instant. Data only: turning an entry into a question for the
+    author is the skills' job.
+    """
+    steps = []
+    plan = _last_of(events, "steps-planned")
+    if plan is not None:
+        answers = step_answers(events, plan)
+        for step in plan.get("steps") or []:
+            event = answers.get(step.get("id")) or {}
+            if event.get("verdict") in ("deviated", "skipped"):
+                steps.append(
+                    {
+                        "id": _as_text(step.get("id")),
+                        "text": _as_text(step.get("text")),
+                        "verdict": event.get("verdict"),
+                        "reason": _as_text(event.get("reason")),
+                    }
+                )
+    accept = None
+    for event in events:
+        if (
+            event.get("kind") == "review"
+            and event.get("verdict") == "accept"
+            and _is_seq(event.get("seq"))
+        ):
+            accept = event
+    if accept is None:
+        return {"steps": steps, "judged": [], "withdrawn": []}
+    accept_seq = accept.get("seq")
+    requests = dict(
+        (event.get("seq"), event)
+        for event in events
+        if _is_h_event(event)
+        and event.get("kind") != "signoff"
+        and _is_seq(event.get("seq"))
+    )
+    changes = [
+        event.get("seq")
+        for event in events
+        if event.get("kind") in ("generation", "reviewer-edit")
+        and _is_seq(event.get("seq"))
+    ]
+    withdrawn = {}
+    for entry in accept.get("withdraws") or []:
+        if isinstance(entry, dict):
+            seq, reason = entry.get("seq"), entry.get("reason")
+        else:
+            seq, reason = entry, ""
+        if _is_seq(seq) and seq < accept_seq and seq in requests:
+            withdrawn.setdefault(seq, reason)
+    judged = set()
+    for seq in accept.get("resolves") or []:
+        if not (_is_seq(seq) and seq < accept_seq and seq in requests):
+            continue
+        if seq in withdrawn:
+            continue
+        if any(seq < change < accept_seq for change in changes):
+            continue
+        judged.add(seq)
+    return {
+        "steps": steps,
+        "judged": [
+            {
+                "seq": seq,
+                "origin": _request_origin(requests[seq]),
+                "note": _as_text(requests[seq].get("note")),
+            }
+            for seq in sorted(judged)
+        ],
+        "withdrawn": [
+            {
+                "seq": seq,
+                "origin": _request_origin(requests[seq]),
+                "note": _as_text(requests[seq].get("note")),
+                "reason": _as_text(withdrawn[seq]),
+            }
+            for seq in sorted(withdrawn)
+        ],
+    }
+
+
+def author_notes(events):
+    """Every note the author wrote over the unit's life, oldest first (D-13, D-15).
+
+    Each entry is ``{seq, origin, note, request}``. Only the event kinds the
+    author's own decisions write are read: each distinct intake ``notes`` value
+    (``unit-declared`` / ``unit-edited``, exact string equality), steering, a
+    review's fix, redraft or non-empty accept note, each accept's withdrawals
+    with their reasons, reviewer-edit notes and the retire note. A step's reason,
+    a generation's gaps and the model are the drafting agent's words, never the
+    author's. ``request`` is the request a note is about -- its own seq for a
+    request, the withdrawn seq for a withdrawal -- and ``None`` otherwise.
+
+    Sorted by seq; entries sharing one (an accept's note and its withdrawals)
+    keep payload order. Every seq passes the CR-04 rule. Pure over ``events``.
+    """
+    rows = []
+    seen_intake = set()
+
+    def add(seq, origin, note, request=None):
+        rows.append(
+            {"seq": seq, "origin": origin, "note": _as_text(note), "request": request}
+        )
+
+    for event in events:
+        seq = event.get("seq")
+        if not _is_seq(seq):
+            continue
+        kind = event.get("kind")
+        if kind in ("unit-declared", "unit-edited"):
+            value = (event.get("frontmatter") or {}).get("notes")
+            if isinstance(value, str) and value and value not in seen_intake:
+                seen_intake.add(value)
+                add(seq, "intake", value)
+        elif _is_h_event(event) and kind != "signoff":
+            if event.get("note"):
+                add(seq, _request_origin(event), event.get("note"), seq)
+        elif kind == "review" and event.get("verdict") == "accept":
+            if event.get("note"):
+                add(seq, "review accept", event.get("note"))
+            for entry in event.get("withdraws") or []:
+                if isinstance(entry, dict):
+                    withdrawn, reason = entry.get("seq"), entry.get("reason")
+                else:
+                    withdrawn, reason = entry, ""
+                if _is_seq(withdrawn) and withdrawn < seq:
+                    add(seq, "withdrawal", reason, withdrawn)
+        elif kind in ("reviewer-edit", "retired"):
+            if event.get("note"):
+                add(seq, "reviewer edit" if kind == "reviewer-edit" else "retired",
+                    event.get("note"))
+    rows.sort(key=lambda row: row["seq"])
+    return rows
+
+
+#: P-16: the plain label of each ``author_notes`` origin, in the human renders
+#: of ``summary``. ``%s`` is the request the note is about. Human wording only,
+#: reversible under D-16; ``--json`` keeps the origin as recorded.
+NOTE_LABELS = {
+    "intake": "intake",
+    "steering (manual)": "request %s, steering",
+    "steering (plan)": "request %s, from the plan",
+    "review fix": "request %s, fix",
+    "review redraft": "request %s, redraft",
+    "review accept": "accepted",
+    "withdrawal": "request %s withdrawn",
+    "reviewer edit": "edited the pages",
+    "retired": "retired",
+}
+
+
+def note_label(entry):
+    """The plain label one ``author_notes`` entry is listed under (P-16).
+
+    The one definition site, shared by the text and ``--md`` renders. An origin
+    the table does not know can only come from a forged record; it is listed as
+    written, after its request when it names one, and never dropped.
+    """
+    origin = _as_text(entry.get("origin"))
+    request = entry.get("request")
+    template = NOTE_LABELS.get(origin)
+    if template is None:
+        if request is None:
+            return origin
+        return "request %s, %s" % (_as_text(request), origin)
+    if "%s" not in template:
+        return template
+    if request is None:
+        return origin
+    return template % _as_text(request)
+
+
+def open_items(handover):
+    """What is still open at handover, as plain statements (D-14, P-16).
+
+    One line per deviated or skipped step, then one per request the latest
+    accept judged with no page change since. Statements of what the record
+    holds, never a question to the author: phrasing one is the skills' job.
+    Withdrawals are the author's own decision and are listed with the notes.
+    """
+    handover = handover if isinstance(handover, dict) else {}
+    items = []
+    for step in handover.get("steps") or []:
+        phrase = "was skipped" if step.get("verdict") == "skipped" else "deviated"
+        item = "Step %s %s" % (_as_text(step.get("id")), phrase)
+        reason = _as_text(step.get("reason"))
+        items.append("%s: %s" % (item, reason) if reason else item)
+    for row in handover.get("judged") or []:
+        item = "Request %s was accepted without a page change" % _as_text(row.get("seq"))
+        note = _as_text(row.get("note"))
+        items.append("%s: %s" % (item, note) if note else item)
+    return items
 
 
 def reviewer_edits_since(events, floor):
@@ -6082,7 +6419,7 @@ def read_page_bytes(repo, path, unit):
         return b""
 
 
-def render_diff(repo, unit, state, path):
+def render_diff(repo, unit, state, path, human=False):
     """``--diff``: a drifted path against the RECORDED basis bytes, or an honest no.
 
     When history rewriting has removed the commit the ``Crayon-Seq`` trailer
@@ -6090,6 +6427,10 @@ def render_diff(repo, unit, state, path):
     inverted and HEAD is not the same fact, so presenting either as the basis
     would be a guess in the record's own voice. The tool says so and shows the
     current content instead.
+
+    ``human`` (D-16, P-20) is human ``show``'s: the recorded side is labelled
+    ``recorded:`` and the unavailable line names no basis. ``show --json
+    --diff`` leaves it false, so its ``diff`` values keep their bytes (SC3).
     """
     current = read_page_bytes(repo, path, unit)
     relative = os.path.join(DOCS_ROOT, path)
@@ -6097,8 +6438,9 @@ def render_diff(repo, unit, state, path):
     recorded = git_show_blob(repo, commit, relative) if commit else None
     if recorded is None:
         lines = [
-            "  the recorded basis bytes for %s are unavailable (the commit that "
-            "recorded them is not reachable); the current content follows" % path
+            "  the recorded %sbytes for %s are unavailable (the commit that "
+            "recorded them is not reachable); the current content follows"
+            % ("" if human else "basis ", path)
         ]
         return lines + [
             "  %s" % line for line in current.decode("utf-8", "replace").splitlines()
@@ -6108,7 +6450,7 @@ def render_diff(repo, unit, state, path):
         for line in difflib.unified_diff(
             recorded.decode("utf-8", "replace").splitlines(),
             current.decode("utf-8", "replace").splitlines(),
-            fromfile="basis:%s" % path,
+            fromfile="%s:%s" % ("recorded" if human else "basis", path),
             tofile="disk:%s" % path,
             lineterm="",
         )
@@ -6164,6 +6506,7 @@ def cmd_show(args):
                 "tip": state["tip_seq"],
             },
             "next": token,
+            "handover": handover_of(events),
         }
         if with_diff:
             payload["diff"] = dict(
@@ -6175,18 +6518,27 @@ def cmd_show(args):
         sys.stdout.flush()
         return EXITS["success"]
 
+    # D-16: the author's render. The overtaken accept's commit is looked up only
+    # when the qualifier names it, so a plain `show` walks git no more than before.
+    rev = state["rev"]
+    accepted_commit = None
+    overtaken = rev is not None and rev.get("verdict") == "accept"
+    if overtaken and state["state"] != "sealed" and _is_seq(rev.get("seq")):
+        accepted_commit = find_seq_commit(repo, unit, rev.get("seq"))
+    plain = plain_state_qualifier(state, accepted_commit)
     out = [title]
     if intent:
         out.append("intent: %s" % intent)
     out.append(
-        "state: %s%s" % (state["state"], " — %s" % qualifier if qualifier else "")
+        "state: %s%s"
+        % (HUMAN_STATE.get(state["state"], state["state"]), " — %s" % plain if plain else "")
     )
     if rows:
         out.append("paths:")
         for row in rows:
             out.append("  %s — %s" % (row["path"], row["status"]))
             if with_diff and row["status"].startswith("drifted"):
-                out.extend(render_diff(repo, unit, state, row["path"]))
+                out.extend(render_diff(repo, unit, state, row["path"], human=True))
     if requests:
         out.append("requests:")
         for row in requests:
@@ -6194,7 +6546,7 @@ def cmd_show(args):
             if disposition == "withdrawn":
                 disposition = "withdrawn: %s" % collapse_note(row["reason"], 200)
             out.append(
-                "  seq %s — %s — %s: %s"
+                "  request %s — %s — %s: %s"
                 % (
                     row["seq"],
                     disposition,
@@ -6208,11 +6560,8 @@ def cmd_show(args):
     if edits:
         out.append("reviewer edits:")
         for entry in edits:
-            out.append(
-                "  edit at seq %s — %s"
-                % (entry["seq"], collapse_note(entry["note"], 200))
-            )
-    out.append("Next: %s" % token)
+            out.append("  - %s" % collapse_note(entry["note"], 200))
+    out.append(next_line(token))
     sys.stdout.write("\n".join(out) + "\n")
     sys.stdout.flush()
     return EXITS["success"]
@@ -6249,6 +6598,188 @@ CHECK_LEVELS = {
     "V19": "warn",
 }
 
+#: D-04 / P-09: each check's plain label, the name the DEFAULT ``verify`` gives
+#: a check that needs a look. Keyed exactly like :data:`CHECK_LEVELS` — a unit
+#: test holds the two key sets equal — so a check has one label, defined here.
+#: Human wording only, reversible under D-16; ``--json`` and ``--verbose`` name
+#: checks by their V id.
+CHECK_LABELS = {
+    "V1": "the record's header",
+    "V2": "the record's lines",
+    "V3": "the record's order and chain",
+    "V4": "the record against the committed history",
+    "V5": "each draft and accept against the signed plan",
+    "V6": "each review against the draft it reviewed",
+    "V7": "the requests between drafts",
+    "V8": "the step evidence",
+    "V9": "the steps resolved before drafting",
+    "V10": "the requests settled at each accept",
+    "V11": "the recorded model",
+    "V12": "the reason for reusing step evidence",
+    "V13": "the pages each draft and edit recorded",
+    "V14": "the pages on disk",
+    "V15": "the commits for each recorded change",
+    "V16": "where each recorded change sits in git history",
+    "V17": "the git ignore settings",
+    "V18": "pages another unit also claims",
+    "V19": "the sources and context since the signoff",
+}
+
+
+class ToolText(str):
+    """An interpolated string the tool itself made: a seq list, a digest, a status.
+
+    :func:`said` reads it as part of the template, so :func:`plain_detail`
+    scans it with the tool's own words. A contributor value is never one.
+    """
+
+
+class Detail(str):
+    """A check's detail: exactly the formatted text, plus who wrote each part.
+
+    Its value is ``template % args``, so ``--json``, ``--verbose`` and every
+    refusal that quotes it print the same bytes they always did. ``pieces`` is
+    a tuple of ``(text, tool)`` pairs recording which characters the tool wrote
+    (``tool`` true) and which are values it was given (CR-03). Only
+    :func:`plain_detail` reads ``pieces``. Without ``pieces`` the whole text is
+    the tool's, which is also how ``copy`` and ``pickle`` rebuild one before
+    restoring its recorded pieces.
+    """
+
+    def __new__(cls, text, pieces=None):
+        self = super().__new__(cls, text)
+        self.pieces = ((text, True),) if pieces is None else tuple(pieces)
+        return self
+
+
+#: One ``%%`` or one printf conversion with no mapping key and no ``*``.
+_SAID_SPEC = re.compile(r"%%|%[#0 +-]*\d*(?:\.\d+)?[diouxXeEfFgGcrsa]")
+
+
+def _said_add(pieces, text, tool):
+    """Append one piece, merging it into the last when both are the same kind."""
+    if not text:
+        return
+    if pieces and pieces[-1][1] == tool:
+        pieces[-1] = (pieces[-1][0] + text, tool)
+    else:
+        pieces.append((text, tool))
+
+
+def said(template, *args):
+    """``template % args`` as a :class:`Detail` that knows its tool text (G-05).
+
+    The template's own text is the tool's. A :class:`Detail` under ``%s`` is
+    spliced with its pieces, a :class:`ToolText` is the tool's, and every other
+    argument is a value, printed by its conversion and never rewritten. Too few
+    or too many arguments raise ``TypeError``, as ``%`` does.
+    """
+    pieces, rest, at = [], list(args), 0
+    for match in _SAID_SPEC.finditer(template):
+        _said_add(pieces, template[at:match.start()], True)
+        at = match.end()
+        spec = match.group(0)
+        if spec == "%%":
+            _said_add(pieces, "%", True)
+            continue
+        if not rest:
+            raise TypeError("not enough arguments for format string")
+        arg = rest.pop(0)
+        if spec == "%s" and isinstance(arg, Detail):
+            for text, tool in arg.pieces:
+                _said_add(pieces, text, tool)
+        else:
+            _said_add(pieces, spec % (arg,), isinstance(arg, ToolText))
+    if rest:
+        raise TypeError("not all arguments converted during string formatting")
+    _said_add(pieces, template[at:], True)
+    return Detail("".join(text for text, _ in pieces), pieces)
+
+
+def said_join(separator, items):
+    """``separator.join(items)`` as a :class:`Detail`; a plain ``str`` is tool text."""
+    pieces = []
+    for index, item in enumerate(items):
+        if index:
+            _said_add(pieces, separator, True)
+        for text, tool in item.pieces if isinstance(item, Detail) else ((item, True),):
+            _said_add(pieces, text, tool)
+    return Detail("".join(text for text, _ in pieces), pieces)
+
+
+#: D-16 / D-05 / P-08: the human render of a check's DETAIL, and nothing else.
+#: An ordered rule table over the tool's OWN wording, and it only ever sees
+#: that: :func:`plain_detail` applies it to a :class:`Detail`'s tool pieces (the
+#: templates, :class:`ToolText`) or to a literal ``str`` whole, so every
+#: interpolated contributor value — a page path, a unit or step id, a quoted
+#: ledger value — passes through as written (CR-03). ``--json``'s
+#: ``checks[].detail`` and the ``--verbose`` rows print the detail as recorded
+#: and never come through here.
+_PLAIN_WORD = r"(?<![\w/.-])%s(?![\w/.-])"
+PLAIN_DETAIL_WORDS = (
+    # 1. the reason-token prefixes V15, V16 and V19 carry (the JSON keeps them)
+    (re.compile(r"\b(?:history_squashed|ledger_diverged|plan_stale): "), ""),
+    # 2. a seq an accept resolves or withdraws is a request
+    (re.compile(r"\b(resolves|withdraws) seq\b"), r"\1 request"),
+    # 3.
+    (re.compile(r"\bin seq order\b"), "in record order"),
+    # 4.
+    (re.compile(r"\b(?:its|their) seq\b"), "that point"),
+    # 5. V3's chain finding
+    (re.compile(r"\bseq is\b"), "entry number is"),
+    # 6. a list of seqs
+    (re.compile(r"\bseq (\d+(?:, \d+)+)\b"), r"entries \1"),
+    # 7. every other seq, lowercase and whole-word (`Crayon-Seq`, `steps_seq` stay)
+    (re.compile(r"\bseq\(s\)"), "entries"),
+    (re.compile(_PLAIN_WORD % "seq"), "entry"),
+    # 8.
+    (re.compile(_PLAIN_WORD % "generations"), "drafts"),
+    (re.compile(_PLAIN_WORD % "generation"), "draft"),
+    # 9. V8 and V12
+    (re.compile(r"\bsteps-planned\b"), "step plan"),
+    (
+        re.compile(r"\bcarries reuse:true with no reuse_note\b"),
+        "reuses step evidence with no reason given",
+    ),
+    # 10.
+    (re.compile(_PLAIN_WORD % "seals"), "accepts"),
+    (re.compile(_PLAIN_WORD % "sealed"), "accepted"),
+    # 11. the only two phrases a non-ok detail uses; no blanket `basis` rule,
+    # because a page path may contain the word
+    (re.compile(r"\bbasis path\(s\)"), "recorded page(s)"),
+    (re.compile(r"\bthe basis\b"), "the recorded pages"),
+    # 12. D-16 drops the hash from human lines
+    (re.compile(r"\ba plan_hash\b"), "a plan"),
+    (re.compile(r"\ba text_hash\b"), "a step text"),
+    (re.compile(r"\bplan_hash\b"), "plan"),
+    # 13. a digest or a long sha keeps the seven characters of a short sha
+    (re.compile(r"[0-9a-f]{12,}"), lambda match: match.group(0)[:7]),
+)
+
+
+def _plain_words(text):
+    """``text`` with :data:`PLAIN_DETAIL_WORDS` applied in order."""
+    for pattern, replacement in PLAIN_DETAIL_WORDS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+def plain_detail(text):
+    """A check's ``detail`` as the default ``verify`` prints it (D-16).
+
+    The rules see only the tool's own words: a :class:`Detail`'s tool pieces,
+    or a literal ``str`` whole. Every value a :class:`Detail` was given passes
+    through as written (CR-03). Only :func:`verify_plain_lines` calls it:
+    ``--json`` and ``--verbose`` print the detail as recorded, so the reviewer's
+    report and the machine's object stay byte-unchanged (D-05).
+    """
+    if not isinstance(text, Detail):
+        return _plain_words(text)
+    return "".join(
+        _plain_words(piece) if tool else piece for piece, tool in text.pieces
+    )
+
+
 #: Contract 5.3's ``step-recorded`` payload, required half. V8 reads it.
 STEP_RECORD_KEYS = (
     "step_id",
@@ -6284,7 +6815,7 @@ def _finding(vid, problems, clean):
         return check_record(vid, True, clean)
     detail = problems[0]
     if len(problems) > 1:
-        detail += " (and %d more)" % (len(problems) - 1)
+        detail = said_join("", [detail, said(" (and %d more)", len(problems) - 1)])
     return check_record(vid, False, detail)
 
 
@@ -6302,8 +6833,12 @@ def _seq_of(event):
 
 
 def _seq_list(seqs):
-    """``"3, 4, 5"`` — a seq list in one voice, for details that name several."""
-    return ", ".join(str(seq) for seq in seqs)
+    """``"3, 4, 5"`` — a seq list in one voice, for details that name several.
+
+    :class:`ToolText`, because the tool wrote it: :func:`plain_detail` reads it
+    with the template, so ``seq 3, 4`` still reads ``entries 3, 4``.
+    """
+    return ToolText(", ".join(str(seq) for seq in seqs))
 
 
 def lenient_events(lines):
@@ -6346,15 +6881,21 @@ def verify_integrity(unit, lines, committed, partial=""):
         header = parsed[0] if isinstance(parsed[0], dict) else None
         if header is None:
             rows.append(
-                check_record("V1", False, "line 1 is not a JSON object, so there is no header")
+                check_record(
+                    "V1",
+                    False,
+                    said("line 1 is not a JSON object, so there is no header"),
+                )
             )
         elif header.get("kind") != "ledger" or header.get("seq") != 0:
             rows.append(
                 check_record(
                     "V1",
                     False,
-                    "the first event is %r at seq %r, not the ledger header"
-                    % (header.get("kind"), header.get("seq")),
+                    said(
+                        "the first event is %r at seq %r, not the ledger header",
+                        header.get("kind"), header.get("seq"),
+                    ),
                 )
             )
         elif header.get("v") != CONTRACT:
@@ -6362,8 +6903,10 @@ def verify_integrity(unit, lines, committed, partial=""):
                 check_record(
                     "V1",
                     False,
-                    "ledger version %r is not supported; this tool reads v%d"
-                    % (header.get("v"), CONTRACT),
+                    said(
+                        "ledger version %r is not supported; this tool reads v%d",
+                        header.get("v"), CONTRACT,
+                    ),
                 )
             )
         elif header.get("unit") != unit:
@@ -6371,12 +6914,22 @@ def verify_integrity(unit, lines, committed, partial=""):
                 check_record(
                     "V1",
                     False,
-                    "the header records unit %r, not %r" % (header.get("unit"), unit),
+                    said(
+                        "the header records unit %r, not %r", header.get("unit"), unit
+                    ),
                 )
             )
         else:
             rows.append(
-                check_record("V1", True, "the header is a v%d ledger event for %r at seq 0" % (CONTRACT, unit))
+                check_record(
+                    "V1",
+                    True,
+                    said(
+                        "the header is a v%d ledger event for %r at seq 0",
+                        CONTRACT,
+                        unit,
+                    ),
+                )
             )
 
     # V2 — every line parses, re-serializes canonically and sits within the caps
@@ -6386,23 +6939,27 @@ def verify_integrity(unit, lines, committed, partial=""):
         size = byte_len(line)
         if size > MAX_LINE_BYTES:
             problems.append(
-                "line %d is %d bytes; the cap is %d" % (number, size, MAX_LINE_BYTES)
+                said("line %d is %d bytes; the cap is %d", number, size, MAX_LINE_BYTES)
             )
             continue
         event = parsed[index]
         if event is None:
-            problems.append("line %d is not valid JSON" % number)
+            problems.append(said("line %d is not valid JSON", number))
             continue
         try:
             canonical = canonical_line(event)
         except (ValueError, Refusal):
-            problems.append("line %d does not re-serialize canonically" % number)
+            problems.append(said("line %d does not re-serialize canonically", number))
             continue
         if canonical != line:
             problems.append(
-                "line %d is not the canonical serialization of its own event" % number
+                said(
+                    "line %d is not the canonical serialization of its own event",
+                    number,
+                )
             )
-    clean = "%d line(s) parse, re-serialize canonically and sit within the %d-byte cap" % (
+    clean = said(
+        "%d line(s) parse, re-serialize canonically and sit within the %d-byte cap",
         len(lines),
         MAX_LINE_BYTES,
     )
@@ -6411,7 +6968,8 @@ def verify_integrity(unit, lines, committed, partial=""):
         # answer is `resume` — not `ledger_corrupt`. Failing V2 on it would exit
         # 6 with the wrong reason on exactly the unit this verb was widened to
         # report on (RESEARCH Pitfall 7), so it is named and not counted.
-        clean += SEGMENT + "a truncated final line is present; crayon resume %s" % unit
+        tail = said("a truncated final line is present; crayon resume %s", unit)
+        clean = said_join(SEGMENT, [clean, tail])
     rows.append(_finding("V2", problems, clean))
 
     # V3 — seq contiguity and the prev chain, over `verify_chain`'s findings.
@@ -6422,8 +6980,11 @@ def verify_integrity(unit, lines, committed, partial=""):
         _finding(
             "V3",
             chain,
-            "seq is contiguous from 0 over %d line(s) and every prev matches the "
-            "previous line's bytes" % len(lines),
+            said(
+                "seq is contiguous from 0 over %d line(s) and every prev matches the "
+                "previous line's bytes",
+                len(lines),
+            ),
         )
     )
 
@@ -6449,8 +7010,11 @@ def verify_integrity(unit, lines, committed, partial=""):
             check_record(
                 "V4",
                 False,
-                "the committed prefix no longer matches HEAD's copy; line %d differs"
-                % differs,
+                said(
+                    "the committed prefix no longer matches HEAD's copy; line %d "
+                    "differs",
+                    differs,
+                ),
             )
         )
     else:
@@ -6458,7 +7022,10 @@ def verify_integrity(unit, lines, committed, partial=""):
             check_record(
                 "V4",
                 True,
-                "the first %d line(s) are byte-identical to HEAD's copy" % len(committed),
+                said(
+                    "the first %d line(s) are byte-identical to HEAD's copy",
+                    len(committed),
+                ),
             )
         )
     return rows
@@ -6516,17 +7083,23 @@ def verify_derivation(events):
         so = current(signoffs, _seq_of(gen))
         if so is None:
             problems.append(
-                "the generation at seq %s has no signoff before it" % _seq_of(gen)
+                said("the generation at seq %s has no signoff before it", _seq_of(gen))
             )
         elif gen.get("signoff_seq") != so.get("seq"):
             problems.append(
-                "the generation at seq %s cites signoff %r; the signoff current at "
-                "its seq is %r" % (_seq_of(gen), gen.get("signoff_seq"), so.get("seq"))
+                said(
+                    "the generation at seq %s cites signoff %r; the signoff current at "
+                    "its seq is %r",
+                    _seq_of(gen), gen.get("signoff_seq"), so.get("seq"),
+                )
             )
         elif gen.get("plan_hash") != so.get("plan_hash"):
             problems.append(
-                "the generation at seq %s records a plan_hash its signoff at seq %r "
-                "does not" % (_seq_of(gen), so.get("seq"))
+                said(
+                    "the generation at seq %s records a plan_hash its signoff at "
+                    "seq %r does not",
+                    _seq_of(gen), so.get("seq"),
+                )
             )
     for rev in accepts:
         gen = next(
@@ -6535,14 +7108,17 @@ def verify_derivation(events):
         so = current(signoffs, _seq_of(rev))
         if gen is None:
             problems.append(
-                "the accept at seq %s names generation %r, which is not in the record"
-                % (_seq_of(rev), rev.get("generation_seq"))
+                said(
+                    "the accept at seq %s names generation %r, which is not in the "
+                    "record",
+                    _seq_of(rev), rev.get("generation_seq"),
+                )
             )
         elif so is None or gen.get("signoff_seq") != so.get("seq"):
             problems.append(
-                "the accept at seq %s seals a generation citing signoff %r; the "
-                "signoff current at the accept is %r"
-                % (
+                said(
+                    "the accept at seq %s seals a generation citing signoff %r; the "
+                    "signoff current at the accept is %r",
                     _seq_of(rev),
                     gen.get("signoff_seq"),
                     so.get("seq") if so is not None else None,
@@ -6553,8 +7129,10 @@ def verify_derivation(events):
         _finding(
             "V5",
             problems,
-            "%d generation(s) and accept(s) cite the signoff current at their seq"
-            % total
+            said(
+                "%d generation(s) and accept(s) cite the signoff current at their seq",
+                total,
+            )
             if total
             else "no generation and no accept to check",
         )
@@ -6567,17 +7145,22 @@ def verify_derivation(events):
         expected = last_gen.get("seq") if last_gen is not None else None
         if rev.get("generation_seq") != expected:
             problems.append(
-                "the review at seq %s cites generation %r; the last generation at "
-                "its seq is %r" % (_seq_of(rev), rev.get("generation_seq"), expected)
+                said(
+                    "the review at seq %s cites generation %r; the last generation at "
+                    "its seq is %r",
+                    _seq_of(rev), rev.get("generation_seq"), expected,
+                )
             )
     for edit in edits:
         last_gen = current(generations, _seq_of(edit))
         expected = last_gen.get("seq") if last_gen is not None else None
         if edit.get("generation_seq") != expected:
             problems.append(
-                "the reviewer edit at seq %s cites generation %r; the last "
-                "generation at its seq is %r (null iff none existed)"
-                % (_seq_of(edit), edit.get("generation_seq"), expected)
+                said(
+                    "the reviewer edit at seq %s cites generation %r; the last "
+                    "generation at its seq is %r (null iff none existed)",
+                    _seq_of(edit), edit.get("generation_seq"), expected,
+                )
             )
     for rev in accepts:
         basis = _later(
@@ -6585,16 +7168,21 @@ def verify_derivation(events):
         )
         if _basis_pairs(rev) != _basis_pairs(basis):
             problems.append(
-                "the accept at seq %s seals files that are not the basis at seq %r"
-                % (_seq_of(rev), basis.get("seq") if basis is not None else None)
+                said(
+                    "the accept at seq %s seals files that are not the basis at seq %r",
+                    _seq_of(rev), basis.get("seq") if basis is not None else None,
+                )
             )
     total = len(reviews) + len(edits)
     rows.append(
         _finding(
             "V6",
             problems,
-            "%d review(s) and reviewer edit(s) cite the basis they were made against"
-            % total
+            said(
+                "%d review(s) and reviewer edit(s) cite the basis they were made "
+                "against",
+                total,
+            )
             if total
             else "no review and no reviewer edit to check",
         )
@@ -6611,15 +7199,21 @@ def verify_derivation(events):
         if gen.get("unsteered") is True and gen.get("unsteered_reason"):
             continue
         problems.append(
-            "the generation at seq %s follows the one at seq %s with no intervening "
-            "steering, review fix or redraft and no unsteered reason" % (high, low)
+            said(
+                "the generation at seq %s follows the one at seq %s with no "
+                "intervening steering, review fix or redraft and no unsteered reason",
+                high, low,
+            )
         )
     rows.append(
         _finding(
             "V7",
             problems,
-            "%d consecutive generation pair(s) are separated by an H event or "
-            "declared unsteered" % max(len(generations) - 1, 0)
+            said(
+                "%d consecutive generation pair(s) are separated by an H event or "
+                "declared unsteered",
+                max(len(generations) - 1, 0),
+            )
             if len(generations) > 1
             else "fewer than two generations, so no pair to check",
         )
@@ -6631,8 +7225,11 @@ def verify_derivation(events):
         plan = plans_by_seq.get(rec.get("steps_seq"))
         if plan is None:
             problems.append(
-                "the step record at seq %s names steps-planned %r, which is not in "
-                "the record" % (_seq_of(rec), rec.get("steps_seq"))
+                said(
+                    "the step record at seq %s names steps-planned %r, which is not in "
+                    "the record",
+                    _seq_of(rec), rec.get("steps_seq"),
+                )
             )
             continue
         step = next(
@@ -6645,15 +7242,20 @@ def verify_derivation(events):
         )
         if step is None:
             problems.append(
-                "the step record at seq %s names step %r, which the plan at seq %r "
-                "does not carry"
-                % (_seq_of(rec), rec.get("step_id"), plan.get("seq"))
+                said(
+                    "the step record at seq %s names step %r, which the plan at seq %r "
+                    "does not carry",
+                    _seq_of(rec), rec.get("step_id"), plan.get("seq"),
+                )
             )
             continue
         if rec.get("text_hash") != step.get("text_hash"):
             problems.append(
-                "the step record at seq %s records a text_hash the plan's step %r "
-                "does not" % (_seq_of(rec), rec.get("step_id"))
+                said(
+                    "the step record at seq %s records a text_hash the plan's step %r "
+                    "does not",
+                    _seq_of(rec), rec.get("step_id"),
+                )
             )
         # WR-02: the same divergence `cmd_step` now refuses at record time,
         # reported over records written before that gate existed. `mode` is
@@ -6662,27 +7264,37 @@ def verify_derivation(events):
         # denies.
         if rec.get("mode") != step.get("mode"):
             problems.append(
-                "the step record at seq %s claims mode %r; the plan's step %r "
-                "declares %r"
-                % (_seq_of(rec), rec.get("mode"), rec.get("step_id"), step.get("mode"))
+                said(
+                    "the step record at seq %s claims mode %r; the plan's step %r "
+                    "declares %r",
+                    _seq_of(rec), rec.get("mode"), rec.get("step_id"), step.get("mode"),
+                )
             )
         missing = [key for key in STEP_RECORD_KEYS if key not in rec]
         if missing:
             problems.append(
-                "the step record at seq %s is missing %s"
-                % (_seq_of(rec), ", ".join(missing))
+                said(
+                    "the step record at seq %s is missing %s",
+                    _seq_of(rec), ", ".join(missing),
+                )
             )
         elif step_reason_required(rec) and not rec.get("reason"):
             problems.append(
-                "the step record at seq %s is a %r at exit %r and carries no reason"
-                % (_seq_of(rec), rec.get("verdict"), rec.get("exit_code"))
+                said(
+                    "the step record at seq %s is a %r at exit %r and carries no "
+                    "reason",
+                    _seq_of(rec), rec.get("verdict"), rec.get("exit_code"),
+                )
             )
     rows.append(
         _finding(
             "V8",
             problems,
-            "%d step record(s) match their plan's hash and mode and carry 5.3's "
-            "fields" % len(records)
+            said(
+                "%d step record(s) match their plan's hash and mode and carry 5.3's "
+                "fields",
+                len(records),
+            )
             if records
             else "no step record to check",
         )
@@ -6699,21 +7311,29 @@ def verify_derivation(events):
         plan = plans_by_seq.get(gen.get("steps_seq")) or current(plans, _seq_of(gen))
         if plan is None:
             problems.append(
-                "the actionable generation at seq %s names no step plan" % _seq_of(gen)
+                said(
+                    "the actionable generation at seq %s names no step plan",
+                    _seq_of(gen),
+                )
             )
             continue
         outstanding = unresolved_steps(before(_seq_of(gen)), plan)
         if outstanding:
             problems.append(
-                "the actionable generation at seq %s was recorded with step(s) %s "
-                "unresolved" % (_seq_of(gen), ", ".join(str(s) for s in outstanding))
+                said(
+                    "the actionable generation at seq %s was recorded with step(s) %s "
+                    "unresolved",
+                    _seq_of(gen), ", ".join(str(s) for s in outstanding),
+                )
             )
     rows.append(
         _finding(
             "V9",
             problems,
-            "%d actionable generation(s) had every step resolved at their seq"
-            % actionable
+            said(
+                "%d actionable generation(s) had every step resolved at their seq",
+                actionable,
+            )
             if actionable
             else "no actionable generation to check",
         )
@@ -6737,36 +7357,48 @@ def verify_derivation(events):
         seq = _seq_of(rev)
         if pending - (resolves | withdraws):
             problems.append(
-                "the accept at seq %s leaves request(s) %s with no disposition"
-                % (seq, _seq_list(sorted(pending - (resolves | withdraws))))
+                said(
+                    "the accept at seq %s leaves request(s) %s with no disposition",
+                    seq, _seq_list(sorted(pending - (resolves | withdraws))),
+                )
             )
         if resolves - pending:
             problems.append(
-                "the accept at seq %s resolves seq(s) %s, which were not pending"
-                % (seq, _seq_list(sorted(resolves - pending)))
+                said(
+                    "the accept at seq %s resolves seq(s) %s, which were not pending",
+                    seq, _seq_list(sorted(resolves - pending)),
+                )
             )
         if withdraws - pending:
             problems.append(
-                "the accept at seq %s withdraws seq(s) %s, which were not pending"
-                % (seq, _seq_list(sorted(withdraws - pending)))
+                said(
+                    "the accept at seq %s withdraws seq(s) %s, which were not pending",
+                    seq, _seq_list(sorted(withdraws - pending)),
+                )
             )
         if resolves & withdraws:
             problems.append(
-                "the accept at seq %s both resolves and withdraws seq(s) %s"
-                % (seq, _seq_list(sorted(resolves & withdraws)))
+                said(
+                    "the accept at seq %s both resolves and withdraws seq(s) %s",
+                    seq, _seq_list(sorted(resolves & withdraws)),
+                )
             )
         for entry in entries:
             if not entry.get("reason"):
                 problems.append(
-                    "the accept at seq %s withdraws seq %r with no reason"
-                    % (seq, entry.get("seq"))
+                    said(
+                        "the accept at seq %s withdraws seq %r with no reason",
+                        seq, entry.get("seq"),
+                    )
                 )
     rows.append(
         _finding(
             "V10",
             problems,
-            "%d accept(s) dispose of exactly the requests pending at their seq"
-            % len(accepts)
+            said(
+                "%d accept(s) dispose of exactly the requests pending at their seq",
+                len(accepts),
+            )
             if accepts
             else "no accept to check",
         )
@@ -6779,13 +7411,16 @@ def verify_derivation(events):
             validate_model(gen.get("model"), gen.get("model_origin"))
         except Refusal as inconsistent:
             problems.append(
-                "the generation at seq %s: %s" % (_seq_of(gen), inconsistent.detail)
+                said("the generation at seq %s: %s", _seq_of(gen), inconsistent.detail)
             )
     rows.append(
         _finding(
             "V11",
             problems,
-            "%d generation(s) record a model consistent with its origin" % len(generations)
+            said(
+                "%d generation(s) record a model consistent with its origin",
+                len(generations),
+            )
             if generations
             else "no generation to check",
         )
@@ -6793,7 +7428,10 @@ def verify_derivation(events):
 
     # V12 — a reuse plan states why it reuses
     problems = [
-        "the step plan at seq %s carries reuse:true with no reuse_note" % _seq_of(plan)
+        said(
+            "the step plan at seq %s carries reuse:true with no reuse_note",
+            _seq_of(plan),
+        )
         for plan in plans
         if plan.get("reuse") and not plan.get("reuse_note")
     ]
@@ -6801,7 +7439,7 @@ def verify_derivation(events):
         _finding(
             "V12",
             problems,
-            "%d step plan(s) carry a reuse_note wherever they reuse" % len(plans)
+            said("%d step plan(s) carry a reuse_note wherever they reuse", len(plans))
             if plans
             else "no step plan to check",
         )
@@ -6815,8 +7453,11 @@ def verify_derivation(events):
         files = sorted(path for path, _ in _basis_pairs(gen))
         if files != targets:
             problems.append(
-                "the generation at seq %s records files %s; the signoff current at "
-                "its seq targets %s" % (_seq_of(gen), files, targets)
+                said(
+                    "the generation at seq %s records files %s; the signoff current at "
+                    "its seq targets %s",
+                    _seq_of(gen), files, targets,
+                )
             )
     for edit in edits:
         previous = _later(
@@ -6834,16 +7475,21 @@ def verify_derivation(events):
         dropped = sorted(kept - set(path for path, _ in _basis_pairs(edit)))
         if dropped:
             problems.append(
-                "the reviewer edit at seq %s drops still-signed basis path(s) %s"
-                % (_seq_of(edit), ", ".join(dropped))
+                said(
+                    "the reviewer edit at seq %s drops still-signed basis path(s) %s",
+                    _seq_of(edit), ", ".join(dropped),
+                )
             )
     total = len(generations) + len(edits)
     rows.append(
         _finding(
             "V13",
             problems,
-            "%d generation(s) and reviewer edit(s) record the files their signoff "
-            "targets" % total
+            said(
+                "%d generation(s) and reviewer edit(s) record the files their signoff "
+                "targets",
+                total,
+            )
             if total
             else "no generation and no reviewer edit to check",
         )
@@ -6876,7 +7522,9 @@ def verify_currency(repo, state, paths):
         for row in rows
         if row["status"] in ("missing", "new") or row["status"].startswith("drifted")
     ]
-    detail = SEGMENT.join("%s: %s" % (row["path"], row["status"]) for row in rows)
+    detail = said_join(
+        SEGMENT, [said("%s: %s", row["path"], ToolText(row["status"])) for row in rows]
+    )
     return [check_record("V14", not unsettled, detail)]
 
 
@@ -6924,6 +7572,33 @@ def verify_report_lines(head, checks, notes=()):
     return out
 
 
+def verify_plain_lines(checks, notes=()):
+    """The DEFAULT report (D-04): one outcome line, then what needs a look.
+
+    The outcome comes from :func:`verify_summary`'s ``failed`` and ``warn``,
+    the same counts the exit rule reads, so a FAIL can never read as intact
+    (T-20-05). Every warned or failed check follows in V order as its plain
+    label and its detail, then every note; nothing is dropped to make the
+    answer shorter. Each detail and note passes through :func:`plain_detail`
+    (D-16); no V id, status token or count is printed — those are
+    ``--verbose``'s and ``--json``'s.
+    """
+    counts = verify_summary(checks, notes)
+    if counts["failed"]:
+        out = ["The record is damaged:"]
+    elif counts["warn"]:
+        out = ["The record is intact; these need a look:"]
+    else:
+        out = ["The record is intact."]
+    out += [
+        "  %s: %s" % (CHECK_LABELS[row["id"]], plain_detail(row["detail"]))
+        for row in checks
+        if row["status"] != "ok"
+    ]
+    out += ["  %s" % plain_detail(note) for note in notes]
+    return out
+
+
 def verify_corroboration(repo, unit, events, state, committed):
     """V15–V19 — what git can corroborate, at the levels contract 5.9 fixes.
 
@@ -6957,20 +7632,28 @@ def verify_corroboration(repo, unit, events, state, committed):
     problems = []
     if missing:
         problems.append(
-            "history_squashed: the ledger line(s) at seq %s are committed and no "
-            "commit carries their Crayon-Seq trailer" % _seq_list(missing)
+            said(
+                "history_squashed: the ledger line(s) at seq %s are committed and no "
+                "commit carries their Crayon-Seq trailer",
+                _seq_list(missing),
+            )
         )
     if out_of_order:
         problems.append(
-            "history_squashed: the trailer commits for seq %s do not appear in seq "
-            "order in this history" % _seq_list(out_of_order)
+            said(
+                "history_squashed: the trailer commits for seq %s do not appear in "
+                "seq order in this history",
+                _seq_list(out_of_order),
+            )
         )
     rows.append(
         _finding(
             "V15",
             problems,
-            "%d committed seq(s) have their Crayon-Seq trailer commit, in order"
-            % committed
+            said(
+                "%d committed seq(s) have their Crayon-Seq trailer commit, in order",
+                committed,
+            )
             if committed
             else "no committed event to corroborate",
         )
@@ -7003,11 +7686,14 @@ def verify_corroboration(repo, unit, events, state, committed):
             checked += 1
             if not ancestry[commit]:
                 problems.append(
-                    "ledger_diverged: the commit recorded at seq %s (%s) is not an "
-                    "ancestor of HEAD" % (_seq_of(event), commit[:7])
+                    said(
+                        "ledger_diverged: the commit recorded at seq %s (%s) is not "
+                        "an ancestor of HEAD",
+                        _seq_of(event), commit[:7],
+                    )
                 )
         clean = (
-            "%d recorded commit(s) are ancestors of HEAD" % checked
+            said("%d recorded commit(s) are ancestors of HEAD", checked)
             if checked
             else "no event records a commit to place in this history"
         )
@@ -7029,17 +7715,20 @@ def verify_corroboration(repo, unit, events, state, committed):
     pinned = attribute.returncode == 0 and attribute.stdout.strip().endswith(": unset")
     problems = []
     if ignored.returncode != 0:
-        problems.append("%s/ is not gitignored" % staging)
+        problems.append(said("%s/ is not gitignored", staging))
     if not pinned:
         problems.append(
-            "%s is not pinned -text; contract 5.2 puts `*.jsonl -text` in "
-            ".crayon/.gitattributes" % relative
+            said(
+                "%s is not pinned -text; contract 5.2 puts `*.jsonl -text` in "
+                ".crayon/.gitattributes",
+                relative,
+            )
         )
     rows.append(
         _finding(
             "V17",
-            [SEGMENT.join(problems)] if problems else [],
-            "%s/ is gitignored and the ledger is pinned -text" % staging,
+            [said_join(SEGMENT, problems)] if problems else [],
+            said("%s/ is gitignored and the ledger is pinned -text", staging),
         )
     )
 
@@ -7067,13 +7756,13 @@ def verify_corroboration(repo, unit, events, state, committed):
             shared = sorted(mine.intersection(sibling["targets"]))
             if shared:
                 problems.append(
-                    "%s and %s both claim %s" % (unit, other, ", ".join(shared))
+                    said("%s and %s both claim %s", unit, other, ", ".join(shared))
                 )
     rows.append(
         _finding(
             "V18",
             problems,
-            "no other live unit claims any of %s's %d target(s)" % (unit, len(mine))
+            said("no other live unit claims any of %s's %d target(s)", unit, len(mine))
             if mine
             else "no signed target to claim",
         )
@@ -7092,18 +7781,27 @@ def verify_corroboration(repo, unit, events, state, committed):
             digest = digest_file(full) if contained(root, full) else None
             if digest is None:
                 problems.append(
-                    "the source %s recorded at the signoff cannot be read now" % path
+                    said(
+                        "the source %s recorded at the signoff cannot be read now",
+                        path,
+                    )
                 )
             elif digest != context[path]:
-                problems.append("the source %s has changed since the signoff" % path)
+                problems.append(
+                    said("the source %s has changed since the signoff", path)
+                )
         if state.get("plan_stale"):
             problems.append(
-                "plan_stale: unit.md has changed since the signoff at seq %s"
-                % state.get("so_seq")
+                said(
+                    "plan_stale: unit.md has changed since the signoff at seq %s",
+                    state.get("so_seq"),
+                )
             )
         clean = (
-            "%d recorded context digest(s) still match and the plan is current"
-            % len(context)
+            said(
+                "%d recorded context digest(s) still match and the plan is current",
+                len(context),
+            )
         )
     rows.append(_finding("V19", problems, clean))
     return rows
@@ -7326,30 +8024,74 @@ def provenance_line(repo, unit, state, checks):
         counts["fail"],
         (": " + ", ".join(counts["failed"])) if counts["failed"] else "",
     )
-    if state["basis"] is None:
-        page = "no basis recorded"
-    elif state["page_missing"]:
-        page = "missing"
-    elif state["page_drift"]:
-        commit = find_seq_commit(repo, unit, state["basis_seq"])
-        sha = (commit or state["basis"].get("commit") or "")[:7] or "unknown"
-        page = "drifted since %s" % sha
-    else:
-        page = "current"
+    page = _provenance_page(repo, unit, state, False)
     return "record: %s · page: %s" % (record, page)
 
 
-def summary_data(repo, unit, events, snapshot, state):
+def _provenance_page(repo, unit, state, plain):
+    """The page half both provenance lines share: the basis against the disk.
+
+    ``plain`` only changes the words for a unit with no page yet; ``missing``,
+    ``drifted since <sha7>`` and ``current`` read the same in both lines.
+    """
+    if state["basis"] is None:
+        return "no page recorded yet" if plain else "no basis recorded"
+    if state["page_missing"]:
+        return "missing"
+    if state["page_drift"]:
+        commit = find_seq_commit(repo, unit, state["basis_seq"])
+        sha = (commit or state["basis"].get("commit") or "")[:7] or "unknown"
+        return "drifted since %s" % sha
+    return "current"
+
+
+def plain_provenance_line(repo, unit, state, checks):
+    """The human provenance line of ``summary`` and ``summary --md`` (D-06, P-15).
+
+    The same checks as :func:`provenance_line`, over the same snapshot, said
+    plainly: ``intact at <sha7>``, ``intact at <sha7>; needs a look: <labels>``
+    or ``damaged at <sha7>: <labels>``. Checks are named by
+    :data:`CHECK_LABELS`, never by their V id or a count. A damaged record says
+    so and names what failed: plain words never hide a failure (T-20-15).
+    Human only, so not a ``--json`` key: ``summary --json``'s ``provenance``
+    keeps the counts the review skill's reference documents.
+    """
+    head = git(["rev-parse", "--short=7", "HEAD"], repo).stdout.strip() or "no commit"
+    notes = state.get("warnings") or []
+    counts = verify_summary(checks, notes)
+    if counts["failed"]:
+        record = "damaged at %s: %s" % (
+            head,
+            ", ".join(CHECK_LABELS.get(vid, vid) for vid in counts["failed"]),
+        )
+    elif counts["warn"]:
+        labels = [
+            CHECK_LABELS.get(row["id"], row["id"])
+            for row in checks
+            if row["status"] == "warn"
+        ]
+        if notes:
+            labels.append("events of an unknown kind")
+        record = "intact at %s; needs a look: %s" % (head, ", ".join(labels))
+    else:
+        record = "intact at %s" % head
+    return "record: %s · page: %s" % (record, _provenance_page(repo, unit, state, True))
+
+
+def summary_data(repo, unit, events, snapshot, state, checks=None):
     """Everything §3.3 says `summary` reports, gathered once and rendered thrice.
 
     ``snapshot`` is the caller's own ``read_fs`` result, threaded through rather
     than re-taken: the provenance half runs :func:`run_verify` over it, so the
     record's verdict and the page's status describe ONE instant. A second
     snapshot here would let `summary` report a page as current and drifted in
-    the same breath.
+    the same breath. ``checks`` is that run's result when the caller already
+    has it, so the JSON ``provenance`` (counts, for the review skill) and the
+    human :func:`plain_provenance_line` describe the same checks (P-15).
     """
     title, intent, audience = unit_headline(events, state, unit)
-    checks = run_verify(repo, unit, events, snapshot, state)
+    if checks is None:
+        checks = run_verify(repo, unit, events, snapshot, state)
     gen = state["gen"]
     floor = state["gen_seq"] if state["gen_seq"] is not None else 0
     gaps = list((gen or {}).get("gaps") or [])
@@ -7372,6 +8114,8 @@ def summary_data(repo, unit, events, snapshot, state):
         "provenance": provenance_line(repo, unit, state, checks),
         "state": state["state"],
         "next": route(state),
+        "author_notes": author_notes(events),
+        "handover": handover_of(events),
     }
 
 
@@ -7383,21 +8127,47 @@ def _disposition_text(row, verbatim):
     return "withdrawn: %s" % reason
 
 
-def summary_text(data):
-    """The plain report: one section per §3.3 heading, empty ones omitted."""
+def _author_decisions(data):
+    """The intent, audience, notes and open items "Author decisions" lists."""
+    notes = [
+        (note_label(entry), _as_text(entry.get("note")))
+        for entry in data.get("author_notes") or []
+    ]
+    return data["intent"], data["audience"], notes, open_items(data.get("handover"))
+
+
+def summary_text(data, record):
+    """The plain report: one section per §3.3 heading, empty ones omitted.
+
+    "Author decisions" comes first (D-12): the author's judgment is read before
+    the file list. Each sub-block appears only when it has items. ``record`` is
+    :func:`plain_provenance_line`'s, printed where the JSON keeps its counted
+    ``provenance`` (P-15).
+    """
     out = [data["title"]]
+    intent, audience, notes, items = _author_decisions(data)
+    if intent or audience or notes or items:
+        out.append("author decisions:")
+        if intent:
+            out.append("  intent: %s" % intent)
+        if audience:
+            out.append("  audience: %s" % audience)
+        if notes:
+            out.append("  notes:")
+            out += [
+                "    %s: %s" % (label, collapse_note(note, 200)) for label, note in notes
+            ]
+        if items:
+            out.append("  still open at handover:")
+            out += ["    %s" % collapse_note(item, 200) for item in items]
     if data["files"]:
         out.append("files changed:")
         out += ["  %s" % path for path in data["files"]]
-    if data["intent"]:
-        out.append("intent: %s" % data["intent"])
-    if data["audience"]:
-        out.append("audience: %s" % data["audience"])
     if data["requests"]:
         out.append("recorded requests:")
         for row in data["requests"]:
             out.append(
-                "  seq %s — %s — %s: %s"
+                "  request %s — %s — %s: %s"
                 % (
                     row["seq"],
                     _disposition_text(row, False),
@@ -7408,9 +8178,7 @@ def summary_text(data):
     if data["reviewer_edits"]:
         out.append("reviewer edits:")
         for entry in data["reviewer_edits"]:
-            out.append(
-                "  seq %s — %s" % (entry["seq"], collapse_note(entry["note"], 200))
-            )
+            out.append("  - %s" % collapse_note(_as_text(entry["note"]), 200))
     if data["gaps"]:
         out.append("known gaps:")
         out += ["  - %s" % collapse_note(gap, 200) for gap in data["gaps"]]
@@ -7420,11 +8188,11 @@ def summary_text(data):
         out.append("sphinx: %s" % data["sphinx"])
     if data["model"]:
         out.append("model: %s (%s)" % (data["model"], data["model_origin"]))
-    out.append(data["provenance"])
+    out.append(record)
     return "\n".join(out) + "\n"
 
 
-def summary_markdown(data):
+def summary_markdown(data, record):
     """The paste-ready PR text: the same sections, as Markdown.
 
     WR-11: every contributor-controlled value goes through an escaper chosen
@@ -7447,23 +8215,33 @@ def summary_markdown(data):
     never the reader's ability to see what the record holds. The plain
     (:func:`summary_text`) render is unescaped on purpose — it is terminal
     output, not a document.
+
+    ``record`` is :func:`plain_provenance_line`'s human line; ``summary
+    --json``'s ``provenance`` keeps the counts (P-15).
     """
     out = ["# %s" % md_text(data["title"])]
+    intent, audience, notes, items = _author_decisions(data)
+    if intent or audience or notes or items:
+        out += ["", "## Author decisions", ""]
+        if intent:
+            out.append("- **Intent:** %s" % md_text(intent))
+        if audience:
+            out.append("- **Audience:** %s" % md_text(audience))
+        if notes:
+            out += ["", "### The author's notes", ""]
+            out += ["- %s" % md_text("%s: %s" % (label, note)) for label, note in notes]
+        if items:
+            out += ["", "### Still open at handover", ""]
+            out += ["- %s" % md_text(item) for item in items]
     if data["files"]:
         out += ["", "## Files changed", ""]
         out += ["- `%s`" % md_code(path) for path in data["files"]]
-    if data["intent"] or data["audience"]:
-        out += ["", "## Intent and audience", ""]
-        if data["intent"]:
-            out.append("- **Intent:** %s" % md_text(data["intent"]))
-        if data["audience"]:
-            out.append("- **Audience:** %s" % md_text(data["audience"]))
     if data["requests"]:
         out += [
             "",
             "## Recorded requests",
             "",
-            "| seq | disposition | request |",
+            "| request | disposition | note |",
             "| --- | --- | --- |",
         ]
         for row in data["requests"]:
@@ -7477,10 +8255,7 @@ def summary_markdown(data):
             )
     if data["reviewer_edits"]:
         out += ["", "## Reviewer edits", ""]
-        for index, entry in enumerate(data["reviewer_edits"]):
-            if index:
-                out.append("")
-            out.append("**seq %s** — %s" % (entry["seq"], md_text(entry["note"])))
+        out += ["- %s" % md_text(entry["note"]) for entry in data["reviewer_edits"]]
     if data["gaps"]:
         out += ["", "## Known gaps", ""]
         out += ["- %s" % md_text(gap) for gap in data["gaps"]]
@@ -7502,12 +8277,12 @@ def summary_markdown(data):
             % (md_code(data["model"]), md_code(data["model_origin"])),
         ]
     # WR-13: the last raw interpolation. It is tool-derived today — `git
-    # rev-parse` output, verify counts, check ids — but `state["basis"]`'s
+    # rev-parse` output, check labels — but `state["basis"]`'s
     # `commit` is a LEDGER value and therefore forgeable, and WR-11's rule is
     # "every contributor-controlled value goes through an escaper chosen for
     # its position". One exception means the next reader cannot verify the rule
     # by reading the function, which is the whole point of stating it that way.
-    out += ["", "## Provenance", "", md_text(data["provenance"])]
+    out += ["", "## Provenance", "", md_text(record)]
     return "\n".join(out) + "\n"
 
 
@@ -7529,14 +8304,17 @@ def cmd_summary(args):
     unit = args.unit
     repo = git_root()
     events, snapshot, state = read_only_unit(repo, unit)
-    data = summary_data(repo, unit, events, snapshot, state)
+    checks = run_verify(repo, unit, events, snapshot, state)
+    data = summary_data(repo, unit, events, snapshot, state, checks=checks)
 
     if as_json:
         sys.stdout.write(json.dumps(data, ensure_ascii=False) + "\n")
-    elif as_md:
-        sys.stdout.write(summary_markdown(data))
     else:
-        sys.stdout.write(summary_text(data))
+        record = plain_provenance_line(repo, unit, state, checks)
+        if as_md:
+            sys.stdout.write(summary_markdown(data, record))
+        else:
+            sys.stdout.write(summary_text(data, record))
     sys.stdout.flush()
     return EXITS["success"]
 
@@ -8824,16 +9602,16 @@ def resume_pass_two(repo, unit, found, rows, as_json):
         )
     for notice in notices:
         diagnostic(notice)
-    segments = [
-        "resumed %s" % unit,
-        "seq %s" % result["seq_range"],
-        git(["rev-parse", "--short", "HEAD"], repo).stdout.strip(),
-        "%d file(s) placed" % len(place),
-    ]
+    short_head = git(["rev-parse", "--short", "HEAD"], repo).stdout.strip()
+    placed = "%d file(s) placed" % len(place)
+    segments = ["resumed %s" % unit, "completed the interrupted write", short_head, placed]
+    # CR-01: `--json`'s message keeps its contract-1 wording.
+    json_segments = ["resumed %s" % unit, "seq %s" % result["seq_range"], short_head, placed]
     return respond(
         segments,
         route(state) if state is not None else "show",
         as_json,
+        json_segments=json_segments,
         payload={"notices": notices} if notices else None,
     )
 
@@ -8933,8 +9711,22 @@ def cmd_resume(args):
 
         listed = [{"path": r["path"], "class": r["class"]} for r in rows]
         if args.dry_run:
-            segments = ["resumable %s" % unit, found["detail"], "%d file(s)" % len(rows)]
-            return respond(segments, "resume", as_json, payload={"files": listed})
+            # D-16 (P-04): the count in words; the seq range stays in the
+            # `uncommitted_tail` refusal that shares `found["detail"]`.
+            segments = [
+                "resumable %s" % unit,
+                "%d uncommitted event(s) from an interrupted write" % len(found["seqs"]),
+                "%d file(s)" % len(rows),
+            ]
+            # CR-01: `--json`'s message keeps its contract-1 wording.
+            json_segments = ["resumable %s" % unit, found["detail"], segments[2]]
+            return respond(
+                segments,
+                "resume",
+                as_json,
+                json_segments=json_segments,
+                payload={"files": listed},
+            )
 
         # A crash before contract 5.8's step (ii) leaves the adopt copies behind
         # with the OLD manifest still authoritative. They are stray: the next
@@ -9046,9 +9838,18 @@ def cmd_verify(args):
     row, U-07 asserts the tool's keys equal that table exactly, and phase 18's
     docs check reads the same equality. Choosing between existing codes rather
     than adding one is the discipline three phase-16 plans already applied.
-    WARN and INFO alone exit 0, with the full report still on stdout.
+    WARN and INFO alone exit 0, with the report still on stdout.
+
+    Three renders of the one ``checks`` list (D-04, D-05): ``--json`` is the
+    machine's object and wins over ``--verbose`` (P-07); ``--verbose`` is the
+    full V1–V19 report with its counts, byte for byte what it always was; the
+    default is :func:`verify_plain_lines`, the plain answer for the author.
+    The exit rule reads the same ``counts`` under all three. The default
+    render's refusal hint names each failing id with its plain label, so the
+    refusal and the report share one vocabulary (WR-01).
     """
     as_json = bool(getattr(args, "json", False))
+    verbose = bool(getattr(args, "verbose", False))
     unit = args.unit
     repo = git_root()
     classify_stage_a(repo, unit, report_only=True)
@@ -9071,17 +9872,24 @@ def cmd_verify(args):
             "warnings": notes,
         }
         sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
-    else:
+    elif verbose:
         sys.stdout.write("\n".join(verify_report_lines(head, checks, notes)) + "\n")
+    else:
+        sys.stdout.write("\n".join(verify_plain_lines(checks, notes)) + "\n")
     sys.stdout.flush()
 
     if counts["failed"]:
+        hint = "the report above names each failing check"
+        if not (as_json or verbose):
+            hint += ": " + ", ".join(
+                "%s (%s)" % (vid, CHECK_LABELS[vid]) for vid in counts["failed"]
+            )
         raise Refusal(
             "ledger_corrupt",
             unit=unit,
             detail="record integrity failed: %s" % ", ".join(counts["failed"]),
-            hint="the report above names each failing check; %s is damaged and "
-            "nothing may be appended" % ledger_label(ledger_path(repo, unit)),
+            hint="%s; %s is damaged and nothing may be appended"
+            % (hint, ledger_label(ledger_path(repo, unit))),
             next_token="show",
         )
     return EXITS["success"]
@@ -9899,6 +10707,11 @@ def build_parser():
         help="report contract 5.9's V1-V19 over the whole record",
     )
     verify.add_argument("unit", help="unit id")
+    verify.add_argument(
+        "--verbose",
+        action="store_true",
+        help="print the full V1–V19 report with its counts",
+    )
     verify.set_defaults(func=cmd_verify)
 
     version = verbs.add_parser(

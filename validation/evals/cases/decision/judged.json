@@ -198,7 +198,7 @@
       "assert": [
         {
           "kind": "text_re",
-          "re": "\\(19\\ checks,\\ 0\\ warn,\\ 0\\ fail\\)"
+          "re": "record:\\ intact\\ at\\ [0-9a-f]{7}"
         },
         {
           "kind": "not_text_re",
@@ -206,13 +206,13 @@
         },
         {
           "kind": "judge",
-          "context": "Earlier in the session `crayon summary cfg` printed:\nConfiguration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current",
-          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example 'record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current') rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
+          "context": "Earlier in the session `crayon summary cfg` printed:\nConfiguration reference\nauthor decisions:\n  intent: reference\n  audience: operators configuring toyq on a server\nfiles changed:\n  reference/config.md\nrecord: intact at 5001311 · page: current",
+          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example 'record: intact at 5001311 · page: current') rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
         }
       ],
       "oracle": [
         {
-          "content": "Provenance, as crayon summary printed it:\n\n    files changed: reference/config.md\n    record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current\n\nWhat is your verdict: accept, fix or redraft?"
+          "content": "Provenance, as crayon summary printed it:\n\n    files changed: reference/config.md\n    record: intact at 5001311 · page: current\n\nWhat is your verdict: accept, fix or redraft?"
         }
       ],
       "foil": [

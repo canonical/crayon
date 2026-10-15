@@ -20,3 +20,10 @@ __pycache__/
 # are committed; these never are.
 validation/evals/results/raw/
 validation/evals/.cache/
+
+# GSD/crayon runtime state — generated per session or derived from the
+# tracked planning docs; never hand-authored, so keep it out of history.
+.gsd/
+.planning/state.json
+.planning/agent-history.json
+.planning/research/.cache/

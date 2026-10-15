@@ -117,6 +117,38 @@ assert_not_contains() {
     return 0
 }
 
+# D-16: the ledger vocabulary no human success line may carry, in Python `re`
+# syntax. This is its ONE definition site; `assert_plain` reads it, and the
+# lifecycle suite's self-test drives it against the forbidden samples. `seq`
+# followed by a number, `sealed`, `basis` and `plan_hash` as whole words, and
+# any run of 12 or more lowercase hex characters (a digest or a long sha). A
+# seven-character short sha stays allowed: a human line may give the short
+# commit sha where it helps the reader find it (P-06).
+LEDGER_WORDS_RE='\bseq\s*[0-9]|\bsealed\b|\bbasis\b|\bplan_hash\b|[0-9a-f]{12,}'
+
+# D-16: TEXT carries none of LEDGER_WORDS_RE. A match is recorded as a failure
+# naming the matched words; so is a matcher that could not run, because a
+# check that silently checked nothing is the vacuous pass WR-12 forbids.
+assert_plain() {
+    local desc="$1" text="$2" hit rc
+    hit=$(python3 -c '
+import re, sys
+match = re.search(sys.argv[1], sys.argv[2])
+if match:
+    print(match.group(0))
+    sys.exit(3)
+' "$LEDGER_WORDS_RE" "$text" 2>&1)
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+        _record_pass
+    elif [ "$rc" -eq 3 ]; then
+        _record_fail "$desc (ledger vocabulary '$hit' in: '$text')"
+    else
+        _record_fail "$desc (the ledger-vocabulary matcher failed: $hit)"
+    fi
+    return 0
+}
+
 assert_file_exists() {
     local desc="$1" file="$2"
     if [ -e "$file" ]; then
