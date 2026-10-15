@@ -49,7 +49,9 @@ Every command below must be green before a commit lands. This is the gate in ful
 shorter version, and a claim of completeness that omits one is the failure mode the list exists
 against. It is pinned by the `GATE_COMMANDS` tuple in `tests/test_crayon_unit.py`: every string
 appears here and in [[development]] verbatim, every `tests/test_*.py` module appears in it, and
-every `run:` body in `.github/workflows/ci.yml` is one of them.
+every `run:` body in `.github/workflows/ci.yml` is one of them, bar the two the suite's `CI_EXTRA`
+names with their reasons: the `shellcheck` command below, and the `unittest` job's install of
+ripgrep, which the eval kit's self-tests run for real and the runner image does not ship.
 
 ```bash
 python3 -m unittest tests.test_crayon_unit       # the unit suite

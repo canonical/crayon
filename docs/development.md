@@ -22,7 +22,9 @@ and the unit suite asserts it.
 Every command below must be green before a commit lands. The list is pinned three ways: the
 `GATE_COMMANDS` tuple in `tests/test_crayon_unit.py` must equal it string for string, every
 command must appear in `AGENTS.md` and in this page, and every `run:` body in
-`.github/workflows/ci.yml` must be one of them.
+`.github/workflows/ci.yml` must be one of them, bar the two the suite's `CI_EXTRA` names with
+their reasons: the `shellcheck` command, and the `unittest` job's install of ripgrep, which
+`tests.test_evals` runs for real and the runner image does not ship.
 
 ```bash
 python3 -m unittest tests.test_crayon_unit       # the unit suite
@@ -227,6 +229,8 @@ verdict lands on the checks list at once. Each job body is the literal local com
 check reproduces with one paste. First-party actions only, pinned to commit SHAs. The unit
 matrix runs 3.9 / 3.12 / 3.13 from the runner's tool cache; `tests/run_matrix.sh` is the local
 equivalent, fetching interpreters with `uv` as a fetcher only — it never installs a package.
+The one step that is not a local command installs ripgrep on the runner before the unit
+matrix runs: `tests.test_evals` runs `rg` for real and refuses to skip a cell without it.
 
 ## Driving the verbs by hand
 

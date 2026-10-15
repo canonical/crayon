@@ -121,6 +121,13 @@ jobs:
         with:
           # The matrix value travels in `with:`, which is not a shell.
           python-version: ${{ matrix.python-version }}
+      # The eval kit's self-tests run `rg` for real: the agent's looking path
+      # replays recorded searches through the host's ripgrep, and the
+      # expansion cross product fails by name on a missing tool rather than
+      # skip a cell. The image does not ship it. This is the one `run:` body
+      # in the job that is not a gate command; `CI_EXTRA` in
+      # tests/test_crayon_unit.py names it with this reason.
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ripgrep
       # Every module is named explicitly. Never the discovery runner: `tests/`
       # carries no package marker, so discovery finds nothing and reports it
       # as success.
