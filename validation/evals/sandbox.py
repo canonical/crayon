@@ -27,9 +27,27 @@ RECORDER = HERE / "fixtures" / "states.sh"
 #: The ``snap`` points ``states.sh`` takes, one sandbox each. ``ensure`` checks
 #: the build produced exactly these, so the two cannot drift apart silently.
 SNAPSHOTS = (
-    "accepted", "context_empty", "context_recorded", "context_staged", "crashed",
-    "declared", "diverged", "drafted", "edited", "fixed", "missing", "no_material",
-    "retired", "signed", "stale", "target_exists", "walk",
+    "accepted",
+    "closing",
+    "closing_linked",
+    "closing_nested",
+    "closing_walk",
+    "context_empty",
+    "context_recorded",
+    "context_staged",
+    "crashed",
+    "declared",
+    "diverged",
+    "drafted",
+    "edited",
+    "fixed",
+    "missing",
+    "no_material",
+    "retired",
+    "signed",
+    "stale",
+    "target_exists",
+    "walk",
 )
 
 
@@ -61,8 +79,12 @@ def _inputs():
 
 
 def digest():
-    """One digest over everything that shapes a snapshot."""
-    hashed = hashlib.sha256()
+    """One digest over everything that shapes a snapshot.
+
+    ``SNAPSHOTS`` is part of it, so naming a snapshot the recorder does not take
+    rebuilds and fails in ``ensure`` rather than passing on a cached build.
+    """
+    hashed = hashlib.sha256(repr(SNAPSHOTS).encode("utf-8") + b"\0")
     for path in _inputs():
         hashed.update(str(path.relative_to(REPO)).encode("utf-8") + b"\0")
         hashed.update(path.read_bytes() + b"\0")

@@ -86,6 +86,10 @@ from declared external sources, with provenance), `crayon-plan` (declare and sig
 tutorials and how-tos) and `crayon-review` (record the verdict). The family contract and
 the routing table are in `skills/README.md`; the table is mirrored byte-identically into each
 skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copies are equal.
+Three author rules — notes in the author's words, no marked option on a judgment question, an
+explicit go — are authored once in `skills/README.md` between the `author-rules` sentinels and
+carried byte for byte in the plan, write and review SKILL.md bodies, and
+`tests/test_skill_text.py` (S-15) asserts the copies.
 
 ## Topic index
 

@@ -34,7 +34,7 @@ differently. Each turn carries exactly one focused question, optionally preceded
 by a one-sentence acknowledgment of the previous answer (the SKILL.md's dialogue
 example shows the shape).
 
-## Recommendations on judgment questions
+## Your view on judgment questions
 
 The mechanical fields already come with evidence-grounded defaults (the family
 smart-defaults rule, v1.2). Judgment questions are different — the point is to
@@ -42,25 +42,33 @@ draw the TA's own picture out, not to hand them one. So:
 
 - **Open every judgment field open-ended.** The first question about the reader's
   problem or the audience never carries a proposed answer.
-- **Recommend when it helps, not before:** offer ONE evidence-grounded
-  recommendation when the TA is stuck, asks "what do you think?", or gave a vague
-  answer that one narrower probe did not sharpen. Reacting to a concrete
-  proposal is easier than generating from nothing.
-- **Sharpen after they answer.** Reflecting a first answer back with an
-  evidence-grounded narrowing is not leading — it is the fastest path to shared
-  understanding: "you said operators — from the config surface this page covers,
-  I'd narrow that to operators wiring the pipeline for the first time. Does that
-  match?"
-- Ground every recommendation in something you actually looked at (the change,
-  the siblings, `doc-gaps.md`) and say what that something is, in one clause.
+- **Give your view only when asked.** When the TA asks "what do you think?",
+  state what you saw as evidence — "the siblings under `reference/` are written
+  for operators" — and let them choose. Never put it as a marked option, and
+  never volunteer it unasked.
+- **A stuck or vague TA gets a narrower probe, not a proposal.** Narrow to one
+  concrete case, or an either/or in their own words. After two narrowing probes,
+  say plainly that the answer is still open, and ask whether they want your view
+  on it.
+- **Sharpen after they answer** with a narrower question in the TA's terms, not
+  a narrowing of your own: "you said operators — wiring the pipeline for the
+  first time, or already running it?"
+- Ground every view and every narrower probe in something you actually looked
+  at (the change, the siblings, `doc-gaps.md`) and say what that something is,
+  in one clause.
 
 ## Handling scripts
 
-- **Vague answer:** one narrower probe. Still vague → one recommendation to react
-  to. Never a third open probe.
+- **Vague answer:** one narrower probe, then a narrower one — one concrete case,
+  or an either/or in the TA's words. After those two narrowing probes, say plainly
+  that the answer is still open, and ask whether they want your view on it. No
+  proposal unless the TA asks for your view.
 - **Jump-ahead TA:** they answered three questions at once or dictated the whole
   plan. Bank it all, reflect it back as settled, and ask only what is genuinely
-  still open. Re-asking an answered question is the cardinal intake sin.
+  still open. Re-asking an answered question is the cardinal intake sin. One of
+  SKILL.md step 2's two fixed questions — where the reader arrives from, or what
+  they do right after — is always open, so even a brief that answers everything
+  gets that one question before anything is recorded.
 - **"Just write it for me":** decline warmly and keep drawing out — drafting is
   crayon-write's job after signoff, and the two minutes of intake are what make
   the draft land right the first time.
@@ -76,16 +84,17 @@ Terminology settles during the dialogue, and catching it there is cheap:
   the moment it happens — "you've been saying 'binding'; the glossary calls this
   'attachment' — which should the page use?" — and use the settled term from
   then on.
-- When a genuinely new term crystallizes, fold it into the outline and the
-  synthesized steering note so the drafter inherits it. This skill holds no
-  write-capable tool, so the note reaches disk through the tool: `--notes` on
-  `crayon unit new` / `crayon unit edit` for a plan-level note, and
-  `crayon steer <id> --note "…" --origin plan` for a note recorded after the plan
-  is signed off. `--origin` defaults to `manual`, so the flag is not optional
-  here: the origin is the field `crayon summary` reports and the review skill is
-  told to read, and a synthesized note filed as `manual` says a human asked for
-  it. `unit.md`'s frontmatter is the fixed subset
-  `title` / `intent` / `audience` / `targets` / `sources` / `notes` — any other
-  key is refused `unit_invalid`.
+- When a genuinely new term crystallizes, fold it into the outline — the plan
+  body the TA approves — so the drafter inherits it.
+- The skill records no note of its own. It holds no write-capable tool, so what
+  is recorded reaches disk through the tool: `--notes` on `crayon unit new` /
+  `crayon unit edit` carries only the TA's own words given in answer to an open
+  question, verbatim, and
+  `crayon steer <id> --note '<their words>' --origin plan` carries the TA's
+  words given after the plan is signed off. `--origin` defaults to `manual`, so
+  the flag is not optional here: the origin is the field `crayon summary` reports
+  and the review skill is told to read. `unit.md`'s frontmatter is the fixed
+  subset `title` / `intent` / `audience` / `targets` / `sources` / `notes` — any
+  other key is refused `unit_invalid`.
 - Sparingly: only terms the unit's page actually leans on. The glossary artifact
   itself is maintained outside this loop.

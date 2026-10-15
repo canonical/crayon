@@ -87,6 +87,48 @@ repo-level transition, `context record`, commits the same way with `Crayon-Phase
 context-recorded` and no `Crayon-Unit:` — the context belongs to the repository, not
 to a unit. The tool never pushes, opens PRs, builds, or publishes.
 
+## Author rules
+
+Three rules bind every question the plan, write and review skills put to the author.
+They are authored here, once, between the two sentinel comments, and carried byte for
+byte in those three `SKILL.md` bodies, directly after `</opening>`, because the loading
+model never loads this README — `tests/test_skill_text.py` (S-15) asserts the copies.
+The onboarding and fetch skills do not carry them: their `context record --note` is the
+agent's own summary of the scope it walked, not a note the author wrote. Their one
+judgment question, the priorities question each report ends on, states the no-marker
+rule in that step instead. When you change a rule, change it here and
+re-copy the block, sentinel lines included.
+
+<!-- author-rules:begin -->
+<author_rules>
+These three rules hold at every question this skill puts to the author.
+
+- **The author's words, verbatim.** A note recorded with `--note`, `--note-file -` or
+  `--notes` is exactly what the author typed beyond the verdict, the yes or the no that
+  answered the question: that answer alone is not part of the note, so "Fix." then
+  "Say …" records the second reply, and "Accept. The table …" records "The table …".
+  The words beyond it, given across several turns, are joined in order, one reply per
+  line. No spelling fix, no rephrasing, and no text offered for them to approve, such
+  as "I'll use: …". When their words are unclear, ask them; never rewrite them. With
+  nothing of theirs to record, omit the flag.
+  On the command line their words go inside single quotes, each `'` in them written
+  as `'\''`, and never inside double quotes: there a backtick runs a command and a `$`
+  expands, so the record would hold words they never typed. Through `--note-file -`,
+  the same single-quoted words are piped in with `printf '%s'`, which adds nothing.
+- **No marked option on a judgment question.** Audience, intent, step choices, the
+  verdict and restore-or-amend are the author's judgment. No option of those questions
+  carries "(Recommended)", "(default)", "suggested", a star or any other marker, and
+  their order implies nothing. This rule wins over any harness's own convention of
+  marking a recommended option. A mechanical choice, such as an id, a path or a title,
+  may keep a marked default.
+- **An explicit go.** A signoff or an accept runs only on an explicit go: an
+  affirmative ("yes", "go", "sign it") to a question that named that act. For an
+  accept, the go is the verdict itself, or a yes to "Keep accept?". "Looks good" about
+  an outline is not a go, and neither is "yes, but …": handle the change, then ask
+  again.
+</author_rules>
+<!-- author-rules:end -->
+
 ## Routing
 
 Every `crayon` invocation answers with either a `Next: <token>` response line or a
@@ -97,8 +139,8 @@ This table is authored **here, once**, between the two sentinel comments, and
 mirrored byte-identically into each skill's `references/routing.md` (D-13). The
 mirrors are what actually ship, because the loading model auto-loads each skill
 directory but never this file. When you change a row, change it here and re-copy the
-block between the sentinels — `tests/test_skill_text.py` (S-03) asserts the three
-copies are equal.
+block between the sentinels — `tests/test_skill_text.py` (S-03) asserts each of the
+five mirrors equals it.
 
 The first block is one row per reason in `docs/contract.md` §5.7's reason table, in
 that table's order; the second is one row per `next` token in §5.5's order. A row
@@ -114,7 +156,7 @@ precondition — the preconditions live in §5.7 and nowhere else.
 | `target_exists` | A signed target already holds bytes crayon never recorded. Same answer as drift — adopt the file as the basis rather than drafting over it unseen. | `crayon edits <id> --note "…"` |
 | `target_missing` | An accept was asked for while a basis page is absent or unlisted. Record the author's restoration request; the next draft restores the page. | `crayon steer <id> --note "…"` |
 | `generation_stale` | The plan was amended after the last generation, so that draft no longer answers the current plan. Draft again — walk the steps first if the unit is actionable. | `crayon draft <id> <staging file\|dir>` |
-| `unapplied_steering` | Accept was asked for with steering still pending; `detail` lists the seqs. Put each one to the reviewer and re-run accept resolving or withdrawing every seq. | `crayon review <id> --verdict accept --note "…" --resolves a,b [--withdraw <seq> "<reason>"]…` |
+| `unapplied_steering` | Accept was asked for with steering still pending; `detail` lists the seqs. Put each one to the reviewer and re-run accept resolving or withdrawing every seq. | `crayon review <id> --verdict accept [--note "…"] --resolves a,b [--withdraw <seq> "<reason>"]…` |
 | `unsteered` | A second generation was asked for with no steering between it and the last one. Record what the author wants changed, or re-run the draft stating why it is unsteered. | `crayon steer <id> --note "…"` then `crayon draft`, or `crayon draft <id> <staging file\|dir> --unsteered-reason "…"` |
 | `no_generation` | A verdict was asked for on a unit that has no draft yet. Draft first. | `crayon draft <id> <staging file\|dir>` |
 | `target_claimed` | Name the holding unit from the refusal's `detail`, tell the author the target is still listed in that unit's current signoff, and offer to release it. Retire only on an explicit yes — it is another unit's record. Then retry the declaration unchanged. | `crayon unit retire <holder> --note "…"`, then re-run the refused command |
@@ -122,7 +164,7 @@ precondition — the preconditions live in §5.7 and nowhere else.
 | `bad_target` | The target, identifier or context artefact name breaks the input rules; the refusal names the offending value. Read it back to the author and re-run with a corrected value — a docs-relative `.md` or `.rst` path for a target, one of the five context artefact names for `context stage`. | re-run the refused command with the corrected value |
 | `bad_write_path` | A write destination resolved outside the repo. STOP and report the path from `detail` verbatim — this is a repo-layout problem, not something to retry. | none — report and stop |
 | `bad_draft_path` | The staging path is not inside the unit's own draft directory, or a directory does not hold exactly the signed targets. Re-stage and re-run. | `crayon draft <id> .crayon/staging/<id>/draft/…` |
-| `bad_resolution` | `--resolves` / `--withdraw` named a seq that is not pending, repeated one, crossed the two sets, or left a withdrawal without a reason. Read the pending seqs back and re-run accept with a corrected set. | `crayon review <id> --verdict accept --note "…" --resolves a,b [--withdraw <seq> "<reason>"]…` |
+| `bad_resolution` | `--resolves` / `--withdraw` named a seq that is not pending, repeated one, crossed the two sets, or left a withdrawal without a reason. Read the pending seqs back and re-run accept with a corrected set. | `crayon review <id> --verdict accept [--note "…"] --resolves a,b [--withdraw <seq> "<reason>"]…` |
 | `unit_invalid` | `unit.md` is not the declared shape; the refusal names the line and the flag that owns that field. Fix the field through that flag, never by hand-editing around the tool. | `crayon unit edit <id> [flags] [--body-file -]` |
 | `unit_exists` | That id is already declared. Show the existing unit and continue on it, or agree a new id with the author. | `crayon show <id>` |
 | `unit_not_found` | No unit with that id exists. Ask the author for the right id rather than guessing, or declare it. | `crayon show <id>` on the corrected id, or `crayon unit new <id> …` |
@@ -163,9 +205,9 @@ precondition — the preconditions live in §5.7 and nowhere else.
 | `record_edits` | Basis bytes on disk are not the recorded ones. Name the paths and record them before drafting or reviewing. | `crayon edits <id> --note "…"` |
 | `walk` | The unit is actionable with unresolved steps. Run each step, capture its output to a file, and record the evidence the tool hashes. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` |
 | `draft` | Author the page, stage it under the unit's own draft directory, and record it. | `crayon draft <id> <staging file\|dir>` |
-| `publish` | The unit is accepted and its pages are current. STOP — crayon stops here; the author owns the PR, the build and the publish. | none — report and stop |
+| `publish` | The unit is accepted and its pages are current. STOP — crayon stops here; what happens to the pages next is the author's. | none — report and stop |
 | `steer` | Record the author's request on the record before drafting again. | `crayon steer <id> --note "…"` |
-| `review` | A generation or a reviewer edit is the tip. Surface it for review and record the verdict the reviewer gives. | `crayon review <id> --verdict accept\|fix\|redraft --note "…"` |
+| `review` | A generation or a reviewer edit is the tip. Surface it for review and record the verdict the reviewer gives. | `crayon review <id> --verdict accept [--note "…"]`, or `crayon review <id> --verdict fix\|redraft --note "…"` |
 | `record` | Context artefacts are staged and not yet recorded. Record them — one commit, no unit — and echo the tool's line. | `crayon context record [--model … --model-origin …] [--note "…"]` |
 | `onboard` | No context is recorded yet: at least one of `doc-style.md`, `glossary.md`, `structure.md` is absent. STOP and offer the author the bootstrap choice — supply the files, run `/crayon-onboard`, or ground this intake ephemerally; never author `.crayon/context/` yourself. | none — route to `/crayon-onboard` (a skill), or continue on the author's choice |
 | `plan` | The context artefacts are recorded and current. STOP — context is done; the next act is a unit declaration. | none — route to `/crayon-plan` (a skill) |

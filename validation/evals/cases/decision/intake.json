@@ -1,0 +1,165 @@
+{
+  "lane": "B",
+  "_comment": "Every intake asks at least one open question the brief cannot answer, and its answer is recorded in the author's words (JUDG-04, EVAL-05): a brief that fills every field still gets the arrival or next-step question before anything is recorded.",
+  "cases": [
+    {
+      "id": "B-53",
+      "skill": "crayon-plan",
+      "ask": "Declare a reference page. Id: retries. Title: Retry settings. Target: reference/retries.md. Source: src/toyq/config.py. It is for operators running toyq on servers, so they can tune max_retries and retry_backoff_seconds. Outline: one table of the two settings with their defaults and TOYQ_* overrides, then the precedence rule.",
+      "history": [
+        "tool/version_json",
+        "context_recorded/show_json"
+      ],
+      "why": "JUDG-04, EVAL-05 boundary: a brief that fills problem, audience, intent, id, title, target, source and outline still gets one open question (where the reader arrives from, or what they do next) before anything is recorded; a read-back that only asks to sign off is not one",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "question_count",
+          "min": 1
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\bjust\\s+before\\b|\\bright\\s+after\\b|\\bbefore\\s+they\\s+(land|reach|arrive)|\\bafter\\s+they\\s+(read|finish)|\\bcomes?\\s+from\\b|\\bdo\\s+next\\b|\\bgo\\s+next\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Read",
+              "arguments": {
+                "file_path": ".crayon/context/structure.md"
+              }
+            }
+          ]
+        },
+        {
+          "content": "What is the reader doing just before they land here?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "The plan: Retry settings (retries), a reference page for operators running toyq on servers, so they can tune max_retries and retry_backoff_seconds; from src/toyq/config.py, at reference/retries.md. Outline: one table of the two settings with their defaults and TOYQ_* overrides, then the precedence rule. Shall I record this and sign it off?"
+        }
+      ]
+    },
+    {
+      "id": "B-54",
+      "skill": "crayon-plan",
+      "ask": "Declare a reference page. Id: retries. Title: Retry settings. Target: reference/retries.md. Source: src/toyq/config.py. It is for operators running toyq on servers, so they can tune max_retries and retry_backoff_seconds. Outline: one table of the two settings with their defaults and TOYQ_* overrides, then the precedence rule.",
+      "history": [
+        "tool/version_json",
+        "context_recorded/show_json",
+        {
+          "assistant": "What is the reader doing just before they land here?"
+        },
+        {
+          "user": "They have just seen a job fail twice in toyq status."
+        },
+        {
+          "assistant": "The plan: Retry settings (retries), a reference page for operators running toyq on servers, so they can tune max_retries and retry_backoff_seconds; from src/toyq/config.py, at reference/retries.md. Outline: one table of the two settings with their defaults and TOYQ_* overrides, then the precedence rule. Readers arrive having just seen a job fail twice in toyq status. Record this and sign it off?"
+        },
+        {
+          "user": "Yes."
+        }
+      ],
+      "why": "JUDG-01, D-08, D-17, EVAL-02: --notes carries the author's answer to the arrival question, word for word; a note the agent synthesized fails",
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "(?s)^(?=.*\\bcrayon\\s+unit\\s+new\\s+[\"']?retries[\"']?\\s)(?=.*\\s--notes(?:=|\\s+)(?:'They have just seen a job fail twice in toyq status\\.'|\"They have just seen a job fail twice in toyq status\\.\")(?:\\s|$))"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "printf '%s\\n' '## Intent & scope\\n\\nOperators running toyq on servers tune how failed jobs are retried.\\n\\n## Outline / acceptance\\n\\n- One table of max_retries and retry_backoff_seconds with their defaults and TOYQ_* overrides.\\n- The precedence rule.' | crayon unit new retries --intent reference --audience 'operators running toyq on servers' --title 'Retry settings' --target reference/retries.md --source src/toyq/config.py --notes 'They have just seen a job fail twice in toyq status.' --body-file -"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "printf '%s\\n' '## Intent & scope\\n\\nOperators running toyq on servers tune how failed jobs are retried.\\n\\n## Outline / acceptance\\n\\n- One table of max_retries and retry_backoff_seconds with their defaults and TOYQ_* overrides.\\n- The precedence rule.' | crayon unit new retries --intent reference --audience 'operators running toyq on servers' --title 'Retry settings' --target reference/retries.md --source src/toyq/config.py --notes 'Readers arrive after repeated job failures; settled terms: retry, backoff.' --body-file -"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-59",
+      "skill": "crayon-plan",
+      "ask": "Declare a reference page. Id: retries. Title: Retry settings. Target: reference/retries.md. Source: src/toyq/config.py. It is for operators running toyq on servers, so they can tune max_retries and retry_backoff_seconds. Outline: one table of the two settings with their defaults and TOYQ_* overrides, then the precedence rule.",
+      "history": [
+        "tool/version_json",
+        "context_recorded/show_json",
+        {
+          "assistant": "What is the reader doing just before they land here?"
+        },
+        {
+          "user": "They've just seen `toyq status` show a job fail twice, with $TOYQ_MAX_RETRIES at 1."
+        },
+        {
+          "assistant": "The plan: Retry settings (retries), a reference page for operators running toyq on servers, so they can tune max_retries and retry_backoff_seconds; from src/toyq/config.py, at reference/retries.md. Outline: one table of the two settings with their defaults and TOYQ_* overrides, then the precedence rule. Readers arrive having just seen toyq status show a job fail twice. Record this and sign it off?"
+        },
+        {
+          "user": "Yes."
+        }
+      ],
+      "why": "JUDG-01, CR-01 quoting edge on the verb with no file variant: --notes carries the author's answer with an apostrophe, a backtick span and a $ variable, single-quoted with each ' written as '\\''; double quotes run the backticks and expand the variable",
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "(?s)^(?=.*\\bcrayon\\s+unit\\s+new\\s+[\"']?retries[\"']?\\s)(?=.*\\s--notes(?:=|\\s+)'They(?:'\\\\''|'\\\"'\\\"')ve\\ just\\ seen\\ `toyq\\ status`\\ show\\ a\\ job\\ fail\\ twice,\\ with\\ \\$TOYQ_MAX_RETRIES\\ at\\ 1\\.'(?:\\s|$))"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "printf '%s\\n' '## Intent & scope\\n\\nOperators running toyq on servers tune how failed jobs are retried.\\n\\n## Outline / acceptance\\n\\n- One table of max_retries and retry_backoff_seconds with their defaults and TOYQ_* overrides.\\n- The precedence rule.' | crayon unit new retries --intent reference --audience 'operators running toyq on servers' --title 'Retry settings' --target reference/retries.md --source src/toyq/config.py --notes 'They'\\''ve just seen `toyq status` show a job fail twice, with $TOYQ_MAX_RETRIES at 1.' --body-file -"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "printf '%s\\n' '## Intent & scope\\n\\nOperators running toyq on servers tune how failed jobs are retried.\\n\\n## Outline / acceptance\\n\\n- One table of max_retries and retry_backoff_seconds with their defaults and TOYQ_* overrides.\\n- The precedence rule.' | crayon unit new retries --intent reference --audience 'operators running toyq on servers' --title 'Retry settings' --target reference/retries.md --source src/toyq/config.py --notes \"They've just seen `toyq status` show a job fail twice, with $TOYQ_MAX_RETRIES at 1.\" --body-file -"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -549,6 +549,77 @@ draft_path() {
     printf '.crayon/staging/%s/draft/%s' "$1" "$2"
 }
 
+# --- step evidence (contract 5.6), for the walk-protocol suites and the eval
+# fixture: the one definition site of the recipe ------------------------------
+
+# The seq of the last `steps-planned` event of a unit.
+last_plan_seq() {
+    python3 -c '
+import json, sys
+seq = None
+for line in open(sys.argv[1], encoding="utf-8"):
+    line = line.strip()
+    if not line:
+        continue
+    event = json.loads(line)
+    if event.get("kind") == "steps-planned":
+        seq = event.get("seq")
+print("null" if seq is None else seq)
+' ".crayon/units/$1/ledger.jsonl"
+}
+
+# The walk-protocol recipe (D-15), as the skill runs it: one redirection, one
+# status, and NO digest anywhere. The tool computes both.
+#
+# record_step UNIT STEP SEQ VERDICT TEXT [MODE] [REASON]
+record_step() {
+    local unit="$1" step="$2" seq="$3" verdict="$4" text="$5"
+    # The mode the evidence CLAIMS. It defaults to `agent` because most fixture
+    # steps are declared that way, but it is a parameter because contract 5.6's
+    # `evidence_mismatch` gate compares it against the mode the PLAN declares —
+    # a fixture that hardcoded one mode for every step was recording a `ta`
+    # step as `agent` and nothing said so (WR-02).
+    local mode="${6:-agent}"
+    # The reason contract 5.6 requires for a `deviated` step. Without it the
+    # evidence is the same printf bytes as ever; with it, json.dump writes the
+    # contract's full key set, so the reason is escaped as JSON, not as a format.
+    local reason="${7:-}"
+    local ws=".crayon/staging/${unit}/scratch/evidence"
+    mkdir -p "$ws"
+    printf '%b' "$text" >"$ws/${step}.out"
+    if [ -z "$reason" ]; then
+        printf '{"verdict": "%s", "exit_code": 0, "mode": "%s", "command": "echo %s"}\n' \
+            "$verdict" "$mode" "$step" >"$ws/${step}.json"
+    else
+        python3 -c '
+import json, sys
+json.dump(
+    {"verdict": sys.argv[2], "exit_code": 0, "mode": sys.argv[3],
+     "command": "echo " + sys.argv[4], "reason": sys.argv[5]},
+    open(sys.argv[1], "w", encoding="utf-8"),
+)
+' "$ws/${step}.json" "$verdict" "$mode" "$step" "$reason"
+    fi
+    "$CRAYON" step "$unit" "$step" --steps-seq "$seq" \
+        --evidence-file "$ws/${step}.json" --output-file "$ws/${step}.out"
+}
+
+# A skipped step: a reason and no output file at all (D-03).
+skip_step() {
+    local unit="$1" step="$2" seq="$3" reason="$4"
+    local ws=".crayon/staging/${unit}/scratch/evidence"
+    mkdir -p "$ws"
+    python3 -c '
+import json, sys
+json.dump(
+    {"verdict": "skipped", "exit_code": 0, "mode": "ta", "reason": sys.argv[2]},
+    open(sys.argv[1], "w", encoding="utf-8"),
+)
+' "$ws/${step}.json" "$reason"
+    "$CRAYON" step "$unit" "$step" --steps-seq "$seq" \
+        --evidence-file "$ws/${step}.json"
+}
+
 # "<path> <sha256> <bytes>" per entry of an event's files[], in recorded order.
 event_files() {
     python3 -c '

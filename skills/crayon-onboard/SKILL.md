@@ -81,7 +81,8 @@ fourth file can be smuggled into `.crayon/context/` through this skill.
 5. Author the three artefacts, loading the matching stance reference for each, and
    hand each one to the tool with `crayon context stage <name> --body-file -`.
 6. Record the set with `crayon context record --model … --model-origin … --note "…"`.
-7. Report which artefacts landed and the gap count, and route the author on `next`.
+7. Report which artefacts landed and the gap count, end on the priorities question,
+   and once the author answers, route to `/crayon-plan` with their first pick.
 </quick_start>
 
 <pipeline>
@@ -201,7 +202,8 @@ fix that and re-run; nothing was promoted.
 </step_5>
 
 <step_6 name="Report and route">
-Present a single summary block:
+Present a single summary block, as plain text rather than a code block, ending on
+one question about the author's priorities:
 
 ```
 ## crayon-onboard
@@ -211,8 +213,28 @@ Present a single summary block:
 - Structure: .crayon/context/structure.md (<n> coverage gaps)
 - Recorded: <the tool's response line, verbatim>
 
-Next: /crayon-plan — the context now grounds unit declarations.
+Which three gaps would your readers miss first?
 ```
+
+That question is for three gaps or more. With one or two, ask
+`Which of these would your readers miss first?`; with none, ask
+`What would your readers miss most?`. Only their first pick is used.
+
+Ask nothing else in the report, and give it no route line yet: which gaps matter
+most is the author's judgment, not something the walk can settle. So the question is
+plain text, not options in a question tool, and no gap is marked as recommended,
+suggested or a default, whatever a harness's own convention: the order of the gaps
+implies nothing. Nothing is recorded from the answer; `crayon context record` has
+already run. Once the author answers, the route line names their first pick in their
+own words:
+
+```
+Next: /crayon-plan — start with <their first pick>
+```
+
+Their first pick is the first item in their reply, in the words they used for it,
+whatever the walk called that gap. If they name none, the route line is
+`Next: /crayon-plan`, with no pick: never pick one for them.
 
 Do not push or build — the tool's commit seam already recorded the transition.
 </step_6>
@@ -270,6 +292,8 @@ one), and act on the routing row for `next`.
 - Tag every code-versus-docs coverage gap `[CODE↔DOCS GAP]` (or `[SDLC]` for a
   forge-discussion trigger) with a named citation.
 - Echo each verb's own response line verbatim.
+- End the report on the priorities question, and route to `/crayon-plan` only after
+  the author answers, naming their first pick in their own words, or none.
 </must>
 <must_not>
 - Never write `.crayon/context/*.md` or `manifest.json` yourself, or hand a file to
@@ -283,6 +307,7 @@ one), and act on the routing row for `next`.
 - Never declare, draft, review, push or build — those belong to the other skills and
   to the author.
 - Never re-derive state or invent a next step; the tool emits `next`.
+- Never choose the author's priorities or first unit for them.
 </must_not>
 </constraints>
 
@@ -292,5 +317,8 @@ one), and act on the routing row for `next`.
 - [ ] Every observation and gap was grounded in prose or code actually read.
 - [ ] Each artefact reached the tool through `crayon context stage … --body-file -`.
 - [ ] `crayon context record` exited 0, or 3 on an unchanged set, and its line was quoted.
-- [ ] The term count and gap count were reported, and the author was routed on `next`.
+- [ ] The term count and gap count were reported, and the report ended on the
+      priorities question.
+- [ ] The route line to `/crayon-plan` named the author's first pick in their own
+      words, or none when they named none.
 </success_criteria>

@@ -28,7 +28,7 @@
       ],
       "oracle": [
         {
-          "content": "cfg was already accepted at seq 4 (commit 38186c2); nothing new was recorded. crayon stops here."
+          "content": "cfg was already accepted at seq 4; nothing new was recorded. crayon stops here."
         }
       ],
       "foil": [
@@ -305,6 +305,10 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "\\bcrayon\\s+steer\\b"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@MARKER"
         }
       ],
       "oracle": [

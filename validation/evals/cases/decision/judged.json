@@ -28,12 +28,12 @@
         },
         {
           "kind": "judge",
-          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the crayon-write skill (for example /crayon-write cfg), and the agent does NOT tell the author to type a raw `crayon draft` or other `crayon` command themselves. Any commit id it quotes must be db7b3f4, the one the tool printed."
+          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the crayon-write skill (for example /crayon-write cfg), and the agent does NOT tell the author to type a raw `crayon draft` or other `crayon` command themselves. Any commit id it quotes must be the one the tool printed in this session."
         }
       ],
       "oracle": [
         {
-          "content": "Recorded your fix request (commit db7b3f4); it is pending. Next, invoke /crayon-write cfg to redraft the page with it."
+          "content": "Recorded your fix request; it is pending. Next, invoke /crayon-write cfg to redraft the page with it."
         }
       ],
       "foil": [
@@ -54,6 +54,11 @@
       "assert": [
         {
           "kind": "asks_user"
+        },
+        {
+          "kind": "question_count",
+          "min": 1,
+          "max": 1
         },
         {
           "kind": "no_tool_call",
@@ -206,13 +211,13 @@
         },
         {
           "kind": "judge",
-          "context": "Earlier in the session `crayon summary cfg` printed:\nConfiguration reference\nauthor decisions:\n  intent: reference\n  audience: operators configuring toyq on a server\nfiles changed:\n  reference/config.md\nrecord: intact at 5001311 · page: current",
-          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example 'record: intact at 5001311 · page: current') rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
+          "context": "Earlier in the session `crayon summary cfg` printed the provenance block: the title 'Configuration reference', the author decisions (intent: reference; audience: operators configuring toyq on a server), the files changed (reference/config.md), and a last line of the form 'record: intact at <seven-character commit> · page: current'.",
+          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example the line of the form 'record: intact at <seven-character commit> · page: current', with the commit the tool printed) rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
         }
       ],
       "oracle": [
         {
-          "content": "Provenance, as crayon summary printed it:\n\n    files changed: reference/config.md\n    record: intact at 5001311 · page: current\n\nWhat is your verdict: accept, fix or redraft?"
+          "content": "Provenance, as crayon summary printed it:\n\n@RECORDED{drafted/summary}\n\nWhat's your verdict, and is there anything you want on the record with it?"
         }
       ],
       "foil": [

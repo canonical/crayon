@@ -1,4 +1,4 @@
-Load this file at workflow step 4 (Perform the findings review).
+Load this file at workflow step 5 (Perform the findings review).
 
 # Findings review rubric
 
@@ -298,14 +298,16 @@ progress word describes *the script operation's outcome*.
 Present the findings grouped by dimension. One line per finding: the `F-N` id,
 the priority tag, `(pre-pass)` when the deterministic pre-pass produced it, the
 observation quoting the offending draft text with its page and line, then `→`
-and a concrete suggested action. Number in presentation order — the ids exist so
-the verdict note can say "apply F-2 and F-5" instead of restating the findings.
+and a concrete suggested action. Number in presentation order. The ids are for
+this conversation only; they do not reach the next drafting session, so a note
+that cites one is restated with the author (SKILL.md step 6).
 A clean dimension shows `(none)`; a skipped one shows
 `(not assessed — <reason>)`. The block is presented in the conversation and is
 **never written to a file** — only the reviewer's resulting verdict is recorded,
-via `crayon review <id> --verdict <accept|fix|redraft> --note "…"` (a fix/redraft
-verdict's note lands in the steering stream automatically, so a finding phrased as
-a steering correction is directly actionable).
+via `crayon review <id> --verdict <accept|fix|redraft>`, with the reviewer's own
+words as `--note "…"`: required for fix and redraft, and present on an accept only
+when the reviewer gave words beyond the verdict (a fix/redraft verdict's note lands
+in the steering stream automatically, so it is exactly what the next draft reads).
 
 ```
 ## crayon-review — findings: <unit-id>
@@ -330,19 +332,21 @@ a steering correction is directly actionable).
 
 Findings: N total — X must-fix, Y should-fix, Z nit.
 Dismissed pre-pass candidates: <M, each with its one-line reason — or (none)>
-Recommended verdict: <accept | fix | redraft> — <one clause tying it to the tally>
 
-Next: accept (the publishing commit is yours) · record fix/redraft — the draft-stage skill applies the note
+What's your verdict, and is there anything you want on the record with it?
 ```
 
-The recommended verdict is the family smart-defaults rule applied to the tally:
+**The lean, held until the author answers.** The lean is the tally read one way:
 any `[must-fix]` → **fix** (or **redraft** when the must-fixes are pervasive
-rather than bounded); `[should-fix]` only → genuinely the reviewer's call,
-present both; clean → **accept**. Self-check before presenting: the
-recommendation must agree with the tally line above it (dismissed pre-pass
-candidates are not in the tally); if it does not, re-derive it. The verdict
-remains the reviewer's — the recommendation is a labeled default, never a
-decision.
+rather than bounded); `[should-fix]` only → no lean, genuinely the reviewer's call;
+clean → **accept**. It is never shown before the reviewer answers the verdict
+question, unless they ask what the tally suggests. After they answer, a verdict
+that matches the lean, or any verdict on a tally with no lean, is recorded without
+comment; a verdict that differs gets the lean with its one-clause reason and one
+`Keep <verdict>?`, whose answer is final (SKILL.md step 6). Self-check before
+showing it: the lean must agree with the tally line above it (dismissed pre-pass
+candidates are not in the tally); if it does not, re-derive it. The verdict is
+the reviewer's.
 
 There are exactly TWO next steps: accept, or a recorded fix/redraft verdict that
 routes to the draft-stage skill. "Make the edit yourself" is not one of them — an

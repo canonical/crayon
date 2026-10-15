@@ -52,6 +52,36 @@ invalidates every line after it. Nothing in this skill ever opens it in an edito
 not to fix a typo, not to append a note, not to correct a field.
 </opening>
 
+<!-- author-rules:begin -->
+<author_rules>
+These three rules hold at every question this skill puts to the author.
+
+- **The author's words, verbatim.** A note recorded with `--note`, `--note-file -` or
+  `--notes` is exactly what the author typed beyond the verdict, the yes or the no that
+  answered the question: that answer alone is not part of the note, so "Fix." then
+  "Say …" records the second reply, and "Accept. The table …" records "The table …".
+  The words beyond it, given across several turns, are joined in order, one reply per
+  line. No spelling fix, no rephrasing, and no text offered for them to approve, such
+  as "I'll use: …". When their words are unclear, ask them; never rewrite them. With
+  nothing of theirs to record, omit the flag.
+  On the command line their words go inside single quotes, each `'` in them written
+  as `'\''`, and never inside double quotes: there a backtick runs a command and a `$`
+  expands, so the record would hold words they never typed. Through `--note-file -`,
+  the same single-quoted words are piped in with `printf '%s'`, which adds nothing.
+- **No marked option on a judgment question.** Audience, intent, step choices, the
+  verdict and restore-or-amend are the author's judgment. No option of those questions
+  carries "(Recommended)", "(default)", "suggested", a star or any other marker, and
+  their order implies nothing. This rule wins over any harness's own convention of
+  marking a recommended option. A mechanical choice, such as an id, a path or a title,
+  may keep a marked default.
+- **An explicit go.** A signoff or an accept runs only on an explicit go: an
+  affirmative ("yes", "go", "sign it") to a question that named that act. For an
+  accept, the go is the verdict itself, or a yes to "Keep accept?". "Looks good" about
+  an outline is not a go, and neither is "yes, but …": handle the change, then ask
+  again.
+</author_rules>
+<!-- author-rules:end -->
+
 <hard_gate>
 Do NOT invoke crayon-write, write any documentation, or take any drafting action
 until:
@@ -154,8 +184,21 @@ reader?"**
 
 Then, once the problem is clear, draw out who the page is for (the audience). Keep
 questions open-ended, not leading; probe when an answer is vague; do not record
-anything yet. When the TA is stuck, offer ONE evidence-grounded recommendation they
-can react to.
+anything yet. Give your view of the audience only when the TA asks for it, stated as
+evidence — what the siblings or the change show — and never as a marked option. A
+vague answer gets a narrower probe, not a proposal.
+
+Every intake asks at least one open question. One of two fixed questions is always
+among them, written exactly as:
+
+- **"What is the reader doing just before they land here?"**
+- **"What do they do right after?"**
+
+Ask whichever the brief and the answers so far leave thinnest; when they leave both
+equally thin or equally full, ask the first. When the brief already fills every
+field — the reader's problem, the audience, the direction, the id, the title, the
+target, the sources and the outline — this question is still asked, before recording
+anything. Its answer is recorded in the TA's words (step 6).
 </step_2>
 
 <step_3 name="Propose the mechanical fields; ask only for what you cannot infer">
@@ -191,9 +234,10 @@ Settle the unit's Diataxis direction, then route on it:
 - **explanation** → run the intent walk (Socratic "5 whys" that draws out recorded
   intent), then declare `intent: explanation` and route to crayon-write.
 
-A TA-stated direction is honored verbatim; propose one only when the TA supplied none.
-If the intake evidence contradicts a stated type, surface that tension once, in one
-line, and let the TA decide.
+A TA-stated direction is honored verbatim. When the TA supplied none, ask for it as an
+open question, and give your view only when the TA asks for it, stated as evidence and
+never as a marked option. If the intake evidence contradicts a stated type, surface
+that tension once, in one line, and let the TA decide.
 </step_4>
 
 <step_5 name="Shape a reader-facing outline">
@@ -213,7 +257,9 @@ outcome-framed, and **never a step list**. Enumerating steps is crayon-write's j
 **J1 — batch the whole ceremony behind ONE confirmation.** Read back the settled
 plan in a single block — id, title, intent, audience, targets, sources, outline —
 and ask once: "record this and sign it off?" Do not confirm the fields one at a time,
-and do not ask again between the two verbs below.
+and do not ask again between the two verbs below. Only an explicit yes to that
+question is the go: "looks good" about the outline is not a go, and "yes, but …"
+means make the change, read the plan back, and ask again.
 
 **Record the declaration.** Compose the frontmatter fields as flags and pipe the
 approved body on stdin. This is the only path `unit.md` has to disk: the skill holds
@@ -229,14 +275,17 @@ printf '%s\n' "$APPROVED_BODY" | crayon unit new "$UNIT_ID" \
   --target "$TARGET" \
   --also-target "$EXTRA_TARGET" \
   --source "$SOURCE" \
-  --notes "$NOTES" \
+  --notes '<their words>' \
   --body-file -
 ```
 
-`--also-target` and `--source` repeat, once per additional page or source; omit
-`--notes` when there are none. The tool writes `unit.md` in its own frontmatter
-shape, so never compose the frontmatter block yourself — pass the fields as flags
-and let the tool render them.
+`--also-target` and `--source` repeat, once per additional page or source. `--notes` is
+the TA's own words given in answer to an open question during the intake — at least
+their answer to step 2's arrival-or-next question — verbatim, replies joined in order,
+one per line. Settled terms and the outline go into the body, which the TA approves;
+the skill writes no note of its own. Omit `--notes` only when the TA gave no such
+words. The tool writes `unit.md` in its own frontmatter shape, so never compose the
+frontmatter block yourself — pass the fields as flags and let the tool render them.
 
 **Record the gate act.**
 
@@ -303,7 +352,7 @@ another unit's record, and retiring it is a recorded act on that unit, not
 housekeeping on this one.
 
 ```bash
-crayon unit retire "$HOLDING_UNIT" --note "<why the TA is releasing this target>"
+crayon unit retire "$HOLDING_UNIT" --note '<why they are releasing this target>'
 ```
 
 Then retry the refused declaration unchanged. If the TA says no, agree a different
@@ -330,11 +379,15 @@ signs off. crayon-write drafts, after signoff.
 **Triage ask ("does this need docs?"):** the step 1 triage fork — ground, deliver
 the Triage Recommendation, STOP.
 
-**Vague answer:** probe once with a narrower follow-up. If still vague, offer ONE
-evidence-grounded recommendation.
+**Vague answer:** narrow the probe — one concrete case, or an either/or in the TA's own
+words — at most twice. A vague answer gets a narrower probe, not a proposal. After two
+narrowing probes, say plainly that the answer is still open, and ask whether they want
+your view on it; give your view only when the TA asks for it.
 
 **Jump-ahead TA:** bank everything they gave and continue only for what is genuinely
-open. Never re-ask what they already answered.
+open. Never re-ask what they already answered. One of step 2's two fixed questions is
+always open, so a brief that answers everything still gets that one question before
+anything is recorded.
 
 **`unit_exists` (exit 2):** that id is already declared. Show it with
 `crayon show <id>` and continue on it, or agree a new id with the TA.
@@ -370,6 +423,8 @@ one), and act on the routing row for `next`.
   nothing from a dynamic crawl.
 - Ask exactly one question per turn during the Socratic intake.
 - Draw out the judgment fields (reader problem, audience) before recording anything.
+- Ask at least one open question before recording anything — one of step 2's two
+  fixed questions — even when the brief fills every field.
 - Propose every field the repo can answer; ask only for what it cannot.
 - Batch the declaration ceremony behind ONE confirmation.
 - Ground the target placement in the docs tree (siblings, toctree slots); the
@@ -384,7 +439,8 @@ one), and act on the routing row for `next`.
 - Echo each verb's own response line verbatim.
 </must>
 <must_not>
-- Never override a TA-stated Diataxis direction — propose only when absent.
+- Never override a TA-stated Diataxis direction, and give a view on a direction or an
+  audience only when the TA asks for it — as evidence, never as a marked option.
 - Never record agent-invented intent as the TA's own — the recorded note reflects
   only the TA's actual answers.
 - Never invoke crayon-write before `crayon signoff` exits 0.
@@ -407,6 +463,8 @@ one), and act on the routing row for `next`.
 - [ ] When the context was missing, the TA was offered the bootstrap choice once, and
       any dynamic crawl persisted nothing.
 - [ ] The intake ran one question at a time, drawing out intent and audience first.
+- [ ] The intake asked at least one open question before anything was recorded, even
+      when the brief filled every field.
 - [ ] Every derivable field was proposed, not asked.
 - [ ] The whole ceremony was confirmed once.
 - [ ] `crayon unit new … --body-file -` recorded the plan and `crayon signoff` exited 0.

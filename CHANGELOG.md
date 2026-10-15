@@ -45,7 +45,7 @@ across. The contract number stays `1`.
 - `validation/evals/` — model evals. They measure how well a model drives the five skills
   under the same skill text and a neutral loop, through OpenRouter. Lane A checks skill
   selection (15 cases). Lane B checks the next action after real, recorded `crayon` output
-  (31 cases), acted out in a copy of the state inside a bubblewrap jail. Every case carries a
+  (60 cases), acted out in a copy of the state inside a bubblewrap jail. Every case carries a
   reply that must pass and one that must fail. `--repeat K` reports per-case pass counts, and
   results are committed under `validation/evals/results/`. Paid runs are started by hand, never
   in CI. The gate gains `python3 -m unittest tests.test_evals`, the kit's offline self-tests.
@@ -117,6 +117,19 @@ across. The contract number stays `1`.
 
 ### Changed
 
+- The skills hand each judgment back to the author. After an accept, `crayon-review` asks at
+  most three questions drawn from the unit's record — deviated or skipped steps, requests
+  accepted without a page change, findings left open in that review, where a reader arrives
+  from — none when nothing is open, and names no publishing step. The verdict is asked as one
+  open question before the findings' lean is shown. Notes are recorded in the author's own
+  words, single-quoted on the command line so a backtick or a `$` in them is recorded as
+  typed rather than run or expanded; a bare accept records no note, and no judgment question
+  marks an option as recommended. `crayon-plan` asks at least one open question even when a
+  brief fills every field, and gives its view on audience or direction only when asked.
+  `crayon-onboard` ends on a question about the author's priorities and routes to `/crayon-plan`
+  with their first pick, in their own words. The three author rules are authored once in `skills/README.md` and
+  carried in the plan, write and review skills. Lane B gains the cases that pin these, the
+  `question_count` kind and three named patterns.
 - The tool's human lines are plain. On a sealed unit the handover line reads
   `Next: yours — crayon stops here`, and the accept line names the pages it accepted, with no
   count and no "sealed". The `signoff`, re-sign, `edits` and `resume` lines name the ledger
@@ -142,7 +155,8 @@ across. The contract number stays `1`.
   `crayon steer <id> --note "<their words>"`; `--unsteered-reason` only for an authorised
   redraft with nothing to change. `crayon-write` says a bare "draft it again" is not a note,
   and that a step marked `stateful` takes the author's yes every time, on resume too.
-- `unapplied_steering`'s `hint` leads with putting each pending seq to the reviewer. Every
+- `unapplied_steering`'s `hint` leads with putting each pending seq to the reviewer, and
+  writes the accept's note as optional, `[--note "…"]`, as the routing rows do. Every
   skill now acts on a refusal's routing row for its `error` before routing on `next`, and the
   `hint` is a reminder, never the whole route. The version stop rule gives a concrete case
   (`0.1.9` is older than `0.2.0`) instead of saying the numbers are never ordered.

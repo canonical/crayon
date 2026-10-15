@@ -186,6 +186,11 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "(^|[;|]\\s*|&&\\s*(?![^\\n]*\\)\\s*>))(python3? -m pip install|pip3? install|python3? -m toyq|toyq\\b)"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@MARKER",
+          "except_re": "(?i)\\bresum(e|ing)\\b"
         }
       ],
       "oracle": [

@@ -96,6 +96,30 @@ MACROS = {
     # git writes, builds and publishing: never the skill's to run.
     "@PUBLISH": r"\b(git\s+(add|commit|push|reset|checkout|restore|rebase)|"
                 r"sphinx-build|make\s+html|gh\s+pr)\b",
+    # A recommended or default marker on a judgment option (option order alone is none).
+    "@MARKER": r"(?i:\((recommended|default|suggested|preferred)\)|"
+               r"\b(recommended|suggested)\b|[\u2605\u2606\u2b50])",
+    # Publishing offered as a step, not merely named: a `Next:` that publishes or
+    # opens a PR, a publish/PR/build handed over as "yours" or "when you're ready",
+    # or an instruction to open a PR or to publish. "crayon does not publish" and
+    # quoting the routed token (`next` is `publish`) are mentions, not offers.
+    "@OFFERS_PUBLISH": r"(?i:\bnext:?\s+(publish|push|open\s+(a\s+|the\s+)?(PR|pull\s+request))\b|"
+                       r"\b(publish\w*|pull\s+requests?|PRs?|build)\b[^.\n]{0,60}"
+                       r"\b(is|are)\s+yours\b|"
+                       r"\bpublish\w*\b[^.\n]{0,40}\bwhen\s+you('re|\s+are)\s+ready\b|"
+                       r"(^|[.!?:;]\s*|\b(then|now|and|you\s+(can|could|may|might|should))\s+)"
+                       r"open\s+(a\s+|the\s+)?(PR|pull\s+request)\b|"
+                       r"\b(once|when|after)\s+you\s+open\s+(a\s+|the\s+)?(PR|pull\s+request)\b|"
+                       r"\b(you\s+(can|could|may|might|should)|go\s+ahead\s+and|ready\s+to)"
+                       r"\s+publish\b)",
+    # Note text the agent offers in the author's place: after "I'll use/record…",
+    # a colon or an opening quote introducing a span that ends as a statement,
+    # not a question ("I'll record the fix: what should change?" is asking).
+    "@OFFERS_NOTE": r"(?i:\bI(\s+will|'ll|\u2019ll)\s+(use|record|put|write|note|file)\b"
+                    r"[^\n?]{0,40}?(:\s*[^?\n]*?[.!][\"'\u201d\u2019]?(\s|$)|"
+                    r" [\"'\u201c\u2018][^\"'\u201d\u2019?\n]+[\"'\u201d\u2019])|"
+                    r"\b(proposed|suggested|draft)\s+note\b|"
+                    r"\b(how\s+about|something\s+like)\s*[\"'\u201c\u2018:])",
 }
 
 def load_states(path=DECISION / "states.json"):
@@ -120,6 +144,21 @@ def _recorded(states, ref, where):
         return states[state][label]
     except KeyError:
         raise ValueError("%s: no recorded %r in states.json" % (where, ref))
+
+
+#: ``@RECORDED{<state>/<label>}`` in an oracle or foil turn's text: that recorded
+#: output, spliced in at load time, so a reply that quotes the tool never types a
+#: commit sha a later skill edit would move.
+_RECORDED_RE = re.compile(r"@RECORDED\{([^{}]+)\}")
+
+
+def _splice(turns, states, where):
+    for turn in turns or []:
+        if isinstance(turn.get("content"), str):
+            turn["content"] = _RECORDED_RE.sub(
+                lambda m: _recorded(states, m.group(1), where)["output"].rstrip("\n"),
+                turn["content"])
+    return turns
 
 
 def _resolve_step(step, states, where):
@@ -212,6 +251,8 @@ def load_b(root=CASES):
                 "overrides": _overrides(history),
                 "writes": _writes(history, where),
             }
+            _splice(case["oracle"], states, where)
+            _splice(case.get("foil"), states, where)
             case["assert"] = _expand(case["assert"])
             for spec in case["assert"]:
                 grade.validate_assertion(spec)

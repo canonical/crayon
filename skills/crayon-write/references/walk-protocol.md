@@ -70,12 +70,13 @@ the tool would have no reason to believe it.
 whenever it does:
 
 ```bash
-crayon plan-steps "$UNIT_ID" --steps-file - --keep-evidence --note "<why the plan changed>"
+crayon plan-steps "$UNIT_ID" --steps-file - --keep-evidence --note '<their words: why the plan changed>'
 ```
 
 Reuse travels only along consecutive reusing plans, and only for the prefix whose
 steps are identical in text, mode and statefulness at every hop. Ask the author first:
-it asserts that something which has not been re-run still holds.
+it asserts that something which has not been re-run still holds. The note is the
+author's answer, verbatim, to why the plan changed; never compose a reason for them.
 
 ## Capture mechanics (D-15)
 
@@ -191,8 +192,10 @@ The step tally names every unresolved step by id, in the form `passed 4 · skipp
 marker, status and text; `--json` carries the same rows as `steps.plan`. That listing
 **is** the plan in a session that did not propose it: never re-propose or re-record it,
 and never read the ledger for it. When a plan exists with unresolved steps, offer resume
-as the **default**: show that tally, trust every resolved step, and continue at the first
-unresolved one — a step marked stateful still takes its just-in-time permission gate.
+as the **default**, a mechanical choice because the record says which steps are resolved:
+show that tally, trust every resolved step, and continue at the first unresolved one — a
+step marked stateful still takes its just-in-time permission gate, put as a plain
+question with no option marked.
 
 A step whose text changed on a later plan carries no evidence forward, because the
 tool's own computed hash no longer matches the one the evidence answered — so "only

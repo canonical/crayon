@@ -81,8 +81,10 @@ the line budget's two thresholds, the Python 3.9 hazard scan and the no-dependen
 
 **`tests/test_skill_text.py`** — the skill-text contracts: the routing table authored once in
 `skills/README.md` between its sentinels is byte-identical in every skill's
-`references/routing.md`; every reason and every `next` token has exactly one row; the manual
-install lines in [[install]] create the directory they copy into.
+`references/routing.md`; every reason and every `next` token has exactly one row; the
+author-rules block, the three rules authored once in `skills/README.md` between the
+`author-rules` sentinels, is carried byte for byte in the plan, write and review SKILL.md
+bodies (S-15); the manual install lines in [[install]] create the directory they copy into.
 
 **`tests/test_crayon_lifecycle.sh`** — the N-series: lifecycle walks, negative paths, recovery
 situations and the contract's trace table, each test driving the real executable in a hermetic
@@ -93,8 +95,9 @@ intent from the v1 bash layer, the tests that cannot live in the N file, and A-3
 verbs driven end to end through the executable.
 
 Both bash suites source `tests/lib.sh`, the one definition site for the temp-repo fixture, the
-assertion set, the hook fixtures, the vacuous-test guard and the TAP runner. Never add a second
-copy of any of those.
+assertion set, the hook fixtures, the step-evidence helpers (`last_plan_seq`, `record_step` and
+`skip_step`), the vacuous-test guard and the TAP runner; `validation/evals/fixtures/states.sh`
+sources the same file. Never add a second copy of any of those.
 
 **`tests/install_smoke.sh`** — the only test that reaches `crayon` through `PATH` rather than the
 in-tree file. It extracts the fenced shell between the `INSTALL:BEGIN` / `INSTALL:END` markers in
@@ -194,6 +197,7 @@ the local guard are the same code.
 | `AGENTS.md`'s tree block | the real `docs/`, `scripts/`, `tests/`, `validation/` | the unit suite |
 | The routing table | each skill's `references/routing.md` | `test_skill_text.py` |
 | The three stance references | `crayon-fetch`'s copies of `crayon-onboard`'s | `test_skill_text.py` |
+| The author-rules block | the plan, write and review `SKILL.md` bodies | `test_skill_text.py` |
 | The five context artefact names | `docs/context.md`, the plan and onboard skills | the unit suite |
 | The verb rows in `docs/internals.md` | `crayon --help` | `check_docs.py` |
 | Reader-facing pages name skills, not tool commands | `crayon --help` | `check_docs.py` |

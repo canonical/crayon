@@ -77,7 +77,8 @@ one the author did not declare.
    staged. Skip this step, report the failed sources, and ask the author how to
    proceed.
 7. Report accepted sources, failed sources, revisions, preservation, output paths and
-   limitations, and route the author on `next`.
+   limitations, end on the priorities question, and once the author answers, route to
+   `/crayon-plan` with their first pick.
 </quick_start>
 
 <pipeline>
@@ -191,7 +192,8 @@ and act on the payload's `next`.
 </step_5>
 
 <step_6 name="Report and route">
-Present a single summary block:
+Present a single summary block, as plain text rather than a code block, ending on
+one question about the author's priorities:
 
 ```
 ## crayon-fetch
@@ -202,8 +204,28 @@ Present a single summary block:
 - Recorded: <the tool's response line, verbatim>
 - Limitations: <what the accepted sources do not cover>
 
-Next: /crayon-plan — the context now grounds unit declarations.
+Which three gaps would your readers miss first?
 ```
+
+That question is for three gaps or more across the artefacts. With one or two, ask
+`Which of these would your readers miss first?`; with none, ask
+`What would your readers miss most?`. Only their first pick is used.
+
+Ask nothing else in the report, and give it no route line yet: which gaps matter
+most is the author's judgment, not something the fetched sources can settle. So the
+question is plain text, not options in a question tool, and no gap is marked as
+recommended, suggested or a default, whatever a harness's own convention: the order
+of the gaps implies nothing. Nothing is recorded from the answer; `crayon context
+record` has already run. Once the author answers, the route line names their first
+pick in their own words:
+
+```
+Next: /crayon-plan — start with <their first pick>
+```
+
+Their first pick is the first item in their reply, in the words they used for it,
+whatever the sources called that gap. If they name none, the route line is
+`Next: /crayon-plan`, with no pick: never pick one for them.
 
 Do not push or build — the tool's commit seam already recorded the transition.
 </step_6>
@@ -253,6 +275,8 @@ one), and act on the routing row for `next`.
   --source …`, and record the set with `crayon context record`, in that order.
 - Distinguish observed evidence from inference in every artefact.
 - Echo each verb's own response line verbatim.
+- End the report on the priorities question, and route to `/crayon-plan` only after
+  the author answers, naming their first pick in their own words, or none.
 </must>
 <must_not>
 - Never accept an undeclared or implied source class, and never substitute a source
@@ -265,6 +289,7 @@ one), and act on the routing row for `next`.
 - Never rewrite source documentation, declare, draft, review, push or build.
 - Never re-derive state or invent a next step; the tool emits `next`.
 - Never run `crayon context record` with nothing staged.
+- Never choose the author's priorities or first unit for them.
 </must_not>
 </constraints>
 
@@ -275,5 +300,8 @@ one), and act on the routing row for `next`.
 - [ ] Unavailable sources were reported as failed, never substituted.
 - [ ] Each artefact reached the tool through `crayon context stage … --source …`.
 - [ ] `crayon context record` exited 0, or 3 on an unchanged set, and its line was quoted.
-- [ ] The handoff named accepted and failed sources, revisions, outputs and limitations.
+- [ ] The handoff named accepted and failed sources, revisions, outputs and limitations,
+      and ended on the priorities question.
+- [ ] The route line to `/crayon-plan` named the author's first pick in their own
+      words, or none when they named none.
 </success_criteria>
