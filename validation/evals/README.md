@@ -1,7 +1,7 @@
 # Model evals
 
 Dev-time evaluation material, like the rest of `validation/`. This kit measures how well a model,
-driving the five dogen skills, does what the skills say. It does not re-test the tool itself: the
+driving the five crayon skills, does what the skills say. It does not re-test the tool itself: the
 gate already covers that.
 
 The same skill text and the same neutral loop are given to every model, so a score difference
@@ -9,7 +9,7 @@ belongs to the model. No agent harness sits in between:
 
 - The system prompt carries the skill catalog: each skill's name, description and install
   location.
-- `/dogen-<skill> <args>` appends that skill's `SKILL.md` body to the turn.
+- `/crayon-<skill> <args>` appends that skill's `SKILL.md` body to the turn.
 - The model reads reference files itself.
 
 Everything is stdlib Python. Models are reached through OpenRouter with the key in
@@ -20,19 +20,19 @@ Everything is stdlib Python. Models are reached through OpenRouter with the key 
 | Lane | What it asks | Live turns | Graded by | Status |
 |---|---|---|---|---|
 | A | which skill handles this ask? | 1, no tools | exact skill name | built, 15 cases |
-| B | given this `dogen` output, what is the next action? | until the first consequential action | that action, the calls on the way, 4 judged | built, 31 cases |
+| B | given this `crayon` output, what is the next action? | until the first consequential action | that action, the calls on the way, 4 judged | built, 31 cases |
 | C | a whole journey in a real sandbox with a simulated author | many | ledger, `score.py audit`, transcript, 1 judged page | planned |
 
 ## How lane B works
 
-A case invokes one skill (`/dogen-review cfg`) and replays a history: the tool calls a model
-made and what `dogen` printed back. Those outputs are never typed by hand.
+A case invokes one skill (`/crayon-review cfg`) and replays a history: the tool calls a model
+made and what `crayon` printed back. Those outputs are never typed by hand.
 `fixtures/states.sh` builds each state in a temporary repository using `tests/lib.sh` and the
-real `dogen.py`, and records its output. `record_states.py` folds that output into
+real `crayon.py`, and records its output. `record_states.py` folds that output into
 `cases/decision/states.json`, and the gate re-records it. A change in the tool's output
 therefore turns the gate red; lane B never replays stale bytes. A handful of refusals that
 cannot be reached without breaking a repository are written inline in their cases, using
-`dogen.py`'s own wording.
+`crayon.py`'s own wording.
 The fixture copies tracked toyq and skill files from the working tree, not ignored or untracked
 files such as local Python bytecode, so the temporary Git commits are reproducible in CI.
 
@@ -42,7 +42,7 @@ applied. Snapshots are built once per input digest into the gitignored `.cache/`
 
 Looking costs nothing and does not end the episode. It runs for real in that copy:
 - reading, globbing and grepping;
-- read-only `dogen` calls;
+- read-only `crayon` calls;
 - inspection commands, including chains joined by `&&`, `;` or `|`;
 - a `python3 -c` script that names nothing able to write, delete, spawn a process, reach the
   network or run code it builds, and only inside the jail;
@@ -51,7 +51,7 @@ Looking costs nothing and does not end the episode. It runs for real in that cop
 The command list is short and strict: nothing may be redirected into a file, and command
 substitution, `-exec` and `-delete` are refused. A command list cannot stop a path from
 leaving the sandbox, so every looking command runs inside a bubblewrap jail. The copy is mounted
-at a real `/srv/toyq`, with `/usr` read-only, a `dogen` shim on `/opt/dogen` and an empty
+at a real `/srv/toyq`, with `/usr` read-only, a `crayon` shim on `/opt/crayon` and an empty
 `/tmp`. The jail has its own process table and no network. Nothing else of the machine running
 the eval exists in there: not its home, not this checkout. The environment is built from scratch
 rather than inherited: that `PATH`, a throwaway `HOME`, and git config switched off, so no key
@@ -65,7 +65,7 @@ parts such as `; echo "exit:$?"` are dropped before a pattern matches what a com
 
 The first consequential action ends the episode, is never carried out, and is what the case
 grades:
-- a `dogen` verb that records something;
+- a `crayon` verb that records something;
 - any other command;
 - a write;
 - a question to the author;
@@ -126,7 +126,7 @@ Retention endpoints serve these requests; the list of compliant endpoints is at
 `https://openrouter.ai/api/v1/endpoints/zdr`. The judge and the author are never candidates.
 
 A backend can serve a model badly. On `novita/fp8`, minimax-m3's first answer token landed in
-the reasoning trace (`…draft it now.dogen`), leaving `-write` as the answer. So before pinning
+the reasoning trace (`…draft it now.crayon`), leaving `-write` as the answer. So before pinning
 a backend, probe it once with `reasoning.exclude` off and read the end of the reasoning.
 
 Before a model's cases run, one tiny call checks that it can be reached on its pin. A model that

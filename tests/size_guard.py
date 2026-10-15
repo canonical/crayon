@@ -10,10 +10,10 @@ exactly on a threshold.
 So this script restates nothing. D-06 asks for one authoring site for the pair
 of numbers; the strongest reading of it is that the job and the local guard
 become the same *code*, not merely the same constants. Both thresholds and the
-comparison itself are loaded out of ``tests/test_dogen_unit.py`` — the module
+comparison itself are loaded out of ``tests/test_crayon_unit.py`` — the module
 whose U-10 block already pins all four boundary counts — through the same
 ``SourceFileLoader`` shim that module uses to import the extension-less
-``dogen``. No threshold and no comparison operator implementing the budget
+``crayon``. No threshold and no comparison operator implementing the budget
 relation is written here.
 
 D-07 puts the verdict in the **exit code** and never in the job summary: a
@@ -23,7 +23,7 @@ to upload. The summary write is therefore best-effort and its failure is logged
 and ignored; the same facts always go to stdout as well, so the guard is
 readable from a developer's shell with no job-summary variable set at all.
 
-Usage — no argument in CI and locally, where the measured file is ``dogen``:
+Usage — no argument in CI and locally, where the measured file is ``crayon``:
 
     python3 tests/size_guard.py
 
@@ -43,26 +43,26 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 #: The tool the budget is about.
-DOGEN_PATH = ROOT / "dogen.py"
+CRAYON_PATH = ROOT / "crayon.py"
 
 #: The single authoring site for the thresholds AND for the comparison. U-10
 #: cross-checks the pair against ``.planning/REQUIREMENTS.md`` VERB-09 wherever
 #: the planning tree is checked out, so the human home and the machine home
 #: cannot drift apart either.
-GUARD_MODULE = ROOT / "tests" / "test_dogen_unit.py"
+GUARD_MODULE = ROOT / "tests" / "test_crayon_unit.py"
 
 #: Where the platform wants a job's markdown report appended.
 SUMMARY_ENV = "GITHUB_STEP_SUMMARY"
 
 
 def load_guard():
-    """Import ``tests/test_dogen_unit.py`` for its budget block.
+    """Import ``tests/test_crayon_unit.py`` for its budget block.
 
     Loaded under a private module name so this never collides with the same
     file imported as a test module, and because the file's ``unittest.main()``
     entry point is guarded, loading it runs no test.
     """
-    loader = importlib.machinery.SourceFileLoader("_dogen_budget", str(GUARD_MODULE))
+    loader = importlib.machinery.SourceFileLoader("_crayon_budget", str(GUARD_MODULE))
     spec = importlib.util.spec_from_loader(loader.name, loader)
     module = importlib.util.module_from_spec(spec)
     loader.exec_module(module)
@@ -126,7 +126,7 @@ def main(argv=None):
     if len(argv) > 1:
         sys.stderr.write("usage: size_guard.py [path-to-measure]\n")
         return 2
-    measured = pathlib.Path(argv[0]) if argv else DOGEN_PATH
+    measured = pathlib.Path(argv[0]) if argv else CRAYON_PATH
     if not measured.is_file():
         sys.stderr.write("size_guard: %s is not a file\n" % measured)
         return 2

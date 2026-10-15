@@ -31,7 +31,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 VERSIONS=(3.9 3.12 3.13)
-SUITE="tests/test_dogen_unit.py"
+SUITE="tests/test_crayon_unit.py"
 
 ran=0
 failed=0

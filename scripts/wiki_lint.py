@@ -31,11 +31,11 @@ tally), ``2`` tool error (no wiki directory). ``--json`` emits
 Scope decisions, stated so they are decisions and not accidents:
 
 - Checks 6 and 7 scan ``scripts/``, ``tests/``, ``validation/``, ``skills/``,
-  ``.github/``, the root ``*.md`` files and ``dogen.py``. The two files that
+  ``.github/``, the root ``*.md`` files and ``crayon.py``. The two files that
   must quote violations — this file and its test — are exempt by name.
 - Check 8 scans the same set MINUS ``tests/`` and ``validation/``: in those
   trees ``docs/<name>.md`` is a path in a *target* repository's docs root (the
-  thing dogen writes into), not a citation of this wiki, and the two cannot be
+  thing crayon writes into), not a citation of this wiki, and the two cannot be
   told apart by shape. Inside the scanned set the one such example is the
   conventional Sphinx root document ``docs/index.md``, used as a seed in the
   hand walk in ``docs/development.md``; it is exempt by name below.
@@ -63,7 +63,7 @@ RELATED_RE = re.compile(r"^Related: \[\[[a-z0-9-]+\]\](?:, \[\[[a-z0-9-]+\]\])*\
 SCAN_DIRS = ("scripts", "tests", "validation", "skills", ".github", WIKI_DIR)
 SCAN_SUFFIXES = {".py", ".md", ".txt", ".sh", ".yml", ".yaml", ".json", ".toml", ".cfg"}
 SKIP_PARTS = {".venv", "node_modules", "__pycache__", ".git", ".planning"}
-ROOT_FILES = ("dogen.py",)
+ROOT_FILES = ("crayon.py",)
 #: Trees where ``docs/<name>.md`` names a target repository's page, not a wiki
 #: page (see the module docstring). Check 8 skips them.
 PATH_CITE_SKIP_DIRS = ("tests", "validation")

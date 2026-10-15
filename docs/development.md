@@ -1,8 +1,8 @@
-# Developing dogen
+# Developing crayon
 
-<!-- provenance: moved from README.md (Develop dogen itself) and AGENTS.md (The gate), expanded -->
+<!-- provenance: moved from README.md (Develop crayon itself) and AGENTS.md (The gate), expanded -->
 
-The tooling, the test suites and the checks that verify the tree, for someone changing dogen
+The tooling, the test suites and the checks that verify the tree, for someone changing crayon
 rather than using it. The operating rules are in [[architecture]] and [[conventions]], and the behaviour of the
 tool is fixed by [[contract]], frozen at the git tag `contract-v1`. This page explains what
 each command in the gate proves and how the pieces pin one another, so that a red run names the
@@ -10,7 +10,7 @@ thing that moved.
 
 ## The shape
 
-One stdlib-only Python file, `dogen.py`, at the repository root, installed as `dogen`: Python 3.9 syntax, no package, no
+One stdlib-only Python file, `crayon.py`, at the repository root, installed as `crayon`: Python 3.9 syntax, no package, no
 venv, no dependency, no third-party test runner. One verb per transition over a hash-chained
 JSONL ledger. Five portable Agent Skills under `skills/` are the human-facing surface; two
 stdlib-only lint utilities under `scripts/` and a validation kit under `validation/` are the
@@ -20,18 +20,18 @@ and the unit suite asserts it.
 ## The gate
 
 Every command below must be green before a commit lands. The list is pinned three ways: the
-`GATE_COMMANDS` tuple in `tests/test_dogen_unit.py` must equal it string for string, every
+`GATE_COMMANDS` tuple in `tests/test_crayon_unit.py` must equal it string for string, every
 command must appear in `AGENTS.md` and in this page, and every `run:` body in
 `.github/workflows/ci.yml` must be one of them.
 
 ```bash
-python3 -m unittest tests.test_dogen_unit        # the unit suite
-python3 tests/test_dogen_unit.py                 # the SAME suite, script form
+python3 -m unittest tests.test_crayon_unit       # the unit suite
+python3 tests/test_crayon_unit.py                # the SAME suite, script form
 python3 -m unittest tests.test_skill_text        # the skill-text contracts
 python3 -m unittest tests.test_planning_lint     # the anonymization lint's own tests
 python3 -m unittest tests.test_check_docs        # the docs-accuracy checker's own tests
-bash tests/test_dogen_lifecycle.sh               # the lifecycle / recovery suite
-bash tests/test_dogen_acceptance.sh              # the acceptance suite
+bash tests/test_crayon_lifecycle.sh              # the lifecycle / recovery suite
+bash tests/test_crayon_acceptance.sh             # the acceptance suite
 bash tests/install_smoke.sh                      # the stranger's install path, end to end
 bash validation/fixtures.sh                      # the validation kit's four corruption fixtures
 python3 scripts/skill_lint.py                    # the SKILL.md frontmatter gate
@@ -72,7 +72,7 @@ cannot ride to green on the links that did parse.
 
 ## The suites
 
-**`tests/test_dogen_unit.py`** — the unit suite, run twice on purpose. `python3 -m unittest`
+**`tests/test_crayon_unit.py`** — the unit suite, run twice on purpose. `python3 -m unittest`
 and the script form once reported different counts, and a suite whole under one runner and
 truncated under the other reports `OK` either way. Beyond the tool's own units it is the home
 of the repository's self-pins: the gate tuple, the tree block in `AGENTS.md` (pinned against
@@ -84,11 +84,11 @@ the line budget's two thresholds, the Python 3.9 hazard scan and the no-dependen
 `references/routing.md`; every reason and every `next` token has exactly one row; the manual
 install lines in [[install]] create the directory they copy into.
 
-**`tests/test_dogen_lifecycle.sh`** — the N-series: lifecycle walks, negative paths, recovery
+**`tests/test_crayon_lifecycle.sh`** — the N-series: lifecycle walks, negative paths, recovery
 situations and the contract's trace table, each test driving the real executable in a hermetic
 temporary git repository. It is the long pole at roughly three minutes.
 
-**`tests/test_dogen_acceptance.sh`** — A-01 … A-38: the black-box acceptance suite ported by
+**`tests/test_crayon_acceptance.sh`** — A-01 … A-38: the black-box acceptance suite ported by
 intent from the v1 bash layer, the tests that cannot live in the N file, and A-38, the `context`
 verbs driven end to end through the executable.
 
@@ -96,7 +96,7 @@ Both bash suites source `tests/lib.sh`, the one definition site for the temp-rep
 assertion set, the hook fixtures, the vacuous-test guard and the TAP runner. Never add a second
 copy of any of those.
 
-**`tests/install_smoke.sh`** — the only test that reaches `dogen` through `PATH` rather than the
+**`tests/install_smoke.sh`** — the only test that reaches `crayon` through `PATH` rather than the
 in-tree file. It extracts the fenced shell between the `INSTALL:BEGIN` / `INSTALL:END` markers in
 [[install]] byte for byte, runs it from a temporary `HOME` in a temporary
 repository, then drives one unit to a written page and one refusal from that vantage point. It
@@ -149,10 +149,10 @@ kit to is everything that needs no model:
 
 **`tests/check_docs.py`** — the docs-accuracy checker. It compares observables, never judges
 prose: the `VERBS` region (in `docs/internals.md`, exactly once in the documented set) against
-`dogen --help`'s subcommand list; the compact `REASONS` table (likewise) and the reason table in
+`crayon --help`'s subcommand list; the compact `REASONS` table (likewise) and the reason table in
 `docs/contract.md` §5.7 against the tool's `REASONS` dict, name and exit code; the `COMPAT`
 region (exactly once) and contract §5.10 against the two numbers the tool reports; every
-in-repo link and anchor across the documented set; no `dogen <verb>` in the reader-facing
+in-repo link and anchor across the documented set; no `crayon <verb>` in the reader-facing
 documents outside a `## Under the hood` section; the changelog's topmost release heading, which
 must be dated and carry no placeholder. It calls `check_traces.py` itself.
 
@@ -162,7 +162,7 @@ test exists, and nothing about what the test asserts.
 
 **`scripts/skill_lint.py`** — agentskills.io frontmatter invariants for each `SKILL.md`: the
 name matches the directory, the description parses, the compatibility numbers are the contract's
-as literal strings, and only `dogen-write` may hold a write-capable tool. The single-writer rule
+as literal strings, and only `crayon-write` may hold a write-capable tool. The single-writer rule
 is fail-closed.
 
 **`scripts/planning_lint.py`** — no unscrubbed prior-art identity in `.planning/`. A missing
@@ -175,7 +175,7 @@ notation appears nowhere outside the wiki, and every `docs/<slug>.md` path cited
 exists. The live tree is its fixture; `tests/test_wiki_lint.py` mutates a two-page tree once
 per check.
 
-**`tests/size_guard.py`** — VERB-09's line budget over `dogen`, a review trigger rather than a
+**`tests/size_guard.py`** — VERB-09's line budget over `crayon`, a review trigger rather than a
 design goal. Above the reporting threshold it reports and stays green; at the failing threshold
 it fails. It loads both thresholds and the comparison out of the unit suite, so the CI job and
 the local guard are the same code.
@@ -188,12 +188,12 @@ the local guard are the same code.
 | Bracketed links and the wiki shape | `docs/*.md` and `AGENTS.md` | `wiki_lint.py` |
 | `AGENTS.md`'s tree block | the real `docs/`, `scripts/`, `tests/`, `validation/` | the unit suite |
 | The routing table | each skill's `references/routing.md` | `test_skill_text.py` |
-| The three stance references | `dogen-fetch`'s copies of `dogen-onboard`'s | `test_skill_text.py` |
+| The three stance references | `crayon-fetch`'s copies of `crayon-onboard`'s | `test_skill_text.py` |
 | The five context artefact names | `docs/context.md`, the plan and onboard skills | the unit suite |
-| The verb rows in `docs/internals.md` | `dogen --help` | `check_docs.py` |
-| Reader-facing pages name skills, not tool commands | `dogen --help` | `check_docs.py` |
-| The two reason tables | `dogen.REASONS` | `check_docs.py` and the unit suite |
-| The compatibility numbers | `dogen version --json` | `check_docs.py`, `skill_lint.py`, `install.sh` |
+| The verb rows in `docs/internals.md` | `crayon --help` | `check_docs.py` |
+| Reader-facing pages name skills, not tool commands | `crayon --help` | `check_docs.py` |
+| The two reason tables | `crayon.REASONS` | `check_docs.py` and the unit suite |
+| The compatibility numbers | `crayon version --json` | `check_docs.py`, `skill_lint.py`, `install.sh` |
 | The install region | an install that reaches a page, then the uninstall it prints | `install_smoke.sh` |
 | The manual install lines | `mkdir -p` and `cp -r` name one directory | `test_skill_text.py` |
 | The trace table | test function names | `check_traces.py` |
@@ -215,34 +215,34 @@ The skills are the surface, but every guarantee is in the tool, and the fastest 
 a report is to drive the verbs directly in a scratch repository:
 
 ```bash
-mkdir -p /tmp/dogen-try && cd /tmp/dogen-try
+mkdir -p /tmp/crayon-try && cd /tmp/crayon-try
 git init -q -b main . && git config user.name "Anne Example" && git config user.email "anne@example.com"
-printf '.dogen/staging/\n' > .gitignore
+printf '.crayon/staging/\n' > .gitignore
 printf '# Widget API\n\nCreate and delete widgets.\n' > source.md
 mkdir -p docs && printf '# Docs\n' > docs/index.md
 git add -A && git commit -q -m "seed"
 
 printf '# Plan\n\nOutline the widget API reference.\n' \
-  | dogen unit new widget-api --intent reference \
+  | crayon unit new widget-api --intent reference \
       --audience "developers integrating the widget API" \
       --title "Widget API" --target reference/widget-api.md \
       --source source.md --body-file -
-dogen signoff widget-api
-dogen steer widget-api --note "Lead with the create call."
-mkdir -p .dogen/staging/widget-api/draft
-printf '# Widget API\n\n## create\n\nCreates a widget.\n' > .dogen/staging/widget-api/draft/widget-api.md
-dogen draft widget-api .dogen/staging/widget-api/draft/widget-api.md
-dogen verify widget-api
-dogen show widget-api
+crayon signoff widget-api
+crayon steer widget-api --note "Lead with the create call."
+mkdir -p .crayon/staging/widget-api/draft
+printf '# Widget API\n\n## create\n\nCreates a widget.\n' > .crayon/staging/widget-api/draft/widget-api.md
+crayon draft widget-api .crayon/staging/widget-api/draft/widget-api.md
+crayon verify widget-api
+crayon show widget-api
 ```
 
 `steer` is load-bearing: without a steering record since the last generation, `draft` refuses
 with `unsteered`. Every refusal is one JSON line with `error`, `unit`, `detail`, `hint` and
-`next`; branch on `error`. `git log --grep 'Dogen-Unit: widget-api'` replays the unit's path.
+`next`; branch on `error`. `git log --grep 'Crayon-Unit: widget-api'` replays the unit's path.
 
 ## Changing the documented surface
 
-- A new verb or reason: change `dogen`, then the contract, then the region in
+- A new verb or reason: change `crayon`, then the contract, then the region in
   `docs/internals.md` and the routing table in `skills/README.md`, then re-copy the routing mirrors. `check_docs.py` and
   `test_skill_text.py` name whichever side is behind.
 - A new file under `docs/`, `scripts/`, `tests/` or `validation/`: list it in `AGENTS.md`'s tree

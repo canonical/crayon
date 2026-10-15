@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to dogen are recorded here. The format follows
+All notable changes to crayon are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/): `Added`, `Changed`, `Fixed`, `Removed`,
 in that order under every release. Within a heading, entries run in the order the deliverables land
 in the release series — contract and tool core, the four suites, skills over verbs, the retired v1
@@ -9,49 +9,56 @@ significance still have one order a reader can predict.
 
 ## [Unreleased]
 
+dogen is now crayon. The command is `crayon` (the file `crayon.py`), the skills are
+`crayon-onboard`, `crayon-fetch`, `crayon-plan`, `crayon-write` and `crayon-review`, the record
+lives under `.crayon/`, the commit trailers are `Crayon-*`, the variables are `CRAYON_*`, and the
+repository is `https://github.com/canonical/crayon`. crayon does not read a record dogen wrote
+under `.dogen/`. [docs/upgrade.md](docs/upgrade.md) says how to move a machine and a repository
+across. The contract number stays `1`.
+
 ### Added
 
 - `validation/evals/` — model evals. They measure how well a model drives the five skills
   under the same skill text and a neutral loop, through OpenRouter. Lane A checks skill
-  selection (15 cases). Lane B checks the next action after real, recorded `dogen` output
+  selection (15 cases). Lane B checks the next action after real, recorded `crayon` output
   (31 cases), acted out in a copy of the state inside a bubblewrap jail. Every case carries a
   reply that must pass and one that must fail. `--repeat K` reports per-case pass counts, and
   results are committed under `validation/evals/results/`. Paid runs are started by hand, never
   in CI. The gate gains `python3 -m unittest tests.test_evals`, the kit's offline self-tests.
   See `docs/evals.md`.
-- `dogen show` lists the recorded step plan under the step tally — each step's id, mode,
+- `crayon show` lists the recorded step plan under the step tally — each step's id, mode,
   stateful marker, status and text — and `show --json` / `summary --json` carry the same rows
   as `steps.plan`. A session that did not propose a tutorial or how-to plan can now resume the
-  walk from the read surface instead of the ledger; `dogen-write` says so, and gains a
+  walk from the read surface instead of the ledger; `crayon-write` says so, and gains a
   must-not against probing a step's command outside the capture recipe. Additive under
   contract 1, recorded in `docs/contract.md` §5.10.
-- `dogen context stage`, `dogen context record` and `dogen context show` — the repository's
+- `crayon context stage`, `crayon context record` and `crayon context show` — the repository's
   context artefacts (`doc-style.md`, `glossary.md`, `structure.md`, `code-to-docs-map.md`,
-  `doc-gaps.md`) now reach `.dogen/context/` through the tool. `stage` takes one artefact's text
+  `doc-gaps.md`) now reach `.crayon/context/` through the tool. `stage` takes one artefact's text
   from a file or stdin, so a skill that holds no write tool can hand it over; `record` promotes
   the staged set, freezes `manifest.json` with tool-computed digests and the declared sources,
-  and makes one commit with `Dogen-Phase: context-recorded` and no `Dogen-Unit`; `show` derives
+  and makes one commit with `Crayon-Phase: context-recorded` and no `Crayon-Unit`; `show` derives
   what is present, staged, unrecorded or drifted and routes `record`, `onboard` or `plan`. No
   event kind and no reason is added: the change is additive under contract 1, recorded in
   `docs/contract.md` §5.10 beside the `internal_error` revision. N-47 in the lifecycle suite,
   A-38 in the acceptance suite and a unit class cover it.
-- `dogen-onboard` and `dogen-fetch` — two portable skills that produce the context artefacts,
-  outside the per-unit loop. `dogen-onboard` walks the repository's own docs and cross-reads
-  the product surface for `[CODE↔DOCS GAP]` findings; `dogen-fetch` takes sources the author
+- `crayon-onboard` and `crayon-fetch` — two portable skills that produce the context artefacts,
+  outside the per-unit loop. `crayon-onboard` walks the repository's own docs and cross-reads
+  the product surface for `[CODE↔DOCS GAP]` findings; `crayon-fetch` takes sources the author
   declares — a local export, another checkout, a URL, a harness result — retrieves each
   through the declared method, records its origin, revision and preservation status, and
   reports an unreachable one as failed rather than substituting. Neither holds a write tool:
-  each artefact is handed to `dogen context stage` and the set to `dogen context record`, so
+  each artefact is handed to `crayon context stage` and the set to `crayon context record`, so
   the single-writer rule is unchanged. The three stance references are authored in
-  `dogen-onboard` and mirrored byte-identically into `dogen-fetch`; the family is five skills
+  `crayon-onboard` and mirrored byte-identically into `crayon-fetch`; the family is five skills
   wherever it was three — `install.sh`, the install smoke, the skill-text suite, the docs.
 - `docs/context.md` — the one home for the five context files: what each carries, who
-  produces it, how the two verbs record it, and what `dogen-plan` does when they are missing.
-- `dogen-plan` grounds itself through `dogen context show --json` and, when the three
+  produces it, how the two verbs record it, and what `crayon-plan` does when they are missing.
+- `crayon-plan` grounds itself through `crayon context show --json` and, when the three
   onboarding artefacts are missing, offers the author one three-way choice: supply the files,
-  run `/dogen-onboard` first, or ground this one intake from an ephemeral in-memory read
+  run `/crayon-onboard` first, or ground this one intake from an ephemeral in-memory read
   (`references/context-bootstrap.md`) that persists nothing. The skill never authors
-  `.dogen/context/` itself.
+  `.crayon/context/` itself.
 - `install.sh` — an interactive installer at the repository root. It walks through the three
   decisions an install has (project or global skills, where the executable goes — a copy or a
   symlink into the checkout — and `.gitignore`), takes every default under `--yes`,
@@ -80,35 +87,35 @@ significance still have one order a reader can predict.
   links that work in a browser.
 - `tests/check_docs.py` checks that the reader-facing documents (`README.md`,
   `docs/contents.md`, `install.md`, `context.md`, `upgrade.md`, `hooks.md`) name no
-  `dogen <verb>` outside a `## Under the hood` section, with the verbs taken from
-  `dogen --help`. It finds the `VERBS` and `REASONS` regions by their markers, as it already
+  `crayon <verb>` outside a `## Under the hood` section, with the verbs taken from
+  `crayon --help`. It finds the `VERBS` and `REASONS` regions by their markers, as it already
   found `COMPAT`, and reports a region carried by two documents.
 
 ### Changed
 
-- `internal_error`'s `hint` names the whole route its routing row prescribes: run `dogen show`
+- `internal_error`'s `hint` names the whole route its routing row prescribes: run `crayon show`
   on the unit, then re-run the same command unchanged and report the detail. The old hint
   said only "re-run … and report", and models followed it past the `show`. `error`, `next`
   and exit 6 are unchanged.
 - `unsteered`'s `hint` leads with the STOP: ask the author what should change, then
-  `dogen steer <id> --note "<their words>"`; `--unsteered-reason` only for an authorised
-  redraft with nothing to change. `dogen-write` says a bare "draft it again" is not a note,
+  `crayon steer <id> --note "<their words>"`; `--unsteered-reason` only for an authorised
+  redraft with nothing to change. `crayon-write` says a bare "draft it again" is not a note,
   and that a step marked `stateful` takes the author's yes every time, on resume too.
 - `unapplied_steering`'s `hint` leads with putting each pending seq to the reviewer. Every
   skill now acts on a refusal's routing row for its `error` before routing on `next`, and the
   `hint` is a reminder, never the whole route. The version stop rule gives a concrete case
   (`0.1.9` is older than `0.2.0`) instead of saying the numbers are never ordered.
-  `dogen-fetch` records nothing when no declared source was accepted.
-- The source file is `dogen.py`; the installed command is still `dogen`. `install.sh` copies or
-  links it under that name, and every in-tree pin names `dogen.py`.
+  `crayon-fetch` records nothing when no declared source was accepted.
+- The source file is `crayon.py`; the installed command is still `crayon`. `install.sh` copies or
+  links it under that name, and every in-tree pin names `crayon.py`.
 - The surface is harness-agnostic: no agent harness is named, detected or preferred in the
-  README, the installer, the docs or `AGENTS.md`; skills are invoked as `/dogen-plan`,
-  `/dogen-write` and `/dogen-review` everywhere.
-- `README.md` is short and skills-first, in plain English: what dogen does, the requirements, a
+  README, the installer, the docs or `AGENTS.md`; skills are invoked as `/crayon-plan`,
+  `/crayon-write` and `/crayon-review` everywhere.
+- `README.md` is short and skills-first, in plain English: what crayon does, the requirements, a
   manual install in five numbered steps with the installer offered second, the five skills in
-  order, a three-step note on using a separate branch, what dogen does not do (including that
+  order, a three-step note on using a separate branch, what crayon does not do (including that
   it knows no Sphinx stack, theme or `conf.py`), and one link to `docs/contents.md`. It names
-  no `dogen` command. The glossary, the verb table, the exit codes, the branch procedure and the
+  no `crayon` command. The glossary, the verb table, the exit codes, the branch procedure and the
   layout moved to `docs/internals.md`; the document list moved to `docs/contents.md`. The exit
   codes stay one compact table, a row per code with its reasons in the last cell;
   `tests/check_docs.py` reads that shape there and the per-reason shape in the contract,
@@ -116,7 +123,7 @@ significance still have one order a reader can predict.
 - `docs/install.md` puts the manual install first, then the installer's choices, then
   uninstall. `docs/context.md`, `docs/upgrade.md` and `docs/hooks.md` tell the reader what to
   do with the skills and keep the tool's commands in a final `## Under the hood` section. The
-  clone URL is `https://github.com/canonical/dogen`.
+  clone URL is `https://github.com/canonical/crayon`.
 - `docs/upgrade.md` is a forward-looking procedure — upgrade the executable, re-copy the skills,
   check the two numbers, what a contract bump does to existing records — rather than a
   before-and-after of the previous release.

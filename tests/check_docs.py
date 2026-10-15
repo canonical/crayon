@@ -9,14 +9,14 @@ What it claims, and nothing wider:
 
 1. **Verbs** — the rows in the ``VERBS`` region, carried by exactly one
    document of the documented set (``docs/internals.md`` today), are exactly
-   the subcommands the tool registers. The oracle is ``dogen --help``'s own
+   the subcommands the tool registers. The oracle is ``crayon --help``'s own
    subcommand list, never a list kept here, so a wrong document cannot be made
    green by editing this file (T-18-30).
 2. **Reasons** — the ``REASONS`` region, carried by exactly one document of the
    documented set (``docs/internals.md`` today), is ONE compact table, one
    row per exit code with that code's reasons listed in its last cell; the
    rows in ``docs/contract.md``'s reason table are one per reason. Each side,
-   flattened to ``{reason: exit}``, equals ``dogen.REASONS`` by name and code.
+   flattened to ``{reason: exit}``, equals ``crayon.REASONS`` by name and code.
 3. **Compatibility** — the ``COMPAT`` region, carried by exactly one document
    of the documented set (``docs/compatibility.md`` today), and
    ``docs/contract.md`` section 5.10 carry ``contract`` and ``min_tool`` as the
@@ -32,8 +32,8 @@ What it claims, and nothing wider:
    the tally. There is exactly one trace-table parser in this repository and it
    is not here (17 D-09).
 7. **Skills first** — the reader-facing documents in ``SKILLS_FIRST_DOCS`` name
-   no ``dogen <verb>`` outside a ``## Under the hood`` section. The verbs are
-   ``dogen --help``'s, the same oracle as observable 1. The reader drives dogen
+   no ``crayon <verb>`` outside a ``## Under the hood`` section. The verbs are
+   ``crayon --help``'s, the same oracle as observable 1. The reader drives crayon
    through the skills; the tool's commands belong to the pages that say they
    are looking underneath.
 
@@ -97,11 +97,11 @@ DOC_FILES = (
     "docs/evals.md",
     "CHANGELOG.md",
     "skills/README.md",
-    "skills/dogen-fetch/SKILL.md",
-    "skills/dogen-onboard/SKILL.md",
-    "skills/dogen-plan/SKILL.md",
-    "skills/dogen-review/SKILL.md",
-    "skills/dogen-write/SKILL.md",
+    "skills/crayon-fetch/SKILL.md",
+    "skills/crayon-onboard/SKILL.md",
+    "skills/crayon-plan/SKILL.md",
+    "skills/crayon-review/SKILL.md",
+    "skills/crayon-write/SKILL.md",
 )
 
 #: Row shapes. Each requires the first cell to look like the id it is after, so
@@ -123,14 +123,14 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 _SECTION_RE = re.compile(r"^##\s")
 
 #: The anchor of ``docs/contract.md``'s reason table, the same literal
-#: ``tests/test_dogen_unit.py``'s ``contract_reason_table()`` anchors at. The two
+#: ``tests/test_crayon_unit.py``'s ``contract_reason_table()`` anchors at. The two
 #: readers are pinned to one anchor on purpose so they cannot drift apart.
 REASON_TABLE_ANCHOR = "Reason table:"
 COMPAT_HEADING = "## 5.10 Compatibility"
 
 #: The reader-facing documents: the ones a Technical Author follows to install
-#: and use dogen through its skills. Every other document in the set is under
-#: the hood by definition. In these, a ``dogen <verb>`` may appear only in a
+#: and use crayon through its skills. Every other document in the set is under
+#: the hood by definition. In these, a ``crayon <verb>`` may appear only in a
 #: section headed exactly ``UNDER_THE_HOOD_HEADING``.
 SKILLS_FIRST_DOCS = (
     "README.md",
@@ -338,13 +338,13 @@ def file_anchors(path):
 
 
 def registered_verbs(root):
-    """The subcommands ``dogen --help`` registers, in the order it prints them.
+    """The subcommands ``crayon --help`` registers, in the order it prints them.
 
     Taken from the brace group argparse renders in the usage block. ``COLUMNS``
     is widened so the group is not wrapped, and the whitespace is stripped
     anyway so a wrapped group would still parse.
     """
-    tool = root / "dogen.py"
+    tool = root / "crayon.py"
     if not tool.is_file():
         return []
     env = dict(os.environ)
@@ -413,7 +413,7 @@ def check_verbs(root, documents, report):
         return
     registered = registered_verbs(root)
     if not registered:
-        report.nothing_checked(observable, "`dogen --help`'s subcommand list")
+        report.nothing_checked(observable, "`crayon --help`'s subcommand list")
         return
     for verb in registered:
         if verb not in documented:
@@ -446,7 +446,7 @@ def _compare_reasons(report, side, documented, tool):
                 "`%s` is in the tool and has no row in %s" % (name, side),
                 side,
                 sorted(documented),
-                "dogen.REASONS",
+                "crayon.REASONS",
                 sorted(tool),
             )
     for name in sorted(documented):
@@ -456,7 +456,7 @@ def _compare_reasons(report, side, documented, tool):
                 "`%s` has a row in %s and the tool does not raise it" % (name, side),
                 side,
                 sorted(documented),
-                "dogen.REASONS",
+                "crayon.REASONS",
                 sorted(tool),
             )
         elif documented[name] != tool[name]:
@@ -466,13 +466,13 @@ def _compare_reasons(report, side, documented, tool):
                 % (name, documented[name], side, tool[name]),
                 side,
                 ["%s=%s" % (name, documented[name])],
-                "dogen.REASONS",
+                "crayon.REASONS",
                 ["%s=%s" % (name, tool[name])],
             )
 
 
 def check_reasons(documents, contract, tool_reasons, report):
-    """Both documented reason tables against ``dogen.REASONS``, name and code."""
+    """Both documented reason tables against ``crayon.REASONS``, name and code."""
     observable = "reasons"
     if not tool_reasons:
         report.nothing_checked(observable, "the tool's REASONS table")
@@ -650,15 +650,15 @@ def user_facing_lines(text):
 
 
 def check_skills_first(root, documents, report):
-    """No ``dogen <verb>`` in a reader-facing document outside an under-the-hood section."""
+    """No ``crayon <verb>`` in a reader-facing document outside an under-the-hood section."""
     observable = "skills-first"
     verbs = registered_verbs(root)
     if not verbs:
-        report.nothing_checked(observable, "`dogen --help`'s subcommand list")
+        report.nothing_checked(observable, "`crayon --help`'s subcommand list")
         return
     # Longest first, so `plan-steps` is never read as a shorter verb.
     alternatives = "|".join(re.escape(verb) for verb in sorted(verbs, key=len, reverse=True))
-    command = re.compile(r"\bdogen[ \t]+(?:%s)\b" % alternatives)
+    command = re.compile(r"\bcrayon[ \t]+(?:%s)\b" % alternatives)
     scanned = []
     for relative in SKILLS_FIRST_DOCS:
         text = documents.get(relative)
@@ -857,11 +857,11 @@ def main(argv=None):
     documents = read_documents(root)
 
     try:
-        tool = load_module("dogen", root / "dogen.py")
+        tool = load_module("crayon", root / "crayon.py")
     except Exception as bad:  # noqa: BLE001 - reported, never swallowed
         print(
             "check-docs: ERROR - the tool at %s could not be read (%s)"
-            % (root / "dogen.py", type(bad).__name__),
+            % (root / "crayon.py", type(bad).__name__),
             file=sys.stderr,
         )
         return 2

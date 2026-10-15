@@ -28,7 +28,7 @@ Mechanisms table by 19 D-12):
    or says which T#, which expected id and which files it looked in.
 2. **The ``## Mechanisms`` section, under one rule.** A Mechanisms row is
    scanned when its signal cell carries a parenthetical naming a file — the
-   shape ``N-40 (`tests/test_dogen_lifecycle.sh`)`` the table already uses —
+   shape ``N-40 (`tests/test_crayon_lifecycle.sh`)`` the table already uses —
    **and** that file is in :data:`SUITE_FILES`. Two rows qualify today: the
    ``verify`` row's ``V-01…V-04 (`validation/fixtures.sh`)``, which is the link
    D-12 exists to gate and was swept by hand until this phase, and the
@@ -52,8 +52,8 @@ Mechanisms table by 19 D-12):
      carry ids they do not otherwise have is rejected.
 
 V-05 (the T25 unknown-kinds trace) is a ``verify`` behaviour test and lives in
-``tests/test_dogen_lifecycle.sh`` with ``v05`` in its function name, not in the
-phase 19 fixture series; A-36 lives in ``tests/test_dogen_lifecycle.sh`` rather
+``tests/test_crayon_lifecycle.sh`` with ``v05`` in its function name, not in the
+phase 19 fixture series; A-36 lives in ``tests/test_crayon_lifecycle.sh`` rather
 than in the acceptance file, and the function that landed carries a comment
 saying why an A-id lives in the N file.
 
@@ -74,9 +74,9 @@ CONTRACT = ROOT / "docs" / "contract.md"
 #: fixtures V-01…V-04, added here by 19 D-12 so the Mechanisms ``verify`` row's
 #: link to them is a gate rather than a hand sweep.
 SUITE_FILES = (
-    ROOT / "tests" / "test_dogen_acceptance.sh",
-    ROOT / "tests" / "test_dogen_lifecycle.sh",
-    ROOT / "tests" / "test_dogen_unit.py",
+    ROOT / "tests" / "test_crayon_acceptance.sh",
+    ROOT / "tests" / "test_crayon_lifecycle.sh",
+    ROOT / "tests" / "test_crayon_unit.py",
     ROOT / "tests" / "test_skill_text.py",
     ROOT / "validation" / "fixtures.sh",
 )
@@ -91,7 +91,7 @@ _SECTION_RE = re.compile(r"^##\s")
 _TRACE_TABLE_RE = re.compile(r"^##\s+Trace table\s*$")
 _MECHANISMS_TABLE_RE = re.compile(r"^##\s+Mechanisms\s*$")
 #: The parenthetical the Mechanisms table uses to name a row's suite file:
-#: ``N-40 (`tests/test_dogen_lifecycle.sh`)`` — backticks inside parentheses,
+#: ``N-40 (`tests/test_crayon_lifecycle.sh`)`` — backticks inside parentheses,
 #: and an extension, so ``(`summary --md`)``-shaped prose is not mistaken for a
 #: file name.
 _SUITE_PAREN_RE = re.compile(r"\(`([^`]+\.[A-Za-z0-9]+)`\)")

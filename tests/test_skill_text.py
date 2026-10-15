@@ -1,8 +1,8 @@
-"""Structural text contracts for the dogen skill family (S-01, S-02, S-03).
+"""Structural text contracts for the crayon skill family (S-01, S-02, S-03).
 
 Runner (D-12): ``python3 -m unittest tests/test_skill_text.py`` — never
 ``discover`` (the repo has no ``tests/__init__.py``, RESEARCH P-11) and never
-pytest. The suite reads skill *text* only: it must NOT import ``dogen``, because
+pytest. The suite reads skill *text* only: it must NOT import ``crayon``, because
 nothing here is a claim about the tool's behaviour.
 
 These are TEXT contracts, not LLM evaluations (D-11). Every assertion is a
@@ -22,37 +22,37 @@ guard (an empty or mis-rooted scan cannot masquerade as valid).
 
 Coverage:
   S-01  frontmatter — name, both compatibility numbers, a non-empty tool list
-  S-02  single writer — only ``dogen-write`` holds a write-capable tool
+  S-02  single writer — only ``crayon-write`` holds a write-capable tool
   S-03  routing-copy equality (D-13) — the three mirrors equal the README block,
         and every reason and every ``next`` token has a row
-  S-04  the common opening — ``dogen version --json`` then ``dogen show <id>
+  S-04  the common opening — ``crayon version --json`` then ``crayon show <id>
         --json`` as the first verb pair of every body, the routing sentence, the
         never-hand-edit sentence, and no ``--force`` anywhere
-  S-05  ``dogen-plan`` through verbs — ``unit new --body-file -``, ``unit edit
+  S-05  ``crayon-plan`` through verbs — ``unit new --body-file -``, ``unit edit
         --re-sign``, ``unit retire``, no flag the tool does not expose ON THAT
-        VERB (WR-06: the flat union let `dogen show <id> --re-sign` through),
+        VERB (WR-06: the flat union let `crayon show <id> --re-sign` through),
         and the Socratic intake and triage fork carried over verbatim
-  S-06  the D-15 evidence recipe — ``dogen step`` with ``--steps-seq``,
-        ``--evidence-file`` and ``--output-file``, ``dogen plan-steps
+  S-06  the D-15 evidence recipe — ``crayon step`` with ``--steps-seq``,
+        ``--evidence-file`` and ``--output-file``, ``crayon plan-steps
         --steps-file``, and the question asked before ``--keep-evidence``
   S-07  the honesty guards — no shell digest utility, no pipeline exit-status
         array, no evidence key outside contract 5.6's set, and no claim that the
         committed excerpt is redacted, sanitised or free of secrets
-  S-08  recovery presentation — the dry run before the real ``dogen resume``,
+  S-08  recovery presentation — the dry run before the real ``crayon resume``,
         exactly contract 5.8's two choices on ``resume_ambiguous``, the printed
         findings shown verbatim on ``recovery_unsupported``, no restore recipe
         of the skill's own, and dispositions on accept
   S-09  T34a/T34b, ``target_missing`` — the restore-or-amend question, the
         never-a-second-accept statement, an explicit restore instruction
-        recorded through ``dogen steer`` without reconfirming, and no invented
+        recorded through ``crayon steer`` without reconfirming, and no invented
         steering note
   S-10  the ``references/`` tree — no v1 artefact name, no ``--force``, and
-        every flag a reference puts on a ``dogen`` verb is one the tool
+        every flag a reference puts on a ``crayon`` verb is one the tool
         registers. Every other assertion here reads ``SKILL.md`` only, and the
         lint reads only its frontmatter, so the files the skills load at
         RUNTIME had no gate at all (CR-02)
-        — and every field a reference attributes to `dogen summary --json` or
-        `dogen show --json` is a key that payload actually carries (CR-04), and
+        — and every field a reference attributes to `crayon summary --json` or
+        `crayon show --json` is a key that payload actually carries (CR-04), and
         every backticked name written as a field of the unit is one of contract
         5.6's six frontmatter keys (WR-14)
   S-11  routed descriptions are grounded — for a pinned set of reasons, the
@@ -61,11 +61,11 @@ Coverage:
         token; S-11 sees a row that describes something else entirely, which is
         how ``evidence_mismatch`` shipped a remedy that could never clear it
   S-12  the step gate's two enumerations — ``walk-protocol.md``'s branch table
-        and ``dogen-write``'s "Refusals to expect" both present themselves as
+        and ``crayon-write``'s "Refusals to expect" both present themselves as
         complete, so both must name every reason a walk can meet (WR-07); and
         prose never outruns the command it sits beside — an origin attributed
-        to a bare ``dogen steer`` that only ``--origin plan`` produces (WR-08)
-  S-13  every routed escape terminates — an AST walk over ``dogen`` enumerates
+        to a bare ``crayon steer`` that only ``--origin plan`` produces (WR-08)
+  S-13  every routed escape terminates — an AST walk over ``crayon`` enumerates
         every refusal-constructing call, and no hint may route the operator to
         a command its own refusal has ruled out: ``--adopt`` is never named
         without its precondition, and no raise site of ``adopt_unsupported``,
@@ -96,20 +96,20 @@ SKILL_LINT_PATH = ROOT / "scripts" / "skill_lint.py"
 #: the vacuous-pass guard below compares the discovered set against, so a
 #: mis-rooted scan cannot make S-01 and S-02 pass over an empty set.
 EXPECTED_SKILLS = (
-    "dogen-fetch",
-    "dogen-onboard",
-    "dogen-plan",
-    "dogen-review",
-    "dogen-write",
+    "crayon-fetch",
+    "crayon-onboard",
+    "crayon-plan",
+    "crayon-review",
+    "crayon-write",
 )
 
 #: The skills that act on the repository's context rather than on a unit. They
-#: open on `dogen context show` where the unit skills open on `dogen show`, and
-#: they hand every artefact to `dogen context stage` — none of them writes.
-CONTEXT_SKILLS = ("dogen-fetch", "dogen-onboard")
+#: open on `crayon context show` where the unit skills open on `crayon show`, and
+#: they hand every artefact to `crayon context stage` — none of them writes.
+CONTEXT_SKILLS = ("crayon-fetch", "crayon-onboard")
 
-#: The stance references are authored ONCE, in `dogen-onboard`, and mirrored
-#: byte-identically into `dogen-fetch` — the routing table's own rule, applied
+#: The stance references are authored ONCE, in `crayon-onboard`, and mirrored
+#: byte-identically into `crayon-fetch` — the routing table's own rule, applied
 #: to the three files both skills load before authoring an artefact.
 STANCE_REFERENCES = ("glossary-stance.md", "structure-stance.md", "style-stance.md")
 
@@ -283,9 +283,9 @@ class TestS01Frontmatter(unittest.TestCase):
         for skill_dir in skill_dirs():
             with self.subTest(skill=skill_dir.name):
                 frontmatter = frontmatter_of(skill_dir)
-                self.assertEqual(frontmatter.get("metadata.dogen_contract"), "1")
+                self.assertEqual(frontmatter.get("metadata.crayon_contract"), "1")
                 self.assertEqual(
-                    frontmatter.get("metadata.dogen_min_tool"), "0.2.0"
+                    frontmatter.get("metadata.crayon_min_tool"), "0.2.0"
                 )
 
     def test_s01_allowed_tools_parses_to_a_non_empty_list(self):
@@ -295,7 +295,7 @@ class TestS01Frontmatter(unittest.TestCase):
 
 
 class TestS02SingleWriter(unittest.TestCase):
-    """S-02 — exactly one skill may write files, and it is ``dogen-write``."""
+    """S-02 — exactly one skill may write files, and it is ``crayon-write``."""
 
     def _writers(self):
         writers = set()
@@ -305,8 +305,8 @@ class TestS02SingleWriter(unittest.TestCase):
                 writers.add(skill_dir.name)
         return writers
 
-    def test_s02_dogen_write_is_the_only_skill_holding_a_write_capable_tool(self):
-        self.assertEqual(self._writers(), {"dogen-write"})
+    def test_s02_crayon_write_is_the_only_skill_holding_a_write_capable_tool(self):
+        self.assertEqual(self._writers(), {"crayon-write"})
 
     def test_s02_the_observed_writers_match_the_lint_allow_list(self):
         # The lint enforces the rule; this pins the lint's allow-list to the
@@ -438,7 +438,7 @@ class TestS03RoutingCopies(unittest.TestCase):
     def test_s03_the_adopt_escape_is_routed_with_its_precondition(self):
         """CR-01 (iteration 3) — ``--adopt`` is conditional, so the row must be.
 
-        The first CR-01 fix put the bare command ``dogen resume <id> --adopt
+        The first CR-01 fix put the bare command ``crayon resume <id> --adopt
         --note "…"`` in this row as *the* escape for ``commit_rejected``. The
         tool applies two preconditions to it: ``resume_adopt`` refuses
         ``adopt_unsupported`` unless the batch's last event is a generation or
@@ -460,7 +460,7 @@ class TestS03RoutingCopies(unittest.TestCase):
     def test_s03_the_adopt_unsupported_row_does_not_close_the_loop(self):
         """CR-01 (iteration 3) — the second hop of the two-hop livelock.
 
-        ``adopt_unsupported``'s row routed to ``dogen resume <id> --overwrite``
+        ``adopt_unsupported``'s row routed to ``crayon resume <id> --overwrite``
         unconditionally. On a batch git has already refused, ``--overwrite``
         re-places the same bytes, meets the same hook and raises
         ``commit_rejected`` — whose row named ``--adopt``, which lands back
@@ -476,7 +476,7 @@ class TestS03RoutingCopies(unittest.TestCase):
         """CR-01 — ``commit_rejected`` carries ``next: resume``.
 
         Every SKILL.md body carries S-04's sentence, "act on the row for the
-        emitted ``next``". Unqualified, that row's verb is ``dogen resume <id>``
+        emitted ``next``". Unqualified, that row's verb is ``crayon resume <id>``
         — precisely the command that produced the refusal, which is the livelock
         the tool-side fix was written to break, re-opened one layer up.
         """
@@ -495,7 +495,7 @@ class TestS03RoutingCopies(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 #: contract.md 6's verb table. A "verb invocation" in a body is an occurrence of
-#: ``dogen <verb>``; the hyphenated skill names (``dogen-plan``) can never be
+#: ``crayon <verb>``; the hyphenated skill names (``crayon-plan``) can never be
 #: mistaken for one because the separator here is a space, not a hyphen.
 VERBS = (
     "unit",
@@ -514,9 +514,9 @@ VERBS = (
     "version",
 )
 
-#: Longest first, so ``dogen plan-steps`` is never read as ``dogen plan``.
+#: Longest first, so ``crayon plan-steps`` is never read as ``crayon plan``.
 _VERB_RE = re.compile(
-    r"\bdogen (%s)\b([^\n`]*)"
+    r"\bcrayon (%s)\b([^\n`]*)"
     % "|".join(re.escape(v) for v in sorted(VERBS, key=len, reverse=True))
 )
 
@@ -525,7 +525,7 @@ _FLAG_RE = re.compile(r"--[a-z][a-z-]*")
 
 #: ``add_argument("--flag"…)`` in the tool itself — the set of flags the tool
 #: actually exposes. Parsed from source text rather than imported: this suite
-#: must not import ``dogen`` (D-11).
+#: must not import ``crayon`` (D-11).
 _TOOL_FLAG_RE = re.compile(r'add_argument\(\s*"(--[a-z][a-z-]*)"')
 
 #: D-13/D-14: every body routes on its own mirror of the one routing table, and
@@ -542,7 +542,7 @@ NEVER_HAND_EDIT = "The ledger is never hand-edited."
 #: never appears in a skill either.
 FORCE_FLAG = "--force"
 
-#: D-14's verbatim carry-over for ``dogen-plan``: the advise-only triage fork and
+#: D-14's verbatim carry-over for ``crayon-plan``: the advise-only triage fork and
 #: the Socratic intake, byte for byte as the dogfooded file had them. Stored as
 #: literals on purpose — reading them back out of the file under test would make
 #: the assertion vacuous.
@@ -583,26 +583,26 @@ def verb_invocations(body):
 
 
 def assert_verb_scoped_flags(case, text, what):
-    """Every flag on a ``dogen <verb> …`` invocation is one THAT verb takes.
+    """Every flag on a ``crayon <verb> …`` invocation is one THAT verb takes.
 
     WR-06: S-05 and S-10 both asserted membership of ``tool_flags()``, a flat
     union of every ``add_argument`` in the file, and then threw the verb away.
-    ``dogen show <id> --re-sign``, ``dogen steer <id> --steps-seq 4`` and
-    ``dogen edits <id> --hook`` all passed — and "documented-but-nonexistent
+    ``crayon show <id> --re-sign``, ``crayon steer <id> --steps-seq 4`` and
+    ``crayon edits <id> --hook`` all passed — and "documented-but-nonexistent
     verbs, wrong flag names" is the defect class the gate exists for.
     """
     per_verb = tool_verb_flags()
     for verb, invocation in verb_invocations(text):
         exposed = per_verb.get(verb)
         case.assertIsNotNone(
-            exposed, "`dogen %s` is not a verb build_parser registers" % verb
+            exposed, "`crayon %s` is not a verb build_parser registers" % verb
         )
         for flag in sorted(set(_FLAG_RE.findall(invocation))):
             with case.subTest(what=what, verb=verb, flag=flag):
                 case.assertIn(
                     flag,
                     exposed,
-                    "%s writes `dogen %s %s`; `dogen %s` takes %s"
+                    "%s writes `crayon %s %s`; `crayon %s` takes %s"
                     % (what, verb, flag, verb, ", ".join(sorted(exposed))),
                 )
 
@@ -627,8 +627,8 @@ def assert_omits(case, haystack, needle, what):
 
 
 def tool_flags():
-    """Every ``--flag`` the tool registers, read from ``dogen``'s source text."""
-    text = (ROOT / "dogen.py").read_text(encoding="utf-8")
+    """Every ``--flag`` the tool registers, read from ``crayon``'s source text."""
+    text = (ROOT / "crayon.py").read_text(encoding="utf-8")
     flags = set(_TOOL_FLAG_RE.findall(text))
     flags.add("--help")
     return flags
@@ -652,17 +652,17 @@ def walk_verb_flags():
     """``({verb: {flags}}, [shared], [unbound])`` from ``build_parser`` (WR-06).
 
     :func:`tool_flags` greps every ``add_argument("--flag"…)`` in the file into
-    ONE flat set, so a flag put on the WRONG verb passed: ``dogen show <id>
-    --re-sign``, ``dogen steer <id> --steps-seq 4`` and ``dogen edits <id>
+    ONE flat set, so a flag put on the WRONG verb passed: ``crayon show <id>
+    --re-sign``, ``crayon steer <id> --steps-seq 4`` and ``crayon edits <id>
     --hook`` were all accepted by S-05 and S-10, and "wrong flag names" is the
     defect class those gates exist for.
 
-    Walked with :mod:`ast` over ``dogen``'s SOURCE — parsing text, not importing
+    Walked with :mod:`ast` over ``crayon``'s SOURCE — parsing text, not importing
     it, so the D-11 rule the module docstring states still holds. Statements are
     read in source order because ``build_parser`` binds a subparser to a local
     name and then adds arguments to that name.
 
-    ``unit``'s three sub-verbs fold into ``unit``: a body writes ``dogen unit
+    ``unit``'s three sub-verbs fold into ``unit``: a body writes ``crayon unit
     new --body-file -``, which :data:`_VERB_RE` captures as the verb ``unit``.
     Flags on the shared ``common`` parent belong to every verb, as
     ``parents=[common]`` gives them. A mutually-exclusive group resolves to the
@@ -682,7 +682,7 @@ def walk_verb_flags():
     be empty: an unrecognised parser shape is a walk that needs updating, not a
     flag that belongs everywhere.
     """
-    tree = ast.parse((ROOT / "dogen.py").read_text(encoding="utf-8"))
+    tree = ast.parse((ROOT / "crayon.py").read_text(encoding="utf-8"))
     builder = next(
         node
         for node in tree.body
@@ -717,7 +717,7 @@ def walk_verb_flags():
                 if verb is None:
                     continue
                 # `unit new` / `unit edit` / `unit retire` are written as
-                # `dogen unit …`, so their flags are the `unit` verb's.
+                # `crayon unit …`, so their flags are the `unit` verb's.
                 owner[name] = subparsers.get(parent) or verb
                 flags.setdefault(owner[name], set())
             elif attribute == "add_subparsers":
@@ -764,7 +764,7 @@ class TestS04TheCommonOpening(unittest.TestCase):
 
     def test_s04_every_body_puts_each_flag_on_a_verb_that_takes_it(self):
         # WR-06, over all three bodies: S-05's version of this covers
-        # `dogen-plan` only, and the defect is not skill-specific.
+        # `crayon-plan` only, and the defect is not skill-specific.
         for skill_dir in skill_dirs():
             assert_verb_scoped_flags(
                 self, body_of(skill_dir), skill_dir.name
@@ -787,7 +787,7 @@ class TestS04TheCommonOpening(unittest.TestCase):
                 self.assertEqual(
                     [verb for verb, _ in found[:2]],
                     ["version", state_verb],
-                    "%s must open on `dogen version` then `dogen %s`; its first "
+                    "%s must open on `crayon version` then `crayon %s`; its first "
                     "two verb invocations are %r"
                     % (skill_dir.name, state_verb, [text for _, text in found[:2]]),
                 )
@@ -795,14 +795,14 @@ class TestS04TheCommonOpening(unittest.TestCase):
                     self.assertIn(
                         "show",
                         found[1][1],
-                        "%s must open on `dogen context show`, not another "
+                        "%s must open on `crayon context show`, not another "
                         "context verb: %r" % (skill_dir.name, found[1][1]),
                     )
                 for verb, text in found[:2]:
                     self.assertIn(
                         "--json",
                         text,
-                        "the opening `dogen %s` in %s must read the machine-"
+                        "the opening `crayon %s` in %s must read the machine-"
                         "readable answer: %r" % (verb, skill_dir.name, text),
                     )
 
@@ -833,19 +833,19 @@ class TestS04TheCommonOpening(unittest.TestCase):
 class TestS14ContextSkillsThroughVerbs(unittest.TestCase):
     """S-14 — the context skills hand every artefact to the tool and write nothing.
 
-    The single-writer rule (S-02) says only `dogen-write` holds a write tool; the
+    The single-writer rule (S-02) says only `crayon-write` holds a write tool; the
     two context skills produce files nonetheless, so the path those files take
-    is the assertion: `dogen context stage … --body-file -` for each artefact,
-    `dogen context record` for the set, and no write tool named anywhere.
+    is the assertion: `crayon context stage … --body-file -` for each artefact,
+    `crayon context record` for the set, and no write tool named anywhere.
     """
 
     def test_s14_each_context_skill_stages_and_records_through_the_tool(self):
         for name in CONTEXT_SKILLS:
             body = body_of(SKILLS_ROOT / name)
             with self.subTest(skill=name):
-                assert_contains(self, body, "dogen context stage", name)
+                assert_contains(self, body, "crayon context stage", name)
                 assert_contains(self, body, "--body-file -", name)
-                assert_contains(self, body, "dogen context record", name)
+                assert_contains(self, body, "crayon context record", name)
                 for tool in ("`Write`", "`Edit`", "`MultiEdit`"):
                     self.assertFalse(
                         tool in body, "%s must not name %s; it does not hold it" % (name, tool)
@@ -859,13 +859,13 @@ class TestS14ContextSkillsThroughVerbs(unittest.TestCase):
         # onboard walks the repository; fetch takes declared external sources.
         # Each names the other for the case it does not serve, so an author is
         # never told "not this skill" without being told which one.
-        assert_contains(self, body_of(SKILLS_ROOT / "dogen-onboard"), "/dogen-fetch", "dogen-onboard")
-        assert_contains(self, body_of(SKILLS_ROOT / "dogen-fetch"), "/dogen-onboard", "dogen-fetch")
+        assert_contains(self, body_of(SKILLS_ROOT / "crayon-onboard"), "/crayon-fetch", "crayon-onboard")
+        assert_contains(self, body_of(SKILLS_ROOT / "crayon-fetch"), "/crayon-onboard", "crayon-fetch")
 
     def test_s14_the_stance_references_are_mirrored_byte_for_byte(self):
         for name in STANCE_REFERENCES:
-            source = SKILLS_ROOT / "dogen-onboard" / "references" / name
-            mirror = SKILLS_ROOT / "dogen-fetch" / "references" / name
+            source = SKILLS_ROOT / "crayon-onboard" / "references" / name
+            mirror = SKILLS_ROOT / "crayon-fetch" / "references" / name
             with self.subTest(reference=name):
                 self.assertTrue(source.exists(), "%s is missing" % source)
                 self.assertTrue(mirror.exists(), "%s is missing" % mirror)
@@ -878,53 +878,53 @@ class TestS14ContextSkillsThroughVerbs(unittest.TestCase):
 
     def test_s14_the_context_skills_name_the_five_artefacts(self):
         names = ("doc-style.md", "glossary.md", "structure.md", "code-to-docs-map.md", "doc-gaps.md")
-        fetch = body_of(SKILLS_ROOT / "dogen-fetch")
+        fetch = body_of(SKILLS_ROOT / "crayon-fetch")
         for name in names:
             with self.subTest(artefact=name):
-                assert_contains(self, fetch, name, "dogen-fetch")
-        onboard = body_of(SKILLS_ROOT / "dogen-onboard")
+                assert_contains(self, fetch, name, "crayon-fetch")
+        onboard = body_of(SKILLS_ROOT / "crayon-onboard")
         for name in names[:3]:
             with self.subTest(artefact=name):
-                assert_contains(self, onboard, name, "dogen-onboard")
+                assert_contains(self, onboard, name, "crayon-onboard")
 
 
 class TestS05PlanThroughVerbs(unittest.TestCase):
-    """S-05 — ``dogen-plan`` declares through verbs and keeps its judgment."""
+    """S-05 — ``crayon-plan`` declares through verbs and keeps its judgment."""
 
     def setUp(self):
-        self.body = body_of(SKILLS_ROOT / "dogen-plan")
+        self.body = body_of(SKILLS_ROOT / "crayon-plan")
 
     def test_s05_unit_md_reaches_disk_only_through_unit_new_body_file(self):
         # D-14: the skill holds no write-capable tool, so the only path from a
         # composed plan to disk is the tool's own stdin flag, under its lock.
-        assert_contains(self, self.body, "dogen unit new", "dogen-plan")
-        assert_contains(self, self.body, "--body-file -", "dogen-plan")
+        assert_contains(self, self.body, "crayon unit new", "crayon-plan")
+        assert_contains(self, self.body, "--body-file -", "crayon-plan")
         for tool in ("`Write`", "`Edit`", "`MultiEdit`"):
             self.assertFalse(
                 tool in self.body,
-                "dogen-plan must not name %s; it does not hold it" % tool,
+                "crayon-plan must not name %s; it does not hold it" % tool,
             )
 
     def test_s05_the_context_is_read_through_the_tool_and_bootstrapped_once(self):
-        # The plan skill grounds on `dogen context show`, not on a directory
+        # The plan skill grounds on `crayon context show`, not on a directory
         # listing, and when the context is missing it offers the three-way
         # choice — including the onboarding skill and the ephemeral reference —
-        # rather than authoring `.dogen/context/` itself.
-        assert_contains(self, self.body, "dogen context show --json", "dogen-plan")
-        assert_contains(self, self.body, "/dogen-onboard", "dogen-plan")
-        assert_contains(self, self.body, "/dogen-fetch", "dogen-plan")
-        assert_contains(self, self.body, "references/context-bootstrap.md", "dogen-plan")
+        # rather than authoring `.crayon/context/` itself.
+        assert_contains(self, self.body, "crayon context show --json", "crayon-plan")
+        assert_contains(self, self.body, "/crayon-onboard", "crayon-plan")
+        assert_contains(self, self.body, "/crayon-fetch", "crayon-plan")
+        assert_contains(self, self.body, "references/context-bootstrap.md", "crayon-plan")
         for name in ("doc-style.md", "glossary.md", "structure.md", "code-to-docs-map.md", "doc-gaps.md"):
             with self.subTest(artefact=name):
-                assert_contains(self, self.body, "`%s`" % name, "dogen-plan")
-        bootstrap = (SKILLS_ROOT / "dogen-plan" / "references" / "context-bootstrap.md").read_text(encoding="utf-8")
+                assert_contains(self, self.body, "`%s`" % name, "crayon-plan")
+        bootstrap = (SKILLS_ROOT / "crayon-plan" / "references" / "context-bootstrap.md").read_text(encoding="utf-8")
         assert_contains(self, bootstrap, "Persist nothing", "context-bootstrap.md")
-        assert_omits(self, bootstrap, "dogen context stage", "context-bootstrap.md")
+        assert_omits(self, bootstrap, "crayon context stage", "context-bootstrap.md")
 
     def test_s05_the_amendment_and_retire_verbs_are_named(self):
-        assert_contains(self, self.body, "dogen unit edit", "dogen-plan")  # J3
-        assert_contains(self, self.body, "--re-sign", "dogen-plan")
-        assert_contains(self, self.body, "dogen unit retire", "dogen-plan")  # J7
+        assert_contains(self, self.body, "crayon unit edit", "crayon-plan")  # J3
+        assert_contains(self, self.body, "--re-sign", "crayon-plan")
+        assert_contains(self, self.body, "crayon unit retire", "crayon-plan")  # J7
 
     def test_s05_every_flag_the_body_names_is_a_flag_the_tool_exposes(self):
         exposed = tool_flags()
@@ -933,27 +933,27 @@ class TestS05PlanThroughVerbs(unittest.TestCase):
                 self.assertIn(
                     flag,
                     exposed,
-                    "dogen-plan names %s, which `dogen` does not register" % flag,
+                    "crayon-plan names %s, which `crayon` does not register" % flag,
                 )
 
     def test_s05_every_flag_is_on_a_verb_that_takes_it(self):
         # WR-06: the assertion above is against the tool's WHOLE flag set, so
-        # `dogen show <id> --re-sign` passed it. The verb is already captured;
+        # `crayon show <id> --re-sign` passed it. The verb is already captured;
         # it was being discarded.
-        assert_verb_scoped_flags(self, self.body, "dogen-plan")
+        assert_verb_scoped_flags(self, self.body, "crayon-plan")
 
     def test_s05_the_judgment_sections_are_carried_over_verbatim(self):
         # D-14: dogfood-validated judgment survives the rewrite byte for byte.
-        assert_contains(self, self.body, "Socratic", "dogen-plan")
-        assert_contains(self, self.body, TRIAGE_FORK, "dogen-plan")
-        assert_contains(self, self.body, SOCRATIC_INTAKE, "dogen-plan")
+        assert_contains(self, self.body, "Socratic", "crayon-plan")
+        assert_contains(self, self.body, TRIAGE_FORK, "crayon-plan")
+        assert_contains(self, self.body, SOCRATIC_INTAKE, "crayon-plan")
 
 # ---------------------------------------------------------------------------
-# S-06 / S-07 — the ``dogen-write`` body and its walk protocol (plan 17-03)
+# S-06 / S-07 — the ``crayon-write`` body and its walk protocol (plan 17-03)
 # ---------------------------------------------------------------------------
 
-WRITE_SKILL = SKILLS_ROOT / "dogen-write" / "SKILL.md"
-WALK_PROTOCOL = SKILLS_ROOT / "dogen-write" / "references" / "walk-protocol.md"
+WRITE_SKILL = SKILLS_ROOT / "crayon-write" / "SKILL.md"
+WALK_PROTOCOL = SKILLS_ROOT / "crayon-write" / "references" / "walk-protocol.md"
 
 #: contract.md 5.6, evidence-file row: ``JSON {verdict, exit_code, mode, command,
 #: reason}``. Exactly this set — "digests never typed" is the same row.
@@ -1043,10 +1043,10 @@ def json_keys(block):
 
 
 class TestS06TheEvidenceRecipe(unittest.TestCase):
-    """S-06 — ``dogen-write`` records the walk through the verbs that gate it."""
+    """S-06 — ``crayon-write`` records the walk through the verbs that gate it."""
 
     def setUp(self):
-        self.body = body_of(SKILLS_ROOT / "dogen-write")
+        self.body = body_of(SKILLS_ROOT / "crayon-write")
         self.calls = {}
         for verb, text in verb_invocations(self.body):
             self.calls.setdefault(verb, []).append(text)
@@ -1054,31 +1054,31 @@ class TestS06TheEvidenceRecipe(unittest.TestCase):
     def test_s06_the_step_verb_carries_the_three_evidence_flags(self):
         wanted = ("--steps-seq", "--evidence-file", "--output-file")
         calls = self.calls.get("step", [])
-        self.assertTrue(calls, "dogen-write names no `dogen step` invocation")
+        self.assertTrue(calls, "crayon-write names no `crayon step` invocation")
         complete = [c for c in calls if all(flag in c for flag in wanted)]
         self.assertTrue(
             complete,
-            "no `dogen step` invocation in dogen-write carries all of %s; found "
+            "no `crayon step` invocation in crayon-write carries all of %s; found "
             "%r" % (", ".join(wanted), calls),
         )
 
     def test_s06_the_step_plan_is_recorded_through_plan_steps(self):
         calls = self.calls.get("plan-steps", [])
-        self.assertTrue(calls, "dogen-write names no `dogen plan-steps` invocation")
+        self.assertTrue(calls, "crayon-write names no `crayon plan-steps` invocation")
         self.assertTrue(
             [c for c in calls if "--steps-file" in c],
-            "no `dogen plan-steps` invocation carries --steps-file; found %r" % calls,
+            "no `crayon plan-steps` invocation carries --steps-file; found %r" % calls,
         )
 
     def test_s06_keep_evidence_is_asked_for_before_it_is_passed(self):
-        assert_contains(self, self.body, "--keep-evidence", "dogen-write")
-        assert_contains(self, self.body, KEEP_EVIDENCE_QUESTION, "dogen-write")
+        assert_contains(self, self.body, "--keep-evidence", "crayon-write")
+        assert_contains(self, self.body, KEEP_EVIDENCE_QUESTION, "crayon-write")
 
     def test_s06_the_skill_supplies_no_step_text_hash(self):
         # D-01: `text_hash` is the tool's to compute. A plan block that carries
         # one is a digest the record cannot corroborate.
         plans = blocks_containing(self.body, '"text"')
-        self.assertTrue(plans, "dogen-write shows no step-plan JSON block")
+        self.assertTrue(plans, "crayon-write shows no step-plan JSON block")
         for block in plans:
             with self.subTest(block=block[:40]):
                 self.assertLessEqual(json_keys(block), STEP_PLAN_KEYS)
@@ -1159,10 +1159,10 @@ class TestS07TheHonestyGuards(unittest.TestCase):
                 assert_contains(self, text, "`%s`" % mode, WALK_PROTOCOL.name)
 
 # ---------------------------------------------------------------------------
-# S-08 / S-09 — the ``dogen-review`` body contracts (plan 17-03)
+# S-08 / S-09 — the ``crayon-review`` body contracts (plan 17-03)
 # ---------------------------------------------------------------------------
 
-REVIEW_SKILL = SKILLS_ROOT / "dogen-review" / "SKILL.md"
+REVIEW_SKILL = SKILLS_ROOT / "crayon-review" / "SKILL.md"
 
 #: contract.md 5.8: on `resume_ambiguous` the tool prints the per-file diff and
 #: names exactly two choices. A third one would be the skill inventing recovery
@@ -1190,7 +1190,7 @@ RESTORE_OR_AMEND_QUESTION = (
 NEVER_A_SECOND_ACCEPT = "Accept is never issued a second time."
 
 #: T34a: an explicit instruction is recorded as given, not re-negotiated.
-RESTORE_WITHOUT_RECONFIRMING = "record it with `dogen steer` without reconfirming it"
+RESTORE_WITHOUT_RECONFIRMING = "record it with `crayon steer` without reconfirming it"
 
 #: T34b: the author's direction is the only thing recorded.
 INVENTS_NO_NOTE = "The skill invents no steering note."
@@ -1204,7 +1204,7 @@ INVENTED_NOTE_TELLS = (
 )
 
 
-#: D-14's verbatim carry-over for ``dogen-review``: the deterministic pre-pass and
+#: D-14's verbatim carry-over for ``crayon-review``: the deterministic pre-pass and
 #: the five-dimension findings rubric, byte for byte as the dogfooded file had
 #: them. Literals on purpose — reading them back out of the file under test would
 #: make the assertion vacuous.
@@ -1247,10 +1247,10 @@ def command_lines(text):
 
 
 class TestS08RecoveryPresentation(unittest.TestCase):
-    """S-08 — ``dogen-review`` presents recovery the way the contract prints it."""
+    """S-08 — ``crayon-review`` presents recovery the way the contract prints it."""
 
     def setUp(self):
-        self.body = body_of(SKILLS_ROOT / "dogen-review")
+        self.body = body_of(SKILLS_ROOT / "crayon-review")
         self.resumes = [
             text for verb, text in verb_invocations(self.body) if verb == "resume"
         ]
@@ -1258,11 +1258,11 @@ class TestS08RecoveryPresentation(unittest.TestCase):
     def test_s08_the_dry_run_precedes_any_bare_resume(self):
         # probe 38: never two write verbs without reading the first one's
         # response. The dry run writes nothing and classifies everything.
-        self.assertTrue(self.resumes, "dogen-review names no `dogen resume`")
+        self.assertTrue(self.resumes, "crayon-review names no `crayon resume`")
         self.assertIn(
             "--dry-run",
             self.resumes[0],
-            "the first `dogen resume` in dogen-review must be the dry run; it is "
+            "the first `crayon resume` in crayon-review must be the dry run; it is "
             "%r" % self.resumes[0],
         )
         # Position in the ordered invocation list, not a substring offset: the
@@ -1278,7 +1278,7 @@ class TestS08RecoveryPresentation(unittest.TestCase):
         ]
         self.assertTrue(
             bare,
-            "dogen-review never runs the real `dogen resume` after the dry run",
+            "crayon-review never runs the real `crayon resume` after the dry run",
         )
         self.assertLess(
             flagged[0],
@@ -1297,13 +1297,13 @@ class TestS08RecoveryPresentation(unittest.TestCase):
         self.assertLessEqual(
             used,
             RESUME_FLAGS,
-            "dogen-review offers a resume flag outside contract 5.8's two "
+            "crayon-review offers a resume flag outside contract 5.8's two "
             "choices: %s" % sorted(used - RESUME_FLAGS),
         )
 
     def test_s08_recovery_unsupported_is_shown_verbatim_and_stops(self):
         assert_contains(
-            self, self.body, RECOVERY_UNSUPPORTED_SENTENCE, "dogen-review"
+            self, self.body, RECOVERY_UNSUPPORTED_SENTENCE, "crayon-review"
         )
 
     def test_s08_commit_rejected_is_not_presented_as_having_written_nothing(self):
@@ -1313,8 +1313,8 @@ class TestS08RecoveryPresentation(unittest.TestCase):
         tells them to stop, and forbids anything that would commit the tail has
         forbidden the ``--adopt`` the tool's own hint offers.
         """
-        assert_contains(self, self.body, "commit_rejected", "dogen-review")
-        assert_contains(self, self.body, "--adopt", "dogen-review")
+        assert_contains(self, self.body, "commit_rejected", "crayon-review")
+        assert_contains(self, self.body, "--adopt", "crayon-review")
 
     def test_s08_the_adopt_escape_carries_its_precondition_in_the_body(self):
         """CR-01 (iteration 3) — step_10 offered ``--adopt`` unconditionally.
@@ -1324,21 +1324,21 @@ class TestS08RecoveryPresentation(unittest.TestCase):
         second refusal. Both conditions, and the escape that needs neither, must
         be in the text.
         """
-        assert_contains(self, self.body, "adopt_unsupported", "dogen-review")
-        assert_contains(self, self.body, "conditional", "dogen-review")
-        assert_contains(self, self.body, "unexpected", "dogen-review")
+        assert_contains(self, self.body, "adopt_unsupported", "crayon-review")
+        assert_contains(self, self.body, "conditional", "crayon-review")
+        assert_contains(self, self.body, "unexpected", "crayon-review")
         # Whitespace-collapsed, because the claim is about the sentence and
         # not about where the paragraph happens to wrap today.
         self.assertIn(
             "remove what is refusing the",
             re.sub(r"\s+", " ", self.body),
-            "dogen-review's step_10 no longer names the escape that works on "
+            "crayon-review's step_10 no longer names the escape that works on "
             "every batch, leaving only the conditional one",
         )
         self.assertNotIn(
             "It wrote nothing",
             self.body,
-            "dogen-review still makes the unscoped claim; it holds for stage "
+            "crayon-review still makes the unscoped claim; it holds for stage "
             "a's details only",
         )
 
@@ -1348,55 +1348,55 @@ class TestS08RecoveryPresentation(unittest.TestCase):
                 with self.subTest(line=line[:50]):
                     self.assertFalse(
                         line.startswith(command),
-                        "dogen-review runs %r; recovery is the tool's to print, "
+                        "crayon-review runs %r; recovery is the tool's to print, "
                         "not the skill's to improvise" % line,
                     )
 
     def test_s08_accept_closes_pending_requests_by_recorded_disposition(self):
         # contract 5.6: the two sets are disjoint and every withdrawal carries a
         # non-empty reason, so nothing is closed by silence.
-        assert_contains(self, self.body, "--resolves", "dogen-review")
-        assert_contains(self, self.body, "--withdraw", "dogen-review")
+        assert_contains(self, self.body, "--resolves", "crayon-review")
+        assert_contains(self, self.body, "--withdraw", "crayon-review")
 
 
 class TestS08JudgmentCarryOver(unittest.TestCase):
-    """S-08 — D-14's verbatim carry-over for ``dogen-review``."""
+    """S-08 — D-14's verbatim carry-over for ``crayon-review``."""
 
     def test_s08_the_findings_rubric_is_carried_over_verbatim(self):
-        body = body_of(SKILLS_ROOT / "dogen-review")
-        assert_contains(self, body, "five dimensions", "dogen-review")
-        assert_contains(self, body, PRE_PASS, "dogen-review")
-        assert_contains(self, body, FIVE_DIMENSIONS, "dogen-review")
+        body = body_of(SKILLS_ROOT / "crayon-review")
+        assert_contains(self, body, "five dimensions", "crayon-review")
+        assert_contains(self, body, PRE_PASS, "crayon-review")
+        assert_contains(self, body, FIVE_DIMENSIONS, "crayon-review")
 
 
 class TestS09TargetMissing(unittest.TestCase):
     """S-09 — T34a/T34b: the missing target is the author's call, not the skill's."""
 
     def setUp(self):
-        self.body = body_of(SKILLS_ROOT / "dogen-review")
+        self.body = body_of(SKILLS_ROOT / "crayon-review")
 
     def test_s09_the_restore_or_amend_question_is_asked_as_one_sentence(self):
         assert_contains(
-            self, self.body, RESTORE_OR_AMEND_QUESTION, "dogen-review"
+            self, self.body, RESTORE_OR_AMEND_QUESTION, "crayon-review"
         )
 
     def test_s09_accept_is_never_retried_after_target_missing(self):
-        assert_contains(self, self.body, "target_missing", "dogen-review")
-        assert_contains(self, self.body, NEVER_A_SECOND_ACCEPT, "dogen-review")
+        assert_contains(self, self.body, "target_missing", "crayon-review")
+        assert_contains(self, self.body, NEVER_A_SECOND_ACCEPT, "crayon-review")
 
     def test_s09_an_explicit_restore_instruction_is_recorded_without_asking_again(
         self,
     ):
         assert_contains(
-            self, self.body, RESTORE_WITHOUT_RECONFIRMING, "dogen-review"
+            self, self.body, RESTORE_WITHOUT_RECONFIRMING, "crayon-review"
         )
 
     def test_s09_the_skill_records_only_the_direction_the_author_gave(self):
-        assert_contains(self, self.body, INVENTS_NO_NOTE, "dogen-review")
+        assert_contains(self, self.body, INVENTS_NO_NOTE, "crayon-review")
         lowered = self.body.lower()
         for tell in INVENTED_NOTE_TELLS:
             with self.subTest(tell=tell):
-                assert_omits(self, lowered, tell, "dogen-review")
+                assert_omits(self, lowered, tell, "crayon-review")
 
 # ---------------------------------------------------------------------------
 # S-10 — the ``references/`` tree, which no gate could see (CR-02)
@@ -1460,10 +1460,10 @@ _UNIT_FIELD_RE = re.compile(
 def unit_frontmatter_keys():
     """contract 5.6's fixed frontmatter subset, from ``_UNIT_KEY_ORDER``.
 
-    Read from ``dogen``'s source text, like every other fact this suite pins
+    Read from ``crayon``'s source text, like every other fact this suite pins
     about the tool.
     """
-    text = (ROOT / "dogen.py").read_text(encoding="utf-8")
+    text = (ROOT / "crayon.py").read_text(encoding="utf-8")
     match = re.search(r"^_UNIT_KEY_ORDER = \(([^)]*)\)", text, re.MULTILINE)
     if match is None:
         return set()
@@ -1472,7 +1472,7 @@ def unit_frontmatter_keys():
 
 #: The two derived-state payloads a reference may tell a reviewer to read, and
 #: the source anchor whose dict literal defines each one's keys. Read as TEXT
-#: (the module never imports ``dogen``); both are plain ``{"key": …}`` literals.
+#: (the module never imports ``crayon``); both are plain ``{"key": …}`` literals.
 PAYLOAD_ANCHORS = {
     "summary": ("def summary_data(", "    return {", "    }"),
     "show": ("def cmd_show(", "        payload = {", "        }"),
@@ -1482,16 +1482,16 @@ PAYLOAD_ANCHORS = {
 #: stopped matching reports a vacuous pass instead of a green one.
 MIN_PAYLOAD_KEYS = 8
 
-#: ``## What `dogen summary <id>` gives you`` / ``## What `dogen show <id>`
+#: ``## What `crayon summary <id>` gives you`` / ``## What `crayon show <id>`
 #: adds`` — a heading that attributes the fields under it to one payload.
-_PAYLOAD_HEADING_RE = re.compile(r"^#{2,4} .*`dogen (summary|show) ")
+_PAYLOAD_HEADING_RE = re.compile(r"^#{2,4} .*`crayon (summary|show) ")
 _BACKTICKED_RE = re.compile(r"`([a-z][a-z_]*)`")
 
 
 def payload_keys(payload):
-    """The keys of one derived-state payload, scraped from ``dogen``'s source."""
+    """The keys of one derived-state payload, scraped from ``crayon``'s source."""
     start, open_line, close_line = PAYLOAD_ANCHORS[payload]
-    lines = (ROOT / "dogen.py").read_text(encoding="utf-8").splitlines()
+    lines = (ROOT / "crayon.py").read_text(encoding="utf-8").splitlines()
     try:
         head = next(i for i, ln in enumerate(lines) if ln.startswith(start))
         begin = next(i for i in range(head, len(lines)) if lines[i] == open_line)
@@ -1510,8 +1510,8 @@ def attributed_fields(text):
     """``[(payload, field, line)]`` a reference attributes to a payload.
 
     A field is attributed when it sits in the FIRST cell of a table row, or at
-    the head of a bullet, inside a section whose heading names ``dogen summary``
-    or ``dogen show``. That is exactly the shape ``provenance-summary.md``'s
+    the head of a bullet, inside a section whose heading names ``crayon summary``
+    or ``crayon show``. That is exactly the shape ``provenance-summary.md``'s
     field map uses, and it is the shape the reviewer reads as "these are the
     fields the verb gives you".
     """
@@ -1570,8 +1570,8 @@ class TestS10ReferenceFiles(unittest.TestCase):
                     str(path.relative_to(ROOT)),
                 )
 
-    def test_s10_every_flag_a_reference_puts_on_a_dogen_verb_exists(self):
-        # Scoped to `dogen <verb> …` invocations on purpose: a reference may
+    def test_s10_every_flag_a_reference_puts_on_a_crayon_verb_exists(self):
+        # Scoped to `crayon <verb> …` invocations on purpose: a reference may
         # legitimately quote another program's flags (a walk records
         # `foo --version`), and only the flags handed to THIS tool are a claim
         # about THIS tool. WR-06: scoped to THAT VERB too — a flag on the wrong
@@ -1640,7 +1640,7 @@ class TestS10ReferenceFiles(unittest.TestCase):
 #: a remedy that can never clear a gate on the evidence's ``mode`` (CR-02).
 #:
 #: Each entry is asserted on BOTH sides: the substring must appear in the
-#: ``raise Refusal(...)`` block for that reason in ``dogen``'s source, and in
+#: ``raise Refusal(...)`` block for that reason in ``crayon``'s source, and in
 #: the reason's routing row. So the fixture cannot rot in either direction — a
 #: raiser reworded without its row goes red, and a row reworded away from its
 #: raiser goes red.
@@ -1684,12 +1684,12 @@ _RAISE_RE = re.compile(r"^(\s*)raise Refusal\($")
 def module_prose_constants(source=None):
     """S-11 needs the strings-only view of the shared module resolver."""
     if source is None:
-        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
+        source = (ROOT / "crayon.py").read_text(encoding="utf-8")
     return _module_string_constants(ast.parse(source)).text
 
 
 def refusal_blocks(source=None):
-    """``{reason: [source text of each ``raise Refusal`` block]}`` from ``dogen``.
+    """``{reason: [source text of each ``raise Refusal`` block]}`` from ``crayon``.
 
     Read as TEXT, never imported — the module docstring's rule. A block runs
     from the ``raise Refusal(`` line to the ``)`` at its own indentation, and
@@ -1697,7 +1697,7 @@ def refusal_blocks(source=None):
     argument.
     """
     if source is None:
-        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
+        source = (ROOT / "crayon.py").read_text(encoding="utf-8")
     lines = source.splitlines()
     constants = module_prose_constants(source)
     blocks = {}
@@ -1742,7 +1742,7 @@ class TestS11RoutedDescriptionsAreGrounded(unittest.TestCase):
         self.assertGreaterEqual(
             total,
             MIN_REFUSAL_BLOCKS,
-            "extracted only %d `raise Refusal(` blocks from `dogen`; every "
+            "extracted only %d `raise Refusal(` blocks from `crayon`; every "
             "S-11 assertion would be vacuously satisfied" % total,
         )
 
@@ -1752,7 +1752,7 @@ class TestS11RoutedDescriptionsAreGrounded(unittest.TestCase):
                 self.assertIn(
                     reason,
                     self.blocks,
-                    "S-11 pins %r, which `dogen` no longer raises — drop the "
+                    "S-11 pins %r, which `crayon` no longer raises — drop the "
                     "fixture entry or restore the raiser" % reason,
                 )
 
@@ -1764,7 +1764,7 @@ class TestS11RoutedDescriptionsAreGrounded(unittest.TestCase):
                     self.assertIn(
                         word.lower(),
                         joined,
-                        "`dogen`'s %s refusal no longer says %r; the routed row "
+                        "`crayon`'s %s refusal no longer says %r; the routed row "
                         "below is pinned to it" % (reason, word),
                     )
 
@@ -1833,7 +1833,7 @@ class TestS10AttributedPayloadFields(unittest.TestCase):
                 self.assertGreaterEqual(
                     len(keys),
                     MIN_PAYLOAD_KEYS,
-                    "scraped only %d key(s) for `dogen %s --json` from `dogen`; "
+                    "scraped only %d key(s) for `crayon %s --json` from `crayon`; "
                     "its source anchor has moved and every assertion below "
                     "would pass vacuously" % (len(keys), payload),
                 )
@@ -1842,7 +1842,7 @@ class TestS10AttributedPayloadFields(unittest.TestCase):
         # The one file that carries a field map today. A scan that stopped
         # matching its headings would make the gate vacuous without failing.
         text = (
-            SKILLS_ROOT / "dogen-review" / "references" / "provenance-summary.md"
+            SKILLS_ROOT / "crayon-review" / "references" / "provenance-summary.md"
         ).read_text(encoding="utf-8")
         found = attributed_fields(text)
         payloads = {payload for payload, _, _ in found}
@@ -1859,7 +1859,7 @@ class TestS10AttributedPayloadFields(unittest.TestCase):
         self.assertEqual(
             keys,
             {"title", "intent", "audience", "targets", "sources", "notes"},
-            "`_UNIT_KEY_ORDER` did not parse out of `dogen` as contract 5.6's "
+            "`_UNIT_KEY_ORDER` did not parse out of `crayon` as contract 5.6's "
             "six keys; the assertion below would pass over an empty set",
         )
 
@@ -1904,7 +1904,7 @@ class TestS10AttributedPayloadFields(unittest.TestCase):
                     self.assertIn(
                         field,
                         keys[payload],
-                        "%s tells the reviewer to read `%s` out of `dogen %s "
+                        "%s tells the reviewer to read `%s` out of `crayon %s "
                         "--json`, which carries %s\n  %s"
                         % (
                             path.relative_to(ROOT),
@@ -1922,7 +1922,7 @@ class TestS10AttributedPayloadFields(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 #: Every refusal a skill WALKING a unit has to branch on, and which both
-#: ``walk-protocol.md``'s step-gate table and ``dogen-write``'s "Refusals to
+#: ``walk-protocol.md``'s step-gate table and ``crayon-write``'s "Refusals to
 #: expect" list present themselves as complete enumerations of.
 #:
 #: WR-07: WR-04 made `plan-steps` and `step` newly capable of refusing
@@ -1939,8 +1939,8 @@ WALK_GATE_REASONS = (
 )
 
 WALK_GATE_FILES = (
-    ("dogen-write", "SKILL.md"),
-    ("dogen-write", "references/walk-protocol.md"),
+    ("crayon-write", "SKILL.md"),
+    ("crayon-write", "references/walk-protocol.md"),
 )
 
 
@@ -1976,8 +1976,8 @@ class TestS12TheStepGateEnumerations(unittest.TestCase):
         """WR-08 — a value the tool only produces when a flag ASKS for it may
         not be attributed to the bare command.
 
-        ``dogen steer``'s ``--origin`` defaults to ``manual``, so
-        ``dogen steer <id> --note "…"`` (origin ``plan``) filed the note under
+        ``crayon steer``'s ``--origin`` defaults to ``manual``, so
+        ``crayon steer <id> --note "…"`` (origin ``plan``) filed the note under
         the wrong origin — the field ``describe_requests`` reports and
         ``provenance-summary.md`` tells the reviewer to read.
         """
@@ -1985,7 +1985,7 @@ class TestS12TheStepGateEnumerations(unittest.TestCase):
             skill_dir / "SKILL.md" for skill_dir in skill_dirs()
         ]:
             text = re.sub(r"\\\n\s*", " ", path.read_text(encoding="utf-8"))
-            for match in re.finditer(r"`dogen steer [^`]*`[^\n]*", text):
+            for match in re.finditer(r"`crayon steer [^`]*`[^\n]*", text):
                 window = match.group(0)
                 if "origin" not in window:
                     continue
@@ -1993,7 +1993,7 @@ class TestS12TheStepGateEnumerations(unittest.TestCase):
                     self.assertIn(
                         "--origin",
                         window,
-                        "%s attributes an origin to `dogen steer` without "
+                        "%s attributes an origin to `crayon steer` without "
                         "passing --origin, which defaults to `manual`:\n  %s"
                         % (path.relative_to(ROOT), window.strip()[:140]),
                     )
@@ -2153,7 +2153,7 @@ def _is_nontext_literal(value):
 
 
 def _module_string_constants(tree):
-    """The module-level prose of ``dogen``, as a :class:`_ModuleScope`.
+    """The module-level prose of ``crayon``, as a :class:`_ModuleScope`.
 
     ``ADOPT_PRECONDITION`` is one of these, and the two hints that carry it
     reference it by name. Without this resolution the walk would read those
@@ -2250,7 +2250,7 @@ def _module_lookup(node, constants):
 
 #: One `%` conversion specifier, in the shape the language defines it:
 #: ``%[(name)][flags][width][.precision][length]conversion``. WR-02: `%`-with-a
-#: -tuple is the dominant hint shape in `dogen`, and until this regex existed
+#: -tuple is the dominant hint shape in `crayon`, and until this regex existed
 #: the collector had no way to tell a format string's operands apart — it
 #: joined the template and every literal beneath it with a newline, so a flag
 #: carried by an operand landed on its own line and the gate at
@@ -2370,7 +2370,7 @@ def _literal_text(node, constants, choice=None):
         # operand carried and credited the site with prose no run ever emits.
         # When the pairing cannot be made the union below is still the honest
         # answer — but that shape does not occur for `%s`/`%(name)s` with a
-        # literal tuple or dict, which is every hint in `dogen`.
+        # literal tuple or dict, which is every hint in `crayon`.
         if isinstance(child, ast.BinOp) and isinstance(child.op, ast.Mod):
             rendered = _percent_format(
                 _literal_text(child.left, constants, choice),
@@ -2417,7 +2417,7 @@ def _literal_text(node, constants, choice=None):
 #: nothing to do with BoolOps and reported by nothing. Over the ceiling is now
 #: an analysis GAP: `test_s13_unreadable_reason_or_hint_fails_closed` refuses
 #: the site rather than quietly crediting it with prose no branch emits. The
-#: worst real hint in `dogen` carries 3.
+#: worst real hint in `crayon` carries 3.
 _MAX_BRANCHED_HINT = 8
 
 
@@ -2627,7 +2627,7 @@ def skill_step_body(text, number):
 
 
 #: The keep path a batch that has ALREADY adopted must never be offered.
-_BARE_RESUME = "`dogen resume <id>`"
+_BARE_RESUME = "`crayon resume <id>`"
 
 
 def bare_resume_offers(text):
@@ -2638,8 +2638,8 @@ def bare_resume_offers(text):
     of the same wrong advice walked past both. The property is about the
     ADVICE: contract 5.8 says a batch already carrying an adoption is completed
     by ``--adopt`` or ``--overwrite``, so no sentence about that case may name
-    a bare ``dogen resume <id>`` as the keep path. The flagged forms are
-    backticked whole, so ```dogen resume <id> --adopt``` never matches the
+    a bare ``crayon resume <id>`` as the keep path. The flagged forms are
+    backticked whole, so ```crayon resume <id> --adopt``` never matches the
     bare spelling.
     """
     hits = []
@@ -2685,7 +2685,7 @@ def refusal_sites(source=None):
     expression pair and enclosing function. Unknown shapes never disappear.
     """
     if source is None:
-        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
+        source = (ROOT / "crayon.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
     constants = _module_string_constants(tree)
     parents = {child: parent for parent in ast.walk(tree)
@@ -2773,7 +2773,7 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
         self.assertGreaterEqual(
             len(self.sites),
             MIN_REFUSAL_SITES,
-            "the AST walk found only %d refusal sites in `dogen`; every S-13 "
+            "the AST walk found only %d refusal sites in `crayon`; every S-13 "
             "assertion would be vacuously satisfied" % len(self.sites),
         )
         escapes = [s for s in self.sites if s[2] in ESCAPE_REASONS]
@@ -2781,14 +2781,14 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
             len(escapes),
             MIN_ESCAPE_SITES,
             "the walk found only %d sites for %s; the reasons that route back "
-            "into `dogen resume` are the whole point of S-13"
+            "into `crayon resume` are the whole point of S-13"
             % (len(escapes), ", ".join(ESCAPE_REASONS)),
         )
         for reason in ESCAPE_REASONS:
             with self.subTest(reason=reason):
                 self.assertTrue(
                     any(site[2] == reason for site in self.sites),
-                    "`dogen` no longer raises %r anywhere the walk can see; "
+                    "`crayon` no longer raises %r anywhere the walk can see; "
                     "either the reason went away or the walk did" % reason,
                 )
 
@@ -2830,7 +2830,7 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
                 self.assertEqual(
                     hint,
                     "",
-                    "dogen:%d builds a hint under a reason S-13 cannot resolve, "
+                    "crayon:%d builds a hint under a reason S-13 cannot resolve, "
                     "so no assertion below can hold it to the escape property. "
                     "Raise the reason as a literal, or hand the hint in." % line,
                 )
@@ -2841,7 +2841,7 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
         for line, _func, _reason, _hint, _calls, emitted in self.sites:
             for hint in emitted:
                 # Stop at the next command, so its flags belong to its verb.
-                commands = list(re.finditer(r"dogen ([a-z][a-z-]*)\b", hint))
+                commands = list(re.finditer(r"crayon ([a-z][a-z-]*)\b", hint))
                 for index, command in enumerate(commands):
                     end = commands[index + 1].start() if index + 1 < len(commands) else len(hint)
                     rest = hint[command.end():end].split("\n", 1)[0]
@@ -2883,14 +2883,14 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
             if reason not in ESCAPE_REASONS:
                 continue
             for text in emitted:
-                if "dogen resume " not in text:
+                if "crayon resume " not in text:
                     continue  # offers no command: nothing to loop through
                 with self.subTest(line=line, reason=reason, emitted=text[:60]):
                     self.assertIn(
                         TERMINATING_ESCAPE,
                         text.lower(),
-                        "dogen:%d raises %s and one of the strings it can "
-                        "actually emit names `dogen resume` without naming the "
+                        "crayon:%d raises %s and one of the strings it can "
+                        "actually emit names `crayon resume` without naming the "
                         "escape that always works (%r). On a batch git has "
                         "already refused, every resume re-places the same "
                         "bytes and meets the same refusal — which is the loop "
@@ -2920,10 +2920,10 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
                         self.assertIn(
                             marker,
                             lowered,
-                            "dogen:%d can emit a string that offers `--adopt` "
+                            "crayon:%d can emit a string that offers `--adopt` "
                             "without saying %r" % (line, marker),
                         )
-        self.assertTrue(offers, "no emitted string in `dogen` offers `--adopt`")
+        self.assertTrue(offers, "no emitted string in `crayon` offers `--adopt`")
 
     def test_s13_the_shared_escape_branch_is_intact(self):
         """The wrapper's shape, not two substrings of its source.
@@ -2937,7 +2937,7 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
         caller's remedy survives every return, and the escape is in every
         string the helper can emit.
         """
-        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
+        source = (ROOT / "crayon.py").read_text(encoding="utf-8")
         tree = ast.parse(source)
         found = [
             node
@@ -2947,7 +2947,7 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
         self.assertEqual(
             len(found),
             1,
-            "`dogen` must define exactly one %s(); found %d"
+            "`crayon` must define exactly one %s(); found %d"
             % (ESCAPE_BRANCH, len(found)),
         )
         helper = found[0]
@@ -2993,7 +2993,7 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
     def test_s13_every_row_that_names_adopt_states_its_precondition(self):
         """The surface half — S-04 tells every body to act on the ROW.
 
-        ``dogen-review/SKILL.md`` step_9 stated the precondition in prose, which
+        ``crayon-review/SKILL.md`` step_9 stated the precondition in prose, which
         is why CR-02's blast radius was one skill. The row is what every body is
         told to act on, and the ``resume_ambiguous`` row offered `--adopt`
         unconditionally. Asserted over every row rather than over a named one.
@@ -3020,13 +3020,13 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
         )
 
     def test_s13_review_recovery_steps_require_current_bytes(self):
-        text = (SKILLS_ROOT / "dogen-review" / "SKILL.md").read_text(
+        text = (SKILLS_ROOT / "crayon-review" / "SKILL.md").read_text(
             encoding="utf-8"
         )
         for step in (9, 10):
             body = skill_step_body(text, step)
             if body is None:
-                self.fail("dogen-review/SKILL.md has no <step_%d> element" % step)
+                self.fail("crayon-review/SKILL.md has no <step_%d> element" % step)
             for marker in ADOPT_PRECONDITION_MARKERS:
                 with self.subTest(step=step, marker=marker):
                     self.assertIn(marker, body.lower())
@@ -3035,26 +3035,26 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
 
     def test_s13_already_adopted_completion_names_the_flagged_command(self):
         row = routing_row("resume_ambiguous")
-        skill = (SKILLS_ROOT / "dogen-review" / "SKILL.md").read_text(encoding="utf-8")
+        skill = (SKILLS_ROOT / "crayon-review" / "SKILL.md").read_text(encoding="utf-8")
         step = skill_step_body(skill, 9)
         if step is None:
-            self.fail("dogen-review/SKILL.md has no <step_9> element")
+            self.fail("crayon-review/SKILL.md has no <step_9> element")
         for text in (row, step):
             text = " ".join(text.split())
             with self.subTest(text=text[:50]):
-                self.assertIn('`dogen resume <id> --adopt`', text)
-                self.assertIn('`dogen resume <id> --overwrite`', text)
+                self.assertIn('`crayon resume <id> --adopt`', text)
+                self.assertIn('`crayon resume <id> --overwrite`', text)
                 self.assertIn('only with no `unexpected` files', text)
                 # IN-03 (phase 17): the negative is about the ADVICE, not about
                 # the two phrasings of it this used to pin.
                 self.assertEqual(
                     bare_resume_offers(text),
                     [],
-                    "a bare `dogen resume <id>` is offered for a batch that "
+                    "a bare `crayon resume <id>` is offered for a batch that "
                     "already carries an adoption",
                 )
         # The actionable column must include the no-note completion command.
-        self.assertIn('`dogen resume <id> --adopt`', row.rsplit('|', 2)[1])
+        self.assertIn('`crayon resume <id> --adopt`', row.rsplit('|', 2)[1])
         # WR-01 (iteration 9): the tool's own constant is the third mirror of
         # this row, not a private comment. `ADOPT_PRECONDITION` is interpolated
         # verbatim into the `resume_ambiguous`, `recovery_unsupported` and
@@ -3071,7 +3071,7 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
             "plain resume",
             adopted_clause,
             "ADOPT_PRECONDITION still calls the already-adopted case a plain "
-            "resume; a bare `dogen resume <id>` exits 6 resume_ambiguous there",
+            "resume; a bare `crayon resume <id>` exits 6 resume_ambiguous there",
         )
         for phrase in (
             "repeated `--adopt`",
@@ -3090,7 +3090,7 @@ class TestS13RoutedTextIsInspectable(unittest.TestCase):
         Iteration 10 (WR-02): the text said post-commit notices arrive as
         stderr prose "either way", but a refusal is one JSON line on stderr and
         the drift / derivation notices exist only after a landed commit
-        (``tests/test_dogen_lifecycle.sh`` pins both). Pin the corrected claim.
+        (``tests/test_crayon_lifecycle.sh`` pins both). Pin the corrected claim.
         """
         text = " ".join(CONTRACT.read_text(encoding="utf-8").split())
         self.assertNotIn("as stderr prose either way", text)
@@ -3132,7 +3132,7 @@ class TestS13WalkControls(unittest.TestCase):
                 self.assertEqual([s[2] for s in sites], ["adopt_unsupported"])
 
     def test_computed_hints_cannot_hide_at_any_depth(self):
-        source = (ROOT / "dogen.py").read_text(encoding="utf-8")
+        source = (ROOT / "crayon.py").read_text(encoding="utf-8")
         helper = source.split("def escape_hint(", 1)[1].split(
             "def refuse_transition(", 1
         )[0]
@@ -3168,8 +3168,8 @@ class TestS13WalkControls(unittest.TestCase):
     #: `--overwrite` with no blocker-removal advice while the suite stayed
     #: green at 83 tests OK.
     LOOKUP_MUTATION = (
-        'ADVICE = {"overwrite": "dogen resume %s --overwrite places the '
-        "intended bytes; dogen resume %s --adopt --note '<why>' keeps them\"}\n"
+        'ADVICE = {"overwrite": "crayon resume %s --overwrite places the '
+        "intended bytes; crayon resume %s --adopt --note '<why>' keeps them\"}\n"
         'Refusal("adopt_unsupported", unit=unit, detail="too many adopted '
         'files", hint="%s" % (ADVICE.get("overwrite") % (unit, unit)), '
         'next_token="resume")\n'
@@ -3191,7 +3191,7 @@ class TestS13WalkControls(unittest.TestCase):
         )
 
     def test_a_sibling_lookup_value_cannot_qualify_an_offer(self):
-        offer = "dogen resume %s --adopt --note '<why>' keeps them"
+        offer = "crayon resume %s --adopt --note '<why>' keeps them"
         qualified = " ".join(ADOPT_PRECONDITION_MARKERS)
         for expression in ('ADVICE.get("overwrite")', 'ADVICE["overwrite"]'):
             with self.subTest(expression=expression):
@@ -3218,7 +3218,7 @@ class TestS13WalkControls(unittest.TestCase):
 
     def test_short_circuit_fallback_cannot_qualify_an_offer(self):
         advice = {
-            "offer": "dogen resume %s --adopt --note x keeps them",
+            "offer": "crayon resume %s --adopt --note x keeps them",
             "manual": " ".join(ADOPT_PRECONDITION_MARKERS) + " " + TERMINATING_ESCAPE,
         }
         for expression in (
@@ -3256,7 +3256,7 @@ class TestS13WalkControls(unittest.TestCase):
         asserting over the decoy, not over what the operator reads.
         """
         dead = " ".join(ADOPT_PRECONDITION_MARKERS) + " " + TERMINATING_ESCAPE
-        template = '"dogen resume %(u)s --adopt --note x keeps them"'
+        template = '"crayon resume %(u)s --adopt --note x keeps them"'
         for mapping in (
             '{"u": unit, "dead": ' + repr(dead) + "}",
             '{"dead": ' + repr(dead) + ', "u": unit}',
@@ -3270,7 +3270,7 @@ class TestS13WalkControls(unittest.TestCase):
                 self.assertEqual(gaps, [])
                 self.assertEqual(
                     sites[0][5],
-                    ["dogen resume <value> --adopt --note x keeps them"],
+                    ["crayon resume <value> --adopt --note x keeps them"],
                 )
                 self.assertTrue(all(dead not in text for text in sites[0][5]))
                 self.assert_rejects_unqualified_emission(sites)
@@ -3303,7 +3303,7 @@ class TestS13WalkControls(unittest.TestCase):
         separation still holds, and one node past it the site is a GAP rather
         than a union wearing an emission's clothes.
         """
-        offer = "dogen resume %s --adopt --note x keeps them"
+        offer = "crayon resume %s --adopt --note x keeps them"
         manual = " ".join(ADOPT_PRECONDITION_MARKERS) + " " + TERMINATING_ESCAPE
 
         def source(conditionals):
@@ -3343,12 +3343,12 @@ class TestS13WalkControls(unittest.TestCase):
         _, _, gaps = refusal_sites(
             'FLAGS = {"title": "--title"}\n'
             'Refusal("adopt_unsupported", hint="%s" % '
-            'FLAGS.get(key, "dogen resume u --adopt"))'
+            'FLAGS.get(key, "crayon resume u --adopt"))'
         )
         self.assertTrue(gaps)
 
     def test_hint_flags_are_checked_on_the_named_verb(self):
-        for hint in ("dogen resume u --discard", "dogen show u --re-sign"):
+        for hint in ("crayon resume u --discard", "crayon show u --re-sign"):
             with self.subTest(hint=hint):
                 sites, _, gaps = refusal_sites('Refusal("example", hint=%r)' % hint)
                 self.assertEqual(gaps, [])
@@ -3364,18 +3364,18 @@ class TestS13WalkControls(unittest.TestCase):
 
     def test_composed_hint_flags_reach_the_actual_gate(self):
         for expression in (
-            'f"dogen resume {unit} --discard"',
-            '"dogen resume %s" % unit + " --discard"',
-            'f"dogen show {unit} --re-sign"',
+            'f"crayon resume {unit} --discard"',
+            '"crayon resume %s" % unit + " --discard"',
+            'f"crayon show {unit} --re-sign"',
             # WR-02: `%` with a tuple, and `%(name)s` with a mapping. These
-            # are the shapes `dogen` itself uses everywhere — the two above
+            # are the shapes `crayon` itself uses everywhere — the two above
             # are the rare ones — and until the collector substituted them the
             # flag landed on a line of its own, past the `split("\n", 1)[0]`
             # the gate below reads. Both forms went green with `--discard`
             # offered on `resume`.
-            '"dogen resume %s %s" % (unit, "--discard")',
-            '"dogen resume %(u)s %(f)s" % {"u": unit, "f": "--discard"}',
-            '"dogen show %s %s" % (unit, "--re-sign")',
+            '"crayon resume %s %s" % (unit, "--discard")',
+            '"crayon resume %(u)s %(f)s" % {"u": unit, "f": "--discard"}',
+            '"crayon show %s %s" % (unit, "--re-sign")',
         ):
             with self.subTest(expression=expression):
                 sites, _, gaps = refusal_sites(
@@ -3394,20 +3394,20 @@ class TestS13WalkControls(unittest.TestCase):
 
     def test_composed_valid_flags_and_real_newlines_are_preserved(self):
         for expression, expected in (
-            ('f"dogen resume {unit} --overwrite"', 'dogen resume <value> --overwrite'),
-            ('"dogen resume %s" % unit + " --overwrite"',
-             'dogen resume <value> --overwrite'),
+            ('f"crayon resume {unit} --overwrite"', 'crayon resume <value> --overwrite'),
+            ('"crayon resume %s" % unit + " --overwrite"',
+             'crayon resume <value> --overwrite'),
             # The positive halves of the two WR-02 shapes: a REGISTERED flag
             # carried by an operand must survive substitution intact, on one
             # line, so the gate above is not merely rejecting everything.
-            ('"dogen resume %s %s" % (unit, "--overwrite")',
-             'dogen resume <value> --overwrite'),
-            ('"dogen resume %(u)s %(f)s" % {"u": unit, "f": "--overwrite"}',
-             'dogen resume <value> --overwrite'),
+            ('"crayon resume %s %s" % (unit, "--overwrite")',
+             'crayon resume <value> --overwrite'),
+            ('"crayon resume %(u)s %(f)s" % {"u": unit, "f": "--overwrite"}',
+             'crayon resume <value> --overwrite'),
             # A literal `%%` is one per cent sign and consumes no operand.
-            ('"dogen resume %s --overwrite 100%%" % unit',
-             'dogen resume <value> --overwrite 100%'),
-            ('f"dogen show {unit}\\n--discard"', 'dogen show <value>\n--discard'),
+            ('"crayon resume %s --overwrite 100%%" % unit',
+             'crayon resume <value> --overwrite 100%'),
+            ('f"crayon show {unit}\\n--discard"', 'crayon show <value>\n--discard'),
         ):
             with self.subTest(expression=expression):
                 sites, _, gaps = refusal_sites('Refusal("bad_target", hint=' + expression + ')')
@@ -3426,9 +3426,9 @@ class TestS13WalkControls(unittest.TestCase):
 
     def test_a_sibling_branch_cannot_qualify_a_reworded_offer(self):
         source = ('Refusal("adopt_unsupported", hint=%r if committing else %r)' % (
-            "`--adopt` keeps the bytes; run `dogen resume %s` with it. "
+            "`--adopt` keeps the bytes; run `crayon resume %s` with it. "
             "remove what is refusing the transition",
-            "dogen resume %s --adopt " + " ".join(ADOPT_PRECONDITION_MARKERS),
+            "crayon resume %s --adopt " + " ".join(ADOPT_PRECONDITION_MARKERS),
         ))
         sites, _, gaps = refusal_sites(source)
         self.assertEqual(gaps, [])
@@ -3445,7 +3445,7 @@ class TestS13WalkControls(unittest.TestCase):
 
     def test_prose_behind_a_module_list_join_is_read_not_waved_through(self):
         source = (
-            'ADVICE_LINES = ["dogen resume <id> --adopt keeps the later edits"]\n'
+            'ADVICE_LINES = ["crayon resume <id> --adopt keeps the later edits"]\n'
             'Refusal("adopt_unsupported", hint="%s" % ", ".join(ADVICE_LINES))\n'
         )
         sites, _constants, gaps = refusal_sites(source)
@@ -3494,7 +3494,7 @@ class TestPhase17In03StepLookupAndNegatives(unittest.TestCase):
     plain resume') that any paraphrase of the same wrong advice walks past.
     """
 
-    SKILL = "dogen-review"
+    SKILL = "crayon-review"
 
     def test_in03_a_step_written_without_attributes_is_still_found(self):
         source = "<step_9>keep this</step_9>"
@@ -3521,9 +3521,9 @@ class TestPhase17In03StepLookupAndNegatives(unittest.TestCase):
         """The negative the two exact phrases could not see."""
         for wording in (
             "Where the batch already carries an adoption, offer the plain "
-            "resume: `dogen resume <id>`.",
-            "A batch that already adopted once simply takes `dogen resume <id>`.",
-            "If adoption already happened, `dogen resume <id>` is what keeps "
+            "resume: `crayon resume <id>`.",
+            "A batch that already adopted once simply takes `crayon resume <id>`.",
+            "If adoption already happened, `crayon resume <id>` is what keeps "
             "the bytes.",
         ):
             with self.subTest(wording=wording[:40]):
@@ -3537,7 +3537,7 @@ class TestPhase17In03StepLookupAndNegatives(unittest.TestCase):
         """Negative keystone: the two real answers must not trip the scan."""
         good = (
             "A batch that already carries an adoption takes "
-            "`dogen resume <id> --adopt` or `dogen resume <id> --overwrite`, "
+            "`crayon resume <id> --adopt` or `crayon resume <id> --overwrite`, "
             "only with no `unexpected` files."
         )
         self.assertEqual(bare_resume_offers(good), [])

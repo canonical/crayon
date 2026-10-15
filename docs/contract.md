@@ -1,8 +1,8 @@
-# dogen contract v1
+# crayon contract v1
 
-<!-- provenance: frozen at tag contract-v1; the internal_error reason row, the context verbs (§5.1, §5.5, §5.7, §6) and the step plan in `show` were added after the freeze -->
+<!-- provenance: frozen at tag contract-v1; the internal_error reason row, the context verbs (§5.1, §5.5, §5.7, §6) and the step plan in `show` were added after the freeze, and its names were later renamed from dogen to crayon (the tool, `.crayon/`, the `Crayon-*` trailers and the `crayon_*` metadata keys) -->
 
-The normative contract for the `dogen` tool: what it writes, what it refuses, and what the
+The normative contract for the `crayon` tool: what it writes, what it refuses, and what the
 record it leaves behind does and does not prove. This document is frozen at git tag
 `contract-v1`; where it and any plan, skill or README disagree, this document wins.
 
@@ -30,8 +30,8 @@ simplest adequate mechanism; how we know it helped.*
 | Manifest write protocol; two-pass `resume`; bounded `--adopt`; honest limit | J6; partial writes; hooks; lost material | a crash or a rewriting hook never loses the author's work; recovery either completes or stops and says exactly what it cannot do | pending/{before,after,manifest}; classify then write | N-13…N-17, N-28…N-31, N-35…N-38 |
 | Repo-wide lock | concurrent invocations | a second invocation refuses with `busy` instead of interleaving two transitions | `fcntl.flock` | N-16 |
 | `verify` (read-only) | N1; scorer oracle | one read-only command answers "is this unit's record internally valid" without changing anything | V1–V19 | V-01…V-04 (`validation/fixtures.sh`) |
-| `retire` | abandoned unit blocks a target | an abandoned unit's target can be claimed again, by one recorded act | one event | N-40 (`tests/test_dogen_lifecycle.sh`) — J7 |
-| `context record` (repo-level) | house style, vocabulary and structure reach the skills only as loose files nobody recorded | the context artefacts a skill drafted land in `.dogen/context/` through the tool, digested and committed, so `dogen-plan` grounds itself in a record rather than in whatever is on disk | a fixed set of five names; one manifest; one commit with no unit | N-47 (`tests/test_dogen_lifecycle.sh`) |
+| `retire` | abandoned unit blocks a target | an abandoned unit's target can be claimed again, by one recorded act | one event | N-40 (`tests/test_crayon_lifecycle.sh`) — J7 |
+| `context record` (repo-level) | house style, vocabulary and structure reach the skills only as loose files nobody recorded | the context artefacts a skill drafted land in `.crayon/context/` through the tool, digested and committed, so `crayon-plan` grounds itself in a record rather than in whatever is on disk | a fixed set of five names; one manifest; one commit with no unit | N-47 (`tests/test_crayon_lifecycle.sh`) |
 | `contract` + `min_tool` | skills drift from tool | a skill paired with an incompatible tool stops with a version message instead of misbehaving | two numbers | A-37 (`tests/install_smoke.sh`) — install smoke |
 
 **Closure rule:** a rule is specified only when each trace in §5.11 follows from the *same*
@@ -55,18 +55,18 @@ present, never produced, no behaviour.
 | `unit.md` | tool (`unit new/edit`) | TA by hand; skills only via `unit edit` | after signoff → `plan_stale` |
 | `ledger.jsonl` | tool only | nobody | chain, canonical check, committed prefix |
 | `docs/<path>` for paths in the basis | tool on `draft`; TA by hand then `edits` | as stated | drift vs basis (git-independent) |
-| `.dogen/staging/<id>/{draft,report.json,scratch/evidence}` | skill or TA | skill | inputs only, gitignored |
-| `.dogen/staging/<id>/pending/{before,after,manifest.json}`, `.dogen/staging/lock` | tool | — | gitignored, transient |
+| `.crayon/staging/<id>/{draft,report.json,scratch/evidence}` | skill or TA | skill | inputs only, gitignored |
+| `.crayon/staging/<id>/pending/{before,after,manifest.json}`, `.crayon/staging/lock` | tool | — | gitignored, transient |
 | commit trailers | tool via git | rebase/squash (visible) | WARN-level corroboration |
-| `.dogen/context/<name>`, `<name>` one of the five context artefacts (§5.6) | tool on `context record`; TA by hand | as stated | `context show`: `drifted` (bytes differ from the manifest), `unrecorded` (present, never recorded) — reported, never refused |
-| `.dogen/context/manifest.json` | tool only (`context record`) | nobody | `context show` and `context record` read it; a damaged one refuses 2 `bad_target` |
-| `.dogen/staging/_context/{<name>,<name>.sources.json}` | tool (`context stage`) | — | gitignored, transient; cleared by `context record` |
+| `.crayon/context/<name>`, `<name>` one of the five context artefacts (§5.6) | tool on `context record`; TA by hand | as stated | `context show`: `drifted` (bytes differ from the manifest), `unrecorded` (present, never recorded) — reported, never refused |
+| `.crayon/context/manifest.json` | tool only (`context record`) | nobody | `context show` and `context record` read it; a damaged one refuses 2 `bad_target` |
+| `.crayon/staging/_context/{<name>,<name>.sources.json}` | tool (`context stage`) | — | gitignored, transient; cleared by `context record` |
 
 **Guarantee (single wording):** the ledger lets `verify` check that each recorded transition was
 valid against the events before it, and lets `show` compare recorded digests with current bytes.
 It does not prove that history was never rewritten, that a recorded actor is who the git
-identity says, that a recorded request was applied, or that anything outside dogen's own writes
-did not happen. Edits outside dogen are detected where recorded digests allow it and never
+identity says, that a recorded request was applied, or that anything outside crayon's own writes
+did not happen. Edits outside crayon are detected where recorded digests allow it and never
 prevented. `allowed-tools` is a lint rule and a convention, not a write boundary. The tool never
 deletes a page.
 
@@ -85,7 +85,7 @@ no floats. A transition is an
 **event batch** (1 event for most verbs; 2 for `unit new` and `--re-sign`; 3 for adopting
 `signoff`; +1 for `resume --adopt`), appended in one `write()` + `fsync`; the manifest (§5.8) is
 the recovery boundary. Caps: line ≤ 256 KiB, note ≤ 64 KiB, steps ≤ 64 KiB, excerpt ≤ 4096
-bytes, ≤ 64 files, ≤ 500 origins. `.dogen/.gitattributes` pins `*.jsonl -text`.
+bytes, ≤ 64 files, ≤ 500 origins. `.crayon/.gitattributes` pins `*.jsonl -text`.
 
 ## 5.3 Event catalogue
 
@@ -106,14 +106,14 @@ Twelve kinds; `void` reserved.
 | `retired` | `unit retire` | `note` |
 | ~`void`~ | none in v1 | reserved for committed events; readers skip voided seqs if present |
 
-Commit per transition: subject `dogen: <phase> <id>`; body = collapsed note ≤ 400 chars;
-trailers `Dogen-Unit`, `Dogen-Phase`, `Dogen-Seq: n[-m]`, `Dogen-Head: <16 hex>`, and
-`Dogen-Verdict` on review. Pathspecs explicit; never a directory.
+Commit per transition: subject `crayon: <phase> <id>`; body = collapsed note ≤ 400 chars;
+trailers `Crayon-Unit`, `Crayon-Phase`, `Crayon-Seq: n[-m]`, `Crayon-Head: <16 hex>`, and
+`Crayon-Verdict` on review. Pathspecs explicit; never a directory.
 
 `context record` is the one repo-level transition. It writes no event and touches no unit
-ledger; its commit is subject `dogen: context recorded`, body = collapsed note ≤ 400 chars,
-trailers `Dogen-Phase: context-recorded`, `Dogen-Head: <16 hex>` and, when a model is claimed,
-`Dogen-Model` — no `Dogen-Unit`, no `Dogen-Seq`, because the context belongs to the repository
+ledger; its commit is subject `crayon: context recorded`, body = collapsed note ≤ 400 chars,
+trailers `Crayon-Phase: context-recorded`, `Crayon-Head: <16 hex>` and, when a model is claimed,
+`Crayon-Model` — no `Crayon-Unit`, no `Crayon-Seq`, because the context belongs to the repository
 and not to a unit (§5.1). Pathspecs are the promoted artefacts and the manifest, explicitly.
 
 ## 5.4 Derivation
@@ -198,12 +198,12 @@ unit; one ordered table, first match wins.
 
 | # | Condition | `next` |
 |---|---|---|
-| C1 | an artefact is staged under `.dogen/staging/_context/` | `record` |
-| C2 | any of `doc-style.md`, `glossary.md`, `structure.md` is absent from `.dogen/context/` | `onboard` |
+| C1 | an artefact is staged under `.crayon/staging/_context/` | `record` |
+| C2 | any of `doc-style.md`, `glossary.md`, `structure.md` is absent from `.crayon/context/` | `onboard` |
 | C3 | otherwise | `plan` |
 
 `code-to-docs-map.md` and `doc-gaps.md` never route on their own: they come from tooling outside
-dogen, when the author has it, and their absence is not a missing context.
+crayon, when the author has it, and their absence is not a missing context.
 
 ## 5.6 Validation rules
 
@@ -212,14 +212,14 @@ dogen, when the author has it, and their absence is not a missing context.
 | unit id | `^[a-z0-9][a-z0-9-]{0,63}$` |
 | step id | `^[a-z0-9][a-z0-9._-]{0,31}$`, unique in the plan |
 | target | docs-relative POSIX `^[A-Za-z0-9._/-]{1,200}$`, no `\`, no `.`/`..`/empty segment, not absolute, `.md`/`.rst`, leading `docs/` refused, no duplicates |
-| every write destination | `realpath` inside the repo root; docs root inside the repo (symlinked out → `bad_write_path`); `.dogen/` inside and not a symlink; pages inside the docs root; pending/evidence inside `.dogen/staging/` |
-| draft source | file or dir resolving inside `.dogen/staging/<id>/draft/`; a dir contains exactly the signed targets |
+| every write destination | `realpath` inside the repo root; docs root inside the repo (symlinked out → `bad_write_path`); `.crayon/` inside and not a symlink; pages inside the docs root; pending/evidence inside `.crayon/staging/` |
+| draft source | file or dir resolving inside `.crayon/staging/<id>/draft/`; a dir contains exactly the signed targets |
 | note / reason | UTF-8, C0 controls except `\n`/`\t` stripped, `\r` refused, ≤ 64 KiB, non-empty; `\|` and newlines are ordinary characters (JSON), where `slim@357c513` refuses them in review notes — a stated behaviour change |
 | model | single line ≤ 128; `""` iff `model_origin == "unknown"` |
 | `--resolves a,b` / `--withdraw <seq> "<reason>"` (repeatable) | every seq ∈ current `pending`; no duplicates; the two sets disjoint; every withdrawal has a non-empty reason; else 2 `bad_resolution`. `resolves` = the reviewer's recorded judgment that the request is satisfied (no proof that bytes changed). |
 | `--steps-seq` | required on `step`; must name a `steps-planned` of this unit |
 | evidence file | JSON `{verdict, exit_code, mode, command, reason}`; digests never typed |
-| `--output-file` (`step`) | `realpath` inside `.dogen/staging/<id>/scratch/`; anything else → 2 `bad_write_path`. Not merely "inside the repository": up to 4096 bytes of it are excerpted **verbatim** into the committed ledger and the excerpt is control-character-stripped, never credential-stripped, so an in-repo `.env.local` or `.git/config` would be published by the next transition. `.dogen/staging/<id>/` and `.dogen/staging/<id>/scratch/` are `islink`-checked by name FIRST: `realpath` resolves both operands, so a containment test anchored on a symlinked directory resolves through the link and passes for every target |
+| `--output-file` (`step`) | `realpath` inside `.crayon/staging/<id>/scratch/`; anything else → 2 `bad_write_path`. Not merely "inside the repository": up to 4096 bytes of it are excerpted **verbatim** into the committed ledger and the excerpt is control-character-stripped, never credential-stripped, so an in-repo `.env.local` or `.git/config` would be published by the next transition. `.crayon/staging/<id>/` and `.crayon/staging/<id>/scratch/` are `islink`-checked by name FIRST: `realpath` resolves both operands, so a containment test anchored on a symlinked directory resolves through the link and passes for every target |
 | `unit.md` | the exact subset below |
 | context artefact name | one of `doc-style.md`, `glossary.md`, `structure.md`, `code-to-docs-map.md`, `doc-gaps.md`; anything else → 2 `bad_target` |
 | context body (`context stage --body-file`) | UTF-8, non-empty; recorded byte for byte, never re-encoded |
@@ -345,7 +345,7 @@ Mutating verb (after a–e):
    with trailers. The attempt is counted in `pending/progress.json` as `transition_attempts`,
    before **either** git call — so an add failure, a commit refusal and a run killed between the
    two all consume one; the counter is a count of attempts to complete the transition, never of
-   refusals. A failed transition is 6 `uncommitted_tail` (hint `dogen resume <id>`) the first
+   refusals. A failed transition is 6 `uncommitted_tail` (hint `crayon resume <id>`) the first
    time and 6 `recovery_unsupported` from the **second** attempt on the same batch onward:
    resuming again would re-place the same bytes and fail the same way, and a hint that reproduces
    its own refusal is not an escape. The `detail` names **which** git call failed, because the two
@@ -382,11 +382,11 @@ byte-identical and exits with the classification result (0 resumable, 3 `nothing
 | `pending/` without a complete manifest | delete it; proceed |
 | complete manifest, none of its events in the ledger, no tail | delete it (nothing was placed: 2 precedes 3); proceed |
 | all manifest events in the **committed** ledger, no tail | delete it (crash after 4/5); proceed |
-| tail present, manifest present, tail is an exact byte-prefix of the batch (at most one truncated final line, itself a byte-prefix of the next expected line), chain verifies | 6 `uncommitted_tail`, hint `dogen resume <id>` |
+| tail present, manifest present, tail is an exact byte-prefix of the batch (at most one truncated final line, itself a byte-prefix of the next expected line), chain verifies | 6 `uncommitted_tail`, hint `crayon resume <id>` |
 | tail present but no manifest, or tail not a prefix of the batch, or any `after/`/`before/` copy fails its manifest digest, or a manifest event line is not canonical | 6 `recovery_unsupported` (detail: `no_material` / `tail_unknown` / `material_invalid` / `event_invalid`) with the expert recipe below; nothing written |
 | committed prefix rewritten | 6 `ledger_diverged` with the git recipe |
 
-`dogen resume <id> [--dry-run | --overwrite | --adopt --note]` (any unit, retired included):
+`crayon resume <id> [--dry-run | --overwrite | --adopt --note]` (any unit, retired included):
 
 **Pass 1 (read-only, always):** load and validate the manifest as above; classify each file:
 `done` (disk == after), `recoverable` (step 3 had not yet placed this file and disk == before, or
@@ -406,7 +406,7 @@ decision to discard). `--adopt --note` → allowed only when the batch's last ev
 recipe). Adopt builds one `reviewer-edit` whose `files[]` is the **complete** batch file set
 (unchanged paths with their recorded digests, unexpected ones with current digests),
 `generation_seq` = the batch's generation seq, or the prior generation, or null if none, `note`
-= the author's note + "(bytes changed outside dogen after recording; retained by the author)",
+= the author's note + "(bytes changed outside crayon after recording; retained by the author)",
 `hook:true`. **Persistence invariant: every published manifest references durable copies
 matching all of its recovery digests.** Adopt therefore (i) copies each unexpected file's
 current bytes to `pending/adopt/<path>` and `fsync`s them; (ii) publishes the revised manifest
@@ -452,8 +452,8 @@ steps, printed only where the evidence supports them: the tail was never committ
 those lines from `ledger.jsonl` (after inspection) returns the record to its committed prefix; a
 page whose disk bytes match the interrupted operation's recorded output carries evidence, not
 proof, that the operation wrote it; the author decides whether to discard or keep it; for a lost
-`unit new` (no ledger in HEAD), move `.dogen/units/<id>/` aside for inspection
-(`mv … .dogen/staging/recovery-<ts>/`), never delete it. Where a complete safe restore cannot be
+`unit new` (no ledger in HEAD), move `.crayon/units/<id>/` aside for inspection
+(`mv … .crayon/staging/recovery-<ts>/`), never delete it. Where a complete safe restore cannot be
 derived the tool says "expert intervention required" and stops. No `void` event, no claim that
 the record is truthful, no "commit it and continue". Corrupt or invalid event lines are never
 legitimised by committing them.
@@ -466,7 +466,7 @@ been adopted once) restores `before_sha`, and only the step-3 placement record k
 reading as `recoverable` and sending `resume` around the same rejection forever. Where the loop
 cannot be broken by classification alone — `--overwrite` re-places the intended bytes the hook
 will reject again — the second failed commit on one batch is 6 `recovery_unsupported`
-(`commit_rejected`) naming what refused it, never a third identical `dogen resume <id>` hint. In
+(`commit_rejected`) naming what refused it, never a third identical `crayon resume <id>` hint. In
 both cases the recorded note says a hook changed the bytes and the author retained them; a
 formatter is not a reviewer. Restoring the intended bytes instead is a re-draft from staging
 after `edits` (the no-op rule compares against the destination, which now holds the hook's
@@ -475,7 +475,7 @@ first), which the hook will rewrite again: the supported behaviour with a format
 target paths is "adopt", and the README says so. Both hook shapes are fixtures (N-15, N-36) and
 are tried on a real repository's hooks in a full session.
 
-## 5.9 What dogen verify reports
+## 5.9 What crayon verify reports
 
 **Record integrity (FAIL):** V1 header; V2 lines parse, canonical, within caps; V3 seq and
 chain; V4 committed prefix; V5 every generation cites the signoff current at its seq with equal
@@ -490,7 +490,7 @@ equals the current signoff's targets at its seq; every reviewer-edit's `files[]`
 the previous basis minus missing non-targets.
 
 **Page currency (status):** V14 per basis path `current` / `drifted` (+ commits since,
-`Dogen-Unit` ones marked) / `missing`; orphans listed.
+`Crayon-Unit` ones marked) / `missing`; orphans listed.
 
 **Git corroboration (WARN/INFO):** V15 committed seq ranges have trailer commits in order, else
 WARN `history_squashed`; V16 `event.commit` ancestry; V17 ignore/attributes patterns and
@@ -511,8 +511,8 @@ This section is contract as of `contract-v1`; the code that implements it lands 
 | `contract` | `1` |
 | `min_tool` | `0.2.0` |
 
-`contract: 1` in every event; `metadata.dogen_contract: 1` and `metadata.dogen_min_tool:
-"0.2.0"` in every SKILL.md; `dogen version --json` → `{"tool","contract"}`; a skill stops only on
+`contract: 1` in every event; `metadata.crayon_contract: 1` and `metadata.crayon_min_tool:
+"0.2.0"` in every SKILL.md; `crayon version --json` → `{"tool","contract"}`; a skill stops only on
 contract mismatch or a tool older than `min_tool`. Contract 2 = rename/removal, enum change,
 state-affecting kind, canonicalization change; no in-place migration. Legacy units: 2
 `legacy_unit`, archive hint.
@@ -527,14 +527,14 @@ The two numbers above are compared as literal strings by `tests/check_docs.py`; 
 parsed or rounded as versions.
 
 **Revision (`internal_error`).** §5.7's reason table gains one row: `internal_error`, exit 6,
-raised only by `main`'s blanket fault arm when dogen itself falls over below the verb. The
+raised only by `main`'s blanket fault arm when crayon itself falls over below the verb. The
 addition is additive under `contract: 1` — the two numbers above are unchanged, and so are the
-`metadata.dogen_contract` and `metadata.dogen_min_tool` values in every SKILL.md. The reading:
+`metadata.crayon_contract` and `metadata.crayon_min_tool` values in every SKILL.md. The reading:
 this section's "enum change" names a rename, a removal, or a semantic change to an existing
 member, and a new refusal reason is none of those. No caller can provoke it by using the tool
 correctly; the only callers that meet it are the ones the arm previously answered
 `ledger_corrupt` — telling them their own hash-chained record was damaged, and routing them at a
-recovery verb, for a defect in dogen. The exit code does not move: 6 is the record-and-recovery
+recovery verb, for a defect in crayon. The exit code does not move: 6 is the record-and-recovery
 code and the arm already used it.
 
 That reading reverses an earlier one, and both are recorded here rather than only the one that
@@ -552,9 +552,9 @@ additive under `contract: 1` by the same reading as the row above: no event kind
 renamed or removed — `context record` writes no event and never opens a unit ledger — no
 existing member of any enum changes meaning, and no reason is added to the reason table. A
 ledger written before this revision derives exactly as it did; a tool from before it simply
-does not know the verbs, which `dogen --help` and `tests/check_docs.py` make visible rather
+does not know the verbs, which `crayon --help` and `tests/check_docs.py` make visible rather
 than silent. The two numbers above are unchanged, and so are every SKILL.md's
-`metadata.dogen_contract` and `metadata.dogen_min_tool`.
+`metadata.crayon_contract` and `metadata.crayon_min_tool`.
 
 **Revision (step plan in `show`).** `show` and `summary --json` gain the recorded step plan
 beside the step tally: `steps.plan` lists each step of the current `steps-planned` event with
@@ -600,7 +600,7 @@ Normative; each is a test; outcomes follow from §5.4–5.8.
 | T2 | gen → F1 → F2 → `edits` → `accept --resolves F1` | 1 `unapplied_steering` (F2) |
 | T3 | gen → steer S → gen2 → accept | 0; S non-pending (pending counts from gen2) |
 | T4 | sealed → steer S → accept | 1 `unapplied_steering`; state `reviewed` |
-| T5 | gen → hand edit **committed** outside dogen → steer → draft | 1 `page_drift` (c); `edits` → draft 0 |
+| T5 | gen → hand edit **committed** outside crayon → steer → draft | 1 `page_drift` (c); `edits` → draft 0 |
 | T6 | gen → `edits` → draft, staging differs from the edited destination | 1 `unsteered` (e); with staging equal to the edited destination the outcome is 3 `identical_draft` (d precedes e) |
 | T7 | gen → `edits` → steer → draft | 0; basis = edit |
 | T8 | draft A → `--re-sign` → accept | 1 `generation_stale` (c); `show`: `reviewed`/`drafted` + qualifier, `next: draft` |
@@ -647,8 +647,8 @@ Normative; each is a test; outcomes follow from §5.4–5.8.
 | T31 | plain `unit edit` with no change; `unit edit` that adds a target claimed by another non-retired unit | 3 `noop_unchanged`; 1 `target_claimed` |
 | T32 | `resume` after a successful completion, or with nothing pending | 3 `nothing_to_resume` |
 | T33 | `resume --dry-run` with (a) `pending/` without a manifest, (b) a completed batch awaiting cleanup, (c) a stray `adopt/`, (d) a resumable tail | prints the classification and what write mode would delete; ledger, pages, `pending/` and index byte-identical before and after; the next write-mode verb performs the cleanup |
-| T34a | drafted unit, author deletes a current target, explicitly asks to restore it | accept never retried; the review skill records the request via `steer` without reconfirming and routes to `/dogen-write`; draft 0, page restored → review |
-| T35 | `context stage` three artefacts → `context record` | one commit, subject `dogen: context recorded`, pathspecs = the three files + `manifest.json`, trailers `Dogen-Phase`/`Dogen-Head` and no `Dogen-Unit`; every manifest digest equals the committed bytes; staging cleared; `Next: plan` |
+| T34a | drafted unit, author deletes a current target, explicitly asks to restore it | accept never retried; the review skill records the request via `steer` without reconfirming and routes to `/crayon-write`; draft 0, page restored → review |
+| T35 | `context stage` three artefacts → `context record` | one commit, subject `crayon: context recorded`, pathspecs = the three files + `manifest.json`, trailers `Crayon-Phase`/`Crayon-Head` and no `Crayon-Unit`; every manifest digest equals the committed bytes; staging cleared; `Next: plan` |
 | T35b | `context stage profile.md`; a stray file in `_context/` at record time | 2 `bad_target` naming the five artefacts; 2 `bad_target` naming the stray file; nothing promoted |
 | T35c | record → stage the same bytes → record; then stage one changed artefact → record | 3 `noop_unchanged` with the last commit, staged copies discarded; then one commit promoting the changed artefact while the manifest keeps every other published row |
 | T36 | recorded artefact hand-edited on disk → `context show`; `context record` with nothing staged | `drifted` named, exit 0, nothing refused; 2 `bad_target` (nothing staged), `next` per context routing |
