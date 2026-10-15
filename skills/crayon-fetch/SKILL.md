@@ -4,7 +4,7 @@ description: Produces crayon context artefacts (doc-style.md, glossary.md, struc
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 metadata:
   crayon_contract: 1
-  crayon_min_tool: "0.2.0"
+  crayon_min_tool: "0.3.0"
 ---
 <objective>
 Produce one or more of the repository's context artefacts from sources the author
@@ -30,8 +30,8 @@ crayon context show --json           # what is present, staged, drifted; the rou
 ```
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
-`tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+`tool` older than `min_tool` `0.3.0`. Both numbers are compared as literal strings —
+never parsed or rounded as versions. `0.2.0` is older than `0.3.0`: stop, say which
 number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 

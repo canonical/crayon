@@ -81,8 +81,12 @@ points between identical runs, so a single run cannot tell a small change from n
 or 0/K is settled; one in between is flaky, and a change to a skill has to be measured there,
 over repeated runs. In the three-run sweep of 2026-10-11, a skill-following figure and not a
 measure of page quality, 15 of the 15 lane A cases passed every run on all five roster models,
-and 48 of the 77 lane B cases passed every run on glm-5.3 and gpt-5.6-luna, the two models whose
-lane B runs had no errors; the other three models' lane B runs errored, so they are left out.
+and 48 of the 77 lane B cases passed every run on both glm-5.3 and gpt-5.6-luna (58 and 61
+respectively), the two models whose lane B runs had no errors; the other three models' lane B
+runs errored, so they are left out. Re-graded offline with the classifier as since fixed, one
+run can no longer be graded: B-67 on gpt-5.6-luna run 3 ended on a read-only `git grep`, which
+now counts as a look, so what that run would have done next is unknown; the committed summaries
+are kept as recorded.
 
 ## What they changed in crayon
 

@@ -38,6 +38,10 @@ across. The contract number stays `1`.
   `review` event, so a skill can name the accepted pages and the disposed requests without a
   second read.
   Additive under contract 1, recorded in `docs/contract.md` §5.10.
+- `validation/closeout-docpr-3008.md` — the slim-cycle disposition, landed
+  evidence, release truth and known limitations in one record. It separates
+  the current Jira stop condition from shipped product evidence and from the
+  non-gating follow-up in canonical/crayon#39.
 - `validation/evals/` — model evals. They measure skill-following: whether a model driving the
   five skills does what the skill text says, given the same skill text and a neutral loop,
   through OpenRouter. They do not measure the quality of a page, or speed or effort saved.
@@ -46,21 +50,14 @@ across. The contract number stays `1`.
   case carries a reply that must pass and one that must fail. `--repeat K` reports per-case pass
   counts, and results are committed under `validation/evals/results/`. Every summary's
   `meta.measures` reads `skill-following`, and `validation/evals/results/README.md` labels the
-  folder. The gate holds every documented case count to the loader's, and a sweep is capped at
-  $50 and each model at $5 a run. Paid runs are started by hand, never in CI. The gate gains
-  `python3 -m unittest tests.test_evals`, the kit's offline self-tests. See `docs/evals.md`.
-- `validation/closeout-docpr-3008.md` — the slim-cycle disposition, landed
-  evidence, release truth and known limitations in one record. It separates
-  the current Jira stop condition from shipped product evidence and from the
-  non-gating follow-up in canonical/crayon#39.
-- `validation/evals/` — model evals. They measure how well a model drives the five skills
-  under the same skill text and a neutral loop, through OpenRouter. Lane A checks skill
-  selection (15 cases). Lane B checks the next action after real, recorded `crayon` output
-  (77 cases), acted out in a copy of the state inside a bubblewrap jail. Every case carries a
-  reply that must pass and one that must fail. `--repeat K` reports per-case pass counts, and
-  results are committed under `validation/evals/results/`. Paid runs are started by hand, never
-  in CI. The gate gains `python3 -m unittest tests.test_evals`, the kit's offline self-tests.
-  See `docs/evals.md`.
+  folder. The gate holds every documented case count to the loader's. A sweep and each model
+  are capped by `caps` in `validation/evals/models.json`. An empty answer and an unparsable
+  judge reply each get one uncached retry, charged against the caps and counted in
+  `meta.retries`, and an answer still empty after its retry is a run-level error. An
+  unparsable judge reply is not kept in the cache, and the retried reply that is graded is,
+  so a later cached run replays the graded verdict with no new call and no retry. Paid runs are
+  started by hand, never in CI. The gate gains `python3 -m unittest tests.test_evals`, the kit's
+  offline self-tests. See `docs/evals.md`.
 - `crayon show` lists the recorded step plan under the step tally — each step's id, mode,
   stateful marker, status and text — and `show --json` / `summary --json` carry the same rows
   as `steps.plan`. A session that did not propose a tutorial or how-to plan can now resume the
@@ -128,23 +125,30 @@ across. The contract number stays `1`.
 
 ### Changed
 
+- The tool and the five skills move to 0.3.0 together: `crayon.py`'s `__version__`, `min_tool`
+  in `docs/compatibility.md` and `docs/contract.md` §5.10, and every SKILL.md's
+  `metadata.crayon_min_tool`. The `ledger_corrupt` routing row prescribes
+  `crayon verify <id> --verbose`, which a 0.2.0 tool rejects, so a skill now stops on a tool
+  older than 0.3.0 rather than route its author to a flag the tool lacks. Every copy of the
+  version is read from `__version__` or checked against it.
+  Contract 1 holds, recorded in `docs/contract.md` §5.10.
 - The skills hand each judgment back to the author. After an accept, `crayon-review` asks at
   most three questions drawn from the unit's record — deviated or skipped steps, requests
   accepted without a page change, findings left open in that review, where a reader arrives
   from — none when nothing is open, and names no publishing step. The verdict is asked as one
   open question before the findings' lean is shown. Notes are recorded in the author's own
-  words, single-quoted on the command line so a backtick or a `$` in them is recorded as
-  typed rather than run or expanded, with nothing in them escaped or dropped; a bare accept records no note, and no judgment question
-  marks an option as recommended. `crayon-plan` asks at least one open question even when a
-  brief fills every field, and gives its view on audience or direction only when asked, ending
-  that turn on the question the view informs. It skips the problem question when the brief
-  states the problem, asks one of the two arrival questions and then the leave-out question,
-  and records the replies in one `--notes`, a real line break between them, with nothing
-  recorded for a "nothing".
-  `crayon-onboard` ends on a question about the author's priorities and routes to `/crayon-plan`
-  with their first pick, in their own words. The three author rules are authored once in `skills/README.md` and
-  carried in the plan, write and review skills. Lane B gains the cases that pin these, the
-  `question_count` kind and three named patterns.
+  words, single-quoted on the command line so a backtick or a `$` in them is recorded as typed
+  rather than run or expanded, with nothing in them escaped or dropped; a bare accept records
+  no note, and no judgment question marks an option as recommended. `crayon-plan` asks at least
+  one open question even when a brief fills every field, and gives its view on audience or
+  direction only when asked, ending that turn on the question the view informs. It skips the
+  problem question when the brief states the problem, asks one of the two arrival questions and
+  then the leave-out question, and records the replies in one `--notes`, a real line break
+  between them, with nothing recorded for a "nothing". `crayon-onboard` ends on a question about
+  the author's priorities and routes to `/crayon-plan` with their first pick, in their own
+  words. The three author rules are authored once in `skills/README.md` and carried in the
+  plan, write and review skills. Lane B gains the cases that pin these, the `question_count`
+  kind and three named patterns.
 - The skills talk to the author in plain words. What the author reads says "accepted", "the pages
   as accepted" and "request 7", with no `plan_hash`, digest or check count in prose; the record's
   tokens stay in `--json`, the ledger and every command line, and verbatim tool output sits in a
@@ -182,8 +186,8 @@ across. The contract number stays `1`.
   reads the rule's own forms and both fence forms. `@HEDGE` catches a negated blanket disclaimer
   and a can-not-verify one, such as "I can't verify everything", and passes a grounded line or
   finding that names its thing. A prelude replays a skill invocation with its body. The kit
-  checks that every oracle passes every other case in its conversation, and that quoted tool
-  output in a known-good reply sits in a fenced block.
+  checks that every oracle passes every deterministic assertion of every other case in its
+  conversation, and that quoted tool output in a known-good reply sits in a fenced block.
 - The tool's human lines are plain. On a sealed unit the handover line reads
   `Next: yours — crayon stops here`, and the accept line names the pages it accepted, with no
   count and no "sealed". The `signoff`, re-sign, `edits` and `resume` lines name the ledger
@@ -248,16 +252,67 @@ across. The contract number stays `1`.
   shell in the README.
 - The shellcheck scope is `install.sh tests/*.sh validation/*.sh`, in CI, in `AGENTS.md` and in
   the unit suite's CI mirror.
+- `docs/contract.md` §5.10 records three readings: the `--json` `message` of the accept,
+  `signoff`, `unit edit --re-sign`, `edits` and `resume` keeps its contract-1 wording, with
+  `plan_hash`, `file(s) sealed` and the seq range, and only the human line changed; the
+  accept's note is optional, and `note_required` refuses only a fix or a redraft without one;
+  and `verify` takes `--json` and `--verbose` together, `--json` winning. §6, its copy in
+  `skills/README.md` and `docs/internals.md` write `verify <id> [--json] [--verbose]`.
+  Contract 1 holds, recorded in `docs/contract.md` §5.10.
 
 ### Fixed
 
 - `validation/evals/` grades as looking the read-only commands the first skill-following sweep
   ended episodes on: `git ls-tree`, `git check-ignore`, `git reflog` (never its `expire` or
-  `delete`) and `git --no-pager` before a reading verb; `xargs` before a reading command; an
-  `awk` program that does not spawn, redirect, pipe or edit in place; a `python3 -c` script
-  that only reads a module's source by name; and a backtick or `$(` inside single quotes or
-  escaped, which the shell reads as text. A writing verb, a script that spawns and a live
-  substitution still end the episode. Cases B-07, B-22 and B-44.
+  `delete`) and `git --no-pager` before a reading verb; a reading command behind `xargs`; an
+  `awk` call with only `-F` or `-v`, one single-quoted program and files, whose program may
+  compare with `>=`; a `git branch` that only lists; a bare `env`; a `python3 -c` script that
+  only reads a module's source by name; a backtick or `$(` inside single quotes or escaped,
+  which the shell reads as text; a search whose pattern or pattern file starts with a dash,
+  after a `--`, `-e`, `--regexp`, `-f` or `--file` that no option before it takes as its value,
+  when every option before it is one the kit knows to take a value or none
+  (`grep -n -- '--output-file'`, `rg -n -e '-exec'`, `grep --ignore-case -e '--output-file'`,
+  and the pattern file in `grep -f '--output-file' docs`); an `awk` field separator written in
+  quotes (`awk -F' '`); a pattern written as an ANSI-C `$'…'` word, read as bash 5 reads it, an
+  escape outside bash's table kept as typed (`grep $'\d+'`); a `sed` call that only reads: the
+  options `-n`, `-E`, `-r`, `-s`, `-u`, `-z` or `--debug`, and scripts of the commands `p`,
+  `=`, `l`, `q`, `d`, `n`, `N`, `D`, `P`, `g`, `G`, `h`, `H`, `x`, `z`, `F` and `Q`, the
+  branches `b`, `t` and `T` with or without a label, `:label`, and `s` commands whose flags are
+  `g`, `p`, `i`, `I`, `m`, `M` or a number, a bracket expression read as sed reads it
+  (`sed -n 's/[/]/X/p'`), addresses with a custom delimiter (`\%regexp%`), and a script written as
+  `$'…'` or with an escaped `$` read after its quoting is removed (`sed -n "\$p"`); an expansion in
+  a part whose command has no option that writes or runs and places no option value the kit reads
+  (`cat`, `ls`, `grep`, `echo` and the rest of one list), so `grep -e "$pat" f`, `grep -e $x f`,
+  the setup `mkdir -p $D` and `ls $(pwd)` look; a `$?`, `$#` or `$$` inside double quotes, where
+  bash builds digits that no field splitting divides (`rg -r "$?" -e`); an `fgrep` call, which is
+  `grep -F` (`fgrep -e x f`); and a `<(` inside double quotes, which the shell reads as text. These
+  acting forms are graded as the action and are not run in the jail: an acting command behind
+  `xargs`; an `awk` program or option that writes or runs; a `git branch` that writes or an `env`
+  that runs a command; a nested backtick or an ANSI-C-quoted `$'…'` substitution; a process
+  substitution `<(…)` whose command acts; any other `sed` call, for example a `w`, `W` or `e`
+  anywhere in a script, after an `s` flag, after a custom delimiter or in an `-e` or `--expression`
+  script (`sed -e'w out'`, `sed 's/a/b/gw out'`, `sed 's#a#b#w out'`), a script in which a `[` read
+  as a plain character would hide a write (`sed -n 's/[/]/g;p;/w x/p'`, whose bracket expression
+  leaves sed the flags `w x/p`), and a script the shell may expand (`sed -n -e"$p"`); a `uniq` or
+  `xxd` with a second operand, or behind `xargs`; an acting option written in quotes or escaped,
+  read as the shell passes it on (`sed '-i'`, `find . "-delete"`, `git grep '-Ovim'`), an ANSI-C
+  `$'…'` word among them, which bash cuts at a NUL (`find . $'-delete\0x'`); a dash-led word after
+  an `e`, `f`, `-e`, `-f` or `--` that a value-taking option takes as its value
+  (`rg -ge '--pre=sh'`, `rg -g -e '--pre=sh'`, `rg -g -f '--pre=sh'`,
+  `rg --hidden -r -e '--pre=sh'`); any other parameter expansion or command substitution (`$name`,
+  `$_`, any `${…}`, `$(…)` or a backtick span, quoted or not), or a `$?`, `$#` or `$$` outside
+  double quotes, which a looking part that sets `IFS` can split (`IFS=0; find . -true$?-delete`),
+  in any other part, since the shell builds it from names the jail and bash set and a looking
+  substitution may print anything (`rg -r "$x" -e`, `find . -name h ${PATH:+-delete}`,
+  `: -o; sort f $_ out`, `find . -name h $(echo -dele)te`, `find . -name h ${x:--delete}`,
+  `awk -F "$@"`); every word after a search option the kit does not know to take a value or none,
+  read as the shell passes it on (`rg --no-hidden -r -e '--pre=sh'`); an acting word after a
+  newline inside a quoted word (a multi-line `sed` script followed by `-i`); and a `python3 -c`
+  script that looks a module up at run time. Each form is pinned both ways in
+  `tests/test_evals.py`. Outside the rule: tilde, brace and pathname expansion, a command after
+  a lone `&`, and the operands `xargs` appends from its input; a command built with one of them
+  can still be graded as looking and run in the jail.
+  Cases B-07, B-47, B-56, B-44, B-41, B-17, B-19, B-22, B-60, B-46 and B-63.
 - Lane B's `@OFFERS_PUBLISH` pattern reads `next: publish` quoted whole in inline code as a
   mention of the routed token, as its own comment says, not as publishing offered. The bare
   token is still an offer. Case B-47.
@@ -269,6 +324,95 @@ across. The contract number stays `1`.
   redraft verdict that puts the words on it. B-43 reads a lean set in bold, and B-46 asks where
   a reader arrives from second, one question per source first. Every oracle still passes and
   every foil still fails.
+- Lane B's `@HEDGE` pattern passes a grounded line that locates what may be wrong ("the line
+  on the page may be wrong", "the example in the draft might be wrong") or that cites a file
+  or a line in the same clause as the hedge, before the hedge or after it ("Per config.py:12
+  the page may be wrong.", "it may be wrong, config.py:12 sets 5"). A path with dots in it is
+  read whole (`v1.2/config.py`), and the clause ends at a newline, `;`, a sentence stop or
+  `but`. The dots of `e.g.` and `i.e.` are not a sentence stop, and `etc.` is one only before
+  a capitalised word or the end ("The page may be wrong, e.g. config.py:12 sets 5."). It also
+  passes a could-not-verify line that names its source ("I couldn't verify all of it against
+  config.py: …"). A blanket hedge on a line that names a file in another clause
+  ("I drafted reference/config.md from config.py, but some of it may be wrong.") is caught,
+  and so is "Everything in the draft might be wrong.". It catches every "there may be errors"
+  disclaimer, with an adverb, a quantifier or a clause after the noun ("There may still be
+  errors", "There may be errors I missed"), unless it names a thing other than the page, and
+  it catches "I can't verify every detail". The step-answer notice reads `won't`, `haven't`,
+  `hasn't`, "recorded" after the verdict and "the record" before it, and rejects the opposite
+  claim, that the answer is never recorded, not even with a fix verdict. Cases B-65, B-67,
+  B-68, B-69, B-70 and B-75. Every oracle still passes and every foil still fails.
+- Lane B case B-30 grades the turn its `why` names again: its history runs past the two fixed
+  intake questions, so the turn under test is the proposal of the mechanical fields, and it
+  passes only a reply that proposes `src/toyq/config.py`. A reply that asks the author which
+  source files to use fails it offline, on a check that names the file. B-64 reads a step
+  report that merely contains "no" ("No network in CI, so step first-job was skipped."), and
+  still passes a line saying no step was skipped or deviated, or that no step walk ran, so
+  nothing was deviated or skipped. Lane B's `@OFFERS_PUBLISH`
+  pattern catches the token alone in inline code after a bare `Next:` and an offer to open a
+  PR written in inline code, while `next: publish` quoted whole stays a mention. B-40 checks
+  the provenance summary its `why` says comes first. Every oracle still passes and every foil
+  still fails.
+- The shipped skills no longer name the eval fixtures that grade them. The review skill's
+  examples use a `<unit>` stand-in for the unit opening an ask, the steps `fetch-deps` and
+  `seed-db`, the model `vendor/model-a` and the page `reference/webhooks.md`; the rubric's
+  over-inclusion example names `delivery_timeout`; the write skill's gap example names
+  `relay sync` and `server.py`, and its step-plan example `fetch-deps`. A gate test in
+  `tests/test_skill_text.py` reads its tokens from the fixtures themselves (the `toyq`
+  project, `states.sh` and the recorded states) and fails on any of them in skill text.
+- `crayon-review`'s provenance reference says `page: current` compares the bytes crayon
+  recorded with the bytes on disk, not the recorded digest.
+- Human `crayon show` and `crayon summary` render a request note, a reviewer-edit note or a
+  withdrawal reason that a record holds as a number, instead of exiting `internal_error`. A
+  drift whose recording commit cannot be found reads "drifted since an earlier commit" rather
+  than naming the commit before it. An accept that routes anywhere but the handover says
+  "not handed over yet" before `Next:`. A withdrawal with no reason reads `withdrawn` and
+  `request 4 withdrawn`, with no trailing colon. In `summary --md`, a note that opens with a
+  heading or list marker (`#`, `-`, `+`, `*`, `1.`, `1)`) has it escaped, so it stays text in
+  its list item. The plain `verify` line names several requests an accept resolves or
+  withdraws as `requests 4, 5`. Human wording only; `--json` and the ledger are unchanged.
+- Lane B's `question_count` counts a question tool's questions only when they are a list, so
+  a JSON string is not counted by its characters, and a final code fence left open runs to the
+  end of the reply, so the question marks after it are quoted output. The closure cases B-44,
+  B-45, B-46 and B-47 fail a reply that asks through a question tool, since the closure asks in
+  plain text. B-53 fails an intake turn that asks more than one question, as B-29 does. B-37,
+  B-39, B-55 and B-48 accept a piped note only as `printf '%s'`, which adds nothing, so a
+  recorded note never ends in a newline the author did not type. Every oracle still passes and
+  every foil still fails.
+- `validation/evals/fixtures/states.sh` stops on any setup step that fails, names the step,
+  and still removes its temporary repository, so a broken fixture fails the recording instead
+  of freezing a wrong state as lane B's baseline.
+- `crayon-review` lets a request pending on an existing generation be settled at the verdict:
+  the unit routes `draft`, yet the author may review that generation and resolve or withdraw
+  the request at the accept, or have it redrafted. Its closure runs only when the accept's
+  `next` is `publish`; any other `next`, such as `record_edits` after a hook changed a page,
+  follows its own routing row. On a unit already accepted, the closure says that its questions
+  are what the record still shows open, and a reply that they were settled ends it with nothing
+  recorded. `crayon-plan`'s reference gives the true reason for `--origin plan`: `crayon summary`
+  lists the request under "Author decisions" as from the plan, not as steering.
+- Lane B's `bash_sequence` counts each command of a chain on its own, in the order it runs, as
+  two calls in one turn do: an opening typed as `crayon version --json; crayon show <id> --json`
+  opens on version, then the state read. A leading `cd` into the working directory, or an
+  `echo`, `printf`, `true`, `:` or `pwd` after a command (as in `|| true` or `; pwd`),
+  changes nothing; a read between the opening's commands (`; ls docs`) is a command of its
+  own. Its feedback names what really ran, and a chain that reads the state first still
+  fails. Cases B-01 and B-02.
+- `validation/evals/` grades `rg` and `git grep` as looking, so a search that corroborates a
+  source before a draft no longer ends the writer's episode. `rg --pre` and `--hostname-bin`,
+  and `git grep -O`, `--open-files-in-pager` or an abbreviation of it (`--op…`, such as
+  `--open=`), run a command, so they act. An acting word behind a control keyword
+  (`then sed -i …`, `do sort -o …`) is graded as the bare command is and is not run in the
+  jail, as the tests pin. `docs/evals.md` names the one committed run the fixed classifier
+  can no longer grade. Each form is pinned both ways in `tests/test_evals.py`. Case B-07.
+- `crayon-write` says the signoff is `crayon-plan`'s act although the `sign_off` and `re_sign`
+  routing rows name its verb: the writer runs and offers neither `crayon signoff` nor
+  `crayon unit edit`, and routes back to `/crayon-plan`. Case B-23.
+- Lane B cases whose replayed record contradicted itself replay one a careful model can trust.
+  B-18's history reads the unit's plan and its source before it writes the page that plan asks
+  for, and only then is the draft refused `busy`. B-57's replayed onboarding report counts the
+  gaps its recorded `structure.md` holds and asks the question for that count. B-69 hands the
+  writer a draft that leaves out what its intake notes leave out, from a new `reported_noted`
+  state whose report keeps the one `log_level` gap. A test reads each against its state. Every
+  oracle still passes and every foil still fails.
 
 ### Removed
 

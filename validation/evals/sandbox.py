@@ -45,6 +45,7 @@ SNAPSHOTS = (
     "no_material",
     "reported",
     "reported_clean",
+    "reported_noted",
     "retired",
     "signed",
     "stale",

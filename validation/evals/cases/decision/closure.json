@@ -66,6 +66,10 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "@PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "AskUserQuestion"
         }
       ],
       "oracle": [
@@ -232,6 +236,10 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "@MUTATING"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "AskUserQuestion"
         }
       ],
       "oracle": [
@@ -337,6 +345,10 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "@MUTATING"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "AskUserQuestion"
         }
       ],
       "oracle": [
@@ -399,6 +411,10 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "@PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "AskUserQuestion"
         }
       ],
       "oracle": [
@@ -444,7 +460,7 @@
         {
           "kind": "decisive",
           "tool": "Bash",
-          "args_re": "^(?:crayon\\s+steer\\s+[\"']?install[\"']?\\s+--note(?:=|\\s+)(?:'Say on the page that toyq init needs --force-dir on a fresh checkout\\.'|\"Say on the page that toyq init needs --force-dir on a fresh checkout\\.\")|printf\\s+(?:'%s(?:\\\\n)?'|\"%s(?:\\\\n)?\")\\s+(?:'Say on the page that toyq init needs --force-dir on a fresh checkout\\.'|\"Say on the page that toyq init needs --force-dir on a fresh checkout\\.\")\\s*\\|\\s*crayon\\s+steer\\s+[\"']?install[\"']?\\s+--note-file\\s+-)(?:\\s+--json)?$"
+          "args_re": "^(?:crayon\\s+steer\\s+[\"']?install[\"']?\\s+--note(?:=|\\s+)(?:'Say on the page that toyq init needs --force-dir on a fresh checkout\\.'|\"Say on the page that toyq init needs --force-dir on a fresh checkout\\.\")|printf\\s+(?:'%s'|\"%s\")\\s+(?:'Say on the page that toyq init needs --force-dir on a fresh checkout\\.'|\"Say on the page that toyq init needs --force-dir on a fresh checkout\\.\")\\s*\\|\\s*crayon\\s+steer\\s+[\"']?install[\"']?\\s+--note-file\\s+-)(?:\\s+--json)?$"
         }
       ],
       "oracle": [
@@ -549,7 +565,7 @@
         },
         "context_recorded/record",
         {
-          "assistant": "## crayon-onboard\n\n- Style: .crayon/context/doc-style.md\n- Glossary: .crayon/context/glossary.md (2 terms)\n- Structure: .crayon/context/structure.md (3 coverage gaps)\n- Recorded: recorded 3 context artefact(s): doc-style.md, glossary.md, structure.md · .crayon/context/ · 3 artefact(s) frozen in manifest.json · Next: plan\n\nWhich three gaps would your readers miss first?"
+          "assistant": "## crayon-onboard\n\n- Style: .crayon/context/doc-style.md\n- Glossary: .crayon/context/glossary.md (2 terms)\n- Structure: .crayon/context/structure.md (0 coverage gaps)\n- Recorded: recorded 3 context artefact(s): doc-style.md, glossary.md, structure.md · .crayon/context/ · 3 artefact(s) frozen in manifest.json · Next: plan\n\nWhat would your readers miss most?"
         },
         {
           "user": "The retry settings first, then the CLI commands."

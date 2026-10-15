@@ -4,7 +4,7 @@ description: Guides a Technical Author through declaring one documentation unit 
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 metadata:
   crayon_contract: 1
-  crayon_min_tool: "0.2.0"
+  crayon_min_tool: "0.3.0"
 ---
 <objective>
 Guide the TA through declaring one documentation unit via one-question-at-a-time
@@ -28,8 +28,8 @@ crayon show "$UNIT_ID" --json        # the derived state, and the routed `next`
 ```
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
-`tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+`tool` older than `min_tool` `0.3.0`. Both numbers are compared as literal strings —
+never parsed or rounded as versions. `0.2.0` is older than `0.3.0`: stop, say which
 number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 
@@ -343,11 +343,11 @@ Leave out the plugin API; it has its own page.'
 ```
 
 A "nothing" answer to the leave-out question records nothing for it: no "Nothing.", no
-"Leave out: nothing", and no label of yours before either reply. Settled terms and the outline go into the body,
-which the TA approves; the skill writes no note of its own. Omit `--notes` only when
-the TA gave no such words. The tool writes `unit.md` in its own frontmatter shape, so
-never compose the frontmatter block yourself — pass the fields as flags and let the
-tool render them.
+"Leave out: nothing", and no label of yours before either reply. Settled terms and the
+outline go into the body, which the TA approves; the skill writes no note of its own.
+Omit `--notes` only when the TA gave no such words. The tool writes `unit.md` in its own
+frontmatter shape, so never compose the frontmatter block yourself — pass the fields as
+flags and let the tool render them.
 
 **Record the gate act.**
 

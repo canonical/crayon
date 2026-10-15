@@ -9290,13 +9290,22 @@ print("%s\t%d\t%s\t%s" % (
 
 test_verb08_version_reports_the_tool_and_contract_numbers() {
     setup_repo
-    local out rc
+    local out rc expected
+    # D-07: the expected version is read from crayon.py's own __version__ line,
+    # its one definition site, as text; this suite types no version.
+    expected=$(python3 -c '
+import re, sys
+text = open(sys.argv[1], encoding="utf-8").read()
+match = re.search(r"^__version__ = \"([^\"]+)\"$", text, re.MULTILINE)
+print(match.group(1) if match else "")
+' "$CRAYON")
+    assert_not_eq "crayon.py carries a __version__ line" "" "$expected"
     out=$("$CRAYON" version 2>err.txt)
     rc=$?
     assert_eq "version exits 0" "0" "$rc"
     assert_eq "version prints exactly one line" "1" \
         "$(printf '%s\n' "$out" | wc -l | tr -d ' ')"
-    assert_contains "version names the tool version" "$out" "0.2.0"
+    assert_contains "version names the tool version" "$out" "$expected"
     assert_contains "version names the contract number" "$out" "contract 1"
 
     local keys
@@ -9308,7 +9317,7 @@ print(",".join(sorted(json.load(sys.stdin))))
         "contract,tool" "$keys"
     assert_eq "version --json reports contract 1" "1" \
         "$("$CRAYON" version --json | json_field contract)"
-    assert_eq "version --json reports the tool version" "0.2.0" \
+    assert_eq "version --json reports the tool version" "$expected" \
         "$("$CRAYON" version --json | json_field tool)"
     cleanup
 }
@@ -9558,6 +9567,8 @@ print("%d\t%s\t%s" % (
         "$(printf '%s' "$shape" | cut -f2)"
     # D-03 (P-01): on `publish` the plain handover is itself the "what remains"
     # segment, so an accept's `reviewed · accepted · Next` is complete at three.
+    # An accept routed anywhere else prints its own remainder (`not handed over
+    # yet`, 20 IN-04) and is held to four, like every other verb.
     local min_segments=4
     [ "$expected_next" = "publish" ] && min_segments=3
     assert_eq "$desc carries what changed, where, what remains and Next" "yes" \

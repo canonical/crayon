@@ -37,6 +37,10 @@
           "kind": "asks_user"
         },
         {
+          "kind": "text_re",
+          "re": "record:\\s+intact\\s+at"
+        },
+        {
           "kind": "not_text_re",
           "re": "@MARKER"
         },

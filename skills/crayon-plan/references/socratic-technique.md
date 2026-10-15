@@ -94,8 +94,9 @@ Terminology settles during the dialogue, and catching it there is cheap:
   question, verbatim, and
   `crayon steer <id> --note '<their words>' --origin plan` carries the TA's
   words given after the plan is signed off. `--origin` defaults to `manual`, so
-  the flag is not optional here: the origin is the field `crayon summary` reports
-  and the review skill is told to read. `unit.md`'s frontmatter is the fixed
+  the flag is not optional here: with `--origin plan`, `crayon summary` lists the
+  request under "Author decisions" as "from the plan", where `manual` would list
+  it as steering. `unit.md`'s frontmatter is the fixed
   subset `title` / `intent` / `audience` / `targets` / `sources` / `notes` — any
   other key is refused `unit_invalid`.
 - Sparingly: only terms the unit's page actually leans on. The glossary artifact

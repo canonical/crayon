@@ -185,7 +185,7 @@
         {
           "kind": "not_text_re",
           "re": "(?i)\\bsteps?\\b[^\\n]*\\b(skipped|deviated)\\b",
-          "except_re": "(?i)^[^?]*\\b(no|none|nothing)\\b[^?]*\\b(skipped|deviated)\\b[^?]*$"
+          "except_re": "(?i)^[^?]*\\b(no|none\\s+of\\s+the)\\s+((\\w+\\s+){0,2}steps?\\s+(\\w+\\s+){0,2}(skipped|deviated)|(skipped|deviated)(\\s+(or|and)\\s+(skipped|deviated))?\\s+steps?|steps?([\\s-]+walks?)?\\b([\\s,]+\\w+){0,6}[\\s,;:]+nothing\\s+(\\w+\\s+){0,2}(skipped|deviated))\\b[^?]*$"
         },
         {
           "kind": "no_tool_call",
@@ -250,11 +250,15 @@
         },
         {
           "kind": "text_re",
-          "re": "(?i)\\b(not|nothing|isn['’]t)\\b[^\\n]{0,60}\\brecorded\\b"
+          "re": "(?i)\\b(not|nothing|isn['’]t|won['’]t|haven['’]t|hasn['’]t)\\b[^\\n]{0,60}\\brecord(ed)?\\b"
         },
         {
           "kind": "text_re",
-          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b|\\brecord(s|ed)?\\b[^\\n.?]{0,40}?\\b(if|when|once|with)\\s+(a\\s+|your\\s+|you\\s+give\\s+a\\s+)?(verdict\\s+is\\s+a\\s+)?(fix|redraft)\\b"
+          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecord(s|ed)?\\b|\\brecord(s|ed)?\\b[^\\n.?]{0,40}?\\b(if|when|once|with)\\s+(a\\s+|your\\s+|you\\s+give\\s+a\\s+)?(verdict\\s+is\\s+a\\s+)?(fix|redraft)\\b"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)\\b(not\\s+even|never)\\b[^\\n]{0,30}\\b(with|if)\\s+(a\\s+)?(fix|redraft)\\b"
         },
         {
           "kind": "no_tool_call",
@@ -485,11 +489,15 @@
         },
         {
           "kind": "text_re",
-          "re": "(?i)\\b(not|nothing|isn['’]t)\\b[^\\n]{0,60}\\brecorded\\b"
+          "re": "(?i)\\b(not|nothing|isn['’]t|won['’]t|haven['’]t|hasn['’]t)\\b[^\\n]{0,60}\\brecord(ed)?\\b"
         },
         {
           "kind": "text_re",
-          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b|\\brecord(s|ed)?\\b[^\\n.?]{0,40}?\\b(if|when|once|with)\\s+(a\\s+|your\\s+|you\\s+give\\s+a\\s+)?(verdict\\s+is\\s+a\\s+)?(fix|redraft)\\b"
+          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecord(s|ed)?\\b|\\brecord(s|ed)?\\b[^\\n.?]{0,40}?\\b(if|when|once|with)\\s+(a\\s+|your\\s+|you\\s+give\\s+a\\s+)?(verdict\\s+is\\s+a\\s+)?(fix|redraft)\\b"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)\\b(not\\s+even|never)\\b[^\\n]{0,30}\\b(with|if)\\s+(a\\s+)?(fix|redraft)\\b"
         },
         {
           "kind": "no_tool_call",

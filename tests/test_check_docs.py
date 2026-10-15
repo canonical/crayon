@@ -625,6 +625,46 @@ class TestReleaseRecord(CheckDocsCase):
                 self.assertIn("release record", output)
                 self.assertIn(claim, output)
 
+    def later_release(self, release_020_body, heading_030="## [0.3.0] - 2026-11-01"):
+        """A changelog with a later release cut above the 0.2.0 section."""
+        return (
+            "# Changelog\n\n"
+            "## [Unreleased]\n\nNothing unreleased.\n\n"
+            "%s\n\nThe later fixture release.\n\n"
+            "## [0.2.0] - 2026-09-18\n\n%s\n" % (heading_030, release_020_body)
+        )
+
+    def test_020_facts_hold_below_a_later_dated_release(self):
+        """D-03: a dated [0.3.0] above [0.2.0] does not switch the facts off."""
+        fact = check_docs.RELEASE_020_REQUIRED_FACTS[0]
+        facts = "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        changelog = self.later_release(facts.replace(fact, ""))
+        self.assertNotIn(fact, changelog)
+        code, output = self.run_checker(self.tree(changelog=changelog))
+        self.assertEqual(code, 1, output)
+        self.assertIn("release record", output)
+        self.assertIn(fact, output)
+
+    def test_020_claims_stay_out_below_a_later_dated_release(self):
+        """D-03: a dated [0.3.0] above [0.2.0] does not let a claim back in."""
+        claim = check_docs.RELEASE_020_FORBIDDEN_CLAIMS[0]
+        facts = "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        changelog = self.later_release(facts + "\n" + claim + ".")
+        code, output = self.run_checker(self.tree(changelog=changelog))
+        self.assertEqual(code, 1, output)
+        self.assertIn("release record", output)
+        self.assertIn(claim, output)
+
+    def test_a_later_undated_release_is_named_by_the_date_check(self):
+        """D-03: the date check still reads the topmost section, [0.3.0]."""
+        facts = "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        changelog = self.later_release(facts, heading_030="## [0.3.0]")
+        code, output = self.run_checker(self.tree(changelog=changelog))
+        self.assertEqual(code, 1, output)
+        self.assertIn("release record", output)
+        self.assertIn("## [0.3.0]", output)
+        self.assertNotIn("## [0.2.0] - YYYY-MM-DD", output)
+
     def test_a_changelog_with_no_versioned_heading_is_a_two(self):
         """The vacuous-pass guard: nothing to scan is 2, never 0.
 
@@ -676,7 +716,11 @@ class TestReleaseRecord(CheckDocsCase):
         The other direction, so the cases above cannot pass by refusing every
         tree: this repository's 0.2.0 section is dated, carries no marker,
         retains every delivery fact and carries none of the stale claims.
+        It must carry a ``## [0.2.0]`` heading at all (D-03): the 0.2.0 pins are
+        skipped when no such section exists, so deleting it must not pass.
         """
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertRegex(changelog, r"(?m)^## \[0\.2\.0\]")
         code, output = self.run_checker(ROOT)
         self.assertEqual(code, 0, output)
         self.assertIn("release record", output)

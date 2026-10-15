@@ -29,6 +29,7 @@ import agent
 import grade
 import sandbox
 import skills as skillmod
+from openrouter import retry_empty_turn
 
 HERE = Path(__file__).resolve().parent
 CASES = HERE / "cases"
@@ -80,7 +81,9 @@ def run_a(case, spec, provider, ctx):
     ]
     turn = provider.complete(spec, messages, cache=ctx.get("cache", True),
                              scope=spec["id"])
-    return {"turns": [turn]}
+    # D-24: an empty answer is re-sent once, uncached, and counted.
+    turn, retries = retry_empty_turn(provider, turn, spec, messages, scope=spec["id"])
+    return {"turns": [turn], "retries": retries}
 
 
 def oracle_a(case):
@@ -95,6 +98,21 @@ DECISION = CASES / "decision"
 #: load, so no case can pass while telling the author a record word; this is
 #: the one definition site, and lane A never carries it.
 PLAIN_WORDS = {"kind": "plain_words"}
+
+#: @HEDGE's sentence stop: `.`, `!` or `?` before whitespace or the end, except
+#: the dots of "e.g." and "i.e.", and the dot of "etc." unless a capitalised word
+#: or the end follows it, since "etc." can end a sentence (24-23, IN-01 of the
+#: review at 329fa95). Each lookbehind is fixed-width, so the scan stays linear.
+_HEDGE_STOP = (r"(?:(?<!\be\.g)(?<!\bi\.e)(?<!\betc)[.!?](?:\s|$)|"
+               r"(?<=\betc)\.(?:\s*$|\s+(?-i:[A-Z])))")
+#: @HEDGE's clause start after a sentence stop: the same stop, read backwards.
+#: After "etc." and its first whitespace it mirrors _HEDGE_STOP's "etc." arm
+#: exactly: a clause starts only where more whitespace may follow and then a
+#: capital letter, so "etc. (" starts no clause, as it ends none, and
+#: "etc.  Everything" (two spaces) starts one (24-26, IN-09 of the review at
+#: aac605a, P-24-73).
+_HEDGE_CLAUSE_START = (r"(?<=[.!?]\s)(?<!\be\.g\.\s)(?<!\bi\.e\.\s)"
+                       r"(?!(?<=\betc\.\s)(?!\s*(?-i:[A-Z])))")
 
 #: Patterns a case names by macro, so the same rule reads the same everywhere.
 MACROS = {
@@ -112,10 +130,13 @@ MACROS = {
     # opens a PR, a publish/PR/build handed over as "yours" or "when you're ready",
     # or an instruction to open a PR or to publish. "crayon does not publish" and
     # quoting the routed token (`next` is `publish`, or `next: publish` whole in
-    # inline code) are mentions, not offers.
-    "@OFFERS_PUBLISH": r"(?i:(?<!`)\bnext:?\s+(publish|push|open\s+(a\s+|the\s+)?"
-                       r"(PR|pull\s+request))\b|"
-                       r"\bnext:?\s+(publish|push|open\s+(a\s+|the\s+)?(PR|pull\s+request))\b(?!`)|"
+    # inline code) are mentions, not offers. The token alone in code after a bare
+    # `Next:` (Next: `publish`) is an offer, and so is an offer to open a PR in
+    # inline code, quoted whole or in part: `open a PR` is never a routed token
+    # (23 IN-03).
+    "@OFFERS_PUBLISH": r"(?i:\bnext:?\s+`?open\s+(a\s+|the\s+)?(PR|pull\s+request)\b|"
+                       r"(?<!`)\bnext:?\s+`?(publish|push)\b|"
+                       r"\bnext:?\s+(publish|push)\b(?!`)|"
                        r"\b(publish\w*|pull\s+requests?|PRs?|build)\b[^.\n]{0,60}"
                        r"\b(is|are)\s+yours\b|"
                        r"\bpublish\w*\b[^.\n]{0,40}\bwhen\s+you('re|\s+are)\s+ready\b|"
@@ -137,29 +158,60 @@ MACROS = {
     # of:"), not a named, grounded gap. A verify over the whole is blanket, negated
     # or not, with can / cannot / can not / could / did / have and an optional -ly
     # adverb ("I can't verify everything", "I have not fully verified everything")
-    # (WR-03, WR-01). The page and the details are blanket only at the end of a
-    # clause, so "I couldn't verify the details of log_level: \u2026" names its thing
-    # (WR-02). May / might / could be wrong is blanket only after a generic or
+    # (WR-03, WR-01). Negated, the whole is blanket only at the end of a clause:
+    # everything (else), all of it, it all, every detail, the page and the details,
+    # so "I couldn't verify the details of log_level: \u2026" and "I couldn't verify
+    # all of it against config.py: \u2026" name their thing (WR-02; 22 WR-01, third
+    # review). May / might / could be wrong is blanket only after a generic or
     # first-person subject ("This could be wrong", "Some details may be
-    # inaccurate"), and "there may be errors" only when it ends the clause (WR-01).
-    # A finding that says a cited claim may be wrong names its thing and is not
-    # one (WR-02); nor are "I found no source for \u2026", "I inferred \u2026 from \u2026",
-    # "I could not verify the page's \u2026" and "double-checked", a thing done.
+    # inaccurate", "Everything in the draft might be wrong"), never after a
+    # preposition ("the line on the page may be wrong", "the example in the draft
+    # might be wrong" locate their claim). A cite anywhere in the hedge's clause,
+    # before the hedge or after it, grounds it ("Per config.py:12 the page may be
+    # wrong", "F-2 \u2026 config.md:13 says 3; it may be wrong, config.py:12 sets 5",
+    # "The page may be wrong: v1.2/config.py sets 5"), and a path with dots in it is
+    # read whole. The clause ends at a newline, `;`, a sentence stop (`.`, `!` or
+    # `?` before whitespace or the end) or `but`, so a cite in another clause
+    # grounds nothing: "I drafted reference/config.md from config.py, but some of
+    # it may be wrong" and "Everything may be wrong, but see config.py:12" are
+    # hedges (22 WR-01, third review; 24 WR-03; 24-20, WR-01 of the post-closure
+    # review). The dots of "e.g." and "i.e." are not a stop, so "The page may be
+    # wrong, e.g. config.py:12 sets 5" is grounded; "etc." is a stop only before a
+    # capitalised word or the end, since it can end a sentence, so "Everything may
+    # be wrong, etc. See config.py:12." is a hedge (24-23, IN-01 of the review at
+    # 329fa95; _HEDGE_STOP and _HEDGE_CLAUSE_START). There may (still / also) be
+    # (some / a few) errors is blanket whatever follows, unless it goes on to name
+    # a thing other than the page: "There may be errors I missed" is a hedge,
+    # "There may be errors in the retry table" is not (WR-01; 22 WR-02, third review). The cite
+    # is read as a word ending in .py / .md / .rst / .toml / .yml / .yaml, or a
+    # :<digits> line, each a fixed run. The scan before the hedge starts only at a
+    # clause start and stops at the first cite or clause end, and the scan after
+    # it is bounded to 160 characters, so the match stays linear. Nor are
+    # "I found no source for \u2026", "I inferred \u2026 from \u2026", "I could not verify
+    # the page's \u2026" and "double-checked", a thing done.
     "@HEDGE": r"(?i:\bplease\s+(double[- ]check|verify|review\s+(it|this|everything)\s+carefully)\b|"
               r"\bdouble[- ]check\b|"
               r"\b(may|might|could)\s+(contain|have)\s+(errors|mistakes|inaccuracies)\b|"
               r"\bas\s+an\s+ai\b|\bnot\s+guaranteed\b|"
               r"\b(can(not|['\u2019]t|\s+not)|(could|did|have)(n['\u2019]t|\s+not))"
-              r"(\s+\w+ly)?\s+verif(y|ied)\s+(everything\b|all\s+of\s+it\b|it\s+all\b|"
-              r"the\s+(page|details)(?=\s*([.;,!?]|$)))|"
+              r"(\s+\w+ly)?\s+verif(y|ied)\s+(everything(\s+else)?|all\s+of\s+it|it\s+all|"
+              r"every\s+detail|the\s+(page|details))(?=\s*([.;,!?]|$))|"
               r"(?<!not )(?<!n't )(?<!n\u2019t )\bverify\s+(everything\b|all\s+of\s+it\b|"
               r"the\s+(page|details)(?=\s*([.;,!?]|$)))|"
-              r"\b(I|this|it|everything|some\s+details|"
+              r"(?:^|(?<=[\n;])|" + _HEDGE_CLAUSE_START + r"|(?<=\bbut\s))"
+              r"(?:(?!\w\.(py|md|rst|toml|ya?ml)\b|:\d+\b|" + _HEDGE_STOP + r"|\bbut\b)"
+              r"[^\n;])*?"
+              r"(?<!\bon\s)(?<!\bin\s)(?<!\bof\s)(?<!\bto\s)"
+              r"\b(I|this|it|everything(\s+(in|on)\s+(it|this|the\s+(page|draft)))?|"
+              r"some\s+details|"
               r"some\s+of\s+(this|it|the\s+(page|draft|details))|"
               r"parts\s+of\s+(it|this|the\s+(page|draft))|the\s+(page|draft))"
-              r"\s+(may|might|could)\s+be\s+(wrong|inaccurate|incorrect)\b|"
-              r"\bthere\s+(may|might|could)\s+be\s+(errors|mistakes|inaccuracies)"
-              r"(\s+(in|on)\s+(it|this|here|the\s+(page|draft)))?(?=\s*([.;,!?]|$))|"
+              r"\s+(may|might|could)\s+be\s+(wrong|inaccurate|incorrect)\b"
+              r"(?!(?:(?!" + _HEDGE_STOP + r"|\bbut\b)[^\n;]){0,160}?"
+              r"(\w\.(py|md|rst|toml|ya?ml)\b|:\d+\b))|"
+              r"\bthere\s+(may|might|could)\s+((still|also)\s+)?be\s+((some|a\s+few)\s+)?"
+              r"(errors|mistakes|inaccuracies)\b"
+              r"(?!\s+(in|on|at)\s+(?!(it|this|here|the\s+(page|draft)\b(?!['\u2019]))\b))|"
               r"\bI\s+(may|might)\s+have\s+(made\s+(a\s+)?mistakes?|gotten\s+\w+\s+wrong)\b|"
               r"\bwhat\s+I['\u2019]?m\s+not\s+sure\s+(of|about)\b)",
 }

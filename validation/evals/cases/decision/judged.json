@@ -125,9 +125,21 @@
         },
         {
           "user": "A reference page."
+        },
+        {
+          "assistant": "What is the reader doing just before they land here?"
+        },
+        {
+          "user": "They've just seen a job retried in the worker logs and want to know why it ran again, and how to change that."
+        },
+        {
+          "assistant": "What can this page leave out?"
+        },
+        {
+          "user": "The queue internals. How the backend stores a failed job doesn't matter to them."
         }
       ],
-      "why": "propose, don't ask: a field the repository answers (the source) is proposed, not asked for",
+      "why": "propose, don't ask: once the open questions are answered, the source the repository answers is proposed for confirmation, never asked for",
       "assert": [
         {
           "kind": "no_tool_call",
@@ -135,8 +147,12 @@
           "args_re": "\\bcrayon\\s+unit\\s+new\\b"
         },
         {
+          "kind": "text_re",
+          "re": "config\\.py"
+        },
+        {
           "kind": "judge",
-          "rubric": "The repository contains src/toyq/config.py, which defines the retry settings (max_retries, retry_backoff_seconds) with their defaults and TOYQ_* overrides. The intake opens with a question, and the source is proposed when the fields are put to the author for confirmation. PASS if the agent proposes this file (or proposes it among fields for confirmation), or asks an intake question the repository cannot answer, such as what the reader is doing before they arrive or what to leave out. FAIL if it asks the author open-endedly which source files, code or settings to use. FAIL if it asks the author where the retry logic or settings live."
+          "rubric": "The repository contains src/toyq/config.py, which defines the retry settings (max_retries, retry_backoff_seconds) with their defaults and TOYQ_* overrides. The author has answered the intake questions, including what the reader is doing before they arrive and what the page can leave out, so the turn under test is the one where the mechanical fields are proposed. PASS only if the agent proposes src/toyq/config.py as the source, alone or among the fields put to the author for confirmation. FAIL if it asks the author open-endedly which source files, code or settings to use. FAIL if it asks the author where the retry logic or settings live."
         }
       ],
       "oracle": [
@@ -158,15 +174,7 @@
       ],
       "foil": [
         {
-          "content": "",
-          "tool_calls": [
-            {
-              "name": "Bash",
-              "arguments": {
-                "command": "crayon unit new retries --intent reference --audience operators --title Retries --target reference/retries.md --body-file -"
-              }
-            }
-          ]
+          "content": "Which source files should the page use?"
         }
       ]
     },

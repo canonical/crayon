@@ -509,10 +509,10 @@ This section is contract as of `contract-v1`; the code that implements it lands 
 | Number | Value |
 |---|---|
 | `contract` | `1` |
-| `min_tool` | `0.2.0` |
+| `min_tool` | `0.3.0` |
 
 `contract: 1` in every event; `metadata.crayon_contract: 1` and `metadata.crayon_min_tool:
-"0.2.0"` in every SKILL.md; `crayon version --json` → `{"tool","contract"}`; a skill stops only on
+"0.3.0"` in every SKILL.md; `crayon version --json` → `{"tool","contract"}`; a skill stops only on
 contract mismatch or a tool older than `min_tool`. Contract 2 = rename/removal, enum change,
 state-affecting kind, canonicalization change; no in-place migration. Legacy units: 2
 `legacy_unit`, archive hint.
@@ -599,6 +599,27 @@ changes are additive under `contract: 1` by the reading above: no event kind, re
 member changes, the ledger bytes are untouched, and the two numbers above and every SKILL.md's
 metadata stay as they are.
 
+**Revision (min_tool 0.3.0).** This is the revision that moves `min_tool`; every revision above
+kept it. The routing table's `ledger_corrupt` row prescribes `crayon verify <id> --verbose`, the
+flag the revision above added, and a 0.2.0 tool rejects it, so a skill paired with a 0.2.0 tool
+would route its author to a command that tool refuses. `min_tool` and the tool's version
+therefore move to `0.3.0` together, and every SKILL.md's `metadata.crayon_min_tool` with them: a
+skill now stops on a 0.2.0 tool as a tool older than `min_tool`. The contract stays `1`. No
+event kind, enum member, reason or ledger field changes, and a ledger written before this
+revision reads exactly as it did.
+
+**Revision (readings).** Three places where this text read differently from the tool are
+recorded here as readings; the contract stays `1` and the tool's behaviour does not change.
+The success lines of the accept, `signoff`, `unit edit --re-sign`, `edits` and `resume` that
+the plain-record-surfaces revision rewords change for a human only: their `--json` `message`
+keeps its contract-1 wording, `plan_hash`, `file(s) sealed` and the seq range included.
+§6's `review` row shows `--note|--note-file -` unbracketed, but the accept's note is optional:
+`note_required` refuses only a fix or a redraft without one, as §5.7's reason table and the
+tool say, and the skills' `accept [--note "…"]` reads §6 that way. §6's read-only row now
+brackets `verify`'s `--json` and `--verbose` apart rather than as alternatives, since both
+flags are accepted together and `--json` wins, as the plain-record-surfaces revision says. No
+event kind, enum member, reason or ledger field changes.
+
 ## 6 Verb table
 
 | Verb | Key args | Events |
@@ -617,7 +638,7 @@ metadata stay as they are.
 | `context stage <name> --body-file -\|F [--source]…` | repo-level; tool-owned staging | — |
 | `context record [--model --model-origin] [--note]` | repo-level; one commit, no unit | — (manifest) |
 | `context show [--json]` | read-only | — |
-| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json\|--verbose]`, `version [--json]` | read-only | — |
+| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json] [--verbose]`, `version [--json]` | read-only | — |
 
 ## 5.11 Traces
 

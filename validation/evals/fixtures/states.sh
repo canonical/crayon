@@ -81,13 +81,14 @@ STRUCTURE='# Structure\n\n- docs/reference/: settings and commands.\n- docs/how-
 # stage_context NAME BODY : stage one context artefact through the tool.
 stage_context() {
     # shellcheck disable=SC2059 # the bodies are printf formats on purpose
-    printf "$2" | "$CRAYON" context stage "$1" --body-file - >/dev/null 2>&1
+    printf "$2" | "$CRAYON" context stage "$1" --body-file - >/dev/null 2>&1 ||
+        { echo "setup failed: context stage $1" >&2; exit 1; }
 }
 
 # base_bare : the toyq project with the skills installed, and no context yet.
 base_bare() {
     setup_repo
-    python3 - "$ROOT" <<'PY'
+    python3 - "$ROOT" <<'PY' || { echo "setup failed: copy toyq and the skills" >&2; exit 1; }
 import os
 from pathlib import Path
 import shutil
@@ -109,8 +110,9 @@ for name in tracked.split(b"\0"):
     shutil.copy2(source / path, target)
 PY
     printf '.crayon/staging/\n' >.gitignore
-    git add -A
-    git commit -q -m "toyq project, crayon skills installed"
+    git add -A || { echo "setup failed: git add the toyq project" >&2; exit 1; }
+    git commit -q -m "toyq project, crayon skills installed" ||
+        { echo "setup failed: commit the toyq project" >&2; exit 1; }
 }
 
 # base : base_bare plus a recorded context, so a unit session grounds without
@@ -120,7 +122,8 @@ base() {
     stage_context doc-style.md "$DOC_STYLE"
     stage_context glossary.md "$GLOSSARY"
     stage_context structure.md "$STRUCTURE"
-    "$CRAYON" context record --note "toyq context" >/dev/null 2>&1
+    "$CRAYON" context record --note "toyq context" >/dev/null 2>&1 ||
+        { echo "setup failed: context record" >&2; exit 1; }
 }
 
 # declare_cfg [NOTES] : the reference unit cfg, declared. NOTES, when given, are
@@ -140,7 +143,8 @@ declare_cfg() {
         "$CRAYON" unit new "$UNIT" --intent reference \
             --audience "operators configuring toyq on a server" \
             --title "Configuration reference" --target "$TARGET" \
-            --source src/toyq/config.py ${notes[@]+"${notes[@]}"} --body-file - >/dev/null 2>&1
+            --source src/toyq/config.py ${notes[@]+"${notes[@]}"} --body-file - >/dev/null 2>&1 ||
+        { echo "setup failed: unit new $UNIT" >&2; exit 1; }
 }
 
 stage_page() {
@@ -153,9 +157,10 @@ PAGE_V2='# Configuration reference\n\nSettings come from defaults, then `toyq.to
 drafted() {
     base
     declare_cfg
-    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
     stage_page "$PAGE_V1"
-    "$CRAYON" draft "$UNIT" "$(draft_path "$UNIT" "$TARGET")" >/dev/null 2>&1
+    "$CRAYON" draft "$UNIT" "$(draft_path "$UNIT" "$TARGET")" >/dev/null 2>&1 ||
+        { echo "setup failed: draft $UNIT" >&2; exit 1; }
 }
 
 scenario_declared() {
@@ -174,10 +179,12 @@ scenario_declared() {
 scenario_signed() {
     base
     declare_cfg
-    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
     rec signed show_json show "$UNIT" --json
     rec signed show show "$UNIT"
     rec_unit signed "$UNIT"
+    # The declared source, so a history that grounds a draft replays its real bytes.
+    rec_file signed src/toyq/config.py
     snap signed
     stage_page "$PAGE_V1"
     rec signed draft_json draft "$UNIT" "$(draft_path "$UNIT" "$TARGET")" --json
@@ -201,7 +208,8 @@ scenario_drafted() {
 
 scenario_accepted() {
     drafted
-    "$CRAYON" review "$UNIT" --verdict accept --note "Accurate and complete." >/dev/null 2>&1
+    "$CRAYON" review "$UNIT" --verdict accept --note "Accurate and complete." >/dev/null 2>&1 ||
+        { echo "setup failed: accept $UNIT" >&2; exit 1; }
     rec accepted show_json show "$UNIT" --json
     rec_unit accepted "$UNIT"
     rec_file accepted "$PAGE"
@@ -217,11 +225,14 @@ scenario_closing_linked() {
 import sys
 path = sys.argv[1]
 text = open(path, encoding="utf-8").read()
+if ":maxdepth: 1\n" not in text:
+    sys.exit("no toctree to list the page in")
 text = text.replace(":maxdepth: 1\n", ":maxdepth: 1\n\nreference/config\n", 1)
 open(path, "w", encoding="utf-8").write(text)
-' docs/index.md
-    git add docs/index.md
-    git commit -q -m "list the configuration reference in the toctree"
+' docs/index.md || { echo "setup failed: list the page in the toctree" >&2; exit 1; }
+    git add docs/index.md || { echo "setup failed: git add docs/index.md" >&2; exit 1; }
+    git commit -q -m "list the configuration reference in the toctree" ||
+        { echo "setup failed: commit the toctree entry" >&2; exit 1; }
     rec closing_linked show_json show "$UNIT" --json
     rec closing_linked summary summary "$UNIT"
     rec closing_linked accept review "$UNIT" --verdict accept
@@ -238,12 +249,16 @@ scenario_closing_nested() {
 import sys
 path = sys.argv[1]
 text = open(path, encoding="utf-8").read()
+if ":maxdepth: 1\n" not in text:
+    sys.exit("no toctree to list the section in")
 text = text.replace(":maxdepth: 1\n", ":maxdepth: 1\n\nreference/index\n", 1)
 open(path, "w", encoding="utf-8").write(text)
-' docs/index.md
+' docs/index.md || { echo "setup failed: list the section in the toctree" >&2; exit 1; }
     printf '# Reference\n\n```{toctree}\n:maxdepth: 1\n\nconfig\n```\n' >docs/reference/index.md
-    git add docs/index.md docs/reference/index.md
-    git commit -q -m "list the reference section and the configuration page in it"
+    git add docs/index.md docs/reference/index.md ||
+        { echo "setup failed: git add the toctree entries" >&2; exit 1; }
+    git commit -q -m "list the reference section and the configuration page in it" ||
+        { echo "setup failed: commit the toctree entries" >&2; exit 1; }
     rec closing_nested show_json show "$UNIT" --json
     rec closing_nested summary summary "$UNIT"
     rec closing_nested accept review "$UNIT" --verdict accept
@@ -275,15 +290,21 @@ walked_install() {
     base
     declare_install
     printf '%s' '[{"id":"install","text":"Install toyq from the checkout: python3 -m pip install /srv/toyq","mode":"agent","stateful":false},{"id":"init","text":"Create the configuration: toyq init","mode":"agent","stateful":false},{"id":"first-job","text":"Queue and run a job: toyq add \"echo hi\" && toyq run --once","mode":"ta","stateful":false}]' |
-        "$CRAYON" plan-steps install --steps-file - >/dev/null 2>&1
+        "$CRAYON" plan-steps install --steps-file - >/dev/null 2>&1 ||
+        { echo "setup failed: plan-steps install" >&2; exit 1; }
     local seq
     seq=$(last_plan_seq install)
-    record_step install install "$seq" pass "Successfully installed toyq\n" >/dev/null 2>&1
+    [ -n "$seq" ] || { echo "setup failed: read the step plan's seq" >&2; exit 1; }
+    record_step install install "$seq" pass "Successfully installed toyq\n" >/dev/null 2>&1 ||
+        { echo "setup failed: step install" >&2; exit 1; }
     record_step install init "$seq" deviated "Created toyq.toml\n" agent \
-        "toyq init needed --force-dir on a fresh checkout" >/dev/null 2>&1
-    skip_step install first-job "$seq" "no network in CI" >/dev/null 2>&1
+        "toyq init needed --force-dir on a fresh checkout" >/dev/null 2>&1 ||
+        { echo "setup failed: step init" >&2; exit 1; }
+    skip_step install first-job "$seq" "no network in CI" >/dev/null 2>&1 ||
+        { echo "setup failed: step first-job" >&2; exit 1; }
     stage_draft install how-to/install.md "$INSTALL_PAGE"
-    "$CRAYON" draft install "$(draft_path install how-to/install.md)" >/dev/null 2>&1
+    "$CRAYON" draft install "$(draft_path install how-to/install.md)" >/dev/null 2>&1 ||
+        { echo "setup failed: draft install" >&2; exit 1; }
 }
 
 # A walked how-to accepted with one deviated step, one skipped step and one
@@ -293,8 +314,10 @@ scenario_closing_walk() {
     local request
     walked_install
     "$CRAYON" review install --verdict fix \
-        --note "Say which Python version toyq needs." >/dev/null 2>&1
+        --note "Say which Python version toyq needs." >/dev/null 2>&1 ||
+        { echo "setup failed: fix install" >&2; exit 1; }
     request=$(tail -n 1 .crayon/units/install/ledger.jsonl | json_field seq)
+    [ -n "$request" ] || { echo "setup failed: read the fix request's seq" >&2; exit 1; }
     rec closing_walk show_json show install --json
     rec closing_walk accept review install --verdict accept --resolves "$request"
     rec closing_walk handover_json show install --json
@@ -325,16 +348,22 @@ Leave out db_path; storage gets its own page.'
 REPORT_GAPS='{"origins": ["src/toyq/config.py"], "gaps": ["No source lists the accepted log_level values; the page gives only the default."]}'
 REPORT_CLEAN='{"origins": ["src/toyq/config.py"], "gaps": [], "gaps_note": "Every setting on the page is read from src/toyq/config.py."}'
 
-# reported_unit STATE REPORT : a reference unit drafted by a named model with
-# intake notes and a context report, so review can weigh who drafted it and
-# write can voice its gaps. reported and reported_clean differ only in REPORT.
+# The first page less the one row REPORTED_NOTES leaves out, so a writer's own
+# draft can honour its notes. Derived, not typed: PAGE_V1 is its one definition.
+PAGE_NOTED=${PAGE_V1/'| `db_path` | `TOYQ_DB_PATH` | string | `toyq.sqlite` |\n'/}
+
+# reported_unit STATE REPORT [PAGE] : a reference unit drafted by a named model
+# with intake notes and a context report, so review can weigh who drafted it and
+# write can voice its gaps. reported and reported_clean differ only in REPORT, and
+# keep the row the notes leave out, which review is to find; reported_noted is
+# reported with PAGE_NOTED, the writer's own draft as its notes ask.
 reported_unit() {
-    local state="$1" report="$2" staged=".crayon/staging/$UNIT/report.json"
+    local state="$1" report="$2" page="${3:-$PAGE_V1}" staged=".crayon/staging/$UNIT/report.json"
     base
     declare_cfg "$REPORTED_NOTES"
-    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
     rec "$state" signed_show_json show "$UNIT" --json
-    stage_page "$PAGE_V1"
+    stage_page "$page"
     printf '%s\n' "$report" >"$staged"
     rec_file "$state" "$staged"
     rec "$state" draft draft "$UNIT" "$(draft_path "$UNIT" "$TARGET")" \
@@ -351,6 +380,12 @@ scenario_reported() {
 
 scenario_reported_clean() {
     reported_unit reported_clean "$REPORT_CLEAN"
+}
+
+scenario_reported_noted() {
+    [ "$PAGE_NOTED" != "$PAGE_V1" ] ||
+        { echo "setup failed: PAGE_NOTED left the db_path row in" >&2; exit 1; }
+    reported_unit reported_noted "$REPORT_GAPS" "$PAGE_NOTED"
 }
 
 scenario_edited() {
@@ -375,7 +410,7 @@ scenario_missing() {
 scenario_target_exists() {
     base
     declare_cfg
-    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
     mkdir -p "$(dirname "$PAGE")"
     printf '# Configuration\n\nHand-written notes.\n' >"$PAGE"
     rec target_exists show_json show "$UNIT" --json
@@ -387,8 +422,9 @@ scenario_target_exists() {
 scenario_stale() {
     base
     declare_cfg
-    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
-    "$CRAYON" unit edit "$UNIT" --audience "operators and developers configuring toyq" >/dev/null 2>&1
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
+    "$CRAYON" unit edit "$UNIT" --audience "operators and developers configuring toyq" \
+        >/dev/null 2>&1 || { echo "setup failed: unit edit $UNIT" >&2; exit 1; }
     rec stale show_json show "$UNIT" --json
     rec_unit stale "$UNIT"
     snap stale
@@ -399,7 +435,8 @@ scenario_stale() {
 scenario_retired() {
     base
     declare_cfg
-    "$CRAYON" unit retire "$UNIT" --note "Superseded by the settings guide." >/dev/null 2>&1
+    "$CRAYON" unit retire "$UNIT" --note "Superseded by the settings guide." >/dev/null 2>&1 ||
+        { echo "setup failed: unit retire $UNIT" >&2; exit 1; }
     rec retired show_json show "$UNIT" --json
     rec_unit retired "$UNIT"
     snap retired
@@ -411,15 +448,18 @@ declare_install() {
         "$CRAYON" unit new install --intent how-to \
             --audience "operators installing toyq for the first time" \
             --title "Install toyq" --target how-to/install.md \
-            --source README.md --body-file - >/dev/null 2>&1
-    "$CRAYON" signoff install >/dev/null 2>&1
+            --source README.md --body-file - >/dev/null 2>&1 ||
+        { echo "setup failed: unit new install" >&2; exit 1; }
+    "$CRAYON" signoff install >/dev/null 2>&1 ||
+        { echo "setup failed: signoff install" >&2; exit 1; }
 }
 
 scenario_walk() {
     base
     declare_install
     printf '%s' '[{"id":"install","text":"Install toyq from the checkout: python3 -m pip install /srv/toyq","mode":"agent","stateful":true},{"id":"init","text":"Create the configuration: toyq init","mode":"agent","stateful":true},{"id":"first-job","text":"Queue and run a job: toyq add \"echo hi\" && toyq run --once","mode":"agent","stateful":true}]' |
-        "$CRAYON" plan-steps install --steps-file - >/dev/null 2>&1
+        "$CRAYON" plan-steps install --steps-file - >/dev/null 2>&1 ||
+        { echo "setup failed: plan-steps install" >&2; exit 1; }
     rec walk show_json show install --json
     rec walk show show install
     rec_unit walk install
@@ -429,6 +469,7 @@ scenario_walk() {
 scenario_crashed() {
     base
     declare_cfg
+    # The crash IS the state: this signoff fails on purpose, so its exit is not checked.
     CRAYON_CRASH_AT=append "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
     rec crashed show_json show "$UNIT" --json
     rec_unit crashed "$UNIT"
@@ -452,7 +493,8 @@ lines = open(path, encoding="utf-8").read().splitlines(True)
 lines[1] = lines[1].replace("reference", "referenc3", 1)
 open(path, "w", encoding="utf-8").write("".join(lines))
 ' "$ledger"
-    git commit -q -a --amend -m "crayon: drafted $UNIT"
+    git commit -q -a --amend -m "crayon: drafted $UNIT" ||
+        { echo "setup failed: amend the drafted commit" >&2; exit 1; }
     cp "$saved" "$ledger"
     rm -f "$saved"
     rec diverged show_json show "$UNIT" --json
@@ -472,7 +514,8 @@ path = sys.argv[1]
 lines = open(path, encoding="utf-8").read().splitlines(True)
 open(path, "w", encoding="utf-8").write("".join(lines[:-1]))
 ' "$ledger"
-    git commit -q -a --amend -m "crayon: drafted $UNIT"
+    git commit -q -a --amend -m "crayon: drafted $UNIT" ||
+        { echo "setup failed: amend the drafted commit" >&2; exit 1; }
     cp "$saved" "$ledger"
     rm -f "$saved"
     rec no_material show_json show "$UNIT" --json
@@ -508,8 +551,12 @@ scenario_context() {
     rec_file context_recorded .crayon/context/structure.md
 }
 
+# A setup step that fails exits its scenario's subshell 1, the temp repo is still
+# cleaned up, and the recorder stops: a broken fixture never freezes a wrong
+# baseline (21 IN-08). record_states.py runs this with check=True.
 for scenario in declared signed drafted accepted closing_linked closing_nested closing closing_walk \
-    walk_drafted reported reported_clean edited missing target_exists stale retired walk crashed \
+    walk_drafted reported reported_clean reported_noted edited missing target_exists stale retired walk crashed \
     diverged no_material docs_outside context; do
-    ("scenario_$scenario"; cleanup)
+    (trap cleanup EXIT; "scenario_$scenario"; exit 0) ||
+        { echo "setup failed: scenario $scenario" >&2; exit 1; }
 done

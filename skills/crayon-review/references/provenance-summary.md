@@ -37,8 +37,8 @@ acted on is not something the record knows.
 | `provenance` | two halves: `record: verify <verdict> at <head> (<n> checks, <n> warn, <n> fail)` and `page: current` / `drifted since <sha>` / `missing` / `no basis recorded`. The `--json` value keeps that counted form; what you present is the human line `crayon summary` prints, `record: intact at <sha7>` or what it names as needing a look, so the counts are never read out |
 | `state`, `next` | the derived state (`declared`, `signed-off`, `drafted`, `reviewed`, `sealed`, `retired`) and the routed next token; `sealed` is presented as accepted |
 
-`page: current` compares the recorded digest with the bytes on disk and says nothing
-about git: a page the author hand-edited and `crayon edits` then adopted reads
+`page: current` compares the bytes crayon recorded with the bytes on disk and says
+nothing about git: a page the author hand-edited and `crayon edits` then adopted reads
 `current` while it is still uncommitted in the worktree. Present it as what it is, and
 see step 4 for who commits the page before an accept is recorded.
 

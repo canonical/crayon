@@ -4589,7 +4589,7 @@ class TestSummaryGolden(TempRepoTestCase):
             self.assertEqual(proc.returncode, 0, "%s\n%s" % (args, proc.stderr))
         return proc
 
-    def build_fixture(self):
+    def build_fixture(self, accept=True):
         """`unit new` -> `signoff` -> `draft` -> `steer` -> `edits` -> `accept`."""
         (self.repo / "docs" / "reference").mkdir(parents=True)
         (self.repo / "docs" / "index.md").write_text("# Docs\n", encoding="utf-8")
@@ -4631,6 +4631,8 @@ class TestSummaryGolden(TempRepoTestCase):
             "edits", "fixture-unit", "--note-file", "-",
             stdin="hand edit | with a pipe\nand a second line",
         )
+        if not accept:
+            return
         self.crayon(
             "review", "fixture-unit", "--verdict", "accept",
             "--note", "ship it", "--resolves", "4",
@@ -4746,6 +4748,341 @@ class TestSummaryGolden(TempRepoTestCase):
         proc = self.crayon("summary", "fixture-unit", "--md")
         self.assertNotIn("steering applied", proc.stdout)
         self.assertIn("## Recorded requests", proc.stdout)
+
+
+class TestNonStringNotesRender(TempRepoTestCase):
+    """20 WR-04 — a forged non-string note renders through every human read.
+
+    The chain is an unkeyed sha256, so a contributor can commit a ledger whose
+    chain is valid and whose request or reviewer-edit ``note`` is the integer
+    ``5``. Human ``show`` and ``summary`` used to pass it to ``collapse_note``
+    and exit ``internal_error``; ``--json`` keeps what the ledger holds.
+    """
+
+    crayon = TestSummaryGolden.crayon
+    build_fixture = TestSummaryGolden.build_fixture
+
+    def relink(self, mutate):
+        """Build the fixture, then commit its ledger re-linked after ``mutate``."""
+        self.build_fixture()
+        ledger = self.repo / ".crayon/units/fixture-unit/ledger.jsonl"
+        events = [
+            json.loads(row)
+            for row in ledger.read_text(encoding="utf-8").split("\n")
+            if row
+        ]
+        for event in events:
+            mutate(event)
+        lines = crayon.chain_lines(events)
+        ledger.write_text("".join(row + "\n" for row in lines), encoding="utf-8")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "a forged record")
+
+    def forge(self, kind):
+        """Re-link the fixture's ledger with ``kind``'s note set to ``5``."""
+
+        def numeric(event):
+            if event.get("kind") == kind:
+                event["note"] = 5
+
+        self.relink(numeric)
+
+    def renders(self, *verb):
+        proc = self.crayon(*verb, check=False)
+        self.assertNotIn("internal_error", proc.stdout + proc.stderr)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        return proc.stdout
+
+    def test_show_and_summary_render_a_numeric_request_note(self):
+        self.forge("steering")
+        out = self.renders("show", "fixture-unit")
+        self.assertIn("request 4 — resolved — steering (manual): 5", out)
+        out = self.renders("summary", "fixture-unit")
+        self.assertIn("request 4 — resolved — steering (manual): 5", out)
+        out = self.renders("summary", "fixture-unit", "--md")
+        self.assertIn("| 4 | resolved | 5 |", out)
+
+    def test_show_renders_a_numeric_reviewer_edit_note(self):
+        self.forge("reviewer-edit")
+        for verb in (("show",), ("summary",)):
+            out = self.renders(*verb + ("fixture-unit",))
+            self.assertIn("reviewer edits:\n  - 5\n", out)
+        out = self.renders("summary", "fixture-unit", "--md")
+        self.assertIn("## Reviewer edits\n\n- 5\n", out)
+
+    def test_json_keeps_the_recorded_value(self):
+        """The fix is on the human path: ``--json`` still carries the int."""
+        self.forge("steering")
+        for verb in ("show", "summary"):
+            payload = json.loads(self.renders(verb, "fixture-unit", "--json"))
+            notes = [row["note"] for row in payload["requests"] if row["seq"] == 4]
+            self.assertEqual(notes, [5])
+
+    def test_a_numeric_withdrawal_reason_is_text_on_the_human_path_only(self):
+        events = opening() + [
+            signoff(2, ["a.rst"]),
+            generation(3, [("a.rst", "H1")], signoff_seq=2),
+            steering(4),
+            review(5, "accept", 3, withdraws=[{"seq": 4, "reason": 9}]),
+        ]
+        human = crayon.describe_requests(events, 3)
+        self.assertEqual([row["reason"] for row in human if row["seq"] == 4], ["9"])
+        kept = crayon.describe_requests(events, 3, recorded=True)
+        self.assertEqual([row["reason"] for row in kept if row["seq"] == 4], [9])
+
+
+class TestPlainLinePolish(TempRepoTestCase):
+    """20 IN-03..IN-07 (first review): the plain lines hold in every branch."""
+
+    crayon = TestSummaryGolden.crayon
+    build_fixture = TestSummaryGolden.build_fixture
+    relink = TestNonStringNotesRender.relink
+    renders = TestNonStringNotesRender.renders
+
+    # 20 IN-03
+    def test_drifted_since_an_earlier_commit_when_the_recording_commit_is_unknown(self):
+        state = {
+            "basis": {"commit": "abcdef0" + "1" * 33},
+            "basis_seq": 3,
+            "page_missing": False,
+            "page_drift": True,
+        }
+        with mock.patch.object(crayon, "find_seq_commit", return_value=None):
+            plain = crayon._provenance_page(self.repo, "u", state, True)
+            counted = crayon._provenance_page(self.repo, "u", state, False)
+        self.assertEqual(plain, "drifted since an earlier commit")
+        self.assertNotIn("abcdef0", plain, "the recording's parent is not its commit")
+        # --json's `provenance` keeps its contract-1 value.
+        self.assertEqual(counted, "drifted since abcdef0")
+
+    # 20 IN-04
+    def test_an_accept_routed_elsewhere_prints_what_remains(self):
+        self.build_fixture(accept=False)
+        here = os.getcwd()
+        self.addCleanup(os.chdir, here)
+        os.chdir(str(self.repo))
+        out = io.StringIO()
+        with mock.patch.dict(os.environ, self.env, clear=True), mock.patch.object(
+            crayon, "next_token_for", return_value="record_edits"
+        ), mock.patch("sys.stdout", out), mock.patch("sys.stderr", io.StringIO()):
+            code = crayon.main(
+                ["review", "fixture-unit", "--verdict", "accept", "--resolves", "4"]
+            )
+        self.assertEqual(code, 0)
+        parts = out.getvalue().rstrip("\n").split(" · ")
+        self.assertEqual(parts[:2], ["reviewed fixture-unit: accept",
+                                     "accepted reference/fixture.rst"])
+        self.assertEqual(parts[-1], "Next: record_edits")
+        self.assertEqual(len(parts), 4, "what changed, where, what remains, Next")
+        self.assertEqual(parts[2], "not handed over yet")
+        self.assertIsNone(ledger_words_pattern().search(out.getvalue()))
+
+    # 20 IN-05
+    def test_a_withdrawal_without_a_reason_has_no_dangling_colon(self):
+        def int_form(event):
+            if event.get("kind") == "review" and event.get("verdict") == "accept":
+                event["resolves"], event["withdraws"] = [], [4]
+
+        self.relink(int_form)
+        show = self.renders("show", "fixture-unit")
+        text = self.renders("summary", "fixture-unit")
+        md = self.renders("summary", "fixture-unit", "--md")
+        for out in (show, text, md):
+            self.assertNotIn("withdrawn:", out)
+        self.assertIn("  request 4 — withdrawn — steering (manual): ", show)
+        self.assertIn("  request 4 — withdrawn — steering (manual): ", text)
+        self.assertIn("\n    request 4 withdrawn\n", text)
+        self.assertIn("| 4 | withdrawn | ", md)
+        self.assertIn("\n- request 4 withdrawn\n", md)
+
+    # 20 IN-06
+    def test_md_text_escapes_a_leading_block_marker(self):
+        for raw, escaped in (
+            ("# heading", "\\# heading"),
+            ("- item", "\\- item"),
+            ("+ item", "\\+ item"),
+            ("* item", "\\* item"),
+            ("1. item", "1\\. item"),
+            ("12) item", "12\\) item"),
+            # `>` is already `&gt;`, which opens no quote; a backslash before
+            # the entity would print `&gt;` itself.
+            ("> quote", "&gt; quote"),
+        ):
+            with self.subTest(raw=raw):
+                self.assertEqual(crayon.md_text(raw), escaped)
+        for kept in ("a # b - c 1. d", "-5 degrees", "#hashtag", "2026-10-12"):
+            self.assertEqual(crayon.md_text(kept), kept)
+
+    # 20 IN-07, 24 WR-05
+    def test_rule_two_names_several_requests_in_the_plural(self):
+        """24 WR-05: every plural case comes from the detail V10 really emits.
+
+        Each detail is built from ledger events through ``verify_derivation``,
+        never typed by hand, so the rule is pinned against the ``seq(s) 2, 3``
+        form the V10 templates write. The plain line and the plain detail name
+        several requests in the plural; one request keeps ``request(s)``; the
+        ``--json`` and ``--verbose`` detail stays as recorded.
+        """
+        base = opening("u") + [
+            signoff(2, ["a.rst"]),
+            generation(3, [("a.rst", "h1")], signoff_seq=2),
+        ]
+        withdrawn = [{"seq": 2, "reason": "r"}, {"seq": 3, "reason": "r"}]
+        both = [{"seq": 4, "reason": "r"}, {"seq": 5, "reason": "r"}]
+        for events, raw, plain in (
+            (
+                base + [accept(4, 3, [("a.rst", "h1")], resolves=[2, 3])],
+                "the accept at seq 4 resolves seq(s) 2, 3, which were not pending",
+                "the accept at entry 4 resolves requests 2, 3, which were not pending",
+            ),
+            (
+                base + [accept(4, 3, [("a.rst", "h1")], withdraws=withdrawn)],
+                "the accept at seq 4 withdraws seq(s) 2, 3, which were not pending",
+                "the accept at entry 4 withdraws requests 2, 3, which were not pending",
+            ),
+            (
+                base
+                + [
+                    steering(4),
+                    steering(5),
+                    accept(6, 3, [("a.rst", "h1")], resolves=[4, 5], withdraws=both),
+                ],
+                "the accept at seq 6 both resolves and withdraws seq(s) 4, 5",
+                "the accept at entry 6 both resolves and withdraws requests 4, 5",
+            ),
+            (
+                base + [accept(4, 3, [("a.rst", "h1")], resolves=[2])],
+                "the accept at seq 4 resolves seq(s) 2, which were not pending",
+                "the accept at entry 4 resolves request(s) 2, which were not pending",
+            ),
+        ):
+            with self.subTest(raw=raw):
+                checks = crayon.verify_derivation(events)
+                row = by_id(checks)["V10"]
+                self.assertEqual(row["status"], "fail")
+                # --json and --verbose print the detail as recorded
+                self.assertEqual(str(row["detail"]), raw)
+                self.assertIn(
+                    "V10 fail — %s" % raw, crayon.verify_report_lines("", checks)
+                )
+                self.assertEqual(crayon.plain_detail(row["detail"]), plain)
+                self.assertIn(
+                    "  %s: %s" % (crayon.CHECK_LABELS["V10"], plain),
+                    crayon.verify_plain_lines(checks),
+                )
+        # the template that names one request by itself
+        self.assertEqual(
+            crayon.plain_detail("the accept at seq 5 withdraws seq 4 with no reason"),
+            "the accept at entry 5 withdraws request 4 with no reason",
+        )
+
+
+class TestFrozenSegmentsAndHumanPaths(TempRepoTestCase):
+    """20 IN-04 (second review) and 20 IN-01 (first review), D-23.
+
+    ``edits`` and ``resume --dry-run`` build a human line and a frozen
+    contract-1 ``--json`` ``message`` from the same items; the strings below
+    were captured from the tool before the shared items were bound to names,
+    so reordering a human segment can never move a ``--json`` byte. The human
+    ``show`` and ``summary`` do no ``--json``-only work.
+    """
+
+    crayon = TestSummaryGolden.crayon
+    build_fixture = TestSummaryGolden.build_fixture
+
+    def in_process(self, argv):
+        """Run ``crayon.main(argv)`` in the fixture repo; ``(code, stdout)``."""
+        here = os.getcwd()
+        self.addCleanup(os.chdir, here)
+        os.chdir(str(self.repo))
+        out = io.StringIO()
+        with mock.patch.dict(os.environ, self.env, clear=True), mock.patch(
+            "sys.stdout", out
+        ), mock.patch("sys.stderr", io.StringIO()):
+            code = crayon.main(argv)
+        return code, out.getvalue()
+
+    def test_edits_and_dry_run_json_messages_are_unchanged(self):
+        self.build_fixture(accept=False)
+        (self.repo / "docs" / "reference" / "fixture.rst").write_text(
+            "Fixture\n=======\n\nEdited by hand twice.\n", encoding="utf-8"
+        )
+        body = json.loads(
+            self.crayon("edits", "fixture-unit", "--note", "again", "--json").stdout
+        )
+        self.assertEqual(
+            body["message"],
+            "recorded edits on fixture-unit · .crayon/units/fixture-unit/ledger.jsonl"
+            " · 1 file(s) in the basis",
+        )
+
+        env = dict(self.env)
+        env["CRAYON_CRASH_AT"] = "append"
+        subprocess.run(
+            [sys.executable, str(CRAYON_PATH), "unit", "new", "crashed",
+             "--intent", "reference", "--audience", "A", "--title", "C",
+             "--target", "reference/crashed.rst", "--body-file", "-"],
+            cwd=str(self.repo), env=env, input="# p\n",
+            capture_output=True, text=True,
+        )
+        proc = self.crayon("resume", "crashed", "--dry-run", "--json")
+        self.assertEqual(
+            json.loads(proc.stdout)["message"],
+            "resumable crashed · uncommitted event(s) at seq 0–1 · 1 file(s)",
+        )
+        human = self.crayon("resume", "crashed", "--dry-run").stdout.splitlines()[-1]
+        self.assertEqual(
+            human,
+            "resumable crashed · 2 uncommitted event(s) from an interrupted write"
+            " · 1 file(s) · Next: resume",
+        )
+
+    def test_human_show_does_not_compute_the_json_qualifier(self):
+        self.build_fixture()
+        with mock.patch.object(
+            crayon, "state_qualifier", wraps=crayon.state_qualifier
+        ) as spy:
+            code, _ = self.in_process(["show", "fixture-unit"])
+            self.assertEqual(code, 0)
+            self.assertEqual(spy.call_count, 0, "human show built the --json qualifier")
+            code, out = self.in_process(["show", "fixture-unit", "--json"])
+            self.assertEqual(code, 0)
+            self.assertEqual(spy.call_count, 1)
+        self.assertIn("qualifier", json.loads(out))
+
+    def test_human_summary_reads_head_once(self):
+        """Both provenance lines come from one HEAD read.
+
+        ``run_verify``'s own read (V16's ancestry walk) is the verifier's and
+        is not counted: the reads counted are the ones ``summary`` makes to
+        render its record line.
+        """
+        self.build_fixture()
+        reads = []
+        verifying = []
+        real_git, real_verify = crayon.git, crayon.run_verify
+
+        def counting(args, cwd, env=None):
+            if not verifying and args and args[0] == "rev-parse" and "HEAD" in args:
+                reads.append(list(args))
+            return real_git(args, cwd, env=env)
+
+        def verify(*args, **kwargs):
+            verifying.append(True)
+            try:
+                return real_verify(*args, **kwargs)
+            finally:
+                verifying.pop()
+
+        with mock.patch.object(crayon, "git", counting), mock.patch.object(
+            crayon, "run_verify", verify
+        ):
+            for flags in ([], ["--md"]):
+                del reads[:]
+                code, out = self.in_process(["summary", "fixture-unit"] + flags)
+                self.assertEqual(code, 0)
+                self.assertIn("record: intact at ", out)
+                self.assertEqual(len(reads), 1, "HEAD read %d times" % len(reads))
 
 
 # --- U-10 — the tool's own guards: line budget, 3.9 hazards, packaging -------
@@ -8007,6 +8344,8 @@ class TestPlainVerify(unittest.TestCase):
             "verify_currency",
             "verify_corroboration",
             "_finding",
+            # 20 IN-03 (second review): the one note, `derive`'s warning.
+            "unknown_kind_notes",
         ):
             self.assertIn(name, functions, "%s is gone from crayon.py" % name)
             for node in ast.walk(functions[name]):
@@ -8024,6 +8363,15 @@ class TestPlainVerify(unittest.TestCase):
                         node.func, ast.Attribute
                     ):
                         self.assertNotEqual(node.func.attr, "format", ".format")
+
+    def test_every_note_derive_returns_is_a_said_detail(self):
+        """20 IN-03 (second review): notes reach ``plain_detail`` as ``Detail``s too."""
+        events = opening() + [ev("telemetry", 2), ev("generations", 3)]
+        notes = crayon.derive(events, fs_of(None))["warnings"]
+        self.assertTrue(notes, "the fixture carries an unknown kind")
+        for note in notes:
+            self.assertIsInstance(note, crayon.Detail)
+        self.assertEqual(crayon.unknown_kind_notes(events), notes)
 
 
 class TestSaidDetail(unittest.TestCase):
@@ -8090,16 +8438,48 @@ class TestSaidDetail(unittest.TestCase):
         built = crayon.said("for seq %s in seq order", crayon.ToolText("3, 4"))
         self.assertEqual(crayon.plain_detail(built), "for entries 3, 4 in record order")
 
-    def test_said_join_keeps_each_items_pieces_and_reads_a_literal_as_tool_text(self):
+    def test_said_join_keeps_each_items_pieces_and_a_bare_detail_is_tool_text(self):
         built = crayon.said_join(
             " · ",
-            [crayon.said("%s: %s", "a/b.md", crayon.ToolText("missing")), "the basis"],
+            [
+                crayon.said("%s: %s", "a/b.md", crayon.ToolText("missing")),
+                crayon.Detail("the basis"),
+            ],
         )
         self.assertIsInstance(built, crayon.Detail)
         self.assertEqual(str(built), "a/b.md: missing · the basis")
         self.assertEqual(
             crayon.plain_detail(built), "a/b.md: missing · the recorded pages"
         )
+
+    def test_said_join_refuses_a_plain_string(self):
+        """20 IN-01 (second review): no item is taken for the tool's words by default."""
+        for item in ("a", crayon.ToolText("a"), 5):
+            with self.subTest(item=item):
+                with self.assertRaises(TypeError):
+                    crayon.said_join(", ", [item])
+        with self.assertRaises(TypeError):
+            crayon.said_join(", ", [crayon.said("%s", "x"), "the basis"])
+        built = crayon.said_join(", ", [crayon.said("%s", "x"), crayon.said("%s", "y")])
+        self.assertEqual(str(built), "x, y")
+        self.assertEqual(built.pieces, (("x", False), (", ", True), ("y", False)))
+
+    def test_said_refuses_an_unknown_percent(self):
+        """20 IN-02 (second review): ``said`` raises wherever ``%`` would."""
+        for template, args in (
+            ("50%.", ()),
+            ("50%", ()),
+            ("%(k)s", ("x",)),
+            ("a %q b", ("x",)),
+        ):
+            with self.subTest(template=template):
+                with self.assertRaises((TypeError, ValueError)) as native:
+                    template % args
+                with self.assertRaises(type(native.exception)) as caught:
+                    crayon.said(template, *args)
+                self.assertEqual(str(caught.exception), str(native.exception))
+        # A length modifier is one `%` accepts, so `said` accepts it too.
+        self.assertEqual(str(crayon.said("%ld item(s)", 3)), "%ld item(s)" % (3,))
 
 
 class TestPlainVerifyKeepsContributorContent(VerifyRepoTestCase):
