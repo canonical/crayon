@@ -67,8 +67,10 @@ draw the TA's own picture out, not to hand them one. So:
   plan. Bank it all, reflect it back as settled, and ask only what is genuinely
   still open. Re-asking an answered question is the cardinal intake sin. One of
   SKILL.md step 2's two fixed questions — where the reader arrives from, or what
-  they do right after — is always open, so even a brief that answers everything
-  gets that one question before anything is recorded.
+  they do right after — is always open. The leave-out question, what the page can
+  leave out, is always open too, asked after the arrival-or-next question, so even a
+  brief that answers everything gets those two questions before anything is
+  recorded.
 - **"Just write it for me":** decline warmly and keep drawing out — drafting is
   crayon-write's job after signoff, and the two minutes of intake are what make
   the draft land right the first time.

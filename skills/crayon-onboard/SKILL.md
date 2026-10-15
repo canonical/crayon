@@ -55,6 +55,32 @@ the context record it makes is `.crayon/context/manifest.json`, which the tool w
 and nothing else ever edits. Nothing in this skill opens any record in an editor.
 </opening>
 
+<!-- plain-words:begin -->
+<plain_words>
+What the author reads from this skill is in plain words. The record's own words stay in
+`--json`, in the ledger and on every command line, and never reach your prose.
+
+- **Accepted, the pages as accepted, request N.** Say "accepted" where the record says
+  sealed, "the pages as accepted" where it says basis, and "request 7" where it says
+  seq 7 for a request. Give no other record entry a number, neither "event 7" nor
+  "ledger line 7": say what is already recorded and name its commit. These record
+  words stay out of your own prose altogether, not even as an English idiom: say
+  "on what grounds", not "on what basis".
+- **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
+  a sha256, a digest, and a verify or check count never appear in what you say;
+  name a commit by its id, never as a hash. Quote the tallies:
+  the walk tally and the findings tally are the tool's and the rubric's own lines.
+- **The success line, verbatim.** Echo each verb's success response line exactly as the
+  tool printed it; it is already plain. These rules cover what you say around it.
+- **Refusals in plain words, commands exact.** Tell the author in plain words what a
+  refusal means, for example "request 4 is still open". A command you run or show keeps
+  its real flags and values, in a code span. Tool output you show verbatim goes in a
+  fenced code block, never inside a sentence. That covers what a step or a routing row
+  says to show, and any other line you quote beyond the success line, such as a
+  diagnostic a verb prints.
+</plain_words>
+<!-- plain-words:end -->
+
 <hard_gate>
 Do NOT write `.crayon/context/*.md` or `.crayon/context/manifest.json` yourself, and
 do NOT hand an artefact to the author to commit by hand. The only path an artefact has

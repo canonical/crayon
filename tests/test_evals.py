@@ -14,8 +14,10 @@ import json
 import os
 import re
 import shlex
+import shutil
 import sys
 import tempfile
+import time
 import unittest
 import urllib.error
 from pathlib import Path
@@ -47,6 +49,28 @@ SPEC = {
     "price_per_mtok": [1.0, 2.0],
 }
 
+#: WR-04: the record words the plain-words rule names and the check fails, one
+#: typed form each, so the rule (``skills/README.md``), the grader
+#: (``grade.LEDGER_WORDS_RE``) and the eval README are each read against it.
+RECORD_WORDS = ("sealed", "basis", "seq", "plan_hash", "hash", "sha256", "digest",
+                "event 7", "ledger line 7")
+
+#: B-61's foil proves the always-on plain-words check end to end, so it is the
+#: one case allowed to fail on that check alone; any other foil that fails only
+#: it would hide a case whose own assertions are vacuous (Pitfall 2).
+PLAIN_WORDS_ONLY_FOILS = {
+    "B-61": "its foil names request 4 and its record number too; only the "
+            "always-on check can fail it",
+}
+
+
+#: CR-01: the one-line notice after a step answer that asks for a page change,
+#: typed once: it is not recorded until the verdict, and a fix or redraft
+#: verdict with those words records it. B-65 and B-75 each carry both (IN-01).
+NOTICE_RES = (
+    "(?i)\\b(not|nothing|isn['\u2019]t)\\b[^\\n]{0,60}\\brecorded\\b",
+    "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b",
+)
 
 def turn(content="", calls=(), finish="stop"):
     return {
@@ -68,6 +92,71 @@ def trace(*turns):
 
 def bash(command):
     return ("Bash", {"command": command})
+
+
+def conversation_key(case):
+    """One lane B conversation: the skill, the ask, the sandbox, and the
+    resolved prelude and history replayed into it (P-22-36). Two cases with the
+    same key put the model in the same place, so a reply cannot be right in one
+    and wrong in the other."""
+    resolved = case["resolved"]
+    return (case["skill"], case.get("ask", ""), resolved["sandbox"],
+            json.dumps(resolved["prelude"], sort_keys=True),
+            json.dumps(resolved["history"], sort_keys=True))
+
+
+def conversations(cases):
+    """Lane B cases grouped by ``conversation_key``, in load order."""
+    groups = {}
+    for case in cases:
+        groups.setdefault(conversation_key(case), []).append(case)
+    return list(groups.values())
+
+
+def oracles_failing_a_sibling(cases, ctx):
+    """Every (oracle case id, sibling case id) pair in one conversation where
+    the oracle, run once and graded offline with ``ctx``'s judge, fails the
+    sibling's assertions (WR-06). One state, one right answer: an oracle that
+    fails a sibling would be right in one case and wrong in the other. Foils are
+    not graded against siblings; a foil need only fail its own case."""
+    found = []
+    for group in conversations(cases):
+        if len(group) < 2:
+            continue
+        for good in group:
+            tr = lanes.run_b(good, SPEC, StubProvider(run.scripted(good["oracle"])), ctx)
+            for other in group:
+                if other is not good and not grade.grade(
+                        other["assert"], tr, {"judge": ctx["judge"]})["passed"]:
+                    found.append((good["id"], other["id"]))
+    return sorted(found)
+
+
+_FENCE_RE = re.compile(r"(?m)^(?:```|~~~)")
+
+
+def known_good_splices(case):
+    """(where, text) for each known-good reply in a raw case: every oracle
+    turn's content, and every ``assistant`` string replayed in its history or
+    prelude. Foils are not here: a foil may break a rule on purpose."""
+    texts = [("oracle[%d]" % i, reply.get("content"))
+             for i, reply in enumerate(case.get("oracle") or [])]
+    for field in ("prelude", "history"):
+        texts += [("%s[%d]" % (field, i), step.get("assistant"))
+                  for i, step in enumerate(case.get(field) or []) if isinstance(step, dict)]
+    return [(where, text) for where, text in texts if isinstance(text, str)]
+
+
+def unfenced_splices(case):
+    """Each ``@RECORDED{…}`` in a known-good reply of a raw case, before
+    splicing, that sits outside a fenced block (WR-07): an even count of fence
+    openings, three backticks or three tildes, before it."""
+    found = []
+    for where, text in known_good_splices(case):
+        for match in lanes._RECORDED_RE.finditer(text):
+            if len(_FENCE_RE.findall(text[:match.start()])) % 2 == 0:
+                found.append((where, match.group(0)))
+    return found
 
 
 class FakeResponse(io.BytesIO):
@@ -318,6 +407,117 @@ class TestAssertionKinds(unittest.TestCase):
         varied = " ".join("sentence number %d says something new." % i for i in range(400))
         self.assertIsNone(grade.turn_error(turn(varied)))
 
+    def test_plain_words_flags_a_record_word_and_names_it(self):
+        spec = {"kind": "plain_words"}
+        said = self.check(spec, trace(turn("Seq 4 is still pending.")))
+        self.assertFalse(said["pass"])
+        self.assertIn("'Seq'", said["feedback"])
+        ran = turn("Request 4 is still pending; I ran "
+                   "`crayon review cfg --verdict accept --resolves 4`")
+        self.assertTrue(self.check(spec, trace(ran))["pass"])
+        fenced = turn("The tool printed:\n\n```\nthe basis at seq 3 was already accepted\n```\n"
+                      "\nRequest 3 is accepted.")
+        self.assertTrue(self.check(spec, trace(fenced))["pass"])
+        asked = ("AskUserQuestion", {"questions": [{
+            "question": "Is seq 4 resolved?",
+            "options": [{"label": "Yes"}, {"label": "No"}]}]})
+        self.assertFalse(self.check(spec, trace(turn(calls=[asked])))["pass"])
+        described = ("AskUserQuestion", {"questions": [{
+            "question": "Accept request 4?",
+            "options": [{"label": "Accept", "description": "Seals it"},
+                        {"label": "Not yet"}]}]})
+        self.assertFalse(self.check(spec, trace(turn(calls=[described])))["pass"])
+
+    def test_plain_words_strips_code_in_each_part_alone(self):
+        # Joined, the reply's unclosed fence would pair with the option's fence
+        # and swallow the question between them: the check would fail open.
+        ask = ("AskUserQuestion", {"questions": [{
+            "question": "The basis is sealed.",
+            "options": [{"label": "Fine", "description": "```\nok\n```"}]}]})
+        tr = trace(turn("Here is what it printed:\n```\nrequest 4 is pending", calls=[ask]))
+        out = self.check({"kind": "plain_words"}, tr)
+        self.assertFalse(out["pass"], out)
+        self.assertIn("'basis'", out["feedback"])
+
+    def said_everywhere(self, text):
+        """``text`` said in reply prose, a question, an option label and a description."""
+        def asked(question="Which one?", label="Go on", description=""):
+            return trace(turn(calls=[("AskUserQuestion", {"questions": [{
+                "question": question,
+                "options": [{"label": label, "description": description}]}]})]))
+        return {"prose": trace(turn(text)), "question": asked(question=text),
+                "label": asked(label=text), "description": asked(description=text)}
+
+    def test_plain_words_reads_every_token_everywhere_the_author_reads(self):
+        spec = {"kind": "plain_words"}
+        for token in ("seal", "seals", "sealed", "SEALED", "basis", "seq", "Seq", "seqs",
+                      "plan_hash", "plan hash", "Plan Hash", "hash", "hashes", "sha256",
+                      "SHA-256", "digest", "digests", "event 7", "ledger line 7"):
+            for where, tr in self.said_everywhere("Here %s is said." % token).items():
+                with self.subTest(token=token, where=where):
+                    out = self.check(spec, tr)
+                    self.assertFalse(out["pass"], out)
+                    self.assertIn(repr(token), out["feedback"])
+            for form, text in (("inline code", "Here `%s` is quoted." % token),
+                               ("fenced block", "Quoted:\n```\n%s 4\n```\nDone." % token),
+                               ("tilde fence", "Quoted:\n~~~\n%s 4\n~~~\nDone." % token)):
+                for where, tr in self.said_everywhere(text).items():
+                    with self.subTest(token=token, form=form, where=where):
+                        out = self.check(spec, tr)
+                        self.assertTrue(out["pass"], out)
+
+    def test_plain_words_passes_plain_forms_and_flags_idioms(self):
+        spec = {"kind": "plain_words"}
+        for text in ("cfg is accepted.", "These are the pages as accepted.",
+                     "Request 7 is still open.", "Run the sequence of steps again.",
+                     "Sealing it is the author's call.",
+                     "Line 13 of the page carries two clauses.", "The events are listed.",
+                     "Add a hashtag.", "The base page links here."):
+            with self.subTest(text=text):
+                self.assertTrue(self.check(spec, trace(turn(text)))["pass"])
+        # WR-04: the set is the plain-words rule's own forms, exactly these, so
+        # "sealing" passes and a page's "line 13" is not a ledger line. The rule
+        # bans the words even as an English idiom, and a flag outside a code span
+        # is prose. Pitfall 6: an rST double-backtick literal is not stripped;
+        # single backticks are the inline code form, so ``seq`` reads as prose.
+        for text in ("The queue drains on a daily basis.", "Pass --steps-seq 3 to the tool.",
+                     "Add a Crayon-Seq trailer.", "The ``seq`` field is 4."):
+            with self.subTest(text=text):
+                self.assertFalse(self.check(spec, trace(turn(text)))["pass"])
+
+    def test_plain_words_on_an_empty_trace_is_an_error(self):
+        spec = {"kind": "plain_words"}
+        with self.assertRaises(grade.GradeError):
+            self.check(spec, trace())
+        for text in ("", "~~~\n~~~", "~~~\nthe basis at seq 3\n~~~",
+                     "```\nplan_hash sha256\n```"):
+            with self.subTest(text=text):
+                self.assertTrue(self.check(spec, trace(turn(text)))["pass"])
+
+    def test_plain_words_reads_an_indented_block_as_prose(self):
+        # Only a fence or an inline span is code to the grader; an indented block
+        # is prose, so tool output shown that way fails (the eval README says so).
+        out = self.check({"kind": "plain_words"},
+                         trace(turn("The tool printed:\n\n    the basis at seq 3\n\nDone.")))
+        self.assertFalse(out["pass"], out)
+        self.assertIn("'basis'", out["feedback"])
+
+    def test_plain_words_has_no_runaway_backtracking(self):
+        text = ("event ledger line sha plan hash " * 1600)[:50000]
+        start = time.monotonic()
+        grade.LEDGER_WORDS_RE.search(text)
+        grade.LEDGER_WORDS_RE.findall(text)
+        self.assertLess(time.monotonic() - start, 1.0)
+
+    def test_said_is_its_parts_joined(self):
+        ask = ("AskUserQuestion", {"questions": [{
+            "question": "Which request first?",
+            "options": [{"label": "Request 4", "description": "the retries table"},
+                        {"label": "Request 7"}]}]})
+        tr = trace(turn("Two requests are open."), turn(calls=[ask]))
+        self.assertEqual(grade._said(tr), "\n".join(grade._said_parts(tr)))
+        self.assertEqual(len(grade._said_parts(tr)), 4)
+
     def test_grade_aggregates_and_names_every_failure(self):
         out = grade.grade(
             [{"kind": "text_re", "re": "yes"}, {"kind": "text_re", "re": "no"},
@@ -528,6 +728,11 @@ class TestEpisodeKinds(unittest.TestCase):
             self.assertTrue(self.counts({"max": 0}, tr)["pass"])
             self.assertFalse(self.counts({"min": 1}, tr)["pass"])
 
+    def test_question_count_ignores_question_marks_in_a_tilde_fence(self):
+        fenced = self.replied("Recorded:\n~~~\nwhat? why? how?\n~~~\nNext: /crayon-write cfg.")
+        self.assertTrue(self.counts({"max": 0}, fenced)["pass"])
+        self.assertFalse(self.counts({"min": 1}, fenced)["pass"])
+
     def test_question_count_bounds_are_inclusive(self):
         two = self.replied("Who is it for? What should it cover?")
         self.assertTrue(self.counts({"min": 2}, two)["pass"])
@@ -605,7 +810,7 @@ class TestMacros(unittest.TestCase):
                 self.assertTrue(self.grade(macro, tr)["pass"])
 
     def test_every_macro_expands_to_a_pattern(self):
-        for name in ("@MARKER", "@OFFERS_PUBLISH", "@OFFERS_NOTE"):
+        for name in ("@MARKER", "@OFFERS_PUBLISH", "@OFFERS_NOTE", "@HEDGE"):
             with self.subTest(macro=name):
                 self.assertIn(name, lanes.MACROS)
                 self.assertNotIn(name, lanes._expand("x|%s|y" % name))
@@ -666,6 +871,66 @@ class TestMacros(unittest.TestCase):
             trace(turn("How about the precedence rule: should the page cover it?")),
             trace(turn("Is there something like a default you want the page to name?")),
         ])
+
+    def test_hedge_catches_a_blanket_disclaimer_and_misses_a_grounded_line(self):
+        self.proves("@HEDGE", caught=[
+            trace(turn("Please double-check the page before publishing.")),
+            trace(turn("This page may contain errors.")),
+            trace(turn("I might have made mistakes.")),
+            trace(turn("What I'm not sure of:\n- the retry order")),
+            trace(turn("Please verify everything before you accept.")),
+            self.options(("Accept", "Please double-check everything first"), ("Fix", "")),
+            # WR-03: a negated blanket disclaimer names no thing; it is a hedge.
+            trace(turn("I couldn't verify everything.")),
+            trace(turn("I could not verify all of it.")),
+            trace(turn("I didn't verify the page.")),
+            trace(turn("Some details may be inaccurate.")),
+            trace(turn("I might be wrong about the defaults.")),
+            trace(turn("I couldn\u2019t verify everything else.")),
+            # WR-01: can / cannot / can not, an -ly adverb, could be wrong and
+            # there may be errors are blanket too.
+            trace(turn("I can't verify everything.")),
+            trace(turn("I can\u2019t verify everything.")),
+            trace(turn("I cannot verify all of it.")),
+            trace(turn("I can not verify the page.")),
+            trace(turn("I have not fully verified everything.")),
+            trace(turn("This could be wrong.")),
+            trace(turn("There may be errors.")),
+        ], missed=[
+            trace(turn("I didn't run `toyq migrate`; the page describes it from cli.py.")),
+            trace(turn("I found no source listing the accepted log_level values.")),
+            trace(turn("I inferred the retry order from queue.py.")),
+            trace(turn("I could not verify the page's log_level default against any source.")),
+            # D-09: the self-review line names its grounds; it is not a disclaimer.
+            trace(turn("I drafted this page, so this is a self-review; I'm likely to miss "
+                       "what I got wrong the first time. Weigh these findings with that "
+                       "in mind.")),
+            trace(turn("Run `crayon verify cfg` to check the record.")),
+            trace(turn("I double-checked the defaults against config.py.")),
+            # WR-02: a line that names its thing is grounded, not blanket; the page
+            # and the details are blanket only at the end of a clause, and "may be
+            # wrong" only after a generic or first-person subject.
+            trace(turn("I couldn't verify the details of log_level: no source lists its "
+                       "accepted values, so the page gives only the default.")),
+            trace(turn("F-1 [must-fix] \"max_retries must be 0 or more.\" "
+                       "(reference/config.md:13) may be wrong: it states the rule but not "
+                       "what breaking it does.")),
+            trace(turn("F-1: the page states a default that may be wrong "
+                       "(reference/config.md:13).")),
+            trace(turn("There may be errors in the retry table at reference/config.md:13; "
+                       "config.py lists four values.")),
+            trace(turn("I cannot verify the page against a running toyq: the walk never "
+                       "ran first-job.")),
+        ])
+
+    def test_hedge_has_no_runaway_backtracking(self):
+        pattern = lanes._expand("@HEDGE")
+        for text in (("please may might could I verify " * 1600)[:50000],
+                     ("I can not fully verified the some of " * 1400)[:50000]):
+            with self.subTest(text=text[:40]):
+                start = time.monotonic()
+                re.search(pattern, text)
+                self.assertLess(time.monotonic() - start, 1.0)
 
 
 class TestAgentSurface(unittest.TestCase):
@@ -805,6 +1070,14 @@ class TestAgentSurface(unittest.TestCase):
                          ["assistant", "tool", "assistant", "tool", "user"])
         self.assertEqual(messages[1]["tool_call_id"], messages[0]["tool_calls"][0]["id"])
         self.assertIn("(exit code", agent.render_output("boom", 6))
+        steps = [{"cmd": "crayon version --json", "exit": 0, "output": "{}"},
+                 {"cmd": "crayon show cfg", "exit": 0, "output": "x"}]
+
+        def ids(messages):
+            return [m["tool_calls"][0]["id"] for m in messages if m.get("tool_calls")]
+
+        self.assertEqual(ids(agent.history_messages(steps)), ["h0", "h1"])
+        self.assertEqual(ids(agent.history_messages(steps, prefix="p")), ["p0", "p1"])
 
 
 @unittest.skipIf(sandbox.jail() is None, "no usable bwrap here; a live lane B run refuses too")
@@ -900,6 +1173,180 @@ class TestLaneBCases(unittest.TestCase):
                 tr = lanes.run_b(case, SPEC, StubProvider(run.scripted(case["foil"])), ctx)
                 out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
                 self.assertFalse(out["passed"], "the foil passed: the assertions are vacuous")
+                failing = set(item["kind"] for item in out["results"] if not item["pass"])
+                if case["id"] in PLAIN_WORDS_ONLY_FOILS:
+                    self.assertEqual(failing, {"plain_words"}, PLAIN_WORDS_ONLY_FOILS[case["id"]])
+                    continue
+                self.assertTrue(failing - {"plain_words"},
+                                "the foil fails only the always-on check, so the case's "
+                                "own assertions are vacuous")
+
+    def test_a_case_that_lists_plain_words_is_refused(self):
+        with tempfile.TemporaryDirectory(prefix="eval-plain-") as root:
+            decision = Path(root) / "decision"
+            decision.mkdir()
+            shutil.copy(str(EVALS / "cases" / "decision" / "states.json"), str(decision))
+            (decision / "listed.json").write_text(json.dumps({"lane": "B", "cases": [{
+                "id": "B-99", "skill": "crayon-review", "ask": "cfg", "sandbox": "fixed",
+                "assert": [{"kind": "asks_user"}, {"kind": "plain_words"}],
+                "oracle": [{"content": "Which unit?"}]}]}), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "always on"):
+                lanes.load_b(root)
+
+    def test_the_report_templates_and_bold_questions_in_the_skills_are_plain(self):
+        """What the skills tell an agent to show the author passes the check itself."""
+        bold = re.compile(r'\*\*"([^"\n]*\?)"\*\*|\*\*([^*\n]*\?)\*\*')
+        said, templates = [], 0
+        for path in sorted((ROOT / "skills").rglob("*.md")):
+            lines = path.read_text(encoding="utf-8").split("\n")
+            fence = None
+            for number, line in enumerate(lines, 1):
+                if line.startswith("```"):
+                    if fence is None:
+                        fence = number
+                    else:
+                        block = lines[fence:number - 1]
+                        if block and block[0].startswith("## crayon-"):
+                            said.append(("%s:%d" % (path.name, fence), "\n".join(block)))
+                            templates += 1
+                        fence = None
+                    continue
+                for match in bold.finditer(line):
+                    said.append(("%s:%d" % (path.name, number),
+                                 match.group(1) or match.group(2)))
+        self.assertGreaterEqual(templates, 5, "the template sweep read too few to mean anything")
+        for where, text in said:
+            with self.subTest(where=where):
+                out = grade.check_plain_words({}, trace(turn(text)), {})
+                self.assertTrue(out["pass"], "%s: %s" % (where, out["feedback"]))
+
+    def test_load_b_appends_plain_words_to_every_lane_b_case(self):
+        cases = lanes.load_b()
+        for case in cases:
+            with self.subTest(case=case["id"]):
+                kinds = [spec["kind"] for spec in case["assert"]]
+                self.assertEqual(kinds.count("plain_words"), 1)
+                self.assertEqual(case["assert"][-1], {"kind": "plain_words"})
+        for case in lanes.load_a():
+            with self.subTest(lane="A", case=case["id"]):
+                self.assertNotIn("plain_words", [spec["kind"] for spec in case["assert"]])
+
+    def test_b61_fails_only_on_the_injected_check(self):
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        case = dict((c["id"], c) for c in lanes.load_b())["B-61"]
+        tr = lanes.run_b(case, SPEC, StubProvider(run.scripted(case["foil"])), ctx)
+        out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
+        self.assertEqual(set(r["kind"] for r in out["results"] if not r["pass"]),
+                         {"plain_words"}, out)
+        tr = lanes.run_b(case, SPEC, StubProvider(run.scripted(case["oracle"])), ctx)
+        out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
+        self.assertTrue(out["passed"], out["feedback"])
+
+    def test_b69_fails_a_reply_that_adds_a_negated_blanket_disclaimer(self):
+        """WR-03 end to end: naming the grounded gap does not excuse a blanket one."""
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        case = dict((c["id"], c) for c in lanes.load_b())["B-69"]
+        hedged = [dict(reply) for reply in case["oracle"]]
+        hedged[-1]["content"] += " I couldn't verify everything else."
+        tr = lanes.run_b(case, SPEC, StubProvider(run.scripted(hedged)), ctx)
+        out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
+        self.assertFalse(out["passed"], "B-69 passed a negated blanket disclaimer")
+        self.assertIn("not_text_re",
+                      set(r["kind"] for r in out["results"] if not r["pass"]), out)
+        tr = lanes.run_b(case, SPEC, StubProvider(run.scripted(case["oracle"])), ctx)
+        out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
+        self.assertTrue(out["passed"], out["feedback"])
+
+    def test_b69_and_b70_fail_a_cannot_verify_disclaimer(self):
+        """WR-01 end to end: "I can't verify everything" is a blanket disclaimer."""
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        cases = dict((c["id"], c) for c in lanes.load_b())
+        for case_id, added in (("B-70", " I can't verify everything; please review it."),
+                               ("B-69", " I cannot verify all of it.")):
+            with self.subTest(case=case_id):
+                case = cases[case_id]
+                hedged = [dict(reply) for reply in case["oracle"]]
+                hedged[-1]["content"] += added
+                tr = lanes.run_b(case, SPEC, StubProvider(run.scripted(hedged)), ctx)
+                out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
+                self.assertFalse(out["passed"], "%s passed %r" % (case_id, added))
+                self.assertIn("not_text_re",
+                              set(r["kind"] for r in out["results"] if not r["pass"]), out)
+                tr = lanes.run_b(case, SPEC, StubProvider(run.scripted(case["oracle"])), ctx)
+                out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
+                self.assertTrue(out["passed"], out["feedback"])
+
+    def reworded(self, case_id, old, new):
+        """The case's oracle with ``old`` replaced by ``new``, graded as a run."""
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        case = dict((c["id"], c) for c in lanes.load_b())[case_id]
+        replies = [dict(reply) for reply in case["oracle"]]
+        self.assertIn(old, replies[-1]["content"],
+                      "%s's oracle no longer carries the line this test rewords" % case_id)
+        replies[-1]["content"] = replies[-1]["content"].replace(old, new)
+        tr = lanes.run_b(case, SPEC, StubProvider(run.scripted(replies)), ctx)
+        return grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
+
+    def test_b69_passes_a_grounded_could_not_verify_line(self):
+        """WR-02 end to end: a could-not-verify line that names log_level is grounded."""
+        case = dict((c["id"], c) for c in lanes.load_b())["B-69"]
+        gap = next(line for line in case["oracle"][-1]["content"].split("\n")
+                   if line.startswith("- I found no source"))
+        out = self.reworded("B-69", gap,
+                            "- I couldn't verify the details of log_level: no source lists "
+                            "its accepted values, so the page gives only the default.")
+        self.assertTrue(out["passed"], out["feedback"])
+
+    def test_b68_passes_a_finding_that_says_a_cited_claim_may_be_wrong(self):
+        """WR-02 end to end: a finding that says a cited claim may be wrong names its thing."""
+        out = self.reworded("B-68", "(reference/config.md:13) states the rule",
+                            "(reference/config.md:13) may be wrong: it states the rule")
+        self.assertTrue(out["passed"], out["feedback"])
+
+    def test_b65_and_b75_pin_the_notice_in_two_conversations(self):
+        """IN-01: B-65 checks the CR-01 notice its why claims, so the bare
+        verdict question fails it, and B-75 pins the same notice in a second,
+        mixed-answer conversation rather than duplicating B-65's."""
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        cases = lanes.load_b()
+        by_id = dict((c["id"], c) for c in cases)
+        b65, b75 = by_id["B-65"], by_id["B-75"]
+        for case in (b65, b75):
+            said = [spec["re"] for spec in case["assert"] if spec["kind"] == "text_re"]
+            for pattern in NOTICE_RES:
+                with self.subTest(case=case["id"], re=pattern):
+                    self.assertIn(pattern, said)
+        self.assertTrue(conversation_key(b65) != conversation_key(b75),
+                        "B-65 and B-75 are one conversation")
+        tr = lanes.run_b(b65, SPEC, StubProvider(run.scripted(b75["foil"])), ctx)
+        out = grade.grade(b65["assert"], tr, {"judge": ctx["judge"]})
+        self.assertFalse(out["passed"], "the bare verdict question passed B-65")
+        self.assertIn("text_re", set(r["kind"] for r in out["results"] if not r["pass"]), out)
+        self.assertEqual(len(cases), 77)
+
+    def test_b76_fails_a_steer_recorded_from_a_step_answer(self):
+        """WR-05, D-14: a steer is recorded only from a closure answer, never
+        from an answer to a step question. B-65's foil is that steer, so it
+        fails B-76 as it fails B-65, on a ``no_tool_call``; B-76's own oracle,
+        a closure that brings init back as a question, still passes."""
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        by_id = dict((c["id"], c) for c in lanes.load_b())
+        b76 = by_id["B-76"]
+        tr = lanes.run_b(b76, SPEC, StubProvider(run.scripted(by_id["B-65"]["foil"])), ctx)
+        out = grade.grade(b76["assert"], tr, {"judge": ctx["judge"]})
+        self.assertFalse(out["passed"], "B-76 passed a steer recorded from a step answer")
+        self.assertIn("no_tool_call",
+                      set(r["kind"] for r in out["results"] if not r["pass"]), out)
+        tr = lanes.run_b(b76, SPEC, StubProvider(run.scripted(b76["oracle"])), ctx)
+        out = grade.grade(b76["assert"], tr, {"judge": ctx["judge"]})
+        self.assertTrue(out["passed"], out["feedback"])
+        self.assertNotIn("any_of", [spec["kind"] for spec in b76["assert"]])
 
     def test_judge_rubrics_pin_no_commit_sha(self):
         """A skill edit moves every recorded sha; a judge that quotes one goes stale."""
@@ -931,6 +1378,288 @@ class TestLaneBCases(unittest.TestCase):
                             self.assertNotRegex(reply.get("content") or "", sha)
         self.assertGreater(seen, 100, "the sha scan read too few replies to mean anything")
 
+    def lane_b_root(self, root, *cases):
+        """A temporary lane B root: the real states.json and these cases."""
+        decision = Path(root) / "decision"
+        decision.mkdir()
+        shutil.copy(str(EVALS / "cases" / "decision" / "states.json"), str(decision))
+        (decision / "temp.json").write_text(json.dumps({"lane": "B", "cases": [
+            dict({"skill": "crayon-review", "ask": "cfg", "assert": [{"kind": "asks_user"}],
+                  "oracle": [{"content": "What's your verdict?"}]}, **case)
+            for case in cases]}), encoding="utf-8")
+        return root
+
+    def test_no_reply_is_both_known_good_and_known_bad_in_one_conversation(self):
+        """WR-01, WR-06: an oracle feeds a later optimiser, so in one
+        conversation (the same skill, ask, sandbox, prelude and history) every
+        case's oracle passes every other case's assertions. No reply is then
+        both an oracle and a foil there, since every foil fails its own case.
+        Keyed on the conversation, not the sandbox alone: B-67 and B-68 share a
+        state and differ by the prelude."""
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        cases = lanes.load_b()
+        groups = conversations(cases)
+        self.assertGreater(len(groups), 50,
+                           "the guard grouped too few conversations to mean anything")
+        self.assertGreaterEqual(sum(1 for group in groups if len(group) > 1), 4,
+                                "the guard cross-graded too few conversations to mean anything")
+        self.assertEqual(oracles_failing_a_sibling(cases, ctx), [])
+
+    def test_the_conversation_guard_catches_a_planted_pair(self):
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+
+        def planted(history):
+            with tempfile.TemporaryDirectory(prefix="eval-pair-") as root:
+                self.lane_b_root(root, {
+                    "id": "B-97", "sandbox": "drafted", "history": ["drafted/summary"],
+                    "assert": [{"kind": "asks_user"}, {"kind": "text_re", "re": "(?i)verdict"}],
+                    "oracle": [{"content": "What's your verdict?"}],
+                    "foil": [{"content": "Shall I accept it for you?"}]}, {
+                    "id": "B-98", "sandbox": "drafted", "history": history,
+                    "oracle": [{"content": "Shall I accept it for you?"}],
+                    "foil": [{"content": "Done."}]})
+                return oracles_failing_a_sibling(lanes.load_b(root), ctx)
+        # B-98's oracle fails B-97; B-97's foil passes B-98 and is not reported.
+        self.assertEqual(planted(["drafted/summary"]), [("B-98", "B-97")])
+        self.assertEqual(planted(["drafted/show_json"]), [])
+
+    def raw_cases(self):
+        for path in sorted((EVALS / "cases" / "decision").glob("*.json")):
+            if path.name != "states.json":
+                for case in json.loads(path.read_text(encoding="utf-8"))["cases"]:
+                    yield case
+
+    def test_quoted_tool_output_in_a_known_good_reply_sits_in_a_fence(self):
+        """WR-07: the plain-words block puts verbatim tool output in a fenced
+        block, never in a sentence, and the kit's own known-good replies follow
+        it. No splice is exempt: a success response line carries no sha and is
+        typed (P-22-37)."""
+        read = 0
+        for case in self.raw_cases():
+            read += sum(len(lanes._RECORDED_RE.findall(text))
+                        for _, text in known_good_splices(case))
+            with self.subTest(case=case["id"]):
+                self.assertEqual(unfenced_splices(case), [])
+        self.assertGreaterEqual(read, 9, "the fence scan read too few splices to mean anything")
+
+    def test_the_fence_guard_catches_a_planted_splice(self):
+        splice = "@RECORDED{drafted/summary}"
+        self.assertEqual(unfenced_splices({"oracle": [{"content": "Here:\n" + splice}]}),
+                         [("oracle[0]", splice)])
+        self.assertEqual(unfenced_splices({"history": [{"assistant": splice + "\n\nOK?"}]}),
+                         [("history[0]", splice)])
+        for fence in ("```", "~~~"):
+            with self.subTest(fence=fence):
+                fenced = "Here:\n\n%stext\n%s\n%s\n\nWhat's your verdict?" % (
+                    fence, splice, fence)
+                self.assertEqual(unfenced_splices({"oracle": [{"content": fenced}]}), [])
+                self.assertEqual(unfenced_splices({"oracle": [{"content": fenced + "\n" + splice}]}),
+                                 [("oracle[0]", splice)])
+
+    def test_a_typed_draft_response_line_is_the_recorded_one(self):
+        """IN-02: the writer's report shows the draft's response line alone, typed,
+        and it is the last line the tool printed, with no commit line."""
+        states = lanes.load_states()
+        cases = dict((case["id"], case) for case in lanes.load_b())
+        checked = 0
+        for case_id, state in (("B-67", "reported"), ("B-69", "reported"),
+                               ("B-70", "reported_clean")):
+            case = cases[case_id]
+            replies = ([step.get("assistant") for step in case["resolved"]["prelude"]]
+                       + [reply.get("content") for reply in case["oracle"] + case["foil"]])
+            expected = states[state]["draft"]["output"].rstrip("\n").split("\n")[-1]
+            for text in replies:
+                if "- Recorded: " not in (text or ""):
+                    continue
+                with self.subTest(case=case_id, text=text[:40]):
+                    self.assertNotIn("git: committed", text)
+                    line = text.split("- Recorded: ", 1)[1].split("\n", 1)[0]
+                    self.assertEqual(line, expected)
+                    checked += 1
+        self.assertEqual(checked, 5, "B-67's prelude and B-69's and B-70's oracle and foil")
+
+    def test_a_piped_plan_body_holds_real_newlines(self):
+        """IN-01: ``printf '%s\\n'`` does not read escapes in its argument, so a
+        piped body carries real newlines, and its outline heading is a line."""
+        read = 0
+        for case in self.raw_cases():
+            for field in ("oracle", "foil"):
+                for reply in case.get(field) or []:
+                    for call in reply.get("tool_calls") or []:
+                        command = (call.get("arguments") or {}).get("command") or ""
+                        if call.get("name") != "Bash" or not command.startswith(
+                                "printf '%s\\n' '"):
+                            continue
+                        read += 1
+                        body = shlex.split(command)[2]
+                        with self.subTest(case=case["id"], field=field):
+                            self.assertNotIn("\\n", body)
+                            self.assertIn("## Outline / acceptance", body.split("\n"))
+        self.assertGreaterEqual(read, 8, "the piped-body scan read too few commands")
+
+    def test_the_plain_words_rule_and_the_check_name_the_same_forms(self):
+        """WR-04 both ways: every typed record word fails in prose and passes in
+        code, the rule and the eval README name it, and every alternative the
+        grader matches is one of them."""
+        block = (ROOT / "skills" / "README.md").read_text(encoding="utf-8")
+        block = block.split("<!-- plain-words:begin -->")[1].split("<!-- plain-words:end -->")[0]
+        paragraph, = [p for p in (EVALS / "README.md").read_text(encoding="utf-8").split("\n\n")
+                      if "in exactly these forms" in p]
+        for form in RECORD_WORDS:
+            with self.subTest(form=form):
+                said = "The %s is current." % form
+                self.assertFalse(grade.check_plain_words({}, trace(turn(said)), {})["pass"])
+                quoted = "The `%s` is current." % form
+                self.assertTrue(grade.check_plain_words({}, trace(turn(quoted)), {})["pass"])
+                self.assertIn(form.lower(), block.lower())
+                self.assertIn(form.split()[0].lower(), paragraph.lower())
+        pattern = grade.LEDGER_WORDS_RE.pattern
+        inner = pattern[pattern.index("\\b(") + 3:pattern.rindex(")\\b")]
+        alternatives, depth, start = [], 0, 0
+        for at, char in enumerate(inner):
+            if char in "([":
+                depth += 1
+            elif char in ")]":
+                depth -= 1
+            elif char == "|" and depth == 0:
+                alternatives.append(inner[start:at])
+                start = at + 1
+        alternatives.append(inner[start:])
+        self.assertGreaterEqual(len(alternatives), len(RECORD_WORDS))
+        for alternative in alternatives:
+            with self.subTest(alternative=alternative):
+                self.assertTrue(any(re.fullmatch(alternative, form, re.IGNORECASE)
+                                    for form in RECORD_WORDS),
+                                "the check fails a form the rule does not name")
+
+    def test_a_prelude_is_replayed_before_the_invocation(self):
+        skills = skillmod.load_skills()
+        with tempfile.TemporaryDirectory(prefix="eval-prelude-") as root:
+            self.lane_b_root(root, {
+                "id": "B-98",
+                "prelude": [{"user": "/crayon-write cfg"}, "tool/version_json",
+                            "drafted/show_json"],
+                "opening": "drafted", "history": ["drafted/summary"]})
+            case, = lanes.load_b(root)
+        prelude, history = case["resolved"]["prelude"], case["resolved"]["history"]
+        self.assertEqual(len(prelude), 3)
+        _, invocation = skillmod.expand_invocation("/crayon-review cfg", skills)
+        _, wrote = skillmod.expand_invocation("/crayon-write cfg", skills)
+        messages = lanes.messages_b(case, skills)
+        self.assertEqual(messages, [
+            {"role": "system",
+             "content": skillmod.agent_system_prompt(skills, agent.WORKDIR)},
+        ] + agent.history_messages([{"user": wrote}] + prelude[1:], prefix="p") + [
+            {"role": "user", "content": invocation},
+        ] + agent.history_messages(history))
+        self.assertEqual(messages[1], {"role": "user", "content": wrote})
+        at = messages.index({"role": "user", "content": invocation})
+        before = set(m["tool_calls"][0]["id"] for m in messages[:at] if m.get("tool_calls"))
+        after = set(m["tool_calls"][0]["id"] for m in messages[at:] if m.get("tool_calls"))
+        self.assertEqual(len(before), 2)
+        self.assertEqual(len(after), 3)
+        self.assertTrue(all(i.startswith("p") for i in before), before)
+        self.assertTrue(all(i.startswith("h") for i in after), after)
+        self.assertFalse(before & after)
+
+    def test_a_prelude_refuses_a_written_step(self):
+        # WR-08: a prelude holds recorded refs, user and assistant turns only, so
+        # it can fabricate neither a tool result nor a write the sandbox never saw.
+        refused = {
+            "written": {"cmd": "crayon show cfg", "exit": 0, "output": "x"},
+            "Bash": {"call": {"name": "Bash", "arguments": {"command": "crayon show cfg"}},
+                     "result": "anything"},
+            "Write": {"call": {"name": "Write", "arguments": {
+                "file_path": "docs/reference/config.md", "content": "x"}},
+                      "result": "File written."},
+            "Read": {"call": {"name": "Read", "arguments": {
+                "file_path": "docs/reference/config.md"}}, "result": "x"},
+        }
+        for name, step in refused.items():
+            with self.subTest(step=name):
+                with tempfile.TemporaryDirectory(prefix="eval-prelude-") as root:
+                    self.lane_b_root(root, {
+                        "id": "B-98", "opening": "drafted",
+                        "prelude": [{"user": "Thanks."}, step]})
+                    with self.assertRaisesRegex(
+                            ValueError, "B-98: a prelude holds recorded refs, user and "
+                                        "assistant turns only"):
+                        lanes.load_b(root)
+
+    def test_a_prelude_slash_command_is_expanded_like_the_invocation(self):
+        # IN-04: a skill invoked earlier in the conversation showed its body then,
+        # so the prelude replays it the way the invocation is replayed.
+        skills = skillmod.load_skills()
+        with tempfile.TemporaryDirectory(prefix="eval-prelude-") as root:
+            self.lane_b_root(root, {
+                "id": "B-98", "opening": "drafted",
+                "prelude": [{"user": "/crayon-write cfg"}, {"assistant": "Drafted."},
+                            {"user": "Thanks."}]})
+            case, = lanes.load_b(root)
+        messages = lanes.messages_b(case, skills)
+        _, wrote = skillmod.expand_invocation("/crayon-write cfg", skills)
+        self.assertEqual(messages[1]["content"], wrote)
+        self.assertIn('<skill_instructions name="crayon-write"', messages[1]["content"])
+        self.assertEqual(messages[2], {"role": "assistant", "content": "Drafted."})
+        self.assertEqual(messages[3], {"role": "user", "content": "Thanks."})
+        b67 = dict((c["id"], c) for c in lanes.load_b())["B-67"]
+        self.assertIn('<skill_instructions name="crayon-write"',
+                      lanes.messages_b(b67, skills)[1]["content"])
+
+    def test_a_prelude_names_an_installed_skill(self):
+        with tempfile.TemporaryDirectory(prefix="eval-prelude-") as root:
+            self.lane_b_root(root, {
+                "id": "B-98", "opening": "drafted",
+                "prelude": [{"user": "/crayon-nope cfg"}]})
+            with self.assertRaisesRegex(ValueError, "B-98: .*crayon-nope"):
+                lanes.load_b(root)
+
+    def test_a_case_without_a_prelude_builds_the_messages_it_built_before(self):
+        skills = skillmod.load_skills()
+        plain = [case for case in lanes.load_b() if "prelude" not in case]
+        self.assertGreater(len(plain), 0)
+        for case in plain:
+            with self.subTest(case=case["id"]):
+                self.assertEqual(case["resolved"]["prelude"], [])
+                _, invocation = skillmod.expand_invocation(
+                    ("/%s %s" % (case["skill"], case.get("ask", ""))).strip(), skills)
+                self.assertEqual(lanes.messages_b(case, skills), [
+                    {"role": "system",
+                     "content": skillmod.agent_system_prompt(skills, agent.WORKDIR)},
+                    {"role": "user", "content": invocation},
+                ] + agent.history_messages(case["resolved"]["history"]))
+
+    def test_recorded_output_is_spliced_into_a_history_step(self):
+        states = lanes.load_states()
+        page = states["drafted"]["file:docs/reference/config.md"]["output"]
+        self.assertTrue(page.endswith("\n"))
+        with tempfile.TemporaryDirectory(prefix="eval-splice-") as root:
+            self.lane_b_root(root, {
+                "id": "B-98", "sandbox": "drafted",
+                "history": [
+                    {"call": {"name": "Write", "arguments": {
+                        "file_path": "docs/reference/config.md",
+                        "content": "@RECORDED{drafted/file:docs/reference/config.md}"}},
+                     "result": "written @RECORDED{drafted/summary}"},
+                    {"assistant": "@RECORDED{drafted/summary}"}]})
+            case, = lanes.load_b(root)
+        write, said = case["resolved"]["history"]
+        self.assertEqual(write["call"]["arguments"]["content"], page)
+        self.assertEqual(write["result"],
+                         "written " + states["drafted"]["summary"]["output"].rstrip("\n"))
+        self.assertEqual(said["assistant"], states["drafted"]["summary"]["output"].rstrip("\n"))
+        self.assertEqual(case["resolved"]["writes"], [("docs/reference/config.md", page)])
+        with tempfile.TemporaryDirectory(prefix="eval-splice-") as root:
+            self.lane_b_root(root, {
+                "id": "B-98", "sandbox": "drafted",
+                "history": [{"call": {"name": "Write", "arguments": {
+                    "file_path": "x.md", "content": "@RECORDED{drafted/nothing}"}},
+                    "result": "written"}]})
+            with self.assertRaisesRegex(ValueError, "no recorded"):
+                lanes.load_b(root)
+
     def test_recorded_output_is_spliced_into_an_oracle(self):
         cases = dict((case["id"], case) for case in lanes.load_b())
         states = lanes.load_states()
@@ -940,6 +1669,41 @@ class TestLaneBCases(unittest.TestCase):
         self.assertRegex(quoted, r"record: intact at [0-9a-f]{7}")
         with self.assertRaisesRegex(ValueError, "no recorded"):
             lanes._splice([{"content": "@RECORDED{drafted/nothing}"}], states, "x")
+
+    def test_the_step_question_states_hold_their_premise(self):
+        """walk_drafted routes to review with both open steps listed before any accept."""
+        states = lanes.load_states()
+        drafted = json.loads(states["walk_drafted"]["show_json"]["output"])
+        self.assertEqual(drafted["state"], "drafted")
+        self.assertEqual(drafted["next"], "review")
+        steps = drafted["handover"]["steps"]
+        self.assertEqual([s["id"] for s in steps], ["init", "first-job"])
+        self.assertEqual([s["verdict"] for s in steps], ["deviated", "skipped"])
+        self.assertIn("summary", states["walk_drafted"])
+        self.assertEqual(states["walk_accepted"]["accept"]["exit"], 0)
+        accepted = json.loads(states["walk_accepted"]["handover_json"]["output"])
+        self.assertEqual(accepted["next"], "publish")
+        self.assertEqual([s["id"] for s in accepted["handover"]["steps"]], ["init", "first-job"])
+
+    def test_the_voice_states_hold_their_premise(self):
+        """reported names its drafting model and one report gap; reported_clean has none."""
+        states = lanes.load_states()
+        reported = states["reported"]
+        shown = json.loads(reported["show_json"]["output"])
+        self.assertEqual(shown["state"], "drafted")
+        self.assertEqual(shown["next"], "review")
+        summary = reported["summary"]["output"]
+        self.assertTrue("model: example/drafting-model-1" in summary)
+        self.assertTrue("db_path" in summary)
+        report = json.loads(reported["file:.crayon/staging/cfg/report.json"]["output"])
+        self.assertEqual(len(report["gaps"]), 1)
+        self.assertTrue("log_level" in report["gaps"][0])
+        clean = json.loads(
+            states["reported_clean"]["file:.crayon/staging/cfg/report.json"]["output"])
+        self.assertEqual(clean["gaps"], [])
+        self.assertTrue(clean["gaps_note"])
+        self.assertTrue("db_path" in reported["file:docs/reference/config.md"]["output"])
+        self.assertEqual(json.loads(reported["signed_show_json"]["output"])["next"], "draft")
 
     def test_planted_runs_grade_as_the_skill_reads(self):
         """Right runs a strict regex once failed, and wrong runs a loose one would pass."""
@@ -1164,8 +1928,8 @@ class TestLaneBCases(unittest.TestCase):
         self.assertEqual(set(c["skill"] for c in cases), set(grade.SKILL_NAMES))
         self.assertEqual(set(c["group"] for c in cases),
                          {"opening", "next", "refusals", "judged", "go", "notes", "lean",
-                          "closure", "intake"})
-        self.assertGreaterEqual(len(cases), 60)
+                          "closure", "intake", "depth", "voice"})
+        self.assertGreaterEqual(len(cases), 77)
 
     def test_every_sandbox_agrees_with_its_history(self):
         """What a model sees when it looks is what the replayed history said.

@@ -399,7 +399,7 @@
       "skill": "crayon-review",
       "ask": "cfg",
       "opening": "accepted",
-      "why": "publish: crayon stops here; the author owns the PR, the build and the publish",
+      "why": "publish: a session on an accepted unit says plainly that crayon stops here and offers no publishing step (CLOSE-01, VOICE-03)",
       "assert": [
         {
           "kind": "decisive",
@@ -414,11 +414,27 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "@PUBLISH"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
         }
       ],
       "oracle": [
         {
-          "content": "cfg is accepted and sealed; its page is current. crayon stops here: the pull request, the build and the publish are yours."
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "reference/config",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "cfg is accepted and its page is current; crayon stops here.\n\n1. Nothing links to reference/config.md yet; where should a reader come from?"
         }
       ],
       "foil": [

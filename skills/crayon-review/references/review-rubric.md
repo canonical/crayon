@@ -43,7 +43,7 @@ the findings tally.
 
 ## Dimension 0 — the objective check (assessed first)
 
-Before the four dimensions, ask the one question the unit exists to answer: **does
+Before the five dimensions, ask the one question the unit exists to answer: **does
 this draft satisfy the unit's reader problem and every `## Outline / acceptance`
 item?** This is the objective check — it measures the draft against the job it was
 declared to do, not against its own internal polish.
@@ -75,7 +75,7 @@ Does every touched page read as if written fresh to its correct end-state, or
 does it carry the sediment of its own history? This dimension is **always on**:
 it may never be skipped or marked not assessed (it needs only the draft), it
 runs in the scoped re-review as well as the full pass (over the touched
-sections), and it is assessed before the four generalized dimensions — scaled to
+sections), and it is assessed before the five generalized dimensions — scaled to
 the surface: a bounded fix gets a quick hunt over the touched text; a fresh page
 gets a line-by-line pass. Hunt adversarially — on a large or brand-new page,
 assume the defects ARE present and go looking; return `(none)` only after
@@ -110,10 +110,10 @@ factual misstatement is graded there.
 that silently *lost* working content the steering never ordered removed is a
 completeness finding, graded there — hunt for it on every re-draft.
 
-## The four review dimensions
+## The five review dimensions
 
-Default to assessing all four (writing-approach above is always on and cannot
-be deselected). Any of the four may be marked **not assessed** with a stated
+Default to assessing all five (writing-approach above is always on and cannot
+be deselected). Any of the five may be marked **not assessed** with a stated
 reason — source-fidelity is `(not assessed — <reason>)`, never guessed, when
 the declared sources are unreadable or absent: fabricating source behaviour is
 the one unforgivable reviewer move.
@@ -173,6 +173,32 @@ Two mandatory checks inside this dimension:
   against the page: an inventory the writer READ (e.g. every per-module
   reference file) but did not surface is the highest-value completeness flag —
   the grounding existed and the page still omitted it.
+
+The author's leave-out notes narrow the plan's inventory: a member the notes leave
+out is not owed by the coverage-vs-outline check, and the focus dimension flags it if
+the page carries it. A later recorded request outranks the intake notes: what it asks
+for is owed again, and focus does not flag it.
+
+### focus
+
+Focus is the mirror of completeness. Completeness asks what is absent that the
+reader needs; focus asks what is present that the reader does not need. Read the
+author's intake notes first — `crayon summary <id>` lists them under author
+decisions — for anything the author said the page can leave out.
+
+Two mandatory checks inside this dimension:
+
+- **Over-inclusion.** Material the reader's problem does not call for: a
+  digression, an inventory the outline did not promise, background the audience
+  already has. Anything the author said to leave out is `[must-fix]` (completeness
+  settles how the notes stand against the inventory and a later request); other
+  over-inclusion is `[should-fix]` or `[nit]`.
+- **Complete but disconnected.** Every outline item is present, but the sections
+  do not build toward the reader's problem. Read the page against the intake's
+  answer about where the reader arrives from or what they do right after. A page
+  that does not meet the reader there, or does not hand them their next step, is
+  disconnected: `[should-fix]`, or `[nit]` when the gap is cosmetic. Whether other
+  pages link to this one is the closure's question, not a finding.
 
 ### structure-fit
 
@@ -249,10 +275,13 @@ machinery.
 
 ## Verification discipline (before any finding is reported)
 
-Only verified findings reach the report — never intermediate hypotheses. Every
-finding carries its `F-N` id, its page path and line, and the verbatim offending
-quote. For **absence-based** findings ("not supported", "not in source",
-"missing from the page") the bar is higher:
+A finding reaches the report once you have checked it as far as the sources allow,
+never as an intermediate hypothesis. When it still rests on an absence or an
+inference, it says so inside the finding, in the first person: "I found no source for
+…", "I inferred … from …". A verified finding carries no hedge, and the review never
+adds a section of doubts or a general caveat. Every finding carries its `F-N` id, its
+page path and line, and the verbatim offending quote. For **absence-based** findings
+("not supported", "not in source", "missing from the page") the bar is higher:
 
 - **At least two search strategies, recorded in the finding** — e.g. the exact
   symbol AND a concept/synonym grep; an entrypoint trace AND a test search. One
@@ -277,8 +306,8 @@ never by impression:
 
 | Priority | Trigger |
 |----------|---------|
-| `[must-fix]` | A claim ungrounded in or contradicting the declared sources; an instruction or path that fails the reader (broken include/link, wrong syntax); an outline/acceptance item unmet and unrecorded (the dimension 0 floor); a code-dump surfacing implementation source (source-fidelity); a category violation that defeats the page as its **declared Diátaxis type** (for a reference unit, tutorial/how-to drift; for an actionable unit, a failure of the tutorial/how-to conformance shape — never reference-only drift); or a writing-approach finding escalated as a source-fidelity co-finding. |
-| `[should-fix]` | A material completeness gap; wrong register for a reference; a terminology contradiction; a structural inconsistency that impairs (but does not break) the page; a writing-approach failure mode with no factual misstatement. |
+| `[must-fix]` | A claim ungrounded in or contradicting the declared sources; an instruction or path that fails the reader (broken include/link, wrong syntax); an outline/acceptance item unmet and unrecorded (the dimension 0 floor); a code-dump surfacing implementation source (source-fidelity); a category violation that defeats the page as its **declared Diátaxis type** (for a reference unit, tutorial/how-to drift; for an actionable unit, a failure of the tutorial/how-to conformance shape — never reference-only drift); a writing-approach finding escalated as a source-fidelity co-finding; or material the author's intake notes said to leave out (focus). |
+| `[should-fix]` | A material completeness gap; wrong register for a reference; a terminology contradiction; a structural inconsistency that impairs (but does not break) the page; a writing-approach failure mode with no factual misstatement; over-inclusion the reader's problem does not need, or a complete page with no thread to the reader's problem (focus). |
 | `[nit]` | Wording, ordering, or optional polish with no reader-facing consequence. |
 
 A candidate matching no row is a `[nit]` at most — or not a finding.
@@ -323,6 +352,9 @@ in the steering stream automatically, so it is exactly what the next draft reads
 
 ### completeness
 - F-4 [should-fix] <observation> → <action>
+
+### focus
+- (none)
 
 ### structure-fit
 - (none)

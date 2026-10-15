@@ -367,7 +367,7 @@
       "skill": "crayon-review",
       "ask": "cfg",
       "opening": "accepted",
-      "why": "CLOSE-01, P-14: a session that opens on an already-accepted unit says plainly that crayon stops here and asks the record's questions without the findings source, here only where a reader arrives from, since no page lists reference/config.md; B-11 is kept unchanged for Phase 22, and its oracle, which offers the pull request, the build and the publish, is this case's foil",
+      "why": "CLOSE-01, P-14: a session that opens on an already-accepted unit says plainly that crayon stops here and asks the record's questions without the findings source, here only where a reader arrives from, since no page lists reference/config.md; B-11's former oracle, which offers the pull request, the build and the publish, is this case's foil",
       "assert": [
         {
           "kind": "decisive",

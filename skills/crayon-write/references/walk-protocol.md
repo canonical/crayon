@@ -18,7 +18,7 @@ on the exit code alone — several reasons share one:
 | 0 | recorded; the step resolves (a `fail` is recorded and stays unresolved) | continue the walk |
 | 2 | `step_unknown` — the step id is not in the plan named by `--steps-seq` | read the plan back and use an id it contains |
 | 2 | `not_actionable` — the unit's signed intent is neither tutorial nor how-to, so a step walk does not belong to it | STOP walking; a reference or explanation page is drafted straight from its declared sources |
-| 3 | `already_recorded` — this evidence is already on the record, field for field | report the existing seq and commit; move to the next step |
+| 3 | `already_recorded` — this evidence is already on the record, field for field | say it is already recorded and give the commit from the payload, naming no record number; move to the next step |
 | 4 | `evidence_incomplete` — a required field is missing, or a `pass` / `fail` / `deviated` step arrived without `--output-file` | re-capture with well-shaped proof; never fabricate a field |
 | 4 | `evidence_mismatch` — the evidence's `mode` is not the `mode` the plan declares for this step | record it in the declared mode, or re-plan the step; re-running the command unchanged cannot clear it |
 | 4 | `evidence_stale` — the plan was re-planned after this capture | re-run the command against the current `--steps-seq` |

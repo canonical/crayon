@@ -43,11 +43,15 @@ SNAPSHOTS = (
     "fixed",
     "missing",
     "no_material",
+    "reported",
+    "reported_clean",
     "retired",
     "signed",
     "stale",
     "target_exists",
     "walk",
+    "walk_accepted",
+    "walk_drafted",
 )
 
 

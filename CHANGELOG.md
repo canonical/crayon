@@ -45,7 +45,7 @@ across. The contract number stays `1`.
 - `validation/evals/` — model evals. They measure how well a model drives the five skills
   under the same skill text and a neutral loop, through OpenRouter. Lane A checks skill
   selection (15 cases). Lane B checks the next action after real, recorded `crayon` output
-  (60 cases), acted out in a copy of the state inside a bubblewrap jail. Every case carries a
+  (77 cases), acted out in a copy of the state inside a bubblewrap jail. Every case carries a
   reply that must pass and one that must fail. `--repeat K` reports per-case pass counts, and
   results are committed under `validation/evals/results/`. Paid runs are started by hand, never
   in CI. The gate gains `python3 -m unittest tests.test_evals`, the kit's offline self-tests.
@@ -130,6 +130,32 @@ across. The contract number stays `1`.
   with their first pick, in their own words. The three author rules are authored once in `skills/README.md` and
   carried in the plan, write and review skills. Lane B gains the cases that pin these, the
   `question_count` kind and three named patterns.
+- The skills talk to the author in plain words. What the author reads says "accepted", "the pages
+  as accepted" and "request 7", with no `plan_hash`, digest or check count in prose; the record's
+  tokens stay in `--json`, the ledger and every command line, and verbatim tool output sits in a
+  code block. The rule is authored once in `skills/README.md` and carried in all five skills,
+  and it names a commit by its id; the routing rows and references a model relays carry no
+  record word.
+  `crayon-review` puts each deviated or skipped step to the author as a question after the
+  provenance summary, in both modes, and the closure does not ask it again in the same
+  conversation unless the answer asked for a page change; a step left unanswered is not asked
+  again either. It says when it is reviewing its own draft, and assesses a sixth dimension,
+  focus, for what the page should not carry. A page change the author asks for in answer to a
+  step question is not recorded until the verdict, and the skill says so; after a bare accept,
+  the closure asks about it again, in the author's words. When the reviewer already authorised
+  the accept, the steps are asked at the closure instead. The review's quick start puts the step
+  questions before any finding and before the verdict question.
+  `crayon-plan` asks every intake what the page can leave out and records the answer in the
+  author's words, and `crayon-write` keeps it off the page. The author's leave-out notes narrow a
+  promised inventory, and a later recorded request outranks them. Write and review state what
+  they could not verify in the first person, only where the record grounds it. Lane B grades
+  every case for record words in what the agent says (`plain_words`), and gains `@HEDGE`, a
+  `prelude` for what ran earlier in the conversation, and the cases that pin these. `plain_words`
+  reads the rule's own forms and both fence forms. `@HEDGE` catches a negated blanket disclaimer
+  and a can-not-verify one, such as "I can't verify everything", and passes a grounded line or
+  finding that names its thing. A prelude replays a skill invocation with its body. The kit
+  checks that every oracle passes every other case in its conversation, and that quoted tool
+  output in a known-good reply sits in a fenced block.
 - The tool's human lines are plain. On a sealed unit the handover line reads
   `Next: yours — crayon stops here`, and the accept line names the pages it accepted, with no
   count and no "sealed". The `signoff`, re-sign, `edits` and `resume` lines name the ledger

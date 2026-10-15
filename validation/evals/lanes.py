@@ -14,7 +14,11 @@ Dev-time evaluation material. A lane is three functions:
 
 Lane A (skill selection) is single-turn and tool-less. Lane B (next action)
 replays a recorded history into one skill and grades the model's first
-consequential action (``agent.run_episode``).
+consequential action (``agent.run_episode``); a case may also replay a
+prelude, what happened earlier in the same conversation, before the skill is
+invoked: recorded refs, user turns and assistant turns only. Every lane B case
+also carries the plain-words check (``PLAIN_WORDS``), appended at load, never
+listed.
 """
 
 import json
@@ -87,6 +91,11 @@ def oracle_a(case):
 
 DECISION = CASES / "decision"
 
+#: D-05: always on for lane B. Appended to every lane B case's assertions at
+#: load, so no case can pass while telling the author a record word; this is
+#: the one definition site, and lane A never carries it.
+PLAIN_WORDS = {"kind": "plain_words"}
+
 #: Patterns a case names by macro, so the same rule reads the same everywhere.
 MACROS = {
     # A crayon verb that records anything (resume --dry-run only looks).
@@ -120,6 +129,36 @@ MACROS = {
                     r" [\"'\u201c\u2018][^\"'\u201d\u2019?\n]+[\"'\u201d\u2019])|"
                     r"\b(proposed|suggested|draft)\s+note\b|"
                     r"\b(how\s+about|something\s+like)\s*[\"'\u201c\u2018:])",
+    # A blanket disclaimer or a reminder to check: a hedge over the whole page or
+    # review ("Please double-check \u2026", "may contain errors", "What I'm not sure
+    # of:"), not a named, grounded gap. A verify over the whole is blanket, negated
+    # or not, with can / cannot / can not / could / did / have and an optional -ly
+    # adverb ("I can't verify everything", "I have not fully verified everything")
+    # (WR-03, WR-01). The page and the details are blanket only at the end of a
+    # clause, so "I couldn't verify the details of log_level: \u2026" names its thing
+    # (WR-02). May / might / could be wrong is blanket only after a generic or
+    # first-person subject ("This could be wrong", "Some details may be
+    # inaccurate"), and "there may be errors" only when it ends the clause (WR-01).
+    # A finding that says a cited claim may be wrong names its thing and is not
+    # one (WR-02); nor are "I found no source for \u2026", "I inferred \u2026 from \u2026",
+    # "I could not verify the page's \u2026" and "double-checked", a thing done.
+    "@HEDGE": r"(?i:\bplease\s+(double[- ]check|verify|review\s+(it|this|everything)\s+carefully)\b|"
+              r"\bdouble[- ]check\b|"
+              r"\b(may|might|could)\s+(contain|have)\s+(errors|mistakes|inaccuracies)\b|"
+              r"\bas\s+an\s+ai\b|\bnot\s+guaranteed\b|"
+              r"\b(can(not|['\u2019]t|\s+not)|(could|did|have)(n['\u2019]t|\s+not))"
+              r"(\s+\w+ly)?\s+verif(y|ied)\s+(everything\b|all\s+of\s+it\b|it\s+all\b|"
+              r"the\s+(page|details)(?=\s*([.;,!?]|$)))|"
+              r"(?<!not )(?<!n't )(?<!n\u2019t )\bverify\s+(everything\b|all\s+of\s+it\b|"
+              r"the\s+(page|details)(?=\s*([.;,!?]|$)))|"
+              r"\b(I|this|it|everything|some\s+details|"
+              r"some\s+of\s+(this|it|the\s+(page|draft|details))|"
+              r"parts\s+of\s+(it|this|the\s+(page|draft))|the\s+(page|draft))"
+              r"\s+(may|might|could)\s+be\s+(wrong|inaccurate|incorrect)\b|"
+              r"\bthere\s+(may|might|could)\s+be\s+(errors|mistakes|inaccuracies)"
+              r"(\s+(in|on)\s+(it|this|here|the\s+(page|draft)))?(?=\s*([.;,!?]|$))|"
+              r"\bI\s+(may|might)\s+have\s+(made\s+(a\s+)?mistakes?|gotten\s+\w+\s+wrong)\b|"
+              r"\bwhat\s+I['\u2019]?m\s+not\s+sure\s+(of|about)\b)",
 }
 
 def load_states(path=DECISION / "states.json"):
@@ -146,19 +185,59 @@ def _recorded(states, ref, where):
         raise ValueError("%s: no recorded %r in states.json" % (where, ref))
 
 
-#: ``@RECORDED{<state>/<label>}`` in an oracle or foil turn's text: that recorded
-#: output, spliced in at load time, so a reply that quotes the tool never types a
-#: commit sha a later skill edit would move.
+#: ``@RECORDED{<state>/<label>}`` in an oracle or foil turn's text, or in a
+#: history or prelude step: that recorded output, spliced in at load time, so a
+#: reply that quotes the tool never types a commit sha a later skill edit would
+#: move, and a file the history writes is typed once, in the recorder.
 _RECORDED_RE = re.compile(r"@RECORDED\{([^{}]+)\}")
+
+
+def _recorded_text(states, ref, where):
+    """The text a ref splices: a ``file:`` label's bytes exactly, any other
+    label's output less its trailing newline."""
+    output = _recorded(states, ref, where)["output"]
+    if ref.partition("/")[2].startswith("file:"):
+        return output
+    return output.rstrip("\n")
+
+
+def _splice_text(text, states, where):
+    return _RECORDED_RE.sub(lambda m: _recorded_text(states, m.group(1), where), text)
 
 
 def _splice(turns, states, where):
     for turn in turns or []:
         if isinstance(turn.get("content"), str):
-            turn["content"] = _RECORDED_RE.sub(
-                lambda m: _recorded(states, m.group(1), where)["output"].rstrip("\n"),
-                turn["content"])
+            turn["content"] = _splice_text(turn["content"], states, where)
     return turns
+
+
+def _splice_value(value, states, where):
+    if isinstance(value, str):
+        return _splice_text(value, states, where)
+    if isinstance(value, list):
+        return [_splice_value(item, states, where) for item in value]
+    if isinstance(value, dict):
+        return {key: _splice_value(item, states, where) for key, item in value.items()}
+    return value
+
+
+def _splice_step(step, states, where):
+    """A written step with its ``@RECORDED`` refs spliced: in ``assistant`` and
+    ``user``, every string in ``call.arguments`` and ``result``. A string step,
+    itself a recorded ref, passes through untouched."""
+    if not isinstance(step, dict):
+        return step
+    step = dict(step)
+    for field in ("assistant", "user", "result"):
+        if isinstance(step.get(field), str):
+            step[field] = _splice_text(step[field], states, where)
+    if isinstance(step.get("call"), dict):
+        step["call"] = dict(step["call"])
+        if "arguments" in step["call"]:
+            step["call"]["arguments"] = _splice_value(step["call"]["arguments"], states,
+                                                      where)
+    return step
 
 
 def _resolve_step(step, states, where):
@@ -179,10 +258,15 @@ def _opening(case, states, where):
 
 
 def _sandbox(case, where):
-    """The snapshot an episode runs in: named, or the last state the history reads."""
+    """The snapshot an episode runs in: named, or the last state the steps read.
+
+    The prelude, the opening and the history are read in that order, so a
+    prelude names the snapshot only when nothing after it reads a state.
+    """
     name = case.get("sandbox")
     if not name:
-        steps = _opening(case, None, where) + case.get("history", [])
+        steps = (case.get("prelude", []) + _opening(case, None, where)
+                 + case.get("history", []))
         refs = [step.partition("/")[0] for step in steps if isinstance(step, str)]
         refs = [ref for ref in refs if ref != "tool"]
         if not refs:
@@ -202,7 +286,8 @@ def _overrides(history):
     step written into a case (a refusal no recorded state prints) must win over
     the sandbox for the whole verb on that unit — ``crayon show cfg`` with or
     without ``--json`` — or a model re-running it would see the history
-    contradicted.
+    contradicted. Only the history is read: the sandbox is the recorded state
+    after the prelude ran, and a prelude holds no written step and no tool call.
     """
     return [{"prefix": " ".join(agent.normalise(step["cmd"]).split()[:3]),
              "output": step["output"], "exit": step["exit"]}
@@ -211,7 +296,11 @@ def _overrides(history):
 
 
 def _writes(history, where):
-    """(path, content) for every Write the history says already happened."""
+    """(path, content) for every Write the history says already happened.
+
+    Only the history is read: a prelude holds no Write and no other tool call,
+    and the sandbox is already the recorded state after the prelude ran.
+    """
     writes = []
     for step in history:
         call = step.get("call") or {}
@@ -221,6 +310,38 @@ def _writes(history, where):
                 raise ValueError("%s: a history Write needs file_path and content" % where)
             writes.append((args["file_path"], args["content"]))
     return writes
+
+
+def _invokes(step):
+    """A prelude ``user`` turn that invokes a skill, as ``/crayon-write cfg`` does."""
+    return isinstance(step.get("user"), str) and step["user"].strip().startswith("/crayon-")
+
+
+def _check_prelude(prelude, known, where):
+    """A prelude holds recorded refs, user and assistant turns only (WR-08).
+
+    A written command or a tool call, ``Bash`` and ``Write`` included, would put
+    a result or a write before the model that no recorded state ever produced,
+    so it belongs in history. A user turn that invokes a skill must name an
+    installed one, or a typo would silently replay as raw text (IN-04).
+    """
+    for step in prelude:
+        if step.get("written") or "call" in step:
+            raise ValueError("%s: a prelude holds recorded refs, user and assistant turns only; "
+                             "a written command or a tool call belongs in history" % where)
+        if _invokes(step) and skillmod.expand_invocation(step["user"], known)[0] is None:
+            raise ValueError("%s: the prelude turn %r invokes no installed skill"
+                             % (where, step["user"]))
+
+
+def _expanded_prelude(prelude, skills):
+    """The prelude as the model reads it: a turn that invokes a skill carries its body.
+
+    The same ``skillmod.expand_invocation`` call the invocation goes through, so a
+    two-skill conversation replays the way it ran; every other step is untouched.
+    """
+    return [{"user": skillmod.expand_invocation(step["user"], skills)[1]}
+            if _invokes(step) else step for step in prelude]
 
 
 def load_b(root=CASES):
@@ -243,9 +364,13 @@ def load_b(root=CASES):
             seen.add(case["id"])
             if case["skill"] not in known:
                 raise ValueError("%s: unknown skill %r" % (where, case["skill"]))
-            history = [_resolve_step(step, states, where)
+            prelude = [_resolve_step(_splice_step(step, states, where), states, where)
+                       for step in case.get("prelude", [])]
+            _check_prelude(prelude, known, where)
+            history = [_resolve_step(_splice_step(step, states, where), states, where)
                        for step in _opening(case, states, where) + case.get("history", [])]
             case["resolved"] = {
+                "prelude": prelude,
                 "history": history,
                 "sandbox": _sandbox(case, where),
                 "overrides": _overrides(history),
@@ -254,6 +379,10 @@ def load_b(root=CASES):
             _splice(case["oracle"], states, where)
             _splice(case.get("foil"), states, where)
             case["assert"] = _expand(case["assert"])
+            if any(spec.get("kind") == PLAIN_WORDS["kind"] for spec in case["assert"]):
+                raise ValueError("%s: plain_words is always on in lane B; do not list it"
+                                 % where)
+            case["assert"].append(dict(PLAIN_WORDS))
             for spec in case["assert"]:
                 grade.validate_assertion(spec)
             case["group"] = path.stem
@@ -263,15 +392,25 @@ def load_b(root=CASES):
     return cases
 
 
+def messages_b(case, skills):
+    """The system prompt, the prelude, the skill's invocation, then the history.
+
+    A case with no prelude builds exactly the messages it built before there
+    was one, so its cached requests and results stay comparable.
+    """
+    _, invocation = skillmod.expand_invocation(
+        ("/%s %s" % (case["skill"], case.get("ask", ""))).strip(), skills)
+    return ([{"role": "system",
+              "content": skillmod.agent_system_prompt(skills, agent.WORKDIR)}]
+            + agent.history_messages(
+                _expanded_prelude(case["resolved"].get("prelude", []), skills), prefix="p")
+            + [{"role": "user", "content": invocation}]
+            + agent.history_messages(case["resolved"]["history"]))
+
+
 def run_b(case, spec, provider, ctx):
     skill = ctx["skills"][case["skill"]]
-    _, invocation = skillmod.expand_invocation(
-        ("/%s %s" % (case["skill"], case.get("ask", ""))).strip(), ctx["skills"])
-    messages = [
-        {"role": "system",
-         "content": skillmod.agent_system_prompt(ctx["skills"], agent.WORKDIR)},
-        {"role": "user", "content": invocation},
-    ] + agent.history_messages(case["resolved"]["history"])
+    messages = messages_b(case, ctx["skills"])
     jail = sandbox.jail()
     if jail is None and not getattr(provider, "replays", False):
         raise RuntimeError("no bubblewrap jail on this machine (bwrap missing or refused): "

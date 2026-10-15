@@ -28,7 +28,7 @@
       ],
       "oracle": [
         {
-          "content": "cfg was already accepted at seq 4; nothing new was recorded. crayon stops here."
+          "content": "cfg was already accepted; nothing new was recorded. crayon stops here."
         }
       ],
       "foil": [
@@ -653,6 +653,82 @@
               "name": "Bash",
               "arguments": {
                 "command": "crayon draft cfg .crayon/staging/cfg/draft/ --model-origin unknown --report .crayon/staging/cfg/report.json"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-61",
+      "skill": "crayon-review",
+      "ask": "cfg - accept it.",
+      "sandbox": "fixed",
+      "history": [
+        "tool/version_json",
+        "drafted/steering_show_json",
+        "drafted/steering_accept_json"
+      ],
+      "why": "VOICE-03, D-01, D-03: a pending request is put to the reviewer as request 4, never by its record name. The foil names the request and also its record number, so only the always-on check fails it",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\brequest\\s+4\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--(resolves|withdraw)\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "Request 4 (\"Explain what happens when max_retries is exceeded.\") is still pending. Did the current page settle it, or does it no longer apply?",
+                    "options": [
+                      {
+                        "label": "Settled by the page"
+                      },
+                      {
+                        "label": "No longer applies"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "Request 4 (seq 4, \"Explain what happens when max_retries is exceeded.\") is still pending. Did the current page settle it, or does it no longer apply?",
+                    "options": [
+                      {
+                        "label": "Settled by the page"
+                      },
+                      {
+                        "label": "No longer applies"
+                      }
+                    ]
+                  }
+                ]
               }
             }
           ]

@@ -87,6 +87,32 @@ These three rules hold at every question this skill puts to the author.
 </author_rules>
 <!-- author-rules:end -->
 
+<!-- plain-words:begin -->
+<plain_words>
+What the author reads from this skill is in plain words. The record's own words stay in
+`--json`, in the ledger and on every command line, and never reach your prose.
+
+- **Accepted, the pages as accepted, request N.** Say "accepted" where the record says
+  sealed, "the pages as accepted" where it says basis, and "request 7" where it says
+  seq 7 for a request. Give no other record entry a number, neither "event 7" nor
+  "ledger line 7": say what is already recorded and name its commit. These record
+  words stay out of your own prose altogether, not even as an English idiom: say
+  "on what grounds", not "on what basis".
+- **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
+  a sha256, a digest, and a verify or check count never appear in what you say;
+  name a commit by its id, never as a hash. Quote the tallies:
+  the walk tally and the findings tally are the tool's and the rubric's own lines.
+- **The success line, verbatim.** Echo each verb's success response line exactly as the
+  tool printed it; it is already plain. These rules cover what you say around it.
+- **Refusals in plain words, commands exact.** Tell the author in plain words what a
+  refusal means, for example "request 4 is still open". A command you run or show keeps
+  its real flags and values, in a code span. Tool output you show verbatim goes in a
+  fenced code block, never inside a sentence. That covers what a step or a routing row
+  says to show, and any other line you quote beyond the success line, such as a
+  diagnostic a verb prints.
+</plain_words>
+<!-- plain-words:end -->
+
 <iron_law>
 NO PAGE REACHES `docs/` EXCEPT THROUGH `crayon draft`. This skill writes only under
 `.crayon/staging/<id>/draft/` and `.crayon/staging/<id>/scratch/`. Every ledger
@@ -340,6 +366,14 @@ implementations, fixtures, sibling docs, `.crayon/context/` artifacts, and — i
 present — a top-level `optional-guidance/` directory. The declared sources are
 starting points, not a boundary.
 
+**The author's intake notes.** Before you author, read the author's intake notes:
+`crayon summary "$UNIT_ID"` lists them under author decisions, and they are the `notes`
+field of `unit.md`. Whatever the author said the page can leave out is scope: it stays
+off the page. The author's leave-out notes narrow the plan's inventory: a member they
+leave out is not owed by the inventory read-contract below.
+A later recorded request outranks the intake notes: left-out material such a request
+asks for goes on the page.
+
 **The inventory read-contract.** When the plan's outline promises an inventory — every
 option, every field, every module's attributes — that promise is a read-and-materialize
 contract, not a pointer. Read every member of the set at its origin and write them
@@ -384,7 +418,9 @@ reader needs to recognise; leave the rest in the workspace.
 
 **Coverage check (before staging):** walk the unit plan's `## Outline / acceptance`
 items one by one against the authored page. Every item is either present or recorded
-as a gap with a reason — never silently dropped.
+as a gap with a reason — never silently dropped. Material the author said to leave out
+is not an outline item to cover, and stays off the page unless a later recorded request
+asks for it (step 2).
 
 **Stance check:** grep the authored page for the banned researcher register, for
 implementation identifiers (type/function names, `internal/` paths), and for
@@ -444,16 +480,18 @@ Capture the model metadata silently — it is provenance, not a conversation. Wh
 model cannot be established, the honest origin is `unknown` and the model string is
 empty; do not guess one to fill the field.
 
-The response is one line: what changed, where, what remains, and `Next:`. Echo it
-verbatim. It also names every orphan — a path that is still on disk but is no longer
-a signed target — once, and the tool never deletes it.
+The tool prints its `git: committed …` line first, then the response line: what
+changed, where, what remains, and `Next:`. Echo the response line verbatim. It also
+names every orphan — a path that is still on disk but is no longer a signed target —
+once, and the tool never deletes it.
 
 **Refusals to expect:** `no_signoff` / `plan_stale` (exit 1) route back to
 crayon-plan; `page_drift` / `target_exists` (exit 1) route to crayon-review's edits
 flow; `steps_unresolved` / `steps_missing` (exit 4) send you back to the walk;
 `unsteered` (exit 1) is the STOP above; `identical_draft` (exit 3) means every signed
-target already holds these bytes — nothing was recorded, so surface the existing seq
-and commit from the payload and act on the `next` it carries.
+target already holds these bytes and nothing was recorded, so say so,
+give the commit from the payload, naming no record number, and act on the `next` it
+carries.
 </step_5>
 
 <step_6 name="Report and route">
@@ -465,9 +503,17 @@ Report the recorded draft:
 - Draft: .crayon/staging/<unit-id>/draft/<target>
 - Recorded: <the response line, verbatim>
 - Progress: drafted
+- <one line per entry of `gaps` in the report.json you staged: first person, naming the command you did not run, the claim with no source, or the behaviour you inferred; none when `gaps` is empty>
 
 Next: /crayon-review — review the draft.
 ```
+
+State each entry of `gaps` from the report.json you staged in step 4 as one line, in
+the first person and specifically, for example "I didn't run `toyq migrate`; the page
+describes it from cli.py." With an empty `gaps` list the report adds nothing: no hedge
+and no reminder to check the page. Read the gaps from your report.json, not from
+`crayon summary`, whose known gaps also list the `gaps_note`. There is never a section
+of doubts and never a general caveat.
 
 For an actionable unit, also surface the walk tallies — **as the tool printed them**.
 The response and `crayon show` both carry a tally of the form `passed 4 · skipped 1
@@ -532,8 +578,9 @@ applies. Say so before a step prints anything the author would not publish.
 - Record each step with `crayon step <id> <step-id> --steps-seq N --evidence-file F
   --output-file F`, and let the tool compute every digest.
 - Ground every behavioral claim with the three-check rule (locate, confirm, corroborate).
-- Materialize every inventory the outline promises; resolve every relative link from
-  the page's own location.
+- Materialize every inventory the outline promises, less what the author's leave-out
+  notes exclude unless a later recorded request asks for it; resolve every relative
+  link from the page's own location.
 - Write ONLY under `.crayon/staging/<id>/draft/` and `.crayon/staging/<id>/scratch/`.
 - Author in the unit's format: MyST for `.md`, rST for `.rst`.
 - Echo each verb's own response line, and the walk tallies, verbatim.
@@ -581,7 +628,9 @@ applies. Say so before a step prints anything the author would not publish.
       `--steps-seq`, `--evidence-file` and `--output-file`.
 - [ ] No digest was computed, typed or transcribed anywhere in the walk.
 - [ ] The page was authored in the unit's format, with every promised inventory
-      materialized and every relative link resolved from the page's location.
+      materialized, less what the author's leave-out notes exclude unless a later
+      recorded request asks for it, and every relative link resolved from the page's
+      location.
 - [ ] The draft was staged under `.crayon/staging/<id>/draft/` and recorded with
       `crayon draft`.
 - [ ] The response line and the walk tallies were quoted verbatim, with no resolved

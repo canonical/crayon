@@ -217,7 +217,7 @@
       ],
       "oracle": [
         {
-          "content": "Provenance, as crayon summary printed it:\n\n@RECORDED{drafted/summary}\n\nWhat's your verdict, and is there anything you want on the record with it?"
+          "content": "Provenance, as crayon summary printed it:\n\n```text\n@RECORDED{drafted/summary}\n```\n\nWhat's your verdict, and is there anything you want on the record with it?"
         }
       ],
       "foil": [
