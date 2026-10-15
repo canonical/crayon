@@ -79,7 +79,7 @@ Transcribed from `docs/contract.md` §6. No skill may invoke a flag that is not 
 | `context stage <name> --body-file -\|F [--source]…` | repo-level; tool-owned staging | — |
 | `context record [--model --model-origin] [--note]` | repo-level; one commit, no unit | — (manifest) |
 | `context show [--json]` | read-only | — |
-| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json]`, `version [--json]` | read-only | — |
+| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json\|--verbose]`, `version [--json]` | read-only | — |
 
 Every transition emits one local git commit with `Crayon-Unit:` / `Crayon-Phase:`
 trailers and explicit pathspecs (never a directory, never the whole repo). The one
@@ -147,7 +147,7 @@ precondition — the preconditions live in §5.7 and nowhere else.
 | `evidence_mismatch` | The evidence JSON's `mode` is not the `mode` the plan declares for this step; the refusal names both. Record the step in the declared mode, or re-plan the step if the mode itself was wrong. Re-running the command unchanged cannot clear this — the mode is a field of the evidence, not of the run. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` with the declared `mode`, or `crayon plan-steps <id> --steps-file -` |
 | `busy` | Another crayon run holds the staging lock. STOP, wait for it to finish, then re-run the same command unchanged. | re-run the refused command unchanged |
 | `git_busy` | A git process is mid-write in this repo. STOP, wait for it to finish, then re-run the same command unchanged. | re-run the refused command unchanged |
-| `ledger_corrupt` | The record does not verify. STOP and show the author the full verify report; never hand-edit the ledger. | `crayon verify <id>` |
+| `ledger_corrupt` | The record does not verify. STOP and show the author the full verify report; never hand-edit the ledger. | `crayon verify <id> --verbose` |
 | `ledger_version_unsupported` | The record declares a contract number this tool does not implement. STOP and report both numbers from the refusal; never hand-edit the ledger. | `crayon version --json` |
 | `unit_id_mismatch` | The record's header names a different unit than the directory holding it. STOP and report both ids; never hand-edit the ledger. | none — report and stop |
 | `uncommitted_tail` | An interrupted run left uncommitted lines. Show the author what a resume would do; with `unexpected` files, use the `resume_ambiguous` row. Otherwise complete it. | `crayon resume <id> --dry-run`, then `crayon resume <id>` only with no `unexpected` files |

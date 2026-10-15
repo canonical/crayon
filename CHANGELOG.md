@@ -18,6 +18,26 @@ across. The contract number stays `1`.
 
 ### Added
 
+- `crayon show --json` and `crayon summary --json` carry `handover`, always present, with
+  `steps` (the current plan's deviated and skipped steps), `judged` (the requests the latest
+  accept resolved with no generation or reviewer edit between the request and the accept) and
+  `withdrawn` (the requests it withdrew, each with its reason). A skill can put what is still
+  open to the author before the loop stops, without reading the ledger.
+  Additive under contract 1, recorded in `docs/contract.md` §5.10.
+- `crayon summary` and `summary --md` open with "Author decisions": the intent, the audience,
+  every note the record says the author wrote under a plain label, and what is still open at
+  handover. `summary --json` carries the same notes as `author_notes`, entries
+  `{seq, origin, note, request}` in recording order. The list is what the record says, not a
+  proof of who typed it.
+  Additive under contract 1, recorded in `docs/contract.md` §5.10.
+- `crayon verify --verbose` prints the full V1–V19 report with its counts, the report default
+  `verify` printed before. `--json` wins over it and is unchanged, and the `ledger_corrupt`
+  routing row tells a skill to show the `--verbose` report.
+  Additive under contract 1, recorded in `docs/contract.md` §5.10.
+- An accept's `--json` carries `files`, `resolves` and `withdraws`, copied from the recorded
+  `review` event, so a skill can name the accepted pages and the disposed requests without a
+  second read.
+  Additive under contract 1, recorded in `docs/contract.md` §5.10.
 - `validation/closeout-docpr-3008.md` — the slim-cycle disposition, landed
   evidence, release truth and known limitations in one record. It separates
   the current Jira stop condition from shipped product evidence and from the
@@ -97,6 +117,18 @@ across. The contract number stays `1`.
 
 ### Changed
 
+- The tool's human lines are plain. On a sealed unit the handover line reads
+  `Next: yours — crayon stops here`, and the accept line names the pages it accepted, with no
+  count and no "sealed". The `signoff`, re-sign, `edits` and `resume` lines name the ledger
+  and the pages rather than a plan hash, a basis or a seq range. Human `show` says
+  `state: accepted`, names an overtaken accept by its commit, lists `request <n>` rows and
+  reviewer edits by their notes, and labels the recorded side of `--diff` `recorded:`.
+  `summary`'s provenance line reads `record: intact at <sha7>` or names in plain words what
+  needs a look. Default `verify` answers `The record is intact.`, `The record is intact; these
+  need a look:` or `The record is damaged:`, and its check lines name requests and record
+  entries rather than seqs. When it finds damage, the `ledger_corrupt` refusal's `hint` names
+  each failing check's V id beside that label, and `error`, `detail`, `next` and exit 6 are
+  unchanged. `--json`, `verify --verbose` and the ledger keep every token.
 - The 0.2.0 release record now matches the delivery that occurred rather than
   the abandoned release plan: the product tree reached `main` by force-push,
   without a reviewed release merge, `v0.2.0` tag or GitHub Release. The

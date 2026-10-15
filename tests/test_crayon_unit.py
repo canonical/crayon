@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
+import copy
 import errno
 import fcntl
 import hashlib
@@ -3455,6 +3457,14 @@ class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
     """
 
     BEACON = '<img src="http://attacker.example/b">'
+    # The human record line reaches the renderer as its own argument (P-15); it
+    # quotes a basis commit, which is a ledger value, so it is forged too.
+    RECORD = "record: intact at 0000000 · page: drifted since " + BEACON
+
+    def render(self, data=None):
+        return crayon.summary_markdown(
+            self.forged() if data is None else data, self.RECORD
+        )
 
     def forged(self):
         """Every value in the payload forged with the same beacon."""
@@ -3488,10 +3498,39 @@ class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
             "provenance": "record: verify ok at 0000000 " + self.BEACON,
             "state": "reviewed",
             "next": "review",
+            "author_notes": [
+                {
+                    "seq": 3,
+                    "origin": "steering (manual)",
+                    "note": "Steer " + self.BEACON,
+                    "request": 3,
+                },
+                # A forged origin is a label of its own, and is escaped too.
+                {
+                    "seq": 4,
+                    "origin": "Origin " + self.BEACON,
+                    "note": "Forged " + self.BEACON,
+                    "request": None,
+                },
+            ],
+            "handover": {
+                "steps": [
+                    {
+                        "id": "Step " + self.BEACON,
+                        "text": "publish",
+                        "verdict": "skipped",
+                        "reason": "Why " + self.BEACON,
+                    }
+                ],
+                "judged": [
+                    {"seq": 3, "origin": "steering (manual)", "note": "Judged " + self.BEACON}
+                ],
+                "withdrawn": [],
+            },
         }
 
     def test_no_raw_element_survives_any_position(self):
-        rendered = crayon.summary_markdown(self.forged())
+        rendered = self.render()
         self.assertNotIn("<img", rendered)
         # The attribute text stays, visibly — a quote needs no escaping once
         # the tag around it cannot open. What is removed is the value's ability
@@ -3502,17 +3541,19 @@ class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
         # `md_cell` emits `<br>` for a newline in a table cell; nothing else in
         # the document may carry a raw `<`. Asserting on the WHOLE document is
         # what makes this survive a new section being added later.
-        rendered = crayon.summary_markdown(self.forged()).replace("<br>", "")
+        rendered = self.render().replace("<br>", "")
         self.assertNotIn("<", rendered)
         self.assertNotIn(">", rendered)
 
     def test_every_forged_position_is_actually_reached(self):
         # Vacuous-pass guard: an assertion over a document that never rendered
         # the provenance line would pass without proving anything.
-        rendered = crayon.summary_markdown(self.forged())
+        rendered = self.render()
         for heading in (
+            "## Author decisions",
+            "### The author's notes",
+            "### Still open at handover",
             "## Files changed",
-            "## Intent and audience",
             "## Recorded requests",
             "## Reviewer edits",
             "## Known gaps",
@@ -3523,10 +3564,13 @@ class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
         ):
             with self.subTest(section=heading):
                 self.assertIn(heading, rendered)
-        self.assertEqual(rendered.count("&lt;img"), 10, rendered)
+        # Ten positions before "Author decisions", plus six new ones: two notes
+        # (the second carries a forged origin as well), a skipped step's id and
+        # reason, and a judged request's note.
+        self.assertEqual(rendered.count("&lt;img"), 16, rendered)
 
     def test_the_text_stays_visible(self):
-        rendered = crayon.summary_markdown(self.forged())
+        rendered = self.render()
         for word in ("Title", "Note", "Reason", "Edit", "Gap", "Sphinx", "record:"):
             with self.subTest(word=word):
                 self.assertIn(word, rendered)
@@ -3555,7 +3599,7 @@ class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
         data = self.forged()
         data["requests"][0]["note"] = "B" * 60000
         data["requests"][0]["reason"] = "C" * 60000
-        rendered = crayon.summary_markdown(data)
+        rendered = self.render(data)
         self.assertLess(len(rendered), 4000, len(rendered))
         # Vacuous-pass guard: the note really did reach the table.
         self.assertIn("BBBB", rendered)
@@ -3569,12 +3613,204 @@ class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
         data = self.forged()
         data["requests"][0]["note"] = 42
         data["requests"][0]["reason"] = None
-        rendered = crayon.summary_markdown(data)
+        rendered = self.render(data)
         self.assertIn("42", rendered)
         # And the table keeps its column count with a rendered non-string in it.
         row = [ln for ln in rendered.splitlines() if ln.startswith("| 3 |")]
         self.assertEqual(len(row), 1, rendered)
         self.assertEqual(row[0].count("|"), 4, row[0])
+
+
+class TestAuthorDecisionsRender(unittest.TestCase):
+    """SURF-01 (D-12 to D-16) — the author's judgment is read first, and plainly.
+
+    Pure over a data dict shaped like ``summary_data``'s, so every rule is
+    driven without a repository: one data object, the text and ``--md`` renders.
+    """
+
+    RECORD = "record: intact at 0000000 · page: current"
+
+    def data(self, **overrides):
+        data = {
+            "unit": "u1",
+            "title": "Demo",
+            "intent": "reference",
+            "audience": "operators",
+            "files": ["reference/a.rst"],
+            "requests": [],
+            "reviewer_edits": [],
+            "gaps": [],
+            "steps": None,
+            "sphinx": "",
+            "model": "",
+            "model_origin": "",
+            "provenance": "record: verify ok at 0000000 (19 checks, 0 warn, 0 fail) · page: current",
+            "state": "reviewed",
+            "next": "review",
+            "author_notes": [],
+            "handover": {"steps": [], "judged": [], "withdrawn": []},
+        }
+        data.update(overrides)
+        return data
+
+    def test_every_origin_has_its_plain_label(self):
+        cases = (
+            ("intake", None, "intake"),
+            ("steering (manual)", 4, "request 4, steering"),
+            ("steering (plan)", 5, "request 5, from the plan"),
+            ("review fix", 6, "request 6, fix"),
+            ("review redraft", 7, "request 7, redraft"),
+            ("review accept", None, "accepted"),
+            ("withdrawal", 5, "request 5 withdrawn"),
+            ("reviewer edit", None, "edited the pages"),
+            ("retired", None, "retired"),
+            ("something forged", 9, "request 9, something forged"),
+            ("something forged", None, "something forged"),
+        )
+        for origin, request, label in cases:
+            with self.subTest(origin=origin, request=request):
+                self.assertEqual(
+                    crayon.note_label(
+                        {"seq": 1, "origin": origin, "note": "n", "request": request}
+                    ),
+                    label,
+                )
+
+    def test_open_items_are_plain_statements_never_questions(self):
+        handover = {
+            "steps": [
+                {"id": "three", "text": "t", "verdict": "skipped", "reason": "no key"},
+                {"id": "two", "text": "t", "verdict": "deviated", "reason": ""},
+            ],
+            "judged": [{"seq": 4, "origin": "review fix", "note": "tighten it"}],
+            "withdrawn": [
+                {"seq": 5, "origin": "steering (manual)", "note": "x", "reason": "y"}
+            ],
+        }
+        self.assertEqual(
+            crayon.open_items(handover),
+            [
+                "Step three was skipped: no key",
+                "Step two deviated",
+                "Request 4 was accepted without a page change: tighten it",
+            ],
+        )
+        for item in crayon.open_items(handover):
+            self.assertNotIn("?", item)
+
+    def test_a_forged_non_string_is_coerced_not_a_crash(self):
+        self.assertEqual(
+            crayon.open_items(
+                {"steps": [{"id": 3, "verdict": "skipped", "reason": None}],
+                 "judged": [{"seq": 4, "note": 42}]}
+            ),
+            ["Step 3 was skipped", "Request 4 was accepted without a page change: 42"],
+        )
+        self.assertEqual(
+            crayon.note_label({"origin": None, "note": 1, "request": None}), ""
+        )
+
+    def test_author_decisions_come_first_in_both_renders(self):
+        data = self.data(
+            author_notes=[
+                {"seq": 4, "origin": "steering (manual)", "note": "mention it",
+                 "request": 4},
+            ],
+            handover={
+                "steps": [],
+                "judged": [{"seq": 4, "origin": "steering (manual)",
+                            "note": "mention it"}],
+                "withdrawn": [],
+            },
+        )
+        md = crayon.summary_markdown(data, self.RECORD)
+        self.assertTrue(md.startswith("# Demo\n\n## Author decisions\n"), md)
+        self.assertLess(md.index("### The author's notes"),
+                        md.index("### Still open at handover"))
+        self.assertLess(md.index("### Still open at handover"),
+                        md.index("## Files changed"))
+        self.assertIn("- request 4, steering: mention it\n", md)
+        self.assertIn(
+            "- Request 4 was accepted without a page change: mention it\n", md
+        )
+        self.assertNotIn("## Intent and audience", md)
+        text = crayon.summary_text(data, self.RECORD)
+        lines = text.splitlines()
+        self.assertEqual(lines[:2], ["Demo", "author decisions:"])
+        self.assertLess(lines.index("  intent: reference"),
+                        lines.index("files changed:"))
+        self.assertIn("  audience: operators", lines)
+        self.assertIn("  notes:", lines)
+        self.assertIn("    request 4, steering: mention it", lines)
+        self.assertIn("  still open at handover:", lines)
+        self.assertIn(
+            "    Request 4 was accepted without a page change: mention it", lines
+        )
+        self.assertNotIn("intent: reference", [line for line in lines
+                                               if not line.startswith(" ")])
+
+    def test_a_sub_heading_appears_only_with_items(self):
+        md = crayon.summary_markdown(self.data(), self.RECORD)
+        self.assertIn("## Author decisions", md)
+        self.assertNotIn("### The author's notes", md)
+        self.assertNotIn("### Still open at handover", md)
+        text = crayon.summary_text(self.data(), self.RECORD)
+        self.assertNotIn("  notes:", text)
+        self.assertNotIn("still open at handover", text)
+
+    def test_with_nothing_to_say_the_section_is_omitted(self):
+        data = self.data(intent="", audience="")
+        self.assertNotIn("Author decisions", crayon.summary_markdown(data, self.RECORD))
+        self.assertNotIn("author decisions:", crayon.summary_text(data, self.RECORD))
+
+    def test_known_gaps_stay_their_own_section(self):
+        data = self.data(gaps=["the agent could not check the port"])
+        md = crayon.summary_markdown(data, self.RECORD)
+        self.assertIn("## Known gaps", md)
+        self.assertIn("## Author decisions", md)
+        decisions = md[md.index("## Author decisions"):md.index("## Files changed")]
+        self.assertNotIn("the agent could not check the port", decisions)
+        text = crayon.summary_text(data, self.RECORD)
+        self.assertIn("author decisions:", text)
+        block = text[text.index("author decisions:"):text.index("files changed:")]
+        self.assertNotIn("the agent could not check the port", block)
+
+    def test_requests_are_requests_and_edits_carry_no_number(self):
+        data = self.data(
+            requests=[{"seq": 4, "origin": "review fix", "note": "tighten",
+                       "disposition": "resolved", "reason": ""}],
+            reviewer_edits=[{"seq": 5, "note": "hand edit"}],
+        )
+        text = crayon.summary_text(data, self.RECORD)
+        self.assertIn("  request 4 — resolved — review fix: tighten\n", text)
+        self.assertIn("reviewer edits:\n  - hand edit\n", text)
+        self.assertNotRegex(text, r"\bseq\s*[0-9]")
+        md = crayon.summary_markdown(data, self.RECORD)
+        self.assertIn("| request | disposition | note |", md)
+        self.assertIn("## Reviewer edits\n\n- hand edit\n", md)
+        self.assertNotRegex(md, r"\bseq\s*[0-9]")
+        # Recorded and disposed, never applied (T-16-36).
+        self.assertNotIn("applied", text + md)
+
+    def test_the_human_renders_print_the_plain_record_line(self):
+        data = self.data()
+        self.assertEqual(crayon.summary_text(data, self.RECORD).splitlines()[-1],
+                         self.RECORD)
+        self.assertTrue(
+            crayon.summary_markdown(data, self.RECORD).endswith(
+                "## Provenance\n\n%s\n" % self.RECORD
+            )
+        )
+        # The JSON value's counts are the review skill's, not the reader's.
+        for render in (crayon.summary_text, crayon.summary_markdown):
+            self.assertNotIn("19 checks", render(data, self.RECORD))
+
+    def test_a_unit_with_no_page_says_so_plainly(self):
+        state = {"basis": None}
+        self.assertEqual(crayon._provenance_page(None, "u1", state, True),
+                         "no page recorded yet")
+        self.assertEqual(crayon._provenance_page(None, "u1", state, False),
+                         "no basis recorded")
 
 
 # --- U-05 (STATE-03) — contract 5.4's step status and reuse-prefix rule ------
@@ -3921,24 +4157,30 @@ class TestStepTally(unittest.TestCase):
 # report. The characters stay visible; only the line breaks are collapsed.
 GOLDEN_SUMMARY_MD = """# Demo
 
-## Files changed
-
-- `reference/fixture.rst`
-
-## Intent and audience
+## Author decisions
 
 - **Intent:** reference
 - **Audience:** TAs onboarding to the docs repo
 
+### The author's notes
+
+- request 4, steering: mention the | flag and a second line
+- edited the pages: hand edit | with a pipe and a second line
+- accepted: ship it
+
+## Files changed
+
+- `reference/fixture.rst`
+
 ## Recorded requests
 
-| seq | disposition | request |
+| request | disposition | note |
 | --- | --- | --- |
 | 4 | resolved | mention the \\| flag<br>and a second line |
 
 ## Reviewer edits
 
-**seq 5** — hand edit | with a pipe and a second line
+- hand edit | with a pipe and a second line
 
 ## Model
 
@@ -3946,8 +4188,384 @@ GOLDEN_SUMMARY_MD = """# Demo
 
 ## Provenance
 
-record: verify ok at <sha7> (19 checks, 0 warn, 0 fail) · page: current
+record: intact at <sha7> · page: current
 """
+
+
+class TestHandover(unittest.TestCase):
+    """SURF-02 (D-09, D-10, D-11) — what the author decided and what is open.
+
+    ``handover_of`` is pure over the events ``unit_view()`` already read, so
+    every case here is a literal event list. ``judged`` is the latest accept's
+    ``resolves`` with no page change between the request and the accept: a
+    reviewer reading it must be able to trust that no byte answered the request.
+    """
+
+    EMPTY = {"steps": [], "judged": [], "withdrawn": []}
+
+    def drafted(self):
+        """Opening, signoff 2, generation 3."""
+        return opening() + [
+            signoff(2, ["reference/a.rst"]),
+            generation(3, [("reference/a.rst", "h1")], 2),
+        ]
+
+    def test_a_unit_with_nothing_open_has_the_empty_shape(self):
+        self.assertEqual(crayon.handover_of(opening()), self.EMPTY)
+        self.assertEqual(crayon.handover_of(self.drafted()), self.EMPTY)
+
+    def test_a_request_accepted_with_no_page_change_is_judged(self):
+        events = self.drafted() + [
+            review(4, "fix", 3, note="tighten the intro"),
+            steering(5, note="mention the flag"),
+            review(6, "accept", 3, resolves=[4],
+                   withdraws=[{"seq": 5, "reason": "out of scope"}]),
+        ]
+        handover = crayon.handover_of(events)
+        self.assertEqual(
+            handover["judged"],
+            [{"seq": 4, "origin": "review fix", "note": "tighten the intro"}],
+        )
+        self.assertEqual(
+            handover["withdrawn"],
+            [{"seq": 5, "origin": "steering (manual)", "note": "mention the flag",
+              "reason": "out of scope"}],
+        )
+        self.assertEqual(handover["steps"], [])
+
+    def test_a_request_resolved_after_a_reviewer_edit_is_not_judged(self):
+        # TestSummaryGolden's history: steer, a hand edit, then accept.
+        events = self.drafted() + [
+            steering(4, note="mention the | flag"),
+            reviewer_edit(5, [("reference/a.rst", "h2")], generation_seq=3),
+            review(6, "accept", 3, resolves=[4]),
+        ]
+        self.assertEqual(crayon.handover_of(events)["judged"], [])
+
+    def test_a_request_resolved_after_a_generation_is_not_judged(self):
+        events = self.drafted() + [
+            steering(4, note="S"),
+            generation(5, [("reference/a.rst", "h2")], 2),
+            review(6, "accept", 5, resolves=[4]),
+        ]
+        self.assertEqual(crayon.handover_of(events)["judged"], [])
+
+    def test_adjacency_a_request_then_its_accept_is_judged(self):
+        events = self.drafted() + [
+            steering(4, note="S"),
+            review(5, "accept", 3, resolves=[4]),
+        ]
+        self.assertEqual(
+            crayon.handover_of(events)["judged"],
+            [{"seq": 4, "origin": "steering (manual)", "note": "S"}],
+        )
+
+    def test_adjacency_a_page_change_between_them_is_never_judged(self):
+        for label, change in (
+            ("generation", generation(5, [("reference/a.rst", "h2")], 2)),
+            ("reviewer edit", reviewer_edit(5, [("reference/a.rst", "h2")], 3)),
+        ):
+            with self.subTest(change=label):
+                events = self.drafted() + [
+                    steering(4, note="S"),
+                    change,
+                    review(6, "accept", 3, resolves=[4]),
+                ]
+                self.assertEqual(crayon.handover_of(events)["judged"], [])
+
+    def test_forged_seqs_are_ignored_and_raise_nothing(self):
+        events = self.drafted() + [
+            steering(4, note="S"),
+            steering(5, note="T"),
+            review(6, "accept", 3, resolves=[True, "4", None, 99, 6, 2, 3],
+                   withdraws=[5, {"seq": True, "reason": "x"}, {"seq": "4"},
+                              {"seq": 99, "reason": "y"}, None, {"seq": 6}]),
+        ]
+        handover = crayon.handover_of(events)
+        self.assertEqual(handover["judged"], [])
+        self.assertEqual(
+            handover["withdrawn"],
+            [{"seq": 5, "origin": "steering (manual)", "note": "T", "reason": ""}],
+        )
+
+    def test_a_forged_accept_seq_disposes_of_nothing(self):
+        accept = review(6, "accept", 3, resolves=[4])
+        accept["seq"] = True
+        events = self.drafted() + [steering(4, note="S"), accept]
+        self.assertEqual(crayon.handover_of(events), self.EMPTY)
+
+    def test_a_withdrawal_is_never_listed_as_judged(self):
+        events = self.drafted() + [
+            steering(4, note="S"),
+            review(5, "accept", 3, resolves=[4],
+                   withdraws=[{"seq": 4, "reason": "R"}]),
+        ]
+        handover = crayon.handover_of(events)
+        self.assertEqual(handover["judged"], [])
+        self.assertEqual([row["seq"] for row in handover["withdrawn"]], [4])
+
+    def test_entries_are_in_ascending_seq_and_listed_once(self):
+        events = self.drafted() + [
+            steering(4, note="S4"),
+            steering(5, note="S5", origin="plan"),
+            review(6, "accept", 3, resolves=[5, 4, 5]),
+        ]
+        self.assertEqual(
+            crayon.handover_of(events)["judged"],
+            [{"seq": 4, "origin": "steering (manual)", "note": "S4"},
+             {"seq": 5, "origin": "steering (plan)", "note": "S5"}],
+        )
+
+    def test_only_the_latest_accept_is_read(self):
+        events = self.drafted() + [
+            steering(4, note="first"),
+            review(5, "accept", 3, resolves=[4]),
+            steering(6, note="second"),
+            review(7, "accept", 3, resolves=[6]),
+        ]
+        self.assertEqual(
+            [row["seq"] for row in crayon.handover_of(events)["judged"]], [6]
+        )
+
+    def test_a_later_request_does_not_hide_the_last_accept(self):
+        # P-11: state `reviewed` -- the accept is still the author's last word.
+        events = self.drafted() + [
+            steering(4, note="S"),
+            review(5, "accept", 3, resolves=[4]),
+            steering(6, note="one more thing"),
+        ]
+        self.assertEqual(
+            [row["seq"] for row in crayon.handover_of(events)["judged"]], [4]
+        )
+
+    def test_a_non_string_note_or_reason_is_a_string(self):
+        events = self.drafted() + [
+            steering(4, note=7),
+            steering(5, note=None),
+            review(6, "accept", 3, resolves=[4], withdraws=[{"seq": 5, "reason": 8}]),
+        ]
+        handover = crayon.handover_of(events)
+        self.assertEqual(
+            handover["judged"], [{"seq": 4, "origin": "steering (manual)", "note": "7"}]
+        )
+        self.assertEqual(
+            handover["withdrawn"],
+            [{"seq": 5, "origin": "steering (manual)", "note": "", "reason": "8"}],
+        )
+
+    STEPS = (
+        ("a", "install the tool", "agent", False),
+        ("b", "fetch the data", "agent", False),
+        ("c", "publish the result", "agent", True),
+    )
+
+    def test_deviated_and_skipped_steps_are_listed_before_any_accept(self):
+        events = opening() + [
+            signoff(2, ["how-to/a.rst"], intent="how-to"),
+            planned(3, self.STEPS),
+            recorded(4, 3, "a", "pass", output_sha256=DIGEST),
+            recorded(5, 3, "b", "skipped", reason="no network"),
+            recorded(6, 3, "c", "deviated", reason="used --force",
+                     output_sha256=DIGEST),
+        ]
+        self.assertEqual(
+            crayon.handover_of(events),
+            {
+                "steps": [
+                    {"id": "b", "text": "fetch the data", "verdict": "skipped",
+                     "reason": "no network"},
+                    {"id": "c", "text": "publish the result", "verdict": "deviated",
+                     "reason": "used --force"},
+                ],
+                "judged": [],
+                "withdrawn": [],
+            },
+        )
+
+    def test_a_failed_or_unanswered_step_is_not_handed_over(self):
+        events = opening() + [
+            planned(3, self.STEPS),
+            recorded(4, 3, "a", "fail", exit_code=1, reason="it broke"),
+        ]
+        self.assertEqual(crayon.handover_of(events)["steps"], [])
+
+    def test_a_carried_forward_skip_is_still_listed(self):
+        events = opening() + [
+            planned(3, self.STEPS),
+            recorded(4, 3, "a", "pass", output_sha256=DIGEST),
+            recorded(5, 3, "b", "skipped", reason="no network"),
+            planned(10, self.STEPS, replaces=3, reuse=True),
+        ]
+        self.assertEqual(
+            crayon.handover_of(events)["steps"],
+            [{"id": "b", "text": "fetch the data", "verdict": "skipped",
+              "reason": "no network"}],
+        )
+
+    def test_the_origin_phrase_has_one_definition_site(self):
+        for event, origin in (
+            (steering(4), "steering (manual)"),
+            (steering(4, origin="plan"), "steering (plan)"),
+            (steering(4, origin=None), "steering (manual)"),
+            (review(4, "fix", 3), "review fix"),
+            (review(4, "redraft", 3), "review redraft"),
+        ):
+            with self.subTest(origin=origin):
+                self.assertEqual(crayon._request_origin(event), origin)
+
+
+class TestAuthorNotes(unittest.TestCase):
+    """SURF-01's data (D-13, D-15) — every note the author wrote, oldest first.
+
+    Drawn only from the event kinds the author's own decisions write. Text the
+    drafting agent wrote -- a step's reason, a generation's gaps, the model --
+    is never the author's.
+    """
+
+    def intake(self, *values):
+        """``unit-declared`` at seq 1, then one ``unit-edited`` per later value."""
+        events = [
+            ev("ledger", 0, v=1, unit="u", docs_root="docs"),
+            ev("unit-declared", 1, unit_hash="U1", frontmatter={"notes": values[0]}),
+        ]
+        for offset, value in enumerate(values[1:]):
+            events.append(
+                ev("unit-edited", 2 + offset, unit_hash_before="U", unit_hash_after="U",
+                   frontmatter={"notes": value})
+            )
+        return events
+
+    def test_a_unit_with_no_notes_has_an_empty_list(self):
+        self.assertEqual(crayon.author_notes(opening()), [])
+
+    def test_each_distinct_intake_note_is_listed_once_oldest_first(self):
+        events = self.intake("A", "A", "B", "A")
+        self.assertEqual(
+            crayon.author_notes(events),
+            [
+                {"seq": 1, "origin": "intake", "note": "A", "request": None},
+                {"seq": 3, "origin": "intake", "note": "B", "request": None},
+            ],
+        )
+
+    def test_intake_values_compare_by_exact_string(self):
+        events = self.intake("A", "A ", "a")
+        self.assertEqual(
+            [row["note"] for row in crayon.author_notes(events)], ["A", "A ", "a"]
+        )
+
+    def test_an_empty_or_absent_intake_note_is_not_listed(self):
+        events = self.intake("", None) + [
+            ev("unit-edited", 4, unit_hash_before="U", unit_hash_after="U",
+               frontmatter={})
+        ]
+        self.assertEqual(crayon.author_notes(events), [])
+
+    def test_every_origin_in_ledger_order(self):
+        events = self.intake("A") + [
+            signoff(2, ["reference/a.rst"]),
+            generation(3, [("reference/a.rst", "h1")], 2),
+            steering(4, note="S"),
+            review(5, "fix", 3, note="F"),
+            generation(6, [("reference/a.rst", "h2")], 2),
+            review(7, "accept", 6, note="ok", withdraws=[{"seq": 4, "reason": "R"}]),
+        ]
+        self.assertEqual(
+            crayon.author_notes(events),
+            [
+                {"seq": 1, "origin": "intake", "note": "A", "request": None},
+                {"seq": 4, "origin": "steering (manual)", "note": "S", "request": 4},
+                {"seq": 5, "origin": "review fix", "note": "F", "request": 5},
+                {"seq": 7, "origin": "review accept", "note": "ok", "request": None},
+                {"seq": 7, "origin": "withdrawal", "note": "R", "request": 4},
+            ],
+        )
+
+    def test_an_accept_note_comes_before_its_withdrawals_in_payload_order(self):
+        events = opening() + [
+            steering(4, note="S4"),
+            steering(5, note="S5"),
+            review(6, "accept", 3, note="ok",
+                   withdraws=[{"seq": 5, "reason": "R5"}, {"seq": 4, "reason": "R4"}]),
+        ]
+        rows = crayon.author_notes(events)[2:]
+        self.assertEqual(
+            [(row["origin"], row["note"], row["request"]) for row in rows],
+            [("review accept", "ok", None), ("withdrawal", "R5", 5),
+             ("withdrawal", "R4", 4)],
+        )
+
+    def test_an_empty_accept_note_is_skipped_but_its_withdrawals_are_not(self):
+        events = opening() + [
+            steering(4, note="S"),
+            review(5, "accept", 3, note="", withdraws=[{"seq": 4, "reason": "R"}]),
+        ]
+        self.assertEqual(
+            [row["origin"] for row in crayon.author_notes(events)],
+            ["steering (manual)", "withdrawal"],
+        )
+
+    def test_redraft_plan_steering_reviewer_edits_and_retire(self):
+        events = opening() + [
+            steering(2, note="P", origin="plan"),
+            review(3, "redraft", 2, note="D"),
+            reviewer_edit(4, [("reference/a.rst", "h2")], note="E"),
+            ev("retired", 5, note="gone"),
+        ]
+        self.assertEqual(
+            crayon.author_notes(events),
+            [
+                {"seq": 2, "origin": "steering (plan)", "note": "P", "request": 2},
+                {"seq": 3, "origin": "review redraft", "note": "D", "request": 3},
+                {"seq": 4, "origin": "reviewer edit", "note": "E", "request": None},
+                {"seq": 5, "origin": "retired", "note": "gone", "request": None},
+            ],
+        )
+
+    def test_text_the_drafting_agent_wrote_is_never_the_authors(self):
+        events = opening() + [
+            signoff(2, ["how-to/a.rst"], intent="how-to"),
+            planned(3, (("a", "install", "agent", False),)),
+            make_event("steps-planned", seq=4, steps=[], replaces=3, reuse=True,
+                       reuse_note="REUSE-NOTE"),
+            recorded(5, 3, "a", "skipped", reason="STEP-REASON"),
+            generation(6, [("how-to/a.rst", "h1")], 2),
+        ]
+        events[-1].update(gaps=["GAP"], gaps_note="GAPS-NOTE", model="MODEL-NAME")
+        rendered = json.dumps(crayon.author_notes(events))
+        for agent_text in ("STEP-REASON", "GAP", "GAPS-NOTE", "MODEL-NAME", "REUSE-NOTE"):
+            with self.subTest(text=agent_text):
+                self.assertNotIn(agent_text, rendered)
+        self.assertEqual(crayon.author_notes(events), [])
+
+    def test_forged_seqs_are_skipped_and_raise_nothing(self):
+        forged = steering(4, note="FORGED")
+        forged["seq"] = True
+        events = opening() + [
+            forged,
+            steering(5, note="S"),
+            review(7, "accept", 3, note="ok",
+                   withdraws=[{"seq": True, "reason": "x"}, {"seq": "5", "reason": "y"},
+                              {"seq": 9, "reason": "z"}, {"seq": 7, "reason": "w"},
+                              None, 5]),
+        ]
+        self.assertEqual(
+            crayon.author_notes(events),
+            [
+                {"seq": 5, "origin": "steering (manual)", "note": "S", "request": 5},
+                {"seq": 7, "origin": "review accept", "note": "ok", "request": None},
+                {"seq": 7, "origin": "withdrawal", "note": "", "request": 5},
+            ],
+        )
+
+    def test_a_non_string_note_is_listed_as_its_string(self):
+        events = opening() + [
+            steering(4, note=5),
+            review(6, "accept", 3, note="ok", withdraws=[{"seq": 4, "reason": 9}]),
+        ]
+        self.assertEqual(
+            [row["note"] for row in crayon.author_notes(events)], ["5", "ok", "9"]
+        )
 
 
 class TestSummaryGolden(TempRepoTestCase):
@@ -4029,8 +4647,42 @@ class TestSummaryGolden(TempRepoTestCase):
         proc = self.crayon("summary", "fixture-unit")
         line = [row for row in proc.stdout.splitlines() if row.startswith("record: ")][0]
         head = self.git("rev-parse", "--short=7", "HEAD").stdout.strip()
-        self.assertIn("verify ok", line)
-        self.assertIn(head, line)
+        self.assertIn("intact at %s" % head, line)
+        self.assertNotIn("checks", line)
+
+    def test_summary_json_keeps_the_counted_provenance(self):
+        """P-15: the review skill's reference documents the JSON value."""
+        self.build_fixture()
+        proc = self.crayon("summary", "fixture-unit", "--json")
+        provenance = json.loads(proc.stdout)["provenance"]
+        self.assertTrue(provenance.startswith("record: verify ok at "), provenance)
+        self.assertIn("(19 checks, 0 warn, 0 fail)", provenance)
+
+    def test_a_warned_record_names_what_needs_a_look(self):
+        self.build_fixture()
+        self.git("rm", "-q", ".gitignore")
+        self.git("commit", "-q", "-m", "drop the ignore pattern")
+        proc = self.crayon("summary", "fixture-unit")
+        head = self.git("rev-parse", "--short=7", "HEAD").stdout.strip()
+        line = [row for row in proc.stdout.splitlines() if row.startswith("record: ")][0]
+        self.assertEqual(
+            line,
+            "record: intact at %s; needs a look: the git ignore settings"
+            " · page: current" % head,
+        )
+        self.assertNotIn("V17", line)
+
+    def test_unknown_event_kinds_need_a_look_too(self):
+        self.build_fixture()
+        head = self.git("rev-parse", "--short=7", "HEAD").stdout.strip()
+        line = crayon.plain_provenance_line(
+            self.repo, "fixture-unit", {"basis": None, "warnings": ["w"]}, []
+        )
+        self.assertEqual(
+            line,
+            "record: intact at %s; needs a look: events of an unknown kind"
+            " · page: no page recorded yet" % head,
+        )
 
     def test_the_phase_16_placeholder_is_gone(self):
         self.build_fixture()
@@ -4067,8 +4719,19 @@ class TestSummaryGolden(TempRepoTestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         line = [row for row in proc.stdout.splitlines() if row.startswith("record: ")]
         self.assertTrue(line, proc.stderr)
-        self.assertIn("verify fail", line[0])
-        self.assertIn("V5", line[0])
+        # Plain words, and still a failure: never hidden behind them (T-20-15).
+        self.assertIn("damaged at", line[0])
+        self.assertIn("each draft and accept against the signed plan", line[0])
+        self.assertNotIn("V5", line[0])
+        self.assertNotIn("fail)", line[0])
+        md = self.crayon("summary", "fixture-unit", "--md", check=False).stdout
+        self.assertIn("record: damaged at", md)
+        # The JSON value keeps the verdict and the failing id (P-15).
+        provenance = json.loads(
+            self.crayon("summary", "fixture-unit", "--json", check=False).stdout
+        )["provenance"]
+        self.assertIn("verify fail", provenance)
+        self.assertIn("V5", provenance)
 
     def test_summary_takes_exactly_one_filesystem_snapshot(self):
         """`cmd_summary`'s docstring promise, now that it also verifies."""
@@ -6270,12 +6933,55 @@ class TestThisSuiteIsWhollyDefined(unittest.TestCase):
 # and V15–V19 need real history, so those two groups drive a temp repo.
 
 
+_LEDGER_WORDS = {}
+
+
+def ledger_words_pattern():
+    """D-16's banned vocabulary, compiled from ``tests/lib.sh``.
+
+    ``LEDGER_WORDS_RE`` has ONE definition site, the shell library both bash
+    suites source; this reads its single-quoted value out of that file's text
+    rather than copying the pattern, so the unit suite cannot hold a second,
+    drifting opinion of what a human line may not say. Compiled once.
+    """
+    if "re" not in _LEDGER_WORDS:
+        text = (ROOT / "tests" / "lib.sh").read_text(encoding="utf-8")
+        found = re.search(r"^LEDGER_WORDS_RE='([^']*)'$", text, re.MULTILINE)
+        if found is None:
+            raise AssertionError("tests/lib.sh no longer defines LEDGER_WORDS_RE")
+        _LEDGER_WORDS["re"] = re.compile(found.group(1))
+    return _LEDGER_WORDS["re"]
+
+
 def by_id(checks):
-    """``{V id: record}``, asserting that no id appears twice in one report."""
+    """``{V id: record}``, asserting that no id appears twice in one report.
+
+    It also holds every non-ok row's DEFAULT line to D-16: the detail a plain
+    ``verify`` prints is ``crayon.plain_detail(detail)``, and it may carry no
+    ``LEDGER_WORDS_RE`` match. Every V1–V19 test reads its report through here,
+    so every forged-check fixture is also a test of the line the author would
+    read. And every non-ok detail must be a ``crayon.Detail`` built by ``said``
+    (CR-03), so a check that formats its detail any other way, and would have
+    its contributor content scanned as the tool's words, fails here. Explicit
+    ``raise``s, so both checks survive ``python3 -O``.
+    """
     seen = {}
     for row in checks:
         assert row["id"] not in seen, "duplicate check id %s" % row["id"]
         seen[row["id"]] = row
+        if row["status"] != "ok":
+            plain = crayon.plain_detail(row["detail"])
+            hit = ledger_words_pattern().search(plain)
+            if hit is not None:
+                raise AssertionError(
+                    "%s's default line carries ledger vocabulary %r: %r"
+                    % (row["id"], hit.group(0), plain)
+                )
+            if not isinstance(row["detail"], crayon.Detail):
+                raise AssertionError(
+                    "%s's detail is not a crayon.Detail built by said: %r"
+                    % (row["id"], row["detail"])
+                )
     return seen
 
 
@@ -7069,6 +7775,572 @@ class TestVerifyCorroboration(VerifyRepoTestCase):
         self.write_unit(opening(self.UNIT))
         rows = self.verify()
         self.assertEqual([row["id"] for row in rows], ["V%d" % n for n in range(1, 20)])
+
+
+class TestPlainVerify(unittest.TestCase):
+    """VOICE-04 / D-04, D-05, D-16 — the default ``verify`` answers plainly.
+
+    Pure tests over :func:`crayon.check_record` lists: the renderer is a function
+    of the checks and the notes, so a repository would add setup without adding
+    evidence. The lifecycle suite drives the same render through the real verb.
+    """
+
+    def checks(self, **findings):
+        """V1–V19 in order, every one ok but the ``V<n>=detail`` named."""
+        return [
+            crayon.check_record(
+                "V%d" % n,
+                "V%d" % n not in findings,
+                findings.get("V%d" % n, "fine"),
+            )
+            for n in range(1, 20)
+        ]
+
+    def test_an_intact_record_is_one_line(self):
+        self.assertEqual(
+            crayon.verify_plain_lines(self.checks(), []), ["The record is intact."]
+        )
+
+    def test_a_warning_names_its_check_and_its_detail(self):
+        lines = crayon.verify_plain_lines(
+            self.checks(V17=".crayon/staging/ is not gitignored"), []
+        )
+        self.assertEqual(
+            lines,
+            [
+                "The record is intact; these need a look:",
+                "  the git ignore settings: .crayon/staging/ is not gitignored",
+            ],
+        )
+
+    def test_a_failure_opens_damaged_and_lists_every_finding_in_v_order(self):
+        lines = crayon.verify_plain_lines(
+            self.checks(
+                V15="history_squashed: the trailer commits for seq 3, 4 do not "
+                "appear in seq order in this history",
+                V5="the generation at seq 5 cites signoff 2; the signoff current "
+                "at its seq is 3",
+            ),
+            [],
+        )
+        self.assertEqual(
+            lines,
+            [
+                "The record is damaged:",
+                "  each draft and accept against the signed plan: the draft at "
+                "entry 5 cites signoff 2; the signoff current at that point is 3",
+                "  the commits for each recorded change: the trailer commits for "
+                "entries 3, 4 do not appear in record order in this history",
+            ],
+        )
+
+    def test_a_note_alone_needs_a_look_and_follows_the_checks(self):
+        note = (
+            "ignored 1 event(s) of unknown kind ('telemetry') — derivation uses "
+            "the known kinds only"
+        )
+        lines = crayon.verify_plain_lines(self.checks(), [note])
+        self.assertEqual(
+            lines, ["The record is intact; these need a look:", "  " + note]
+        )
+
+    def test_no_line_carries_a_v_id_a_status_token_or_a_count(self):
+        lines = crayon.verify_plain_lines(
+            self.checks(V8="the step record at seq 5 claims mode 'ta'", V17="x"),
+            ["a note"],
+        )
+        for line in lines:
+            with self.subTest(line=line):
+                self.assertIsNone(re.search(r"\bV\d+\b", line))
+                self.assertIsNone(re.search(r"\b(ok|warn|info|fail)\s*$", line))
+                self.assertNotIn("checks", line)
+
+    def test_the_outcome_follows_the_counts_the_exit_rule_reads(self):
+        """T-20-05: a FAIL can never read as intact, whatever else warns."""
+        for findings, notes, first in (
+            ({}, [], "The record is intact."),
+            ({"V19": "w"}, [], "The record is intact; these need a look:"),
+            ({}, ["n"], "The record is intact; these need a look:"),
+            ({"V3": "f", "V17": "w"}, ["n"], "The record is damaged:"),
+        ):
+            with self.subTest(findings=findings, notes=notes):
+                checks = self.checks(**findings)
+                failed = crayon.verify_summary(checks, notes)["failed"]
+                lines = crayon.verify_plain_lines(checks, notes)
+                self.assertEqual(lines[0], first)
+                self.assertEqual(bool(failed), first == "The record is damaged:")
+                self.assertEqual(len(lines), 1 + len(findings) + len(notes))
+
+    def test_every_check_has_one_plain_label_keyed_like_its_level(self):
+        self.assertEqual(set(crayon.CHECK_LABELS), set(crayon.CHECK_LEVELS))
+
+    def test_no_label_and_no_outcome_line_carries_ledger_vocabulary(self):
+        pattern = ledger_words_pattern()
+        outcomes = [
+            crayon.verify_plain_lines(self.checks(), [])[0],
+            crayon.verify_plain_lines(self.checks(V17="w"), [])[0],
+            crayon.verify_plain_lines(self.checks(V1="f"), [])[0],
+        ]
+        for text in list(crayon.CHECK_LABELS.values()) + outcomes:
+            with self.subTest(text=text):
+                self.assertIsNone(pattern.search(text))
+
+    def test_plain_detail_rewrites_the_tools_own_wording(self):
+        a64, b64 = "a" * 64, "b" * 64
+        for raw, plain in (
+            (
+                "the accept at seq 6 resolves seq(s) 2, which were not pending",
+                "the accept at entry 6 resolves request(s) 2, which were not pending",
+            ),
+            (
+                "the accept at seq 5 withdraws seq 4 with no reason",
+                "the accept at entry 5 withdraws request 4 with no reason",
+            ),
+            (
+                "the generation at seq 3 records a plan_hash its signoff at seq 2 "
+                "does not",
+                "the draft at entry 3 records a plan its signoff at entry 2 does not",
+            ),
+            (
+                "the accept at seq 6 seals files that are not the basis at seq 5",
+                "the accept at entry 6 accepts files that are not the recorded "
+                "pages at entry 5",
+            ),
+            (
+                "plan_stale: unit.md has changed since the signoff at seq 5",
+                "unit.md has changed since the signoff at entry 5",
+            ),
+            (
+                "line 3: prev is '%s', expected '%s'" % (a64, b64),
+                "line 3: prev is 'aaaaaaa', expected 'bbbbbbb'",
+            ),
+            (
+                "line 2: seq is 4, expected 1",
+                "line 2: entry number is 4, expected 1",
+            ),
+            (
+                "the step plan at seq 4 carries reuse:true with no reuse_note",
+                "the step plan at entry 4 reuses step evidence with no reason given",
+            ),
+            (
+                "the step record at seq 7 names steps-planned 3, which is not in "
+                "the record",
+                "the step record at entry 7 names step plan 3, which is not in "
+                "the record",
+            ),
+            (
+                "the reviewer edit at seq 9 drops still-signed basis path(s) a.rst",
+                "the reviewer edit at entry 9 drops still-signed recorded page(s) "
+                "a.rst",
+            ),
+            (
+                "ledger_diverged: the commit recorded at seq 3 (abc1234) is not an "
+                "ancestor of HEAD",
+                "the commit recorded at entry 3 (abc1234) is not an ancestor of HEAD",
+            ),
+        ):
+            with self.subTest(raw=raw):
+                self.assertEqual(crayon.plain_detail(raw), plain)
+
+    def test_plain_detail_leaves_contributor_and_plain_text_as_written(self):
+        for text in (
+            ".crayon/staging/ is not gitignored",
+            "reference/p.rst: drifted (uncommitted)",
+            "no commit carries their Crayon-Seq trailer",
+            "the step record is missing steps_seq, output_excerpt",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(crayon.plain_detail(text), text)
+
+    def test_the_worst_case_detail_reads_with_no_ledger_vocabulary(self):
+        raw = (
+            "history_squashed: seq 3 and seq(s) 4, 5 were sealed; the accept "
+            "seals the basis at seq 7, 8 with plan_hash %s" % ("c" * 64)
+        )
+        plain = crayon.plain_detail(raw)
+        self.assertIsNone(ledger_words_pattern().search(plain), plain)
+
+    def test_the_verbose_report_prints_each_detail_as_recorded(self):
+        """D-05: ``--verbose`` never passes through the mapper."""
+        raw = "the accept at seq 6 seals files that are not the basis at seq 5"
+        lines = crayon.verify_report_lines(
+            "f" * 40, self.checks(V6=raw), []
+        )
+        self.assertIn("V6 fail — " + raw, lines)
+
+    def test_by_id_refuses_a_default_line_that_keeps_ledger_vocabulary(self):
+        row = crayon.check_record("V5", False, "a basis remains")
+        with self.assertRaises(AssertionError) as caught:
+            by_id([row])
+        self.assertIn("V5", str(caught.exception))
+        self.assertIn("basis", str(caught.exception))
+
+    def test_by_id_leaves_an_ok_row_alone(self):
+        row = crayon.check_record("V3", True, "seq is contiguous from 0")
+        self.assertEqual(by_id([row]), {"V3": row})
+
+    def test_by_id_refuses_a_non_ok_detail_not_built_by_said(self):
+        row = crayon.check_record("V5", False, "a plain literal")
+        with self.assertRaises(AssertionError) as caught:
+            by_id([row])
+        self.assertIn("V5", str(caught.exception))
+        self.assertIn("crayon.Detail", str(caught.exception))
+
+    def test_no_check_detail_is_formatted_outside_said(self):
+        """CR-03's structural guard: every check detail goes through ``said``.
+
+        A detail formatted any other way is a plain ``str``, which
+        :func:`crayon.plain_detail` scans whole, contributor content included.
+        """
+        tree = ast.parse(CRAYON_PATH.read_text(encoding="utf-8"))
+        functions = {
+            node.name: node for node in tree.body if isinstance(node, ast.FunctionDef)
+        }
+
+        def text(node):
+            return isinstance(node, ast.Constant) and isinstance(node.value, str)
+
+        for name in (
+            "verify_chain",
+            "verify_integrity",
+            "verify_derivation",
+            "verify_currency",
+            "verify_corroboration",
+            "_finding",
+        ):
+            self.assertIn(name, functions, "%s is gone from crayon.py" % name)
+            for node in ast.walk(functions[name]):
+                with self.subTest(function=name, line=getattr(node, "lineno", 0)):
+                    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod):
+                        self.assertFalse(text(node.left), "% formatting")
+                    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+                        self.assertFalse(
+                            text(node.left) or text(node.right), "string +"
+                        )
+                    if isinstance(node, ast.AugAssign) and isinstance(node.op, ast.Add):
+                        self.assertFalse(text(node.value), "string +=")
+                    self.assertNotIsInstance(node, ast.JoinedStr, "an f-string")
+                    if isinstance(node, ast.Call) and isinstance(
+                        node.func, ast.Attribute
+                    ):
+                        self.assertNotEqual(node.func.attr, "format", ".format")
+
+
+class TestSaidDetail(unittest.TestCase):
+    """CR-03 / G-04, G-05 — ``said`` keeps the bytes and records who wrote them.
+
+    A :class:`crayon.Detail` is the string ``template % args`` and nothing else,
+    so ``--json``, ``--verbose`` and every refusal print what they printed
+    before. Its ``pieces`` say which characters are the tool's own words, and
+    those are the only characters :func:`crayon.plain_detail` rewrites.
+    """
+
+    def test_said_is_exactly_percent_formatting(self):
+        for template, args in (
+            ("line %d: prev is %r, expected %r", (3, "a" * 64, None)),
+            (
+                "the generation at seq %s cites signoff %r; the signoff current "
+                "at its seq is %r",
+                (5, 2, 3),
+            ),
+            ("%s and %s both claim %s", ("release-202609181200", "cfg", "reference/p.rst")),
+            ("%d line(s) parse … within the %d-byte cap", (4, 65536)),
+            ("100%% of %s", ("x",)),
+            ("records files %s", (["a.rst"],)),
+        ):
+            with self.subTest(template=template):
+                built = crayon.said(template, *args)
+                self.assertIsInstance(built, crayon.Detail)
+                self.assertEqual(str(built), template % args)
+
+    def test_said_refuses_too_few_or_too_many_arguments_as_percent_does(self):
+        with self.assertRaises(TypeError):
+            crayon.said("x %s")
+        with self.assertRaises(TypeError):
+            crayon.said("x %s", "a", "b")
+
+    def test_a_detail_serialises_as_its_text(self):
+        self.assertEqual(
+            json.dumps(crayon.said("line %d: prev is %r", 3, "p"), ensure_ascii=False),
+            json.dumps("line 3: prev is 'p'", ensure_ascii=False),
+        )
+
+    def test_the_template_is_tool_text_and_every_value_is_not(self):
+        built = crayon.said("the generation at seq %s names step %r", 4, "seq")
+        self.assertEqual(
+            built.pieces,
+            (
+                ("the generation at seq ", True),
+                ("4", False),
+                (" names step ", True),
+                ("'seq'", False),
+            ),
+        )
+        self.assertEqual(
+            crayon.plain_detail(built), "the draft at entry 4 names step 'seq'"
+        )
+
+    def test_a_copied_detail_keeps_its_pieces(self):
+        built = crayon.said("the generation at seq %s names step %r", 4, "seq")
+        for copied in (copy.copy(built), copy.deepcopy(built)):
+            self.assertEqual(copied, built)
+            self.assertEqual(copied.pieces, built.pieces)
+
+    def test_a_tool_text_argument_is_read_with_the_template(self):
+        built = crayon.said("for seq %s in seq order", crayon.ToolText("3, 4"))
+        self.assertEqual(crayon.plain_detail(built), "for entries 3, 4 in record order")
+
+    def test_said_join_keeps_each_items_pieces_and_reads_a_literal_as_tool_text(self):
+        built = crayon.said_join(
+            " · ",
+            [crayon.said("%s: %s", "a/b.md", crayon.ToolText("missing")), "the basis"],
+        )
+        self.assertIsInstance(built, crayon.Detail)
+        self.assertEqual(str(built), "a/b.md: missing · the basis")
+        self.assertEqual(
+            crayon.plain_detail(built), "a/b.md: missing · the recorded pages"
+        )
+
+
+class TestPlainVerifyKeepsContributorContent(VerifyRepoTestCase):
+    """CR-03 — default ``verify`` names the page, unit and step as recorded.
+
+    Each case is a literal input from ``20-VERIFICATION.md``'s CR-03 list, run
+    through the real check rather than a hand-written detail. Rows are indexed
+    directly, not through :func:`by_id` (G-07): ``LEDGER_WORDS_RE`` bans a
+    12-character hex run and the word ``sealed`` in a human line, and these
+    fixtures carry exactly such names as contributor content, by design.
+    """
+
+    UNIT = "release-202609181200"
+
+    def currency(self, path, disk, recorded_bytes):
+        """V14's row for one target ``path``, recorded at ``recorded_bytes``."""
+        page = self.repo / "docs" / path
+        page.parent.mkdir(parents=True, exist_ok=True)
+        if disk is not None:
+            page.write_bytes(disk)
+        digest = hashlib.sha256(recorded_bytes).hexdigest()
+        events = opening(self.UNIT) + [
+            signoff(2, [path]),
+            generation(3, [(path, digest)], signoff_seq=2),
+        ]
+        snapshot = crayon.read_fs(self.repo, self.UNIT, [path], [path])
+        state = crayon.derive(events, snapshot)
+        rows = crayon.verify_currency(self.repo, state, snapshot["paths"])
+        return {row["id"]: row for row in rows}["V14"]
+
+    def test_v14_keeps_a_uuid_page_path_as_written(self):
+        path = "reference/550e8400-e29b-41d4-a716-446655440000.md"
+        row = self.currency(path, b"edited by hand\n", b"page\n")
+        self.assertEqual(row["status"], "warn")
+        expected = "%s: drifted (uncommitted)" % path
+        self.assertEqual(row["detail"], expected)
+        self.assertEqual(crayon.plain_detail(row["detail"]), expected)
+
+    def test_v14_keeps_a_hex_run_page_path_as_written(self):
+        path = "how-to/deadbeefcafe.md"
+        row = self.currency(path, None, b"page\n")
+        self.assertEqual(row["status"], "warn")
+        self.assertEqual(crayon.plain_detail(row["detail"]), "%s: missing" % path)
+
+    def derivation(self, events):
+        """V5–V13 over ``events``, indexed directly rather than through by_id."""
+        return {row["id"]: row for row in crayon.verify_derivation(events)}
+
+    def test_v9_keeps_step_ids_named_after_ledger_words_as_written(self):
+        events = opening(self.UNIT) + [
+            signoff(2, ["a.rst"], intent="how-to"),
+            planned(
+                3,
+                [
+                    ("generation", "run it", "agent", False),
+                    ("sealed", "check it", "agent", False),
+                ],
+            ),
+            generation(4, [("a.rst", "h1")], signoff_seq=2, steps_seq=3),
+        ]
+        row = self.derivation(events)["V9"]
+        self.assertEqual(row["status"], "fail")
+        self.assertEqual(
+            crayon.plain_detail(row["detail"]),
+            "the actionable draft at entry 4 was recorded with step(s) "
+            "generation, sealed unresolved",
+        )
+
+    def test_v8_keeps_a_step_id_named_seq_as_written(self):
+        record = recorded(
+            4,
+            3,
+            "seq",
+            "pass",
+            text_hash=hashlib.sha256(b"run it").hexdigest(),
+            mode="ta",
+            output_sha256=DIGEST,
+            output_excerpt="ok",
+        )
+        events = opening(self.UNIT) + [
+            signoff(2, ["a.rst"], intent="how-to"),
+            planned(3, [("seq", "run it", "human", False)]),
+            record,
+        ]
+        row = self.derivation(events)["V8"]
+        self.assertEqual(row["status"], "fail")
+        plain = crayon.plain_detail(row["detail"])
+        self.assertTrue(
+            plain.startswith("the step record at entry 4 claims mode 'ta'"), plain
+        )
+        self.assertIn("the plan's step 'seq' declares 'human'", plain)
+
+    def test_the_tools_own_words_still_read_plainly_through_v5_to_v10(self):
+        def plain(vid, events):
+            rows = by_id(crayon.verify_derivation(events))
+            self.assertNotEqual(rows[vid]["status"], "ok", vid)
+            return crayon.plain_detail(rows[vid]["detail"])
+
+        self.assertEqual(
+            plain(
+                "V5",
+                opening("u")
+                + [
+                    signoff(2, ["a.rst"]),
+                    signoff(3, ["a.rst"], plan_hash="P2"),
+                    generation(4, [("a.rst", "h1")], signoff_seq=2),
+                ],
+            ),
+            "the draft at entry 4 cites signoff 2; the signoff current at that "
+            "point is 3",
+        )
+        self.assertEqual(
+            plain(
+                "V6",
+                opening("u")
+                + [
+                    signoff(2, ["a.rst"]),
+                    generation(3, [("a.rst", "h1")], signoff_seq=2),
+                    accept(4, 3, [("a.rst", "SOMETHING-ELSE")]),
+                ],
+            ),
+            "the accept at entry 4 accepts files that are not the recorded pages "
+            "at entry 3",
+        )
+        self.assertEqual(
+            plain(
+                "V10",
+                opening("u")
+                + [
+                    signoff(2, ["a.rst"]),
+                    generation(3, [("a.rst", "h1")], signoff_seq=2),
+                    accept(4, 3, [("a.rst", "h1")], resolves=[2]),
+                ],
+            ),
+            "the accept at entry 4 resolves request(s) 2, which were not pending",
+        )
+        self.assertEqual(
+            plain(
+                "V10",
+                opening("u")
+                + [
+                    signoff(2, ["a.rst"]),
+                    generation(3, [("a.rst", "h1")], signoff_seq=2),
+                    steering(4),
+                    steering(5),
+                    accept(6, 3, [("a.rst", "h1")]),
+                ],
+            ),
+            "the accept at entry 6 leaves request(s) 4, 5 with no disposition",
+        )
+        self.assertTrue(
+            plain(
+                "V7",
+                opening("u")
+                + [
+                    signoff(2, ["a.rst"]),
+                    generation(3, [("a.rst", "h1")], signoff_seq=2),
+                    generation(4, [("a.rst", "h2")], signoff_seq=2),
+                ],
+            ).startswith("the draft at entry 4 follows the one at entry 3 ")
+        )
+
+    def corroboration(self, events, committed=0):
+        snapshot = crayon.read_fs(self.repo, self.UNIT, [], [])
+        state = crayon.derive(events, snapshot)
+        return crayon.verify_corroboration(
+            self.repo, self.UNIT, events, state, committed
+        )
+
+    def test_v18_keeps_a_timestamp_unit_id_as_written(self):
+        events = opening(self.UNIT) + [signoff(2, ["reference/p.rst"])]
+        self.write_unit(events, commit=False)
+        other = opening("cfg") + [signoff(2, ["reference/p.rst"])]
+        ledger = self.repo / ".crayon" / "units" / "cfg" / "ledger.jsonl"
+        ledger.parent.mkdir(parents=True, exist_ok=True)
+        ledger.write_text(
+            "".join(line + "\n" for line in lines_of(other)), encoding="utf-8"
+        )
+        row = {row["id"]: row for row in self.corroboration(events)}["V18"]
+        self.assertEqual(row["status"], "warn")
+        self.assertEqual(
+            crayon.plain_detail(row["detail"]),
+            "release-202609181200 and cfg both claim reference/p.rst",
+        )
+
+    def test_the_unknown_kind_note_keeps_the_kind_as_written(self):
+        events = opening(self.UNIT) + [ev("generations", 2)]
+        (warning,) = crayon.derive(events, fs_of(None))["warnings"]
+        before = (
+            "ignored 1 event(s) of unknown kind ('generations') — derivation uses "
+            "the known kinds only"
+        )
+        self.assertIn("('generations')", crayon.plain_detail(warning))
+        self.assertEqual(
+            json.dumps(warning, ensure_ascii=False),
+            json.dumps(before, ensure_ascii=False),
+        )
+
+    def test_the_tools_own_words_still_read_plainly_through_v1_to_v19(self):
+        # This test pins the tool's own vocabulary through by_id, so its unit id
+        # carries no contributor run that LEDGER_WORDS_RE would flag (G-07).
+        self.UNIT = "u"
+        # V3: a forged 64-character prev reads as seven characters.
+        lines = lines_of(opening("u") + [signoff(2, ["a.rst"])])
+        last = json.loads(lines[-1])
+        last["prev"] = "f" * 64
+        lines[-1] = crayon.canonical_line(last)
+        rows = by_id(crayon.verify_integrity("u", lines, []))
+        self.assertEqual(rows["V2"]["status"], "ok", rows["V2"]["detail"])
+        self.assertEqual(
+            crayon.plain_detail(rows["V3"]["detail"]),
+            "line 3: prev is 'fffffff', expected '%s'"
+            % crayon.chain_prev(lines[-2])[:7],
+        )
+        # V15: three committed lines and no trailer commit.
+        events = opening(self.UNIT) + [signoff(2, ["reference/p.rst"])]
+        self.write_unit(events)
+        rows = by_id(self.corroboration(events, committed=3))
+        self.assertEqual(
+            crayon.plain_detail(rows["V15"]["detail"]),
+            "the ledger line(s) at entries 0, 1, 2 are committed and no commit "
+            "carries their Crayon-Seq trailer",
+        )
+        # V19: a plan edited since its signoff.
+        unit_md = self.repo / ".crayon" / "units" / self.UNIT / "unit.md"
+        unit_md.write_text("# edited by hand\n", encoding="utf-8")
+        rows = by_id(self.corroboration(events))
+        self.assertEqual(
+            crayon.plain_detail(rows["V19"]["detail"]),
+            "unit.md has changed since the signoff at entry 2",
+        )
+
+    def test_finding_keeps_its_first_problems_pieces_and_counts_the_rest(self):
+        first = crayon.said("the generation at seq %s names step %r", 4, "seq")
+        row = crayon._finding("V8", [first, "another"], "clean")
+        self.assertIsInstance(row["detail"], crayon.Detail)
+        self.assertTrue(str(row["detail"]).endswith(" (and 1 more)"))
+        self.assertEqual(
+            crayon.plain_detail(row["detail"]),
+            "the draft at entry 4 names step 'seq' (and 1 more)",
+        )
 
 
 class TestEscapeHintHistory(unittest.TestCase):
@@ -8138,6 +9410,204 @@ class TestContextVerbs(CrayonCliTestCase):
                 self.assertNotIn("Traceback", proc.stderr)
                 lines = [l for l in (proc.stdout + proc.stderr).splitlines() if l.strip()]
                 self.assertEqual(len(lines), 1, lines)
+
+
+class TestHumanNext(unittest.TestCase):
+    """CLOSE-04 (D-01, D-02): the ``publish`` token reads plainly for humans only.
+
+    The mapping is one constant read by ``next_line``; the routing token in
+    ``--json`` is the token ``route()`` chose, byte for byte. Every other token
+    prints as itself, ``retired`` included.
+    """
+
+    def respond(self, segments, token, **kwargs):
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            code = crayon.respond(segments, token, **kwargs)
+        self.assertEqual(code, crayon.EXITS["success"])
+        return buffer.getvalue()
+
+    def test_the_map_has_exactly_one_entry(self):
+        self.assertEqual(list(crayon.HUMAN_NEXT), ["publish"])
+
+    def test_next_line_maps_publish_and_passes_every_other_token_through(self):
+        self.assertEqual(crayon.next_line("publish"), "Next: yours — crayon stops here")
+        for token in ("review", "draft", "retired", "steer", "resume", "show"):
+            with self.subTest(token=token):
+                self.assertEqual(crayon.next_line(token), "Next: %s" % token)
+
+    def test_the_human_line_hands_over_on_publish(self):
+        self.assertEqual(
+            self.respond(["did x", "here", "left"], "publish"),
+            "did x · here · left · Next: yours — crayon stops here\n",
+        )
+
+    def test_the_json_line_keeps_the_publish_token(self):
+        body = json.loads(self.respond(["did x", "here", "left"], "publish", as_json=True))
+        self.assertEqual(body["next"], "publish")
+        self.assertNotIn("yours", body["message"])
+
+    def test_other_tokens_print_as_themselves(self):
+        for token in ("draft", "retired"):
+            with self.subTest(token=token):
+                self.assertEqual(
+                    self.respond(["did x", "here", "left"], token),
+                    "did x · here · left · Next: %s\n" % token,
+                )
+
+    def test_a_payload_never_shadows_the_base_keys(self):
+        # T-20-01: `body.update(payload)` must not overwrite ok, message or next.
+        body = json.loads(self.respond(
+            ["did x"],
+            "publish",
+            as_json=True,
+            payload={"files": [{"path": "reference/a.rst"}], "ok": False,
+                     "message": "spoofed", "next": "review"},
+        ))
+        self.assertIs(body["ok"], True)
+        self.assertEqual(body["message"], "did x")
+        self.assertEqual(body["next"], "publish")
+        self.assertEqual(body["files"], [{"path": "reference/a.rst"}])
+
+    def test_json_segments_feed_only_the_json_message(self):
+        # CR-01: a verb whose human wording changed keeps its contract-1
+        # `message` by passing the old segments; the human line never sees them.
+        body = json.loads(self.respond(
+            ["plain a", "plain b"], "draft", as_json=True,
+            json_segments=["old a", "", "old b"],
+        ))
+        self.assertIs(body["ok"], True)
+        self.assertEqual(body["message"], "old a · old b")
+        self.assertEqual(body["next"], "draft")
+        self.assertEqual(
+            self.respond(["plain a", "plain b"], "draft", json_segments=["old a"]),
+            "plain a · plain b · Next: draft\n",
+        )
+
+    def test_without_json_segments_the_message_is_the_segments(self):
+        body = json.loads(self.respond(["plain a", "plain b"], "draft", as_json=True))
+        self.assertEqual(body["message"], "plain a · plain b")
+
+    def test_route_still_returns_the_literal_token(self):
+        source = CRAYON_PATH.read_text(encoding="utf-8")
+        self.assertIn('return "publish"  # 8', source)
+
+
+class TestPlainShow(unittest.TestCase):
+    """D-16 on human ``show``: the state, the qualifier and the diff label read plainly.
+
+    Each is a second, human-only function beside the one ``show --json`` reads,
+    so no JSON value moves (SC3): ``HUMAN_STATE`` beside ``state["state"]``,
+    ``plain_state_qualifier`` beside ``state_qualifier`` and
+    ``render_diff(human=True)`` beside the default.
+    """
+
+    @staticmethod
+    def state(**overrides):
+        base = {
+            "state": "drafted",
+            "rev": None,
+            "generation_stale": False,
+            "plan_stale": False,
+            "so_seq": 3,
+            "pending": [],
+        }
+        base.update(overrides)
+        return base
+
+    def overtaken(self, **overrides):
+        return self.state(
+            state="reviewed",
+            rev={"verdict": "accept", "seq": 4},
+            generation_stale=True,
+            **overrides
+        )
+
+    def test_the_map_has_exactly_one_entry(self):
+        self.assertEqual(crayon.HUMAN_STATE, {"sealed": "accepted"})
+
+    def test_a_stale_plan_and_two_requests_read_plainly(self):
+        self.assertEqual(
+            crayon.plain_state_qualifier(
+                self.state(plan_stale=True, pending=[4, 5])
+            ),
+            "unit.md edited since the signoff, 2 requests pending",
+        )
+
+    def test_an_overtaken_accept_names_its_commit_by_short_sha(self):
+        self.assertEqual(
+            crayon.plain_state_qualifier(self.overtaken(), "0123456789abcdef0123"),
+            "accepted in 0123456, plan amended since the draft",
+        )
+
+    def test_an_overtaken_accept_with_no_commit_was_accepted_earlier(self):
+        plain = crayon.plain_state_qualifier(self.overtaken(), None)
+        self.assertTrue(plain.startswith("accepted earlier"), plain)
+        self.assertEqual(plain, "accepted earlier, plan amended since the draft")
+
+    def test_an_accepted_unit_needs_no_qualifier(self):
+        sealed = self.state(state="sealed", rev={"verdict": "accept", "seq": 4})
+        self.assertEqual(crayon.plain_state_qualifier(sealed, "0123456"), "")
+
+    def test_one_pending_request_is_singular(self):
+        self.assertEqual(
+            crayon.plain_state_qualifier(self.state(pending=[4])), "1 request pending"
+        )
+
+    def test_the_json_qualifier_keeps_its_seqs(self):
+        # SC3: show --json's `qualifier` is the pre-existing value, byte for byte.
+        self.assertEqual(
+            crayon.state_qualifier(self.overtaken(plan_stale=True, pending=[6])),
+            "accepted at seq 4, plan amended at seq 3, "
+            "unit.md edited since the signoff at seq 3, 1 request pending",
+        )
+
+    def test_every_plain_qualifier_carries_no_ledger_vocabulary(self):
+        cases = (
+            (self.overtaken(plan_stale=True, pending=[6, 7]), "0123456789abcdef"),
+            (self.overtaken(plan_stale=True), None),
+            (self.state(plan_stale=True, pending=[4]), None),
+        )
+        for state, commit in cases:
+            plain = crayon.plain_state_qualifier(state, commit)
+            with self.subTest(plain=plain):
+                self.assertTrue(plain)
+                self.assertIsNone(ledger_words_pattern().search(plain))
+
+    def diff(self, recorded, human):
+        with mock.patch.object(crayon, "read_page_bytes", return_value=b"now\n"), \
+                mock.patch.object(crayon, "find_seq_commit", return_value="c0ffee"), \
+                mock.patch.object(crayon, "git_show_blob", return_value=recorded):
+            return crayon.render_diff(
+                "/repo", "u", {"basis_seq": 3}, "reference/a.rst", human=human
+            )
+
+    def test_the_human_diff_labels_the_recorded_side_plainly(self):
+        lines = self.diff(b"then\n", True)
+        self.assertIn("  --- recorded:reference/a.rst", lines)
+        self.assertIn("  +++ disk:reference/a.rst", lines)
+        self.assertIsNone(ledger_words_pattern().search("\n".join(lines)))
+
+    def test_the_json_diff_keeps_the_basis_label(self):
+        lines = self.diff(b"then\n", False)
+        self.assertIn("  --- basis:reference/a.rst", lines)
+        self.assertIn("  +++ disk:reference/a.rst", lines)
+        self.assertNotIn("  --- recorded:reference/a.rst", lines)
+
+    def test_unreachable_bytes_are_said_plainly_for_humans_only(self):
+        human = self.diff(None, True)
+        self.assertEqual(
+            human[0],
+            "  the recorded bytes for reference/a.rst are unavailable (the commit "
+            "that recorded them is not reachable); the current content follows",
+        )
+        self.assertEqual(human[1:], ["  now"])
+        machine = self.diff(None, False)
+        self.assertEqual(
+            machine[0],
+            "  the recorded basis bytes for reference/a.rst are unavailable (the "
+            "commit that recorded them is not reachable); the current content follows",
+        )
 
 
 # CR-06: this block used to sit at line 4567 of a 5378-line file, two thirds of

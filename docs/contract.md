@@ -570,6 +570,35 @@ the reviewer before the `--resolves` / `--withdraw` flags that record the answer
 above: no event kind, reason or enum member changes, the ledger bytes are untouched, and the
 two numbers above and every SKILL.md's metadata stay as they are.
 
+**Revision (plain record surfaces).** The lines an author reads now say what happened in plain
+words. For a human, the `publish` token's `Next:` line reads `Next: yours — crayon stops here`,
+while `--json`'s `next`, `route()` and every routing row keep `publish`. The success lines of
+the accept, `signoff`, `unit edit --re-sign`, `edits` and `resume`, and the human forms of
+`show`, `summary` and default `verify`, name pages, requests and record entries rather than
+seqs, digests, the plan hash, the basis or the sealed state: human `show` prints
+`state: accepted` for a `sealed` unit and one `request <n>` row per request, and `summary`
+opens with the author's decisions and a plain provenance line. Accept's `--json` gains
+`files`, `resolves` and `withdraws`, copied from the recorded event. `verify` gains
+`--verbose`, which prints the V1–V19 report with its counts exactly as `verify` printed it
+before; default `verify` now prints one outcome line, then each check that needs a look under
+a plain label. When default `verify` finds damage, the `ledger_corrupt` refusal that follows
+gives, in its `hint`, each failing check's V id beside the label the report printed; its
+`error`, `detail` and `next`, exit 6, and the refusal after `--verbose` or `--json` are
+unchanged. `--json` wins over `--verbose` and is unchanged, and §6 shows the flag.
+`show --json` and `summary --json` gain `handover`, always present, with three members:
+`steps`, the current plan's deviated and skipped steps; `judged`, the requests the latest
+accept resolved with no generation and no reviewer edit recorded between the request and that
+accept, so the reviewer judged them against a page that had not changed since they were made;
+and `withdrawn`, the requests that accept withdrew, each with its reason. `summary --json`
+gains `author_notes`, entries `{seq, origin, note, request}` in recording order: the notes the
+record says the author wrote, from intake, steering, review, withdrawals and reviewer edits.
+The record cannot prove who typed a note, and the list claims no more than the record does.
+`show --json`'s `state`, `qualifier`, `requests` and `diff`, and `summary --json`'s
+`provenance`, keep their values, so only the human renders change their wording. These
+changes are additive under `contract: 1` by the reading above: no event kind, reason or enum
+member changes, the ledger bytes are untouched, and the two numbers above and every SKILL.md's
+metadata stay as they are.
+
 ## 6 Verb table
 
 | Verb | Key args | Events |
@@ -588,7 +617,7 @@ two numbers above and every SKILL.md's metadata stay as they are.
 | `context stage <name> --body-file -\|F [--source]…` | repo-level; tool-owned staging | — |
 | `context record [--model --model-origin] [--note]` | repo-level; one commit, no unit | — (manifest) |
 | `context show [--json]` | read-only | — |
-| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json]`, `version [--json]` | read-only | — |
+| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json\|--verbose]`, `version [--json]` | read-only | — |
 
 ## 5.11 Traces
 

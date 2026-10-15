@@ -182,6 +182,19 @@ print(value if isinstance(value, str) else json.dumps(value))
 ' "$CRAYON" "$1" "$2"
 }
 
+# The human `Next:` segment for a routed token, read from the tool's own
+# `next_line` (CLOSE-04), so the expected wording has one definition site.
+human_next_line() {
+    python3 -c '
+import importlib.machinery, importlib.util, sys
+loader = importlib.machinery.SourceFileLoader("crayon", sys.argv[1])
+spec = importlib.util.spec_from_loader("crayon", loader)
+module = importlib.util.module_from_spec(spec)
+loader.exec_module(module)
+print(module.next_line(sys.argv[2]))
+' "$CRAYON" "$1"
+}
+
 # The seq of the last `steps-planned` event of a unit.
 last_plan_seq() {
     python3 -c '
@@ -1259,6 +1272,59 @@ PY
     assert_file_contains "V8 is the check that failed" "v8err.txt" "V8"
     assert_contains "and the report names the claimed mode" "$(cat v8.txt)" "'ta'"
     assert_contains "and the mode the plan declares" "$(cat v8.txt)" "'agent'"
+    # VOICE-04 / D-04: the default report opens on the damage, never reads as
+    # healthy, and names what failed in plain words (D-16).
+    assert_eq "the default report opens on the damage" "The record is damaged:" \
+        "$(sed -n 1p v8.txt)"
+    assert_plain "the damaged report speaks plainly" "$(cat v8.txt)"
+    assert_eq "the refusal is the one stderr line" "1" \
+        "$(wc -l <v8err.txt | tr -d ' ')"
+
+    # WR-01: the default report names the check by its plain label, so the
+    # refusal after it gives each failing V id beside that same label, read
+    # from the one CHECK_LABELS; the rest of the refusal is as it was.
+    local ledger_damaged="is damaged and nothing may be appended"
+    assert_eq "the default refusal's hint pairs the id with the report's label" \
+        "the report above names each failing check: V8 (the step evidence); .crayon/units/mode-unit/ledger.jsonl $ledger_damaged" \
+        "$(json_field hint <v8err.txt)"
+    assert_eq "the default refusal's detail is unchanged" \
+        "record integrity failed: V8" "$(json_field detail <v8err.txt)"
+    assert_eq "the default refusal still routes show" "show" \
+        "$(json_field next <v8err.txt)"
+    assert_eq "the default refusal names the unit" "mode-unit" \
+        "$(json_field unit <v8err.txt)"
+    assert_eq "the report prints that label" "1" \
+        "$(grep -c '^  the step evidence: ' v8.txt || true)"
+    assert_eq "and names no V id (D-04)" "0" "$(grep -cE '\bV8\b' v8.txt || true)"
+
+    "$CRAYON" verify mode-unit --verbose >v8v.txt 2>v8verr.txt
+    assert_eq "verify --verbose on the damage exits 6" "6" "$?"
+    assert_json_error "the --verbose refusal is ledger_corrupt" "v8verr.txt" \
+        "ledger_corrupt"
+    assert_eq "the --verbose refusal's hint is unchanged" \
+        "the report above names each failing check; .crayon/units/mode-unit/ledger.jsonl $ledger_damaged" \
+        "$(json_field hint <v8verr.txt)"
+    assert_eq "the --verbose report names V8 by id" "1" \
+        "$(grep -c '^V8 fail — ' v8v.txt || true)"
+
+    "$CRAYON" verify mode-unit --json >v8j.txt 2>v8jerr.txt
+    assert_eq "verify --json on the damage exits 6" "6" "$?"
+    assert_eq "the --json refusal's hint is unchanged" \
+        "the report above names each failing check; .crayon/units/mode-unit/ledger.jsonl $ledger_damaged" \
+        "$(tail -n 1 v8j.txt | json_field hint)"
+    assert_eq "the --json refusal's detail is unchanged" \
+        "record integrity failed: V8" "$(tail -n 1 v8j.txt | json_field detail)"
+    assert_eq "the --json refusal is ledger_corrupt" "ledger_corrupt" \
+        "$(tail -n 1 v8j.txt | json_field error)"
+
+    # VOICE-04 concurrency edge: verify takes no lock and writes nothing, so a
+    # second default run prints the same bytes on both streams.
+    "$CRAYON" verify mode-unit >v8b.txt 2>v8berr.txt
+    assert_eq "a second default run exits 6 too" "6" "$?"
+    assert_eq "and prints byte-identical stdout" "same" \
+        "$(cmp -s v8.txt v8b.txt && echo same || echo differs)"
+    assert_eq "and byte-identical stderr" "same" \
+        "$(cmp -s v8err.txt v8berr.txt && echo same || echo differs)"
     cleanup
 }
 
@@ -3737,6 +3803,31 @@ test_verify_v18_target_overlap() {
     cleanup
 }
 
+# CR-03: a unit id is contributor content, so default `verify` names it as
+# written. A timestamp id holds a 12-digit run that the plain-words table's
+# digest rule used to cut to seven characters, naming a unit that does not exist.
+test_verify_keeps_a_timestamp_unit_id_as_written() {
+    setup_repo
+    git checkout -q -b left
+    crayon_unit_new release-202609181200 "reference/shared.rst" >/dev/null 2>&1
+    "$CRAYON" signoff release-202609181200 >/dev/null 2>&1
+    git checkout -q main
+    git checkout -q -b right
+    crayon_unit_new cfg "reference/shared.rst" >/dev/null 2>&1
+    "$CRAYON" signoff cfg >/dev/null 2>&1
+    git checkout -q left
+    git merge -q --no-edit right
+
+    local out rc
+    out=$("$CRAYON" verify release-202609181200 2>/dev/null)
+    rc=$?
+    assert_eq "verify exits 0 on a target overlap" "0" "$rc"
+    assert_eq "the report names both units and the page exactly as written" "1" \
+        "$(printf '%s\n' "$out" | grep -cFx \
+            '  pages another unit also claims: release-202609181200 and cfg both claim reference/shared.rst')"
+    cleanup
+}
+
 test_verify_v19_context_digests() {
     setup_repo
     printf 'the source of record\n' >workshop.json
@@ -3822,8 +3913,12 @@ PY
     # TWO unknown events, exactly ONE warning about them (contract 5.9).
     assert_eq "exactly one warning, however many unknown events" "1" \
         "$(verify_warnings)"
-    assert_contains "the warning names the kind" \
-        "$("$CRAYON" verify zeta 2>/dev/null | sed -n 1p)" "telemetry"
+    local plain
+    plain=$("$CRAYON" verify zeta 2>/dev/null)
+    assert_contains "the warning names the kind" "$plain" "telemetry"
+    assert_eq "the default report opens on what needs a look" \
+        "The record is intact; these need a look:" "$(printf '%s\n' "$plain" | sed -n 1p)"
+    assert_plain "the warned report speaks plainly" "$plain"
 
     # The gates ran over the KNOWN kinds only: V7 in particular did not read the
     # two telemetry events as generations that skipped their steering.
@@ -7577,7 +7672,11 @@ test_j5_review_accept_seals_the_unit_end_to_end() {
     assert_eq "accept exits 0" "0" "$rc"
     assert_eq "accept prints exactly one stdout line" "1" \
         "$(printf '%s\n' "$out" | wc -l | tr -d ' ')"
-    assert_contains "the accept response routes to publish" "$out" "Next: publish"
+    # D-03 / CLOSE-04: the accepted pages, then the plain handover; no count,
+    # no "sealed" and no resolved/withdrawn counts segment.
+    assert_eq "the accept response hands over plainly" \
+        "reviewed demo-unit: accept · accepted reference/demo.rst · Next: yours — crayon stops here" \
+        "$out"
     assert_eq "accept appends exactly one event" "$((lines_before + 1))" \
         "$(wc -l <".crayon/units/demo-unit/ledger.jsonl" | tr -d ' ')"
     assert_eq "accept makes exactly one commit" "$((before + 1))" \
@@ -7606,6 +7705,15 @@ test_j5_review_accept_seals_the_unit_end_to_end() {
 
     assert_eq "the unit is sealed" "sealed" "$(derived demo-unit state)"
     assert_eq "a sealed unit routes to publish" "publish" "$(derived demo-unit next)"
+
+    # D-16: the author reads `accepted`; the JSON state stays `sealed`.
+    local shown
+    shown=$("$CRAYON" show demo-unit 2>show-err.txt)
+    assert_contains "human show says the unit is accepted" "$shown" "state: accepted"
+    assert_not_contains "human show never says sealed" "$shown" "sealed"
+    assert_plain "show on an accepted unit speaks plainly" "$shown"
+    assert_eq "show --json keeps the sealed state" "sealed" \
+        "$("$CRAYON" show demo-unit --json 2>/dev/null | json_field state)"
     cleanup
 }
 
@@ -7964,6 +8072,7 @@ test_show_on_a_drafted_unit_reports_the_basis_and_routes_to_review() {
     assert_contains "show prints the state" "$out" "state: drafted"
     assert_contains "the basis path is current" "$out" "reference/demo.rst — current"
     assert_eq "the last line is the routed token" "Next: review" "$(last_line "$out")"
+    assert_plain "show on a drafted unit speaks plainly" "$out"
     cleanup
 }
 
@@ -7977,10 +8086,25 @@ test_show_qualifies_a_state_that_would_mislead() {
     local out
     out=$("$CRAYON" show demo-unit 2>err.txt)
     assert_eq "show exits 0 on an amended seal" "0" "$?"
-    assert_contains "the qualifier names the accept" "$out" "accepted at seq 4"
-    assert_contains "the qualifier names the amendment" "$out" "plan amended at seq"
+    # P-19: the accept is named by the commit its Crayon-Seq trailer is on, never
+    # by its seq and never by the event's parent commit.
+    local accept_sha shown_sha state_line
+    accept_sha=$(git log --format='%H %(trailers:key=Crayon-Verdict,valueonly)' \
+        | sed -n 's/^\([0-9a-f]*\) accept$/\1/p' | head -1 | cut -c1-7)
+    shown_sha=$(printf '%s\n' "$out" | sed -n 's/.*accepted in \([0-9a-f]*\).*/\1/p')
+    assert_eq "the qualifier names the accept by a 7-character sha" "7" "${#shown_sha}"
+    assert_eq "it is the accept's own commit" "$accept_sha" "$shown_sha"
+    assert_contains "the qualifier names the amendment" "$out" "plan amended since the draft"
     assert_not_contains "an amended unit never reads as sealed" "$out" "state: sealed"
+    assert_not_contains "an amended unit never reads as accepted" "$out" "state: accepted"
+    state_line=$(printf '%s\n' "$out" | grep '^state:')
+    assert_not_contains "the state line names no seq" "$state_line" "seq"
+    assert_plain "show on an amended unit speaks plainly" "$out"
     assert_eq "an amended seal routes to draft" "Next: draft" "$(last_line "$out")"
+    # SC3: the JSON qualifier keeps its seqs.
+    assert_contains "show --json's qualifier is unchanged" \
+        "$("$CRAYON" show demo-unit --json 2>/dev/null | json_field qualifier)" \
+        "accepted at seq 4"
 
     # The other misleading state: a drafted unit with requests waiting.
     setup_drafted_unit two-unit "reference/two.rst"
@@ -8089,13 +8213,349 @@ test_show_lists_requests_with_their_dispositions() {
 
     local out
     out=$("$CRAYON" show demo-unit 2>err.txt)
-    assert_contains "a disposed request reads resolved" "$out" "seq 4 — resolved"
+    assert_contains "a disposed request reads resolved" "$out" "request 4 — resolved"
     assert_contains "a withdrawn request carries its reason" "$out" \
-        "seq 5 — withdrawn: out of scope for this page"
-    assert_contains "an undisposed request reads pending" "$out" "seq 7 — pending"
+        "request 5 — withdrawn: out of scope for this page"
+    assert_contains "an undisposed request reads pending" "$out" "request 7 — pending"
     local order
-    order=$(printf '%s\n' "$out" | sed -n 's/^  seq \([0-9]*\) —.*/\1/p' | tr '\n' ' ')
-    assert_eq "requests are listed in ascending seq" "4 5 7 " "$order"
+    order=$(printf '%s\n' "$out" | sed -n 's/^  request \([0-9]*\) —.*/\1/p' | tr '\n' ' ')
+    assert_eq "requests are listed in ascending order" "4 5 7 " "$order"
+    assert_plain "show's request rows speak plainly" "$out"
+    cleanup
+}
+
+# D-16: a reviewer edit is listed by its note alone; the seq it sits at stays
+# in show --json's `reviewer_edits`.
+test_show_lists_reviewer_edits_by_their_note() {
+    setup_repo
+    setup_drafted_unit demo-unit "reference/demo.rst"
+    printf 'Demo\n====\n\nEdited by hand.\n' >docs/reference/demo.rst
+    "$CRAYON" edits demo-unit --note "the hand edit" >/dev/null 2>&1
+
+    local out
+    out=$("$CRAYON" show demo-unit 2>err.txt)
+    assert_contains "the edit is listed" "$out" "reviewer edits:"
+    assert_contains "the edit row is its note" "$out" "  - the hand edit"
+    assert_not_contains "the edit row names no seq" "$out" "edit at seq"
+    assert_plain "show's edit rows speak plainly" "$out"
+    assert_eq "show --json keeps the edit's seq" "4" \
+        "$("$CRAYON" show demo-unit --json 2>/dev/null | python3 -c '
+import json, sys
+print(json.load(sys.stdin)["reviewer_edits"][0]["seq"])')"
+    cleanup
+}
+
+# SURF-02 (D-10, D-11): `show --json` and `summary --json` carry the same
+# `handover`. The fix at seq 4 was accepted with no page change since, so it is
+# judged; the steer at seq 5 was withdrawn with its reason.
+test_show_and_summary_json_carry_the_handover() {
+    setup_repo
+    setup_drafted_unit demo-unit "reference/demo.rst"
+    "$CRAYON" review demo-unit --verdict fix --note "tighten the intro" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "mention the flag" >/dev/null 2>&1
+    "$CRAYON" review demo-unit --verdict accept --note "ship it" --resolves 4 \
+        --withdraw 5 "out of scope for this page" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "one more thing" >/dev/null 2>&1
+
+    "$CRAYON" show demo-unit --json >show.json 2>err.txt
+    assert_eq "show --json exits 0" "0" "$?"
+    "$CRAYON" summary demo-unit --json >summary.json 2>>err.txt
+    assert_eq "summary --json exits 0" "0" "$?"
+    local probe='
+import json, sys
+handover = json.load(open(sys.argv[1], encoding="utf-8"))["handover"]
+print("%s|%s|%s|%s" % (
+    ",".join(str(row["seq"]) for row in handover["judged"]),
+    handover["judged"][0]["origin"] if handover["judged"] else "",
+    ",".join(str(row["seq"]) for row in handover["withdrawn"]),
+    handover["withdrawn"][0]["reason"] if handover["withdrawn"] else "",
+))
+'
+    assert_eq "show --json hands over the judged request and the withdrawal" \
+        "4|review fix|5|out of scope for this page" "$(python3 -c "$probe" show.json)"
+    assert_eq "summary --json carries the same handover" \
+        "$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["handover"], sort_keys=True))' show.json)" \
+        "$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["handover"], sort_keys=True))' summary.json)"
+    assert_not_contains "human show prints no handover block" \
+        "$("$CRAYON" show demo-unit 2>&1)" "handover"
+    cleanup
+}
+
+# SURF-02 (D-10): a skipped step is handed over from the moment it is recorded,
+# before any draft or accept.
+test_show_json_hands_over_a_skipped_step_before_any_accept() {
+    setup_repo
+    walk_unit_new walk-unit
+    printf '%s' "$THREE_STEPS" |
+        "$CRAYON" plan-steps walk-unit --steps-file - >/dev/null 2>&1
+    local seq1
+    seq1=$(last_plan_seq walk-unit)
+    record_step walk-unit one "$seq1" pass "installed ok\n" >/dev/null 2>&1
+    skip_step walk-unit three "$seq1" "the publish step needs a credential" \
+        >/dev/null 2>&1
+
+    "$CRAYON" show walk-unit --json >show.json 2>err.txt
+    assert_eq "show --json exits 0" "0" "$?"
+    assert_eq "the skipped step is handed over with its reason" \
+        "three|skipped|the publish step needs a credential|publish the result" \
+        "$(python3 -c '
+import json, sys
+steps = json.load(open(sys.argv[1], encoding="utf-8"))["handover"]["steps"]
+print("|".join(steps[0][key] for key in ("id", "verdict", "reason", "text"))
+      if len(steps) == 1 else json.dumps(steps))
+' show.json)"
+    assert_eq "nothing is judged before an accept" "[] []" "$(python3 -c '
+import json, sys
+handover = json.load(open(sys.argv[1], encoding="utf-8"))["handover"]
+print(json.dumps(handover["judged"]), json.dumps(handover["withdrawn"]))
+' show.json)"
+    cleanup
+}
+
+# D-03 / SC2: the plainer accept line costs the record nothing — accept's
+# `--json` still routes `publish` and carries the accepted files, the requests
+# judged satisfied and the withdrawals with their reasons, copied from the event.
+test_accept_json_carries_files_resolves_and_withdraws() {
+    setup_repo
+    setup_drafted_unit demo-unit "reference/demo.rst"
+    "$CRAYON" review demo-unit --verdict fix --note "tighten the intro" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "mention the flag" >/dev/null 2>&1
+
+    "$CRAYON" review demo-unit --verdict accept --note "ship it" --resolves 4 \
+        --withdraw 5 "out of scope for this page" --json >accept.json 2>err.txt
+    assert_eq "accept --json exits 0" "0" "$?"
+    assert_eq "accept --json prints exactly one line" "1" \
+        "$(wc -l <accept.json | tr -d ' ')"
+    assert_eq "accept --json still routes publish" "publish" \
+        "$(json_field next <accept.json)"
+    # CR-01 (contract 1): the plainer human line leaves the message as it was.
+    assert_eq "accept --json keeps its contract-1 message" \
+        "reviewed demo-unit: accept · 1 file(s) sealed · 1 request(s) judged satisfied, 1 withdrawn (a recorded judgment, never proof that the bytes changed)" \
+        "$(json_field message <accept.json)"
+    assert_eq "accept --json carries the resolves" "[4]" "$(python3 -c '
+import json, sys
+print(json.dumps(json.load(open(sys.argv[1], encoding="utf-8")).get("resolves")))
+' accept.json)"
+    assert_eq "accept --json carries the withdrawals with their reasons" \
+        '[{"seq": 5, "reason": "out of scope for this page"}]' "$(python3 -c '
+import json, sys
+print(json.dumps(json.load(open(sys.argv[1], encoding="utf-8")).get("withdraws")))
+' accept.json)"
+    assert_eq "accept --json carries the accepted files" "reference/demo.rst" \
+        "$(event_paths <accept.json)"
+    assert_eq "the files are the recorded accept event's, verbatim" \
+        "$(sed -n '$p' .crayon/units/demo-unit/ledger.jsonl | event_files)" \
+        "$(event_files <accept.json)"
+    cleanup
+}
+
+# D-03: every page of the accepted set, uncapped, comma-separated, in the
+# order the accept recorded them (the signoff's target order, not the alphabet).
+test_accept_names_every_accepted_page_in_recorded_order() {
+    setup_repo
+    crayon_unit_new multi-unit "reference/b.rst" --also-target "reference/a.rst" \
+        >/dev/null 2>&1
+    "$CRAYON" signoff multi-unit >/dev/null 2>&1
+    stage_draft multi-unit "reference/b.rst" "page b\n"
+    stage_draft multi-unit "reference/a.rst" "page a\n"
+    "$CRAYON" draft multi-unit ".crayon/staging/multi-unit/draft" >/dev/null 2>&1
+
+    local out
+    out=$("$CRAYON" review multi-unit --verdict accept --note "both read well" 2>err.txt)
+    assert_eq "the two-page accept exits 0" "0" "$?"
+    assert_eq "the accept line names both pages in recorded order" \
+        "reviewed multi-unit: accept · accepted reference/b.rst, reference/a.rst · Next: yours — crayon stops here" \
+        "$out"
+    cleanup
+}
+
+# D-16: the harness's ledger-vocabulary check, driven against a PRIVATE
+# results file so its deliberate failures are this test's evidence rather than
+# the suite's (the WR-12 shape). It must bite on each forbidden sample and pass
+# the plain accept line.
+test_d16_assert_plain_bites_on_ledger_vocabulary() {
+    setup_repo
+    local outer="$RESULTS" probe
+    probe=$(mktemp)
+    RESULTS="$probe"
+
+    assert_plain "a plan hash" "signed off u · plan_hash 0123456789ab · Next: draft"
+    assert_plain "the basis" "recorded edits on u · 1 file(s) in the basis · Next: review"
+    assert_plain "a request seq" "seq 4 — resolved"
+    assert_plain "sealed" "state: sealed"
+    assert_plain "a digest" \
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    local forbidden_fails forbidden_passes
+    forbidden_fails=$(grep -c '^FAIL' "$probe" || true)
+    forbidden_passes=$(grep -c '^PASS' "$probe" || true)
+
+    : >"$probe"
+    assert_plain "the plain accept" \
+        "reviewed u: accept · accepted reference/a.rst · Next: yours — crayon stops here"
+    assert_plain "a short sha" "resumed u · completed the interrupted write · 0123abc"
+    local plain_passes plain_fails
+    plain_passes=$(grep -c '^PASS' "$probe" || true)
+    plain_fails=$(grep -c '^FAIL' "$probe" || true)
+
+    RESULTS="$outer"
+    rm -f "$probe"
+
+    assert_eq "every forbidden sample fails" "5" "$forbidden_fails"
+    assert_eq "and none of them passes" "0" "$forbidden_passes"
+    assert_eq "the plain lines pass" "2" "$plain_passes"
+    assert_eq "and record no failure" "0" "$plain_fails"
+    cleanup
+}
+
+# D-16 (P-03): signoff and --re-sign say what changed, where, what remains and
+# Next — the ledger path in place of a plan-hash prefix.
+test_d16_signoff_and_re_sign_lines_are_plain() {
+    setup_repo
+    crayon_unit_new demo-unit "reference/demo.rst" >/dev/null 2>&1
+    "$CRAYON" signoff demo-unit >so-out.txt 2>so-err.txt
+    assert_eq "signoff exits 0" "0" "$?"
+    assert_response_line "signoff" so-out.txt "draft"
+    assert_eq "the signoff line names the ledger and the frozen targets" \
+        "signed off demo-unit · .crayon/units/demo-unit/ledger.jsonl · 1 target(s) frozen · Next: draft" \
+        "$(cat so-out.txt)"
+    assert_plain "the signoff line" "$(cat so-out.txt)"
+
+    "$CRAYON" unit edit demo-unit --audience "A different audience" --re-sign \
+        >rs-out.txt 2>rs-err.txt
+    assert_eq "the re-sign exits 0" "0" "$?"
+    assert_response_line "re-sign" rs-out.txt "draft"
+    assert_eq "the re-sign line has the same shape" \
+        "re-signed demo-unit · .crayon/units/demo-unit/ledger.jsonl · 1 target(s) frozen · Next: draft" \
+        "$(cat rs-out.txt)"
+    assert_plain "the re-sign line" "$(cat rs-out.txt)"
+    cleanup
+}
+
+# The plan hash of the ledger's last event, cut to the 12 hex digits the
+# contract-1 signoff message carries. Read from the record, never a literal.
+last_plan_hash_prefix() {
+    python3 -c '
+import json, sys
+lines = open(sys.argv[1], encoding="utf-8").read().splitlines()
+print(json.loads(lines[-1])["plan_hash"][:12])
+' ".crayon/units/$1/ledger.jsonl"
+}
+
+# CR-01 (contract 1): the plain human line costs `--json` nothing. signoff's
+# `message` keeps the wording it had before the human line was reworded,
+# plan-hash prefix included; the human line is pinned by the test above.
+test_signoff_json_message_keeps_its_contract_1_wording() {
+    setup_repo
+    crayon_unit_new demo-unit "reference/demo.rst" >/dev/null 2>&1
+    "$CRAYON" signoff demo-unit --json >so.json 2>so-err.txt
+    assert_eq "signoff --json exits 0" "0" "$?"
+    assert_eq "signoff --json prints exactly one line" "1" \
+        "$(wc -l <so.json | tr -d ' ')"
+    assert_eq "signoff --json routes draft" "draft" "$(json_field next <so.json)"
+    assert_eq "signoff --json keeps its contract-1 message" \
+        "signed off demo-unit · plan_hash $(last_plan_hash_prefix demo-unit) · 1 target(s) frozen" \
+        "$(json_field message <so.json)"
+    cleanup
+}
+
+# CR-01 (contract 1): `unit edit --re-sign --json` keeps the plan-hash prefix
+# of the re-sign, read from the ledger's last event.
+test_re_sign_json_message_keeps_its_contract_1_wording() {
+    setup_repo
+    crayon_unit_new demo-unit "reference/demo.rst" >/dev/null 2>&1
+    "$CRAYON" signoff demo-unit >/dev/null 2>&1
+    "$CRAYON" unit edit demo-unit --audience "A different audience" --re-sign --json \
+        >rs.json 2>rs-err.txt
+    assert_eq "the re-sign --json exits 0" "0" "$?"
+    assert_eq "the re-sign --json prints exactly one line" "1" \
+        "$(wc -l <rs.json | tr -d ' ')"
+    assert_eq "the re-sign --json routes draft" "draft" "$(json_field next <rs.json)"
+    assert_eq "the re-sign --json keeps its contract-1 message" \
+        "re-signed demo-unit · plan_hash $(last_plan_hash_prefix demo-unit) · 1 target(s) frozen" \
+        "$(json_field message <rs.json)"
+    cleanup
+}
+
+# CR-01 (contract 1): `edits --json` still counts the files in the basis; the
+# human line's plainer count is pinned by test_d16_edits_line_is_plain.
+test_edits_json_message_keeps_its_contract_1_wording() {
+    setup_repo
+    setup_drafted_unit demo-unit "reference/demo.rst"
+    printf 'Demo\n====\n\nEdited by hand.\n' >docs/reference/demo.rst
+    "$CRAYON" edits demo-unit --note "the hand edit" --json >e.json 2>e-err.txt
+    assert_eq "edits --json exits 0" "0" "$?"
+    assert_eq "edits --json prints exactly one line" "1" \
+        "$(wc -l <e.json | tr -d ' ')"
+    assert_eq "edits --json routes review" "review" "$(json_field next <e.json)"
+    assert_eq "edits --json keeps its contract-1 message" \
+        "recorded edits on demo-unit · .crayon/units/demo-unit/ledger.jsonl · 1 file(s) in the basis" \
+        "$(json_field message <e.json)"
+    cleanup
+}
+
+# D-16 (P-02): edits records the pages as they are now; nothing has accepted
+# them yet, so the line claims no acceptance and names no basis.
+test_d16_edits_line_is_plain() {
+    setup_repo
+    setup_drafted_unit demo-unit "reference/demo.rst"
+    printf 'Demo\n====\n\nEdited by hand.\n' >docs/reference/demo.rst
+    "$CRAYON" edits demo-unit --note "the hand edit" >e-out.txt 2>e-err.txt
+    assert_eq "edits exits 0" "0" "$?"
+    assert_response_line "edits" e-out.txt "review"
+    assert_contains "the edits line counts the pages recorded" "$(cat e-out.txt)" \
+        "1 page(s) recorded as they are now"
+    assert_plain "the edits line" "$(cat e-out.txt)"
+    cleanup
+}
+
+# D-16 (P-04): resume and its dry run say what happened in words; the seq range
+# stays in the refusal that shares the classification, which is exempt.
+test_d16_resume_lines_are_plain() {
+    setup_repo
+    crashed_unit_new dry append
+    "$CRAYON" resume dry --dry-run >dry-out.txt 2>dry-err.txt
+    assert_eq "the dry run exits 0" "0" "$?"
+    local dry_line
+    dry_line=$(tail -n 1 dry-out.txt)
+    assert_contains "the dry run counts the uncommitted events" "$dry_line" \
+        "uncommitted event(s) from an interrupted write"
+    assert_not_contains "the dry run names no seq" "$dry_line" "seq"
+    assert_plain "the dry-run line" "$dry_line"
+
+    "$CRAYON" resume dry >res-out.txt 2>res-err.txt
+    assert_eq "resume exits 0" "0" "$?"
+    local resume_line
+    resume_line=$(tail -n 1 res-out.txt)
+    assert_contains "resume says it completed the write" "$resume_line" \
+        "resumed dry · completed the interrupted write"
+    assert_not_contains "resume names no seq" "$resume_line" "seq"
+    assert_plain "the resume line" "$resume_line"
+    cleanup
+}
+
+# CR-01 (contract 1): the dry run and the resume keep their seq ranges in
+# `--json` — the dry run's with an en dash, from the classification's detail,
+# and the resume's with an ASCII hyphen — and the resume names the new HEAD.
+# The two files are the unit's `unit.md` and `.crayon/.gitattributes`, as the
+# tool at eeb33aa counts them on this fixture.
+test_resume_json_messages_keep_their_contract_1_wording() {
+    setup_repo
+    crashed_unit_new dry append
+    "$CRAYON" resume dry --dry-run --json >dry.json 2>dry-err.txt
+    assert_eq "the dry run --json exits 0" "0" "$?"
+    assert_eq "the dry run --json prints exactly one line" "1" \
+        "$(wc -l <dry.json | tr -d ' ')"
+    assert_eq "the dry run --json keeps its contract-1 message" \
+        "resumable dry · uncommitted event(s) at seq 0–1 · 2 file(s)" \
+        "$(json_field message <dry.json)"
+
+    "$CRAYON" resume dry --json >res.json 2>res-err.txt
+    assert_eq "resume --json exits 0" "0" "$?"
+    assert_eq "resume --json prints exactly one line" "1" \
+        "$(wc -l <res.json | tr -d ' ')"
+    assert_eq "resume --json keeps its contract-1 message" \
+        "resumed dry · seq 0-1 · $(git rev-parse --short HEAD) · 2 file(s) placed" \
+        "$(json_field message <res.json)"
     cleanup
 }
 
@@ -8109,6 +8569,16 @@ test_show_diff_prints_the_recorded_basis_bytes() {
     assert_eq "show --diff exits 0" "0" "$?"
     assert_contains "the diff drops the recorded line" "$out" "-The drafted body."
     assert_contains "the diff adds the current line" "$out" "+Edited by hand."
+    # P-20: the human label says what the side is; --json keeps `basis:` (SC3).
+    assert_contains "the recorded side is labelled plainly" "$out" \
+        "--- recorded:reference/demo.rst"
+    assert_plain "show --diff speaks plainly" "$out"
+    local diff_json
+    diff_json=$("$CRAYON" show demo-unit --json --diff 2>/dev/null | python3 -c '
+import json, sys
+print(json.load(sys.stdin)["diff"]["reference/demo.rst"])')
+    assert_contains "show --json --diff keeps the basis label" "$diff_json" \
+        "--- basis:reference/demo.rst"
     cleanup
 }
 
@@ -8124,9 +8594,16 @@ test_show_diff_says_so_when_the_recorded_bytes_are_unreachable() {
     out=$("$CRAYON" show demo-unit --diff 2>err.txt)
     assert_eq "show --diff still exits 0" "0" "$?"
     assert_contains "it says the recorded bytes are unavailable" "$out" \
-        "the recorded basis bytes for reference/demo.rst are unavailable"
+        "the recorded bytes for reference/demo.rst are unavailable"
     assert_contains "it shows the current content instead" "$out" "Edited by hand."
     assert_not_contains "it never invents a diff" "$out" "-The drafted body."
+    assert_plain "the unreachable case speaks plainly" "$out"
+    local diff_json
+    diff_json=$("$CRAYON" show demo-unit --json --diff 2>/dev/null | python3 -c '
+import json, sys
+print(json.load(sys.stdin)["diff"]["reference/demo.rst"])')
+    assert_contains "show --json --diff keeps its wording" "$diff_json" \
+        "the recorded basis bytes for reference/demo.rst are unavailable"
     cleanup
 }
 
@@ -8217,13 +8694,21 @@ test_summary_reports_the_record_and_the_page_on_a_sealed_unit() {
     assert_contains "summary prints the title" "$out" "Demo"
     assert_contains "a single-file unit still lists its file" "$out" \
         "reference/demo.rst"
-    assert_contains "summary prints the intent" "$out" "intent: reference"
+    assert_contains "summary prints the intent" "$out" "  intent: reference"
     assert_contains "summary prints the audience" "$out" \
-        "audience: TAs onboarding to the docs repo"
-    assert_contains "the record half quotes the verifier's verdict" "$out" \
-        "record: verify ok"
-    assert_contains "the record half names the checks it ran" "$out" \
-        "19 checks"
+        "  audience: TAs onboarding to the docs repo"
+    # SURF-01 (D-12): the author's decisions are read before the file list.
+    assert_eq "the author's decisions open the report, after the title" \
+        "author decisions:" "$(printf '%s\n' "$out" | sed -n '2p')"
+    assert_eq "the intent sits in that block, before the files" "yes" \
+        "$(printf '%s\n' "$out" | awk '/^  intent: / {i=NR} /^files changed:/ {f=NR}
+            END {print (i && f && i < f) ? "yes" : "no"}')"
+    assert_plain "summary's text carries no ledger vocabulary" "$out"
+    # D-06: the human line says the record is intact, in plain words; the
+    # counts stay in `summary --json` and `verify --json`.
+    assert_contains "the record half says the record is intact" "$out" \
+        "record: intact at "
+    assert_not_contains "and quotes no check counts" "$out" "19 checks"
     assert_not_contains "the phase-16 placeholder is gone" "$out" \
         "verify has not run"
     assert_contains "the page half is reported" "$out" "page: current"
@@ -8240,7 +8725,8 @@ test_summary_never_claims_that_steering_was_applied() {
     local out
     out=$("$CRAYON" summary demo-unit 2>err.txt)
     assert_contains "requests are reported as recorded" "$out" "recorded requests:"
-    assert_contains "with their disposition" "$out" "seq 4 — resolved"
+    assert_contains "with their disposition" "$out" "request 4 — resolved"
+    assert_plain "the request rows carry no ledger vocabulary" "$out"
     assert_not_contains "summary never claims the steering was applied" "$out" \
         "steering applied"
     cleanup
@@ -8432,6 +8918,105 @@ print("%s|%s|%s" % (data["title"], data["files"][0], data["provenance"][:14]))
 ')
     assert_eq "the object carries the title, the files and the provenance" \
         "Demo|reference/demo.rst|record: verify" "$probe"
+    cleanup
+}
+
+# SURF-01's data (D-13, D-15): `summary --json` carries every note the author
+# wrote, oldest first; an accept's own note precedes its withdrawals.
+test_summary_json_carries_the_authors_notes() {
+    setup_repo
+    setup_drafted_unit demo-unit "reference/demo.rst"
+    "$CRAYON" review demo-unit --verdict fix --note "tighten the intro" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "mention the flag" >/dev/null 2>&1
+    "$CRAYON" review demo-unit --verdict accept --note "ship it" --resolves 4 \
+        --withdraw 5 "out of scope for this page" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "one more thing" >/dev/null 2>&1
+
+    "$CRAYON" summary demo-unit --json >summary.json 2>err.txt
+    assert_eq "summary --json exits 0" "0" "$?"
+    assert_eq "the author's notes are listed oldest first, by origin" \
+        "review fix,steering (manual),review accept,withdrawal,steering (manual)" \
+        "$(python3 -c '
+import json, sys
+notes = json.load(open(sys.argv[1], encoding="utf-8"))["author_notes"]
+print(",".join(row["origin"] for row in notes))
+' summary.json)"
+    assert_eq "the withdrawal carries its reason and names the request" \
+        "6|out of scope for this page|5" "$(python3 -c '
+import json, sys
+notes = json.load(open(sys.argv[1], encoding="utf-8"))["author_notes"]
+row = [row for row in notes if row["origin"] == "withdrawal"]
+print("%s|%s|%s" % (row[0]["seq"], row[0]["note"], row[0]["request"]) if row else "none")
+' summary.json)"
+    assert_eq "show --json does not carry the notes list" "False" \
+        "$("$CRAYON" show demo-unit --json | python3 -c '
+import json, sys
+print("author_notes" in json.load(sys.stdin))
+')"
+    cleanup
+}
+
+# SURF-01 (D-12, D-13, D-14): `summary --md` opens with the author's decisions:
+# intent, audience, every note the author wrote, and what is still open.
+test_summary_md_opens_with_the_authors_decisions() {
+    setup_repo
+    setup_drafted_unit demo-unit "reference/demo.rst"
+    "$CRAYON" review demo-unit --verdict fix --note "tighten the intro" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "mention the flag" >/dev/null 2>&1
+    "$CRAYON" review demo-unit --verdict accept --note "ship it" --resolves 4 \
+        --withdraw 5 "out of scope for this page" >/dev/null 2>&1
+
+    local out
+    out=$("$CRAYON" summary demo-unit --md 2>err.txt)
+    assert_eq "summary --md exits 0" "0" "$?"
+    assert_eq "Author decisions is the first section" "## Author decisions" \
+        "$(printf '%s\n' "$out" | grep -m1 '^## ')"
+    assert_contains "the author's notes are listed" "$out" "### The author's notes"
+    assert_contains "a fix reads as a request" "$out" \
+        "- request 4, fix: tighten the intro"
+    assert_contains "a withdrawal names its request and reason" "$out" \
+        "- request 5 withdrawn: out of scope for this page"
+    assert_contains "the accept's own note is the author's" "$out" "- accepted: ship it"
+    assert_contains "what is open at handover is listed" "$out" \
+        "### Still open at handover"
+    assert_contains "a judged request reads as a plain statement" "$out" \
+        "Request 4 was accepted without a page change: tighten the intro"
+    assert_contains "the request table names requests" "$out" \
+        "| request | disposition | note |"
+    assert_not_contains "the old section is gone" "$out" "## Intent and audience"
+    assert_plain "summary --md carries no ledger vocabulary" "$out"
+
+    local text
+    text=$("$CRAYON" summary demo-unit 2>err2.txt)
+    assert_contains "the text render carries the same open item" "$text" \
+        "    Request 4 was accepted without a page change: tighten the intro"
+    assert_contains "and the same note" "$text" "    request 4, fix: tighten the intro"
+    cleanup
+}
+
+# SURF-01 (D-14): a skipped step is open from the moment it is recorded, and the
+# report says so plainly, before any draft or accept.
+test_summary_lists_a_skipped_step_as_open_before_any_accept() {
+    setup_repo
+    walk_unit_new walk-unit
+    printf '%s' "$THREE_STEPS" |
+        "$CRAYON" plan-steps walk-unit --steps-file - >/dev/null 2>&1
+    local seq1
+    seq1=$(last_plan_seq walk-unit)
+    record_step walk-unit one "$seq1" pass "installed ok\n" >/dev/null 2>&1
+    skip_step walk-unit three "$seq1" "the publish step needs a credential" \
+        >/dev/null 2>&1
+
+    local out
+    out=$("$CRAYON" summary walk-unit 2>err.txt)
+    assert_eq "summary exits 0 before any draft" "0" "$?"
+    assert_contains "the skipped step is open, in plain words" "$out" \
+        "Step three was skipped: the publish step needs a credential"
+    assert_not_contains "the step's reason is not presented as the author's note" \
+        "$out" "  notes:"
+    assert_contains "a unit with no page says so plainly" "$out" \
+        "page: no page recorded yet"
+    assert_plain "the whole report is plain" "$out"
     cleanup
 }
 
@@ -8637,23 +9222,91 @@ test_verb06_verify_is_read_only_and_repeatable() {
     head_before=$(git rev-parse HEAD)
     ledger_before=$(sha256_of_text "$(cat .crayon/units/demo-unit/ledger.jsonl)")
 
-    first=$("$CRAYON" verify demo-unit 2>err.txt)
+    first=$("$CRAYON" verify demo-unit --verbose 2>err.txt)
     rc=$?
     assert_eq "verify exits 0 on a healthy unit" "0" "$rc"
     assert_eq "verify writes nothing to stderr" "0" "$(wc -c <err.txt | tr -d ' ')"
-    assert_eq "verify prints 19 check lines and one summary line" "20" \
+    assert_eq "--verbose prints 19 check lines and one summary line" "20" \
         "$(printf '%s\n' "$first" | wc -l | tr -d ' ')"
     assert_contains "the first line is V1" "$(printf '%s\n' "$first" | sed -n 1p)" "V1 "
     assert_contains "the last line is the summary" \
         "$(printf '%s\n' "$first" | sed -n 20p)" "verdict:"
 
-    second=$("$CRAYON" verify demo-unit 2>/dev/null)
+    second=$("$CRAYON" verify demo-unit --verbose 2>/dev/null)
     assert_eq "a second run prints byte-identical output" "$first" "$second"
     assert_eq "verify makes no commit" "$head_before" "$(git rev-parse HEAD)"
     assert_eq "verify leaves the ledger byte-unchanged" "$ledger_before" \
         "$(sha256_of_text "$(cat .crayon/units/demo-unit/ledger.jsonl)")"
     assert_file_not_exists "verify writes no pending/" \
         ".crayon/staging/demo-unit/pending"
+    cleanup
+}
+
+# VOICE-04 / D-04: the default answers "is my record all right?" in one line
+# when it is. The repository's own hygiene is fixed first, as
+# TestSummaryGolden.build_fixture does, so V17 has nothing to say.
+test_verb06_plain_verify_is_one_line_on_an_intact_record() {
+    setup_repo
+    printf '.crayon/staging/\n' >.gitignore
+    git add .gitignore
+    git commit -q -m "ignore the staging area"
+    setup_drafted_unit demo-unit "reference/demo.rst"
+
+    local head_before ledger_before first second rc
+    head_before=$(git rev-parse HEAD)
+    ledger_before=$(sha256_of_text "$(cat .crayon/units/demo-unit/ledger.jsonl)")
+
+    first=$("$CRAYON" verify demo-unit 2>err.txt)
+    rc=$?
+    assert_eq "verify exits 0 on an intact record" "0" "$rc"
+    assert_eq "and writes nothing to stderr" "0" "$(wc -c <err.txt | tr -d ' ')"
+    assert_eq "the default report is exactly one line" "The record is intact." "$first"
+    assert_plain "the intact line speaks plainly" "$first"
+
+    second=$("$CRAYON" verify demo-unit 2>/dev/null)
+    assert_eq "a second run prints byte-identical output" "$first" "$second"
+    assert_eq "verify makes no commit" "$head_before" "$(git rev-parse HEAD)"
+    assert_eq "verify leaves the ledger byte-unchanged" "$ledger_before" \
+        "$(sha256_of_text "$(cat .crayon/units/demo-unit/ledger.jsonl)")"
+    cleanup
+}
+
+# CR-03: a page path is contributor content, so default `verify` names it as
+# written. A UUID tail holds a 12-hex run that the plain-words table's digest
+# rule used to cut to seven characters, naming a page that does not exist.
+test_verify_keeps_a_uuid_page_path_as_written() {
+    setup_repo
+    printf '.crayon/staging/\n' >.gitignore
+    git add .gitignore
+    git commit -q -m "ignore the staging area"
+    local unit="release-202609181200"
+    local page="reference/550e8400-e29b-41d4-a716-446655440000.md"
+    setup_drafted_unit "$unit" "$page"
+    printf 'Demo\n====\n\nEdited by hand.\n' >"docs/$page"
+
+    local head_before ledger_before first second rc detail
+    head_before=$(git rev-parse HEAD)
+    ledger_before=$(sha256_of_text "$(cat ".crayon/units/$unit/ledger.jsonl")")
+
+    first=$("$CRAYON" verify "$unit" 2>/dev/null)
+    rc=$?
+    assert_eq "verify exits 0 on a drifted page" "0" "$rc"
+    assert_eq "the report names the page exactly as written" \
+        "The record is intact; these need a look:
+  the pages on disk: $page: drifted (uncommitted)" "$first"
+
+    second=$("$CRAYON" verify "$unit" 2>/dev/null)
+    assert_eq "a second run prints byte-identical output" "$first" "$second"
+    assert_eq "verify makes no commit" "$head_before" "$(git rev-parse HEAD)"
+    assert_eq "verify leaves the ledger byte-unchanged" "$ledger_before" \
+        "$(sha256_of_text "$(cat ".crayon/units/$unit/ledger.jsonl")")"
+
+    detail=$("$CRAYON" verify "$unit" --json 2>/dev/null | python3 -c '
+import json, sys
+data = json.loads(sys.stdin.read())
+print([row for row in data["checks"] if row["id"] == "V14"][0]["detail"])
+')
+    assert_eq "--json carries the same detail" "$page: drifted (uncommitted)" "$detail"
     cleanup
 }
 
@@ -8679,6 +9332,10 @@ print("%s\t%d\t%s\t%s" % (
         "$(printf '%s' "$shape" | cut -f2)"
     assert_eq "each entry carries id, level, status and detail" \
         "detail,id,level,status" "$(printf '%s' "$shape" | cut -f3)"
+    # P-07: with both flags --json wins, byte for byte.
+    "$CRAYON" verify demo-unit --json --verbose >both.txt 2>/dev/null
+    assert_eq "--json --verbose prints exactly what --json prints" \
+        "$(cat out.txt)" "$(cat both.txt)"
     cleanup
 }
 
@@ -8808,7 +9465,7 @@ test_verb08_wr03_the_header_this_tool_writes_carries_its_own_contract_number() {
     assert_eq "the header's v is the tool's own contract number" \
         "$("$CRAYON" version --json | json_field contract)" \
         "$(head -1 .crayon/units/stamped-unit/ledger.jsonl | json_field v)"
-    "$CRAYON" verify stamped-unit >v1.txt 2>&1
+    "$CRAYON" verify stamped-unit --verbose >v1.txt 2>&1
     assert_eq "and the tool's own verifier passes V1" "0" "$?"
     assert_contains "V1 is reported ok" "$(cat v1.txt)" "V1 ok"
     cleanup
@@ -8948,12 +9605,18 @@ print("%d\t%s\t%s" % (
     parts[-1],
     "empty" if any(not part.strip() for part in parts) else "full"))
 ' "$outfile")
-    assert_eq "$desc ends with the routed token" "Next: $expected_next" \
+    assert_eq "$desc ends with the routed token" "$(human_next_line "$expected_next")" \
         "$(printf '%s' "$shape" | cut -f2)"
+    # D-03 (P-01): on `publish` the plain handover is itself the "what remains"
+    # segment, so an accept's `reviewed · accepted · Next` is complete at three.
+    local min_segments=4
+    [ "$expected_next" = "publish" ] && min_segments=3
     assert_eq "$desc carries what changed, where, what remains and Next" "yes" \
-        "$([ "$(printf '%s' "$shape" | cut -f1)" -ge 4 ] && echo yes || echo no)"
+        "$([ "$(printf '%s' "$shape" | cut -f1)" -ge "$min_segments" ] && echo yes || echo no)"
     assert_eq "$desc never runs two segments together" "full" \
         "$(printf '%s' "$shape" | cut -f3)"
+    # D-16: no success line carries ledger vocabulary.
+    assert_plain "$desc speaks plainly" "$(cat "$outfile")"
     return 0
 }
 
@@ -9001,9 +9664,11 @@ print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())
 }
 
 
-# J5: the token `crayon show <id>` ALONE yields — no other state consulted.
+# J5: the token `crayon show <id>` ALONE yields — no other state consulted. Read
+# from `--json`, where the token is the routing token (CLOSE-04 maps only the
+# human line).
 show_next() {
-    "$CRAYON" show "$1" 2>/dev/null | sed -n 's/^Next: //p'
+    "$CRAYON" show "$1" --json 2>/dev/null | json_field next
 }
 
 # One journey transition: exit 0, the one-line response, exactly N commits, a
@@ -9024,6 +9689,9 @@ journey_step() {
         "$(chain_problems "$unit")"
     assert_eq "$desc: show alone routes to the same token" "$expected_next" \
         "$(show_next "$unit")"
+    assert_eq "$desc: the human show ends with the same Next line" \
+        "$(human_next_line "$expected_next")" \
+        "$("$CRAYON" show "$unit" 2>/dev/null | tail -n 1)"
     assert_eq "$desc names the unit in the commit trailer" "$unit" \
         "$(git log -1 --format='%(trailers:key=Crayon-Unit,valueonly)' | tr -d '\n')"
     return 0
@@ -9306,7 +9974,7 @@ test_n44_t9_edits_then_draft_clear_a_re_signed_hand_edited_unit() {
     assert_eq "the stderr line is git's, not a refusal" "0" \
         "$(grep -c '"error"' e-err.txt)"
     assert_contains "the edit is recorded as the new basis" "$(cat e-out.txt)" \
-        "1 file(s) in the basis"
+        "1 page(s) recorded as they are now"
     assert_eq "the recorded edit clears the drift" "false" \
         "$(derived demo-unit page_drift)"
     assert_eq "the generation is still stale — edits does not re-generate" "true" \
