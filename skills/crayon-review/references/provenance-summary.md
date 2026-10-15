@@ -13,7 +13,9 @@ crayon show "$UNIT_ID" --json       # the whole derived state, as an object
 ```
 
 Use the non-`--json` form when you are reading it yourself, and the `--json` form
-when you need a specific field. Present the fields in plain language: the author
+when you need a specific field. Quote the tool's lines in a fenced block first, as
+SKILL.md step 3 asks; plain language is for your reading around them, never a bulleted
+re-composition of them. In that reading the author
 hears "accepted" for the `sealed` state, "the pages as accepted" for the basis, and
 "request <n>" for a request; a seq, a digest and a check count are never read out.
 Quote what

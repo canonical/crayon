@@ -111,8 +111,11 @@ MACROS = {
     # Publishing offered as a step, not merely named: a `Next:` that publishes or
     # opens a PR, a publish/PR/build handed over as "yours" or "when you're ready",
     # or an instruction to open a PR or to publish. "crayon does not publish" and
-    # quoting the routed token (`next` is `publish`) are mentions, not offers.
-    "@OFFERS_PUBLISH": r"(?i:\bnext:?\s+(publish|push|open\s+(a\s+|the\s+)?(PR|pull\s+request))\b|"
+    # quoting the routed token (`next` is `publish`, or `next: publish` whole in
+    # inline code) are mentions, not offers.
+    "@OFFERS_PUBLISH": r"(?i:(?<!`)\bnext:?\s+(publish|push|open\s+(a\s+|the\s+)?"
+                       r"(PR|pull\s+request))\b|"
+                       r"\bnext:?\s+(publish|push|open\s+(a\s+|the\s+)?(PR|pull\s+request))\b(?!`)|"
                        r"\b(publish\w*|pull\s+requests?|PRs?|build)\b[^.\n]{0,60}"
                        r"\b(is|are)\s+yours\b|"
                        r"\bpublish\w*\b[^.\n]{0,40}\bwhen\s+you('re|\s+are)\s+ready\b|"

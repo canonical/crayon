@@ -1,8 +1,8 @@
 {
   "_comment": "The eval roster. Every model is pinned to one backend (provider.order + allow_fallbacks:false), so a score belongs to one model on one backend, not to the router. Every pin also carries zdr:true: only Zero Data Retention endpoints may serve these requests, whatever the account setting. Each pin was on OpenRouter's /api/v1/endpoints/zdr list on 2026-09-23. price_per_mtok is [input, output] USD per million tokens for THAT backend, and is only used when a response carries no usage.cost.",
   "caps": {
-    "sweep_usd": 25.0,
-    "per_model_usd": 3.0
+    "sweep_usd": 50.0,
+    "per_model_usd": 5.0
   },
   "gate": "z-ai/glm-5.3",
   "judge": "anthropic/claude-sonnet-5",
@@ -11,7 +11,7 @@
     {
       "id": "z-ai/glm-5.3",
       "role": "candidate",
-      "max_tokens": 16000,
+      "max_tokens": 32000,
       "provider": {"order": ["z-ai"], "allow_fallbacks": false, "zdr": true},
       "price_per_mtok": [1.40, 4.40]
     },

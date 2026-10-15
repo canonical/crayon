@@ -1,0 +1,659 @@
+{
+  "meta": {
+    "lane": "B",
+    "lane_title": "next action",
+    "measures": "skill-following",
+    "model": "z-ai/glm-5.3",
+    "provider_pin": {
+      "order": [
+        "z-ai"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-10-11",
+    "dogen_version": "0.2.0",
+    "repo_head": "143a4fe",
+    "skills_sha256": "35a2ef1133d66e358133cc0a881fd1fe3ee2c63dc15621766efde4447541e2fc",
+    "total_cases": 77,
+    "errors": 0,
+    "cost_usd": 8.699162,
+    "tokens": {
+      "in": 15712759,
+      "out": 899915
+    },
+    "truncated": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null,
+    "runs": 3,
+    "passes": 207,
+    "pass_rate": 0.8961,
+    "stable_pass": 58,
+    "stable_fail": 1,
+    "flaky": 18,
+    "cached_cases": 0
+  },
+  "cases": [
+    {
+      "id": "B-44",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.029056
+    },
+    {
+      "id": "B-60",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.034258
+    },
+    {
+      "id": "B-45",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.410023
+    },
+    {
+      "id": "B-46",
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.044425,
+      "failed": [
+        "question_count: expected between 3 and 3 question(s); its reply asked 1",
+        "text_re: expected the reply to match '(?i)negative'; it reads: 'reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 dogen stops here\\n\\nAccepted, in commit afd1f2b. Nothing links to reference/config.md yet; where should a reader come from?'",
+        "text_re: expected the reply to match 'TOYQ_RETRY_BACKOFF|convert|type'; it reads: 'reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 dogen stops here\\n\\nAccepted, in commit afd1f2b. Nothing links to reference/config.md yet; where should a reader come from?'",
+        "text_re: expected the reply to match '(?im)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*(link|toctree|arriv|come from)[^\\\\n]*\\\\?'; it reads: 'reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 dogen stops here\\n\\nAccepted, in commit afd1f2b. Nothing links to reference/config.md yet; where should a reader com",
+        "text_re: expected the reply to match '(?im)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*(link|toctree|arriv|come from)[^\\\\n]*\\\\?'; it reads: 'reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 dogen stops here\\n\\n1. The page says `max_retries` must be 0 or more but not what breaking the rule does \u2014 that a ne",
+        "question_count: expected between 3 and 3 question(s); its reply asked 1",
+        "text_re: expected the reply to match '(?i)negative'; it reads: 'reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 dogen stops here\\n\\n1. Nothing links to reference/config.md yet \u2014 the toctree in docs/index.md is empty. Where should a reader come fr'",
+        "text_re: expected the reply to match 'TOYQ_RETRY_BACKOFF|convert|type'; it reads: 'reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 dogen stops here\\n\\n1. Nothing links to reference/config.md yet \u2014 the toctree in docs/index.md is empty. Where should a reader come fr'",
+        "text_re: expected the reply to match '(?im)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*(link|toctree|arriv|come from)[^\\\\n]*\\\\?'; it reads: 'reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 dogen stops here\\n\\n1. Nothing links to reference/config.md yet \u2014 the toctree in docs/index.md is empty. Where shoul"
+      ]
+    },
+    {
+      "id": "B-47",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.1105
+    },
+    {
+      "id": "B-48",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.013193
+    },
+    {
+      "id": "B-56",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.102064,
+      "failed": [
+        "decisive: expected the model to stop and reply; it ended on Bash(dogen context stage doc-style.md --body-file - --source README.md --source docs/index.md <<'EOF'\n# Doc style\n\nHow toyq's two prose surfaces \u2014 README.md and docs/index.md \u2014 write. Every trait\nbelow is grounded in those pages.\n\n## 1. Voice & tone\n",
+        "question_count: expected the model to ask the author; it ended on Bash(dogen context stage doc-style.md --body-file - --source README.md --source docs/index.md <<'EOF'\n# Doc style\n\nHow toyq's two prose surfaces \u2014 README.md and docs/index.md \u2014 write. Every trait\nbelow is grounded in those pages.\n\n## 1. Voice & tone\n",
+        "text_re: expected the reply to match '(?im)^[^\\\\n]*(gap|priorit|miss)[^\\\\n]*\\\\?\\\\s*$'; it reads: \"The tool's context show now says the context is recorded and points at plan, but having actually read the repository I can see the three recorded artefacts don't match it \u2014 structure.md names `docs/re\"",
+        "no_tool_call: expected no a Bash call matching '\\\\bdogen\\\\s+(unit\\\\s+(new|edit|retire)|context\\\\s+(stage|record)|signoff|steer|plan-steps|step|draft|edits|review|resume(?![^\\\\n]*--dry-run))\\\\b'; saw Bash(dogen context stage doc-style.md --body-file - --source README.md --source docs/index.md <<'EOF'\n# Doc style\n\n"
+      ]
+    },
+    {
+      "id": "B-57",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.009154
+    },
+    {
+      "id": "B-62",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.062975,
+      "failed": [
+        "question_count: expected between 2 and 2 question(s); its reply asked 3",
+        "not_text_re: the reply must not match \"(?i)what'?s your verdict\"; it contains \"What's your verdict\""
+      ]
+    },
+    {
+      "id": "B-63",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.202929
+    },
+    {
+      "id": "B-64",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.15472
+    },
+    {
+      "id": "B-65",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.015884
+    },
+    {
+      "id": "B-66",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.039443,
+      "failed": [
+        "question_count: expected between 1 and 1 question(s); its reply asked 3",
+        "not_text_re: the reply must not match '(?m)^\\\\s*(?:\\\\*\\\\*)?\\\\d[.)][^\\\\n]*\\\\b(init|first-job)\\\\b[^\\\\n]*\\\\?'; it contains '\\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?'",
+        "question_count: expected between 1 and 1 question(s); its reply asked 2",
+        "text_re: expected the reply to match '(?i)link|toctree|arriv|come from'; it reads: '```text\\ngit: committed 8a4bf7b \u2014 dogen: reviewed install\\nreviewed install: accept \u00b7 accepted how-to/install.md \u00b7 Next: yours \u2014 dogen stops here\\n```\\n\\nTwo things from the record are still open:\\n\\n1. Step'",
+        "not_text_re: the reply must not match '(?m)^\\\\s*(?:\\\\*\\\\*)?\\\\d[.)][^\\\\n]*\\\\b(init|first-job)\\\\b[^\\\\n]*\\\\?'; it contains '\\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?'"
+      ]
+    },
+    {
+      "id": "B-74",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.627664,
+      "failed": [
+        "text_re: expected the reply to match '(?im)^#{2,4}\\\\s*focus\\\\b'; it reads: 'The record and the page are both in view \u2014 here is the provenance, then the findings.\\n\\n### Provenance\\n\\n```\\nConfiguration reference\\nauthor decisions:\\n  intent: reference\\n  audience: operators configuri'"
+      ]
+    },
+    {
+      "id": "B-75",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.013185
+    },
+    {
+      "id": "B-76",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.056739
+    },
+    {
+      "id": "B-77",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.151526,
+      "failed": [
+        "plain_words: the reply uses 'basis', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-32",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.021228
+    },
+    {
+      "id": "B-33",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011791
+    },
+    {
+      "id": "B-34",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.042251
+    },
+    {
+      "id": "B-35",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.010745
+    },
+    {
+      "id": "B-49",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.072695
+    },
+    {
+      "id": "B-50",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.060069
+    },
+    {
+      "id": "B-53",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.07624
+    },
+    {
+      "id": "B-54",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.063711,
+      "failed": [
+        "decisive: expected the action to be Bash matching '(?s)^(?=.*\\\\bdogen\\\\s+unit\\\\s+new\\\\s+[\"\\']?retries[\"\\']?\\\\s)(?=.*\\\\s--notes(?:=|\\\\s+)(?:\\'They have just seen a job fail twice in toyq status\\\\.\\'|\"They have just seen a job fail twice in toyq status\\\\.\")(?:\\\\s|$))'; it was Bash(printf '%s\\n' '## Intent & sco"
+      ]
+    },
+    {
+      "id": "B-59",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.041408,
+      "failed": [
+        "decisive: expected the action to be Bash matching '(?s)^(?=.*\\\\bdogen\\\\s+unit\\\\s+new\\\\s+[\"\\']?retries[\"\\']?\\\\s)(?=.*\\\\s--notes(?:=|\\\\s+)\\'They(?:\\'\\\\\\\\\\'\\'|\\'\\\\\"\\'\\\\\"\\')ve\\\\ just\\\\ seen\\\\ `toyq\\\\ status`\\\\ show\\\\ a\\\\ job\\\\ fail\\\\ twice,\\\\ with\\\\ \\\\$TOYQ_MAX_RETRIES\\\\ at\\\\ 1\\\\.\\'(?:\\\\s|$))'; it was Bash(printf",
+        "decisive: expected the action to be Bash matching '(?s)^(?=.*\\\\bdogen\\\\s+unit\\\\s+new\\\\s+[\"\\']?retries[\"\\']?\\\\s)(?=.*\\\\s--notes(?:=|\\\\s+)\\'They(?:\\'\\\\\\\\\\'\\'|\\'\\\\\"\\'\\\\\"\\')ve\\\\ just\\\\ seen\\\\ `toyq\\\\ status`\\\\ show\\\\ a\\\\ job\\\\ fail\\\\ twice,\\\\ with\\\\ \\\\$TOYQ_MAX_RETRIES\\\\ at\\\\ 1\\\\.\\'(?:\\\\s|$))'; it was Bash(printf"
+      ]
+    },
+    {
+      "id": "B-71",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.025183
+    },
+    {
+      "id": "B-72",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.05216
+    },
+    {
+      "id": "B-73",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.056052
+    },
+    {
+      "id": "B-28",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.037139
+    },
+    {
+      "id": "B-29",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.172962
+    },
+    {
+      "id": "B-30",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.073654
+    },
+    {
+      "id": "B-31",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.093122,
+      "failed": [
+        "judge: judge: While the final line 'record: intact at 9ae1983 \u00b7 page: current' exactly matches the required format, the rest of the block (splitting 'author decisions' into indented sub-items, labeling 'files changed:') appears to be a restructured/recomposed version of the original tool output rather than"
+      ]
+    },
+    {
+      "id": "B-40",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.092752,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(dogen review cfg --verdict accept)",
+        "no_tool_call: expected no a Bash call matching '--verdict'; saw Bash(dogen review cfg --verdict accept)"
+      ]
+    },
+    {
+      "id": "B-41",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.761124,
+      "failed": [
+        "plain_words: the reply uses 'basis', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-42",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.013664
+    },
+    {
+      "id": "B-43",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.01212
+    },
+    {
+      "id": "B-51",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.122974
+    },
+    {
+      "id": "B-52",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.040234
+    },
+    {
+      "id": "B-05",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.192299,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(dogen help 2>&1; echo \"===\"; dogen unit edit --help 2>&1; echo \"===\"; dogen unit new --help 2>&1)"
+      ]
+    },
+    {
+      "id": "B-06",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.019428
+    },
+    {
+      "id": "B-07",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.811118
+    },
+    {
+      "id": "B-08",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.173586
+    },
+    {
+      "id": "B-09",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.121331
+    },
+    {
+      "id": "B-10",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.191648,
+      "failed": [
+        "plain_words: the reply uses 'basis', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-11",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.143355
+    },
+    {
+      "id": "B-12",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.048409
+    },
+    {
+      "id": "B-13",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.041087
+    },
+    {
+      "id": "B-14",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.157835
+    },
+    {
+      "id": "B-15",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.050949
+    },
+    {
+      "id": "B-16",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.188128
+    },
+    {
+      "id": "B-36",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011114
+    },
+    {
+      "id": "B-37",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011084
+    },
+    {
+      "id": "B-38",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.019269
+    },
+    {
+      "id": "B-39",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.015623
+    },
+    {
+      "id": "B-55",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.010179
+    },
+    {
+      "id": "B-58",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.012765
+    },
+    {
+      "id": "B-01",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.043286
+    },
+    {
+      "id": "B-02",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.040988
+    },
+    {
+      "id": "B-03",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.014807
+    },
+    {
+      "id": "B-04",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.009439
+    },
+    {
+      "id": "B-17",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.151009
+    },
+    {
+      "id": "B-18",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008999
+    },
+    {
+      "id": "B-19",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.036904,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(rm -f .dogen/staging/cfg/draft/reference/config.md && rmdir .dogen/staging/cfg/draft/reference .dogen/staging/cfg/draft 2>/dev/null; ls -R .dogen/staging/cfg 2>/dev/null || echo \"staging dir empty or gone\"; git status --porcelain=v"
+      ]
+    },
+    {
+      "id": "B-20",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.061196,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(dogen review cfg --verdict accept --note 'Looks right.' --resolves 4 --json)",
+        "no_tool_call: expected no a Bash call matching '--(resolves|withdraw)\\\\b'; saw Bash(dogen review cfg --verdict accept --note 'Looks right.' --resolves 4 --json)"
+      ]
+    },
+    {
+      "id": "B-21",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.229569
+    },
+    {
+      "id": "B-22",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.195566,
+      "failed": [
+        "no_tool_call: expected no a Bash call matching '\\\\bdogen\\\\s+draft\\\\b'; saw Bash(dogen draft cfg .dogen/staging/cfg/draft/ 2>&1; echo \"exit:$?\")",
+        "text_re: expected the reply to match '(?i)(dogen-review|review skill|dogen edits|\\\\bedits\\\\b|adopt)'; it reads: 'The pairing is supported (`tool` 0.2.0, `contract` 1). The unit shows `next: record_edits` \u2014 before drafting I need to see which page is on disk with bytes the record has never seen. Let me look a"
+      ]
+    },
+    {
+      "id": "B-23",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.202125,
+      "failed": [
+        "text_re: expected the reply to match '(?i)(re-?sign|dogen-plan)'; it reads: ''"
+      ]
+    },
+    {
+      "id": "B-24",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.064928
+    },
+    {
+      "id": "B-25",
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.038931,
+      "failed": [
+        "plain_words: the reply uses 'hash', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code",
+        "plain_words: the reply uses 'hash', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-26",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.059492
+    },
+    {
+      "id": "B-27",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.018962
+    },
+    {
+      "id": "B-61",
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.023831,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on Bash(dogen review cfg --verdict accept --note 'Looks right.' --resolves 4 --json)",
+        "text_re: expected the reply to match '(?i)\\\\brequest\\\\s+4\\\\b'; it reads: ''",
+        "no_tool_call: expected no a Bash call matching '--(resolves|withdraw)\\\\b'; saw Bash(dogen review cfg --verdict accept --note 'Looks right.' --resolves 4 --json)"
+      ]
+    },
+    {
+      "id": "B-67",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.658044
+    },
+    {
+      "id": "B-68",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.526515
+    },
+    {
+      "id": "B-69",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011108
+    },
+    {
+      "id": "B-70",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.05324
+    }
+  ]
+}

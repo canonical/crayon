@@ -38,6 +38,17 @@ across. The contract number stays `1`.
   `review` event, so a skill can name the accepted pages and the disposed requests without a
   second read.
   Additive under contract 1, recorded in `docs/contract.md` §5.10.
+- `validation/evals/` — model evals. They measure skill-following: whether a model driving the
+  five skills does what the skill text says, given the same skill text and a neutral loop,
+  through OpenRouter. They do not measure the quality of a page, or speed or effort saved.
+  Lane A checks skill selection (15 cases). Lane B checks the next action after real, recorded
+  `crayon` output (77 cases), acted out in a copy of the state inside a bubblewrap jail. Every
+  case carries a reply that must pass and one that must fail. `--repeat K` reports per-case pass
+  counts, and results are committed under `validation/evals/results/`. Every summary's
+  `meta.measures` reads `skill-following`, and `validation/evals/results/README.md` labels the
+  folder. The gate holds every documented case count to the loader's, and a sweep is capped at
+  $50 and each model at $5 a run. Paid runs are started by hand, never in CI. The gate gains
+  `python3 -m unittest tests.test_evals`, the kit's offline self-tests. See `docs/evals.md`.
 - `validation/closeout-docpr-3008.md` — the slim-cycle disposition, landed
   evidence, release truth and known limitations in one record. It separates
   the current Jira stop condition from shipped product evidence and from the
@@ -123,9 +134,13 @@ across. The contract number stays `1`.
   from — none when nothing is open, and names no publishing step. The verdict is asked as one
   open question before the findings' lean is shown. Notes are recorded in the author's own
   words, single-quoted on the command line so a backtick or a `$` in them is recorded as
-  typed rather than run or expanded; a bare accept records no note, and no judgment question
+  typed rather than run or expanded, with nothing in them escaped or dropped; a bare accept records no note, and no judgment question
   marks an option as recommended. `crayon-plan` asks at least one open question even when a
-  brief fills every field, and gives its view on audience or direction only when asked.
+  brief fills every field, and gives its view on audience or direction only when asked, ending
+  that turn on the question the view informs. It skips the problem question when the brief
+  states the problem, asks one of the two arrival questions and then the leave-out question,
+  and records the replies in one `--notes`, a real line break between them, with nothing
+  recorded for a "nothing".
   `crayon-onboard` ends on a question about the author's priorities and routes to `/crayon-plan`
   with their first pick, in their own words. The three author rules are authored once in `skills/README.md` and
   carried in the plan, write and review skills. Lane B gains the cases that pin these, the
@@ -133,8 +148,10 @@ across. The contract number stays `1`.
 - The skills talk to the author in plain words. What the author reads says "accepted", "the pages
   as accepted" and "request 7", with no `plan_hash`, digest or check count in prose; the record's
   tokens stay in `--json`, the ledger and every command line, and verbatim tool output sits in a
-  code block. The rule is authored once in `skills/README.md` and carried in all five skills,
-  and it names a commit by its id; the routing rows and references a model relays carry no
+  code block. The rule is authored once in `skills/README.md` and carried in all five skills.
+  It names every form of a record word, "sealed" included, and every place one can reach the
+  author: an option's label or description, and a refusal or a `--json` value retold in a
+  sentence. It names a commit by its id; the routing rows and references a model relays carry no
   record word.
   `crayon-review` puts each deviated or skipped step to the author as a question after the
   provenance summary, in both modes, and the closure does not ask it again in the same
@@ -144,11 +161,22 @@ across. The contract number stays `1`.
   step question is not recorded until the verdict, and the skill says so; after a bare accept,
   the closure asks about it again, in the author's words. When the reviewer already authorised
   the accept, the steps are asked at the closure instead. The review's quick start puts the step
-  questions before any finding and before the verdict question.
+  questions before any finding and before the verdict question. The step questions end their
+  message, and the not-recorded line says both of its halves. The closure counts a finding an
+  accept did not name, finds a link by the page's bare stem as well as its path, numbers its
+  questions in the order it took them, and is never a question-tool call. A pre-authorised
+  accept asks no mode question; an "Accept." given to the verdict question on a must-fix tally
+  still gets the lean and `Keep accept?`, and a lean asked for ends on the verdict question. A
+  pending request is put as a question that ends the message. The self-review line is required
+  when an earlier turn ran the draft, and another model on the record is no ground. The
+  rubric's findings block always carries all six headings and a tally with its total first, a
+  focus must-fix names what the notes left out, and the provenance summary quotes the tool's
+  lines rather than re-composing them as bullets.
   `crayon-plan` asks every intake what the page can leave out and records the answer in the
   author's words, and `crayon-write` keeps it off the page. The author's leave-out notes narrow a
   promised inventory, and a later recorded request outranks them. Write and review state what
-  they could not verify in the first person, only where the record grounds it. Lane B grades
+  they could not verify in the first person, only where the record grounds it, and the
+  writer's gap line names the gap its report records. Lane B grades
   every case for record words in what the agent says (`plain_words`), and gains `@HEDGE`, a
   `prelude` for what ran earlier in the conversation, and the cases that pin these. `plain_words`
   reads the rule's own forms and both fence forms. `@HEDGE` catches a negated blanket disclaimer
@@ -180,7 +208,9 @@ across. The contract number stays `1`.
 - `unsteered`'s `hint` leads with the STOP: ask the author what should change, then
   `crayon steer <id> --note "<their words>"`; `--unsteered-reason` only for an authorised
   redraft with nothing to change. `crayon-write` says a bare "draft it again" is not a note,
-  and that a step marked `stateful` takes the author's yes every time, on resume too.
+  and that a step marked `stateful` takes the author's yes every time, on resume too. The STOP
+  touches nothing on disk, and nothing runs toward a stateful step before its gate, not even
+  a probe of the tools it needs.
 - `unapplied_steering`'s `hint` leads with putting each pending seq to the reviewer, and
   writes the accept's note as optional, `[--note "…"]`, as the routing rows do. Every
   skill now acts on a refusal's routing row for its `error` before routing on `next`, and the
@@ -194,8 +224,13 @@ across. The contract number stays `1`.
   `/crayon-write` and `/crayon-review` everywhere.
 - `README.md` is short and skills-first, in plain English: what crayon does, the requirements, a
   manual install in five numbered steps with the installer offered second, the five skills in
-  order, a three-step note on using a separate branch, what crayon does not do (including that
-  it knows no Sphinx stack, theme or `conf.py`), and one link to `docs/contents.md`. It names
+  order, a three-step note on using a separate branch, `What stays yours`, and one link to
+  `docs/contents.md`. The intro says that crayon knows no Sphinx theme, extension or `conf.py`
+  and never builds. `What stays yours` names the four decisions left to the author (audience,
+  scope, accept and publish), states that the record shows what was decided and in what order
+  but cannot prove who decided, since the author's coding agent runs the commands that approve
+  and accept, names the reviewer of the pull request as the gate, and asks a reader who is not
+  a technical author to have one review the page before merge. It names
   no `crayon` command. The glossary, the verb table, the exit codes, the branch procedure and the
   layout moved to `docs/internals.md`; the document list moved to `docs/contents.md`. The exit
   codes stay one compact table, a row per code with its reasons in the last cell;
@@ -213,6 +248,27 @@ across. The contract number stays `1`.
   shell in the README.
 - The shellcheck scope is `install.sh tests/*.sh validation/*.sh`, in CI, in `AGENTS.md` and in
   the unit suite's CI mirror.
+
+### Fixed
+
+- `validation/evals/` grades as looking the read-only commands the first skill-following sweep
+  ended episodes on: `git ls-tree`, `git check-ignore`, `git reflog` (never its `expire` or
+  `delete`) and `git --no-pager` before a reading verb; `xargs` before a reading command; an
+  `awk` program that does not spawn, redirect, pipe or edit in place; a `python3 -c` script
+  that only reads a module's source by name; and a backtick or `$(` inside single quotes or
+  escaped, which the shell reads as text. A writing verb, a script that spawns and a live
+  substitution still end the episode. Cases B-07, B-22 and B-44.
+- Lane B's `@OFFERS_PUBLISH` pattern reads `next: publish` quoted whole in inline code as a
+  mention of the routed token, as its own comment says, not as publishing offered. The bare
+  token is still an offer. Case B-47.
+- Lane B cases that failed replies saying what the skill asks now ask only their rule. B-28's
+  judge is told the commit line the replayed fix printed, since it sees only the model's turns.
+  B-30's judge fails asking the author where the source lives, not an intake that opens with a
+  question. B-56's history confirms the walk scope before the walk. B-64 reads a line saying no
+  step is open as no step question. B-65 and B-75 take the record named before the fix or
+  redraft verdict that puts the words on it. B-43 reads a lean set in bold, and B-46 asks where
+  a reader arrives from second, one question per source first. Every oracle still passes and
+  every foil still fails.
 
 ### Removed
 

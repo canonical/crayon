@@ -65,10 +65,15 @@ What the author reads from this skill is in plain words. The record's own words 
   seq 7 for a request. Give no other record entry a number, neither "event 7" nor
   "ledger line 7": say what is already recorded and name its commit. These record
   words stay out of your own prose altogether, not even as an English idiom: say
-  "on what grounds", not "on what basis".
+  "on what grounds", not "on what basis". They stay out in every form and every place
+  you write: seal, seals and sealed are all "accept", since an accept is recorded,
+  never sealed; and an option's label or description, or a refusal or a `--json`
+  value retold in a sentence, is prose too, so `"state": "sealed"` is "accepted" and
+  `already_accepted` is "already accepted".
 - **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
   a sha256, a digest, and a verify or check count never appear in what you say;
-  name a commit by its id, never as a hash. Quote the tallies:
+  name a commit by its id, never as a hash. A page whose bytes the record cites is
+  "current"; say so, never that a digest matches. Quote the tallies:
   the walk tally and the findings tally are the tool's and the rubric's own lines.
 - **The success line, verbatim.** Echo each verb's success response line exactly as the
   tool printed it; it is already plain. These rules cover what you say around it.
