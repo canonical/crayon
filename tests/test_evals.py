@@ -13,6 +13,7 @@ import io
 import json
 import os
 import re
+import shlex
 import sys
 import tempfile
 import unittest
@@ -250,6 +251,23 @@ class TestAssertionKinds(unittest.TestCase):
         self.assertTrue(self.check({"kind": "text_re", "re": r"(?i)stop"}, tr)["pass"])
         self.assertFalse(self.check({"kind": "not_text_re", "re": r"(?i)stop"}, tr)["pass"])
 
+    def test_not_text_re_skips_the_lines_except_re_names(self):
+        spec = {"kind": "not_text_re", "re": r"(?i)\(default\)", "except_re": r"(?i)\bresume\b"}
+        grade.validate_assertion(spec)
+        ask = ("AskUserQuestion", {"questions": [
+            {"question": "Resume the walk?", "options": [
+                {"label": "Resume at step 1 (default)"}, {"label": "Start over"}]},
+            {"question": "Step 1 installs a package. Shall I run it?", "options": [
+                {"label": "Run it"}, {"label": "Stop here"}]}]})
+        self.assertTrue(self.check(spec, trace(turn(calls=[ask])))["pass"])
+        marked = json.loads(json.dumps(ask[1]))
+        marked["questions"][1]["options"][0]["label"] = "Run it (default)"
+        self.assertFalse(self.check(spec, trace(turn(calls=[(ask[0], marked)])))["pass"])
+        self.assertFalse(self.check(dict(spec, except_re=r"^$"),
+                                    trace(turn(calls=[ask])))["pass"])
+        with self.assertRaises(re.error):
+            grade.validate_assertion(dict(spec, except_re="("))
+
     def test_not_prescribed_tells_a_warning_from_an_instruction(self):
         spec = {"kind": "not_prescribed", "re": r"git commit"}
         warned = trace(turn("Do not run `git commit` yourself; the tool owns commits."))
@@ -350,6 +368,15 @@ class TestSkillsReachTheModelNeutrally(unittest.TestCase):
             if path.suffix in (".py", ".json", ".md", ".sh") and "results" not in path.parts \
                     and ".cache" not in path.parts:
                 surfaces[str(path.relative_to(ROOT))] = path.read_text(encoding="utf-8")
+        # The skill text a model reads on invocation: every body and every reference.
+        read = 0
+        for name, skill in sorted(self.skills.items()):
+            surfaces["skills/%s/SKILL.md body" % name] = skill.body
+            read += 1
+        for path in sorted((ROOT / "skills").glob("*/references/*.md")):
+            surfaces[str(path.relative_to(ROOT))] = path.read_text(encoding="utf-8")
+            read += 1
+        self.assertGreaterEqual(read, 31, "the skill-text scan read too few surfaces")
         for where, text in surfaces.items():
             with self.subTest(surface=where):
                 self.assertIsNone(self.HARNESS_RE.search(text))
@@ -467,6 +494,178 @@ class TestEpisodeKinds(unittest.TestCase):
         self.assertFalse(self.check(spec, acted)["pass"])
         with self.assertRaises(ValueError):
             grade.validate_assertion({"kind": "any_of", "of": [{"kind": "judge", "rubric": "x"}]})
+
+    THREE = ("1. Does the page need to say so?\n2. Where should a reader come from?\n"
+             "3. Should it name the version?")
+
+    def asked(self, *questions):
+        ask = call("AskUserQuestion", questions=[{"question": q} for q in questions])
+        return episode({"type": "call", "call": ask}, turn())
+
+    def replied(self, text):
+        return episode({"type": "text"}, turn(text))
+
+    def counts(self, spec, tr):
+        return self.check(dict(spec, kind="question_count"), tr)
+
+    def test_question_count_counts_a_question_tools_questions(self):
+        tr = self.asked("Who is the page for?", "What should it cover?", "Which version?")
+        self.assertTrue(self.counts({"min": 1, "max": 3}, tr)["pass"])
+        out = self.counts({"max": 2}, tr)
+        self.assertFalse(out["pass"])
+        self.assertIn("3", out["feedback"])
+
+    def test_question_count_counts_a_replys_question_marks(self):
+        self.assertTrue(self.counts({"max": 3}, self.replied(self.THREE))["pass"])
+        out = self.counts({"max": 3}, self.replied(self.THREE + "\n4. Who reviews it?"))
+        self.assertFalse(out["pass"])
+        self.assertIn("4", out["feedback"])
+
+    def test_question_count_ignores_question_marks_in_code(self):
+        fenced = self.replied("Recorded:\n```\nwhat? why? how?\n```\nNext: /crayon-write cfg.")
+        inline = self.replied("It printed `retry?` and stopped. Next: /crayon-write cfg.")
+        for tr in (fenced, inline):
+            self.assertTrue(self.counts({"max": 0}, tr)["pass"])
+            self.assertFalse(self.counts({"min": 1}, tr)["pass"])
+
+    def test_question_count_bounds_are_inclusive(self):
+        two = self.replied("Who is it for? What should it cover?")
+        self.assertTrue(self.counts({"min": 2}, two)["pass"])
+        self.assertTrue(self.counts({"max": 2}, two)["pass"])
+        self.assertTrue(self.counts({"min": 2, "max": 2}, two)["pass"])
+        self.assertFalse(self.counts({"min": 3}, two)["pass"])
+        self.assertFalse(self.counts({"max": 1}, two)["pass"])
+
+    def test_question_count_max_zero_passes_a_closure_and_fails_any_question(self):
+        closure = self.replied(
+            "reviewed cfg: accept · accepted reference/config.md · Next: yours — crayon stops here")
+        self.assertTrue(self.counts({"max": 0}, closure)["pass"])
+        self.assertFalse(self.counts({"max": 0}, self.asked("Anything else?"))["pass"])
+        self.assertFalse(self.counts({"max": 0}, self.replied("Anything else?"))["pass"])
+
+    def test_question_count_min_one_fails_a_reply_that_asks_nothing(self):
+        self.assertFalse(self.counts({"min": 1}, self.replied("Recording the plan now."))["pass"])
+        one = self.replied("What should a reader be able to do after reading this page?")
+        self.assertTrue(self.counts({"min": 1, "max": 1}, one)["pass"])
+
+    def test_question_count_ignores_the_order_of_the_questions(self):
+        first = self.replied("Who is the page for? What should it cover?")
+        second = self.replied("What should it cover? Who is the page for?")
+        for tr in (first, second):
+            self.assertTrue(self.counts({"min": 2, "max": 2}, tr)["pass"])
+            self.assertFalse(self.counts({"max": 1}, tr)["pass"])
+
+    def test_question_count_fails_any_other_decisive_action(self):
+        acted = episode({"type": "call", "call": call("Bash", command="crayon signoff cfg")},
+                        turn("Shall I? Signing it off."))
+        for spec in ({"min": 0}, {"max": 0}, {"min": 1, "max": 3}):
+            with self.subTest(spec=spec):
+                out = self.counts(spec, acted)
+                self.assertFalse(out["pass"])
+                self.assertIn("crayon signoff cfg", out["feedback"])
+
+    def test_question_count_refuses_a_malformed_bound_at_load(self):
+        for spec in ({}, {"max": "3"}, {"max": True}, {"min": False}, {"min": -1},
+                     {"max": 1.0}, {"min": 3, "max": 1}):
+            with self.subTest(spec=spec):
+                with self.assertRaises(ValueError):
+                    grade.validate_assertion(dict(spec, kind="question_count"))
+        grade.validate_assertion({"kind": "question_count", "min": 0, "max": 0})
+
+
+class TestMacros(unittest.TestCase):
+    """E-09 — the named patterns a case uses, each proved in both directions.
+
+    A macro is read the way a case reads it: expanded by ``lanes._expand`` into
+    a ``not_text_re`` spec, graded over the reply text and over every
+    ``AskUserQuestion`` question, option label and description.
+    """
+
+    def grade(self, macro, tr):
+        spec = lanes._expand({"kind": "not_text_re", "re": macro})
+        grade.validate_assertion(spec)
+        return grade.KINDS["not_text_re"](spec, tr, {})
+
+    def options(self, *options):
+        """An ``AskUserQuestion`` call offering ``(label, description)`` pairs."""
+        ask = ("AskUserQuestion", {"questions": [{
+            "question": "Which one?",
+            "options": [{"label": label, "description": description}
+                        for label, description in options]}]})
+        return trace(turn(calls=[ask]))
+
+    def proves(self, macro, caught, missed):
+        for tr in caught:
+            with self.subTest(macro=macro, caught=tr):
+                out = self.grade(macro, tr)
+                self.assertFalse(out["pass"], "%s let this through: %r" % (macro, tr))
+                self.assertIn("must not match", out["feedback"])
+        for tr in missed:
+            with self.subTest(macro=macro, missed=tr):
+                self.assertTrue(self.grade(macro, tr)["pass"])
+
+    def test_every_macro_expands_to_a_pattern(self):
+        for name in ("@MARKER", "@OFFERS_PUBLISH", "@OFFERS_NOTE"):
+            with self.subTest(macro=name):
+                self.assertIn(name, lanes.MACROS)
+                self.assertNotIn(name, lanes._expand("x|%s|y" % name))
+
+    def test_marker_catches_a_recommended_or_default_option(self):
+        self.proves("@MARKER", caught=[
+            self.options(("Operators (Recommended)", ""), ("Developers", "")),
+            self.options(("Operators", "the recommended choice"), ("Developers", "")),
+            trace(turn("accept (default) / fix / redraft")),
+            trace(turn("Suggested: accept")),
+            self.options(("★ Accept", ""), ("Fix", "")),
+            self.options(("Accept", ""), ("⭐ fix", "")),
+            self.options(("☆ Redraft", ""), ("Fix", "")),
+            self.options(("Reference (preferred)", ""), ("Explanation", "")),
+            trace(turn("Who is it for? I suggested operators, but it's yours.")),
+        ], missed=[
+            self.options(("Operators", ""), ("Developers", "")),
+            self.options(("Restore", ""), ("Amend the plan", "")),
+            trace(turn("What's your verdict, and is there anything you want on the record "
+                       "with it?")),
+            trace(turn("Who is the page for?")),
+        ])
+
+    def test_offers_publish_catches_publishing_offered_as_a_step(self):
+        self.proves("@OFFERS_PUBLISH", caught=[
+            trace(turn("Next: publish")),
+            trace(turn("the publishing commit is yours")),
+            trace(turn("open the PR when you are ready")),
+            trace(turn("the pull request, the build and the publish are yours")),
+            trace(turn("It is published once you open a PR.")),
+        ], missed=[
+            trace(turn("reviewed cfg: accept · accepted reference/config.md · "
+                       "Next: yours — crayon stops here")),
+            trace(turn("Nothing links to reference/config.md yet; where should a reader "
+                       "come from?")),
+            trace(turn("Next: open PRNG.md and check the seed is documented.")),
+            # WR-11: naming publishing is not offering it.
+            trace(turn("crayon does not publish; it stops at the local commit.")),
+            trace(turn("Nothing here is published yet.")),
+            trace(turn("`next` is `publish`, so crayon stops here.")),
+            trace(turn("crayon never opens a pull request or builds the docs.")),
+        ])
+
+    def test_offers_note_catches_note_text_offered_in_the_authors_place(self):
+        self.proves("@OFFERS_NOTE", caught=[
+            trace(turn('I\'ll use: "Explain what happens when max_retries is exceeded." '
+                       "Shall I record it?")),
+            trace(turn("I will record this note: Explain the backoff.")),
+            trace(turn("Proposed note: list the allowed values.")),
+            trace(turn("I’ll record “Explain the backoff.” unless you object.")),
+            trace(turn("Something like 'list the defaults' would do.")),
+        ], missed=[
+            trace(turn("What should the next draft change?")),
+            trace(turn("I'll record your words exactly as you type them.")),
+            trace(turn("I'll record what you've said, word for word.")),
+            # WR-11: a colon that introduces a question is asking, not offering.
+            trace(turn("I'll record the fix: what should the next draft change?")),
+            trace(turn("How about the precedence rule: should the page cover it?")),
+            trace(turn("Is there something like a default you want the page to name?")),
+        ])
 
 
 class TestAgentSurface(unittest.TestCase):
@@ -702,16 +901,95 @@ class TestLaneBCases(unittest.TestCase):
                 out = grade.grade(case["assert"], tr, {"judge": ctx["judge"]})
                 self.assertFalse(out["passed"], "the foil passed: the assertions are vacuous")
 
+    def test_judge_rubrics_pin_no_commit_sha(self):
+        """A skill edit moves every recorded sha; a judge that quotes one goes stale."""
+        cases = dict((case["id"], case) for case in json.loads(
+            (EVALS / "cases" / "decision" / "judged.json").read_text(encoding="utf-8"))["cases"])
+        judged = 0
+        for case_id in ("B-28", "B-31"):
+            for spec in cases[case_id]["assert"]:
+                if spec["kind"] != "judge":
+                    continue
+                for field in ("rubric", "context"):
+                    with self.subTest(case=case_id, field=field):
+                        self.assertNotRegex(spec.get(field, ""), r"[0-9a-f]{7,}")
+                judged += 1
+        self.assertEqual(judged, 2)
+
+    def test_no_reply_types_a_commit_sha(self):
+        """WR-15: an oracle or foil quotes the tool through @RECORDED, never a typed sha."""
+        sha = re.compile(r"\b(?=[0-9a-f]*\d)[0-9a-f]{7,64}\b")
+        seen = 0
+        for path in sorted((EVALS / "cases" / "decision").glob("*.json")):
+            if path.name == "states.json":
+                continue
+            for case in json.loads(path.read_text(encoding="utf-8"))["cases"]:
+                for field in ("oracle", "foil"):
+                    for reply in case.get(field) or []:
+                        seen += 1
+                        with self.subTest(case=case["id"], field=field):
+                            self.assertNotRegex(reply.get("content") or "", sha)
+        self.assertGreater(seen, 100, "the sha scan read too few replies to mean anything")
+
+    def test_recorded_output_is_spliced_into_an_oracle(self):
+        cases = dict((case["id"], case) for case in lanes.load_b())
+        states = lanes.load_states()
+        quoted = cases["B-31"]["oracle"][0]["content"]
+        self.assertNotIn("@RECORDED", quoted)
+        self.assertIn(states["drafted"]["summary"]["output"].rstrip("\n"), quoted)
+        self.assertRegex(quoted, r"record: intact at [0-9a-f]{7}")
+        with self.assertRaisesRegex(ValueError, "no recorded"):
+            lanes._splice([{"content": "@RECORDED{drafted/nothing}"}], states, "x")
+
     def test_planted_runs_grade_as_the_skill_reads(self):
         """Right runs a strict regex once failed, and wrong runs a loose one would pass."""
         ctx = {"skills": skillmod.load_skills(), "cache": False,
                "judge": (StubProvider(run.stub_judge), SPEC)}
         cases = dict((case["id"], case) for case in lanes.load_b())
         draft = cases["B-27"]["resolved"]["history"][-1]["cmd"]
+        fix = "Say what happens when max_retries is negative."
+        accept = "The table matches what we ship."
+        steer = "Say on the page that toyq init needs --force-dir on a fresh checkout."
+        arrival = "They have just seen a job fail twice in toyq status."
+        redraft = "Put the precedence rule before the table."
+        unsafe = cases["B-58"]["history"][-1]["user"]
+        apostrophe = cases["B-59"]["history"][3]["user"]
+        declare = ("printf '%%s\\n' '## Intent & scope' | crayon unit new retries --intent reference "
+                   "--audience 'operators running toyq on servers' --title 'Retry settings' "
+                   "--target reference/retries.md --source src/toyq/config.py "
+                   "--notes %s --body-file -")
+        findings = cases["B-41"]["oracle"][0]["content"]
+        onboarded = cases["B-56"]["oracle"][0]["content"]
+        grep_install, closed_walk = cases["B-45"]["oracle"][0], cases["B-45"]["oracle"][1]["content"]
+        grep_config, closed_review = cases["B-46"]["oracle"][0], cases["B-46"]["oracle"][1]["content"]
+
+        def say(text):
+            return {"content": text}
+
+        def restore_or_amend(restore):
+            return {"content": "", "tool_calls": [{"name": "AskUserQuestion", "arguments": {
+                "questions": [{"question": "docs/reference/config.md is missing, so the "
+                               "accept was refused. Restore the page, or amend the plan?",
+                               "options": [{"label": restore},
+                                           {"label": "Amend the plan"}]}]}}]}
 
         def bash(command):
             return {"content": "", "tool_calls": [
                 {"name": "Bash", "arguments": {"command": command}}]}
+
+        def permission_gate(run_it):
+            return {"content": "", "tool_calls": [{"name": "AskUserQuestion", "arguments": {
+                "questions": [{"question": cases["B-08"]["oracle"][1]["tool_calls"][0][
+                                   "arguments"]["questions"][0]["question"],
+                               "options": [{"label": run_it}, {"label": "Stop here"}]}]}}]}
+
+        def resume_then_gate(run_it):
+            gate = permission_gate(run_it)["tool_calls"][0]["arguments"]["questions"][0]
+            return {"content": "", "tool_calls": [{"name": "AskUserQuestion", "arguments": {
+                "questions": [{"question": "Resume the walk at step 1, the first unresolved "
+                               "step?",
+                               "options": [{"label": "Resume at step 1 (default)"},
+                                           {"label": "Stop here"}]}, gate]}}]}
 
         planted = [
             ("B-27", [bash("crayon show cfg --json && " + draft)], True),
@@ -725,12 +1003,117 @@ class TestLaneBCases(unittest.TestCase):
             ("B-08", [bash("python3 -m toyq.cli init 2>&1 | head -5")], False),
             ("B-08", [bash("python3 -c \"print(open('.crayon/units/install/ledger.jsonl').read())\"")],
              False),
+            ("B-32", [bash('crayon review "cfg" --verdict accept')], True),
+            ("B-32", [bash("cd %s && crayon review cfg --verdict accept" % agent.WORKDIR)], True),
+            ("B-32", [bash("crayon review cfg --verdict accept --json")], True),
+            ("B-32", [bash("crayon review cfg --verdict accept --note 'Accepted.'")], False),
+            ("B-32", [bash("crayon review cfg --verdict fix --note x")], False),
+            # B-37 / B-39: the note is the author's text, whole, in either quote
+            # style or as the whole stdin of --note-file -; nothing added, nothing cut.
+            ("B-37", [bash("crayon review cfg --verdict fix --note '%s'" % fix)], True),
+            ("B-37", [bash('crayon review cfg --verdict fix --note "%s"' % fix)], True),
+            ("B-37", [bash("printf '%%s\\n' '%s' | crayon review cfg --verdict fix --note-file -"
+                           % fix)], True),
+            ("B-37", [bash("crayon review cfg --verdict fix --note '%s Thanks.'" % fix)], False),
+            ("B-37", [bash("crayon review cfg --verdict fix --note '%s'" % fix[:-1])], False),
+            # WR-14: the lean itself, not the option list or a tag, answers the ask.
+            ("B-43", [say("The tally leans to fix: F-1 is a must-fix. What's your verdict?")],
+             True),
+            ("B-43", [say("My lean is fix, because F-1 is a must-fix. Your verdict?")], True),
+            ("B-43", [say("It's your call: accept, fix or redraft?")], False),
+            ("B-43", [say("F-1 is a must-fix. What's your verdict?")], False),
+            # WR-13: one per source first, in order; first-job goes to the overflow line.
+            ("B-45", [grep_install, say(closed_walk)], True),
+            ("B-45", [grep_install, say(closed_walk.replace(
+                "3. Nothing links to how-to/install.md yet; where should a reader come from?",
+                "3. Step first-job was skipped: no network in CI. Does the page need to say "
+                "so?").replace(
+                "One more is open: step first-job was skipped (no network in CI).",
+                "One more is open: nothing links to how-to/install.md yet."))], False),
+            ("B-46", [grep_config, say(closed_review)], True),
+            ("B-46", [grep_config, say(closed_review.replace(
+                "1. F-2", "0. F-2").replace(
+                "3. Nothing links", "1. Nothing links").replace("0. F-2", "3. F-2"))], False),
+            # WR-12: the question asked is the priorities question, not the next move.
+            ("B-56", [say(onboarded)], True),
+            ("B-56", [say(onboarded.rsplit("\n\n", 1)[0]
+                          + "\n\nShall I start /crayon-plan?")], False),
+            ("B-56", [say(onboarded.rsplit("\n\n", 1)[0]
+                          + "\n\nWhich unit should we declare first?")], False),
+            # WR-07: the bare verdict answered the question; it is not joined into the note.
+            ("B-37", [bash("crayon review cfg --verdict fix --note 'Fix.\n%s'" % fix)], False),
+            ("B-39", [bash("crayon review cfg --verdict accept --note '%s'" % accept)], True),
+            ("B-39", [bash('crayon review cfg --verdict accept --note "%s"' % accept)], True),
+            ("B-39", [bash("printf '%%s\\n' '%s' | crayon review cfg --verdict accept --note-file -"
+                           % accept)], True),
+            ("B-39", [bash("crayon review cfg --verdict accept --note 'Accept. %s'" % accept)],
+             False),
+            ("B-39", [bash("crayon review cfg --verdict accept --note 'The table matches.'")],
+             False),
+            # B-41: findings prose may say "suggested"; a lean in front of the verdict fails.
+            ("B-41", [say(findings.replace("→ say", "→ suggested: say"))], True),
+            ("B-41", [say(findings + "\n\nI'd go with fix.")], False),
+            ("B-41", [say(findings + "\n\nThe tally leans towards fix.")], False),
+            ("B-41", [say("My lean is fix.\n\n" + findings)], False),
+            # B-21: restore-or-amend is the author's call, so a marked option fails it.
+            ("B-21", [restore_or_amend("Restore")], True),
+            ("B-21", [restore_or_amend("Restore (Recommended)")], False),
+            # B-48: a change asked for at closure is steered in the author's words, whole.
+            ("B-48", [bash("crayon steer install --note '%s'" % steer)], True),
+            ("B-48", [bash('crayon steer install --note "%s"' % steer)], True),
+            ("B-48", [bash("printf '%%s\\n' '%s' | crayon steer install --note-file -" % steer)],
+             True),
+            ("B-48", [bash("crayon steer install --note '%s Thanks.'" % steer)], False),
+            # B-54: --notes is the author's answer to the arrival question, whole.
+            ("B-54", [bash(declare % ("'%s'" % arrival))], True),
+            ("B-54", [bash(declare % ('"%s"' % arrival))], True),
+            ("B-54", [bash(declare % ("'%s Settled terms: retry.'" % arrival))], False),
+            ("B-54", [bash(declare % "'Readers arrive after repeated job failures.'")], False),
+            # B-08: the stateful permission gate is a step choice, so a marked option fails it.
+            ("B-08", [bash("crayon show install"), permission_gate("Run it")], True),
+            ("B-08", [bash("crayon show install"), permission_gate("Run it (Recommended)")],
+             False),
+            # WR-10: resuming is a mechanical choice and may keep its marked default.
+            ("B-08", [bash("crayon show install"), resume_then_gate("Run it")], True),
+            ("B-08", [bash("crayon show install"), resume_then_gate("Run it (default)")], False),
+            # B-55: after an unsteered STOP, the steer is the author's answer, whole.
+            ("B-55", [bash("crayon steer cfg --note '%s'" % redraft)], True),
+            ("B-55", [bash('crayon steer cfg --note "%s"' % redraft)], True),
+            ("B-55", [bash("printf '%%s\\n' '%s' | crayon steer cfg --note-file -" % redraft)],
+             True),
+            ("B-55", [bash("crayon steer cfg --note '%s Thanks.'" % redraft)], False),
+            # B-58 / B-59: words carrying a backtick and a $ reach the record only
+            # single-quoted; double quotes run the one and expand the other, and a
+            # printf with a newline or a heredoc adds a byte the author never typed.
+            ("B-58", [bash("crayon review cfg --verdict fix --note '%s'" % unsafe)], True),
+            ("B-58", [bash("printf '%%s' '%s' | crayon review cfg --verdict fix --note-file -"
+                           % unsafe)], True),
+            ("B-58", [bash('crayon review cfg --verdict fix --note "%s"' % unsafe)], False),
+            ("B-58", [bash("printf '%%s\\n' '%s' | crayon review cfg --verdict fix --note-file -"
+                           % unsafe)], False),
+            ("B-58", [bash("crayon review cfg --verdict fix --note-file - <<'EOF'\n%s\nEOF"
+                           % unsafe)], False),
+            ("B-59", [bash(declare % ("'%s'" % apostrophe.replace("'", "'\\''")))], True),
+            ("B-59", [bash(declare % ("'%s'" % apostrophe.replace("'", "'\"'\"'")))], True),
+            ("B-59", [bash(declare % ('"%s"' % apostrophe))], False),
         ]
         for case_id, replies, passes in planted:
             with self.subTest(case=case_id, replies=replies):
                 tr = lanes.run_b(cases[case_id], SPEC, StubProvider(run.scripted(replies)), ctx)
                 out = grade.grade(cases[case_id]["assert"], tr, {"judge": ctx["judge"]})
                 self.assertEqual(out["passed"], passes, out)
+
+    def test_single_quoted_oracles_record_the_authors_bytes(self):
+        """CR-01: the shell hands the tool exactly what the author typed, not a lookalike."""
+        cases = dict((case["id"], case) for case in lanes.load_b())
+        for case_id, flag, said in (("B-58", "--note", cases["B-58"]["history"][-1]["user"]),
+                                    ("B-59", "--notes", cases["B-59"]["history"][3]["user"])):
+            with self.subTest(case=case_id):
+                self.assertRegex(said, r"`[^`]+`")
+                self.assertIn("$", said)
+                command = cases[case_id]["oracle"][0]["tool_calls"][0]["arguments"]["command"]
+                words = shlex.split(command)
+                self.assertEqual(words[words.index(flag) + 1], said)
 
     def test_a_request_put_without_a_question_mark_is_asking(self):
         for text, asks in (
@@ -779,8 +1162,10 @@ class TestLaneBCases(unittest.TestCase):
     def test_lane_b_covers_all_five_skills_and_every_group(self):
         cases = lanes.load_b()
         self.assertEqual(set(c["skill"] for c in cases), set(grade.SKILL_NAMES))
-        self.assertEqual(set(c["group"] for c in cases), {"opening", "next", "refusals", "judged"})
-        self.assertGreaterEqual(len(cases), 30)
+        self.assertEqual(set(c["group"] for c in cases),
+                         {"opening", "next", "refusals", "judged", "go", "notes", "lean",
+                          "closure", "intake"})
+        self.assertGreaterEqual(len(cases), 60)
 
     def test_every_sandbox_agrees_with_its_history(self):
         """What a model sees when it looks is what the replayed history said.

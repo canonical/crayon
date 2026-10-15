@@ -57,6 +57,36 @@ invalidates every line after it. Nothing in this skill ever opens it in an edito
 not to fix a typo, not to append a note, not to correct a field.
 </opening>
 
+<!-- author-rules:begin -->
+<author_rules>
+These three rules hold at every question this skill puts to the author.
+
+- **The author's words, verbatim.** A note recorded with `--note`, `--note-file -` or
+  `--notes` is exactly what the author typed beyond the verdict, the yes or the no that
+  answered the question: that answer alone is not part of the note, so "Fix." then
+  "Say …" records the second reply, and "Accept. The table …" records "The table …".
+  The words beyond it, given across several turns, are joined in order, one reply per
+  line. No spelling fix, no rephrasing, and no text offered for them to approve, such
+  as "I'll use: …". When their words are unclear, ask them; never rewrite them. With
+  nothing of theirs to record, omit the flag.
+  On the command line their words go inside single quotes, each `'` in them written
+  as `'\''`, and never inside double quotes: there a backtick runs a command and a `$`
+  expands, so the record would hold words they never typed. Through `--note-file -`,
+  the same single-quoted words are piped in with `printf '%s'`, which adds nothing.
+- **No marked option on a judgment question.** Audience, intent, step choices, the
+  verdict and restore-or-amend are the author's judgment. No option of those questions
+  carries "(Recommended)", "(default)", "suggested", a star or any other marker, and
+  their order implies nothing. This rule wins over any harness's own convention of
+  marking a recommended option. A mechanical choice, such as an id, a path or a title,
+  may keep a marked default.
+- **An explicit go.** A signoff or an accept runs only on an explicit go: an
+  affirmative ("yes", "go", "sign it") to a question that named that act. For an
+  accept, the go is the verdict itself, or a yes to "Keep accept?". "Looks good" about
+  an outline is not a go, and neither is "yes, but …": handle the change, then ask
+  again.
+</author_rules>
+<!-- author-rules:end -->
+
 <iron_law>
 NO PAGE REACHES `docs/` EXCEPT THROUGH `crayon draft`. This skill writes only under
 `.crayon/staging/<id>/draft/` and `.crayon/staging/<id>/scratch/`. Every ledger
@@ -138,7 +168,7 @@ exactly what this STOP is for; it is not a note. Never write, copy or delete a s
 or published file to get a different draft:
 
 ```bash
-crayon steer "$UNIT_ID" --note "<the author's own words>"
+crayon steer "$UNIT_ID" --note '<their own words>'
 ```
 
 Then draft again. **A restoration is not an exception to this.** When a page is
@@ -201,13 +231,14 @@ carry a resolved prefix forward, the tool needs both flags, and the note is not
 optional — the contract requires a reason whenever evidence carries forward:
 
 ```bash
-crayon plan-steps "$UNIT_ID" --steps-file - --keep-evidence --note "<why the plan changed>"
+crayon plan-steps "$UNIT_ID" --steps-file - --keep-evidence --note '<their words: why the plan changed>'
 ```
 
-Ask the author before passing `--keep-evidence`. Reuse asserts that a prefix which
-has not been re-run still holds; it carries forward only along consecutive reusing
-plans and only for steps whose prefix is identical in text, mode and statefulness.
-That is the author's call to make, not a default to take silently.
+Ask the author before passing `--keep-evidence`, and ask why the plan changed. Their
+answer, verbatim, is the note. Reuse asserts that a prefix which has not been re-run
+still holds; it carries forward only along consecutive reusing plans and only for
+steps whose prefix is identical in text, mode and statefulness. That is the author's
+call to make, not a default to take silently.
 
 **Walk each step (silent-until-signal).** Load `references/episode-taxonomy.md` now
 for the improvisation-vs-frustration taxonomy. Walk the plan one step at a time with
@@ -220,6 +251,13 @@ at:
   every time: ask the TA for a yes to that step, naming what it changes, and wait. It
   holds on resume and in a fresh session, and "walk it" is not that yes;
 - a **failed step**.
+
+These are step choices, and they are the author's judgment: the permission gate
+before a stateful step, the `--keep-evidence` ask, and what to do at a failed step or
+a genuine fork (re-plan the step, or record what ran). Put each as a plain question
+with no option marked, as the author rules above require. Resuming at the first
+unresolved step is not one of them: it is mechanical, because the record says which
+steps are resolved, so it keeps its default.
 
 **Capture the command's output (D-15).** One redirection, one status, no digest:
 
@@ -486,7 +524,9 @@ applies. Say so before a step prints anything the author would not publish.
 - Branch on the declared `intent`; never author an actionable unit without walking it.
 - Record the step plan with `crayon plan-steps <id> --steps-file -`, supplying `id`,
   `text`, `mode` and `stateful` per step and no hash of any kind.
-- Ask the author before passing `--keep-evidence`, and pass `--note` with it.
+- Ask the author before passing `--keep-evidence`, and pass the author's answer,
+  verbatim, as `--note` with it.
+- Put every step choice as a plain question with no option marked.
 - Capture each step by redirecting both streams into one file in the unit's scratch
   workspace and echoing the command's own exit status.
 - Record each step with `crayon step <id> <step-id> --steps-seq N --evidence-file F
@@ -534,7 +574,9 @@ applies. Say so before a step prints anything the author would not publish.
       with `crayon steer` before any redraft.
 - [ ] The step plan was recorded with `crayon plan-steps … --steps-file -`, with no
       hash supplied by this skill.
-- [ ] The author was asked before `--keep-evidence`, and `--note` went with it.
+- [ ] The author was asked before `--keep-evidence`, and the author's answer,
+      verbatim, went with it as `--note`.
+- [ ] Every step choice was put as a plain question with no option marked.
 - [ ] Each step's output was captured to one file and handed to `crayon step` with
       `--steps-seq`, `--evidence-file` and `--output-file`.
 - [ ] No digest was computed, typed or transcribed anywhere in the walk.

@@ -5717,7 +5717,7 @@ def cmd_review(args):
                     detail="pending request(s) with no recorded disposition: %s"
                     % ", ".join(str(seq) for seq in outstanding),
                     hint="put each pending seq to the reviewer, then crayon review %s "
-                    '--verdict accept --note "…" with --resolves <seq> or --withdraw '
+                    '--verdict accept [--note "…"] with --resolves <seq> or --withdraw '
                     '<seq> "<reason>" for every one' % unit,
                     next_token=route(state),
                 )

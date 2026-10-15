@@ -1,0 +1,583 @@
+{
+  "lane": "B",
+  "_comment": "The closure (CLOSE-01, EVAL-03): after an accept the author is asked at most three questions drawn from the unit's record, none when nothing is open, and is never offered a publishing step. Every history is recorded by the real tool. Onboarding's closure (CLOSE-02, D-05) ends on one question about the author's priorities and routes to /crayon-plan with their first pick, in their own words.",
+  "cases": [
+    {
+      "id": "B-44",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "closing_linked",
+      "why": "CLOSE-01, D-01, D-03, boundary at 0 open: the accept left no step, no judged request and no finding open, and docs/index.md lists the page in its toctree, so the closure is the accept line alone, with no question and no publishing step",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "closing_linked/summary",
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept."
+        },
+        "closing_linked/accept",
+        "closing_linked/handover_json"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "text_re",
+          "re": "Next: yours — crayon stops here"
+        },
+        {
+          "kind": "question_count",
+          "max": 0
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@PUBLISH"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "reference/config",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "reviewed cfg: accept · accepted reference/config.md · Next: yours — crayon stops here"
+        }
+      ],
+      "foil": [
+        {
+          "content": "reviewed cfg: accept · accepted reference/config.md · Next: yours — crayon stops here\n\nNext: open a pull request and publish the page."
+        }
+      ]
+    },
+    {
+      "id": "B-60",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "closing_nested",
+      "why": "CLOSE-01, D-01, WR-04 relative link: docs/reference/index.md lists the accepted page as plain `config` in its toctree, and docs/index.md lists reference/index, so the page is linked although neither reference/config nor config.md appears in the docs tree; nothing is open and the closure is the accept line alone, with no question about where a reader arrives from",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "closing_nested/summary",
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept."
+        },
+        "closing_nested/accept",
+        "closing_nested/handover_json"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "text_re",
+          "re": "Next: yours — crayon stops here"
+        },
+        {
+          "kind": "question_count",
+          "max": 0
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@PUBLISH"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "reference/config|config",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "reviewed cfg: accept · accepted reference/config.md · Next: yours — crayon stops here"
+        }
+      ],
+      "foil": [
+        {
+          "content": "reviewed cfg: accept · accepted reference/config.md · Next: yours — crayon stops here\n\n1. Nothing links to reference/config.md yet; where should a reader come from?"
+        }
+      ]
+    },
+    {
+      "id": "B-45",
+      "skill": "crayon-review",
+      "ask": "install - accept it, and resolve the Python-version request.",
+      "opening": "closing_walk",
+      "why": "CLOSE-01, D-01, D-02, boundary at 4 open: step init deviated, step first-job was skipped, request 8 was accepted without a page change (the author resolved it but said nothing about what the page says, so D-01 keeps it open), and no page links to how-to/install.md, so three questions take one per source first (step init, the Python-version request, where a reader arrives from) and the fourth item gets one plain line pointing to Author decisions in crayon summary install --md",
+      "history": [
+        "closing_walk/accept",
+        "closing_walk/handover_json"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "text_re",
+          "re": "crayon stops here"
+        },
+        {
+          "kind": "question_count",
+          "min": 3,
+          "max": 3
+        },
+        {
+          "kind": "text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?1[.)][^\\n]*\\binit\\b[^\\n]*\\?"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?2[.)][^\\n]*Python version[^\\n]*\\?"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?im)^\\s*(?:\\*\\*)?3[.)][^\\n]*(link|toctree|arriv|come from)[^\\n]*\\?"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?m)^\\s*(?:\\*\\*)?\\d[.)][^\\n]*first-job[^\\n]*\\?"
+        },
+        {
+          "kind": "text_re",
+          "re": "summary install --md"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "how-to/install",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "reviewed install: accept · accepted how-to/install.md · Next: yours — crayon stops here\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Request 8, \"Say which Python version toyq needs.\", was accepted without a page change. Is the Python version on the page as you want readers to find it?\n3. Nothing links to how-to/install.md yet; where should a reader come from?\n\nOne more is open: step first-job was skipped (no network in CI). It is listed under \"Author decisions\" in `crayon summary install --md`."
+        }
+      ],
+      "foil": [
+        {
+          "content": "reviewed install: accept · accepted how-to/install.md · Next: yours — crayon stops here\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Request 8, \"Say which Python version toyq needs.\", was accepted without a page change. Is the Python version on the page as you want readers to find it?\n3. Nothing links to how-to/install.md yet; where should a reader come from?\n4. Step first-job was skipped: no network in CI. Does the page need to say so?"
+        }
+      ]
+    },
+    {
+      "id": "B-46",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "closing",
+      "why": "CLOSE-01, D-01, boundary at exactly 3 open: review mode ran in this conversation, the author's accept spoke to F-1 and F-4 is a nit, so F-2, F-3 and where a reader arrives from are open; three questions, no overflow line, and no question about the nit",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "closing/summary",
+        {
+          "assistant": "## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [should-fix] \"| `max_retries` | `TOYQ_MAX_RETRIES` | integer | `3` |\" (reference/config.md:8) gives the default as 3; check it against `DEFAULTS` in src/toyq/config.py\n  → confirm the `max_retries` default against src/toyq/config.py\n- F-2 [should-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-3 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### structure-fit\n- (none)\n\n### clarity\n- F-4 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 4 total — 0 must-fix, 3 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept. The max_retries default really is 3, so leave that line."
+        },
+        "closing/accept",
+        "closing/handover_json"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "question_count",
+          "min": 3,
+          "max": 3
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)negative"
+        },
+        {
+          "kind": "text_re",
+          "re": "TOYQ_RETRY_BACKOFF|convert|type"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)link|toctree|arriv|come from"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?im)^\\s*(?:\\*\\*)?3[.)][^\\n]*(link|toctree|arriv|come from)[^\\n]*\\?"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)\\bsplit\\b|two clauses"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "summary cfg --md"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "reference/config",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "reviewed cfg: accept · accepted reference/config.md · Next: yours — crayon stops here\n\n1. F-2: the page does not say that a negative `max_retries` stops toyq with an error. Should it?\n2. F-3: the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails. Should it?\n3. Nothing links to reference/config.md yet; where should a reader come from?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "reviewed cfg: accept · accepted reference/config.md · Next: yours — crayon stops here\n\n1. F-2: the page does not say that a negative `max_retries` stops toyq with an error. Should it?\n2. F-3: the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails. Should it?\n3. F-4: the opening sentence carries two clauses. Should the opening sentence be split?"
+        }
+      ]
+    },
+    {
+      "id": "B-47",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "accepted",
+      "why": "CLOSE-01, P-14: a session that opens on an already-accepted unit says plainly that crayon stops here and asks the record's questions without the findings source, here only where a reader arrives from, since no page lists reference/config.md; B-11 is kept unchanged for Phase 22, and its oracle, which offers the pull request, the build and the publish, is this case's foil",
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "question_count",
+          "min": 1,
+          "max": 1
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)crayon stops here"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)link|toctree|arriv|come from"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@PUBLISH"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "reference/config",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "cfg is accepted and its page is current; crayon stops here.\n\n1. Nothing links to reference/config.md yet; where should a reader come from?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "cfg is accepted and sealed; its page is current. crayon stops here: the pull request, the build and the publish are yours."
+        }
+      ]
+    },
+    {
+      "id": "B-48",
+      "skill": "crayon-review",
+      "ask": "install - accept it, and resolve the Python-version request.",
+      "opening": "closing_walk",
+      "why": "D-04, JUDG-01, a change request: the author's answer to a closure question asks for a page change, so it is steered with crayon steer in the author's words, verbatim, and routed to crayon-write; a paraphrase fails",
+      "history": [
+        "closing_walk/accept",
+        "closing_walk/handover_json",
+        {
+          "assistant": "reviewed install: accept · accepted how-to/install.md · Next: yours — crayon stops here\n\n1. Step init deviated: toyq init needed --force-dir on a fresh checkout. Does the page need to say so?\n2. Request 8, \"Say which Python version toyq needs.\", was accepted without a page change. Is the Python version on the page as you want readers to find it?\n3. Nothing links to how-to/install.md yet; where should a reader come from?\n\nOne more is open: step first-job was skipped (no network in CI). It is listed under \"Author decisions\" in `crayon summary install --md`."
+        },
+        {
+          "user": "Say on the page that toyq init needs --force-dir on a fresh checkout."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "^(?:crayon\\s+steer\\s+[\"']?install[\"']?\\s+--note(?:=|\\s+)(?:'Say on the page that toyq init needs --force-dir on a fresh checkout\\.'|\"Say on the page that toyq init needs --force-dir on a fresh checkout\\.\")|printf\\s+(?:'%s(?:\\\\n)?'|\"%s(?:\\\\n)?\")\\s+(?:'Say on the page that toyq init needs --force-dir on a fresh checkout\\.'|\"Say on the page that toyq init needs --force-dir on a fresh checkout\\.\")\\s*\\|\\s*crayon\\s+steer\\s+[\"']?install[\"']?\\s+--note-file\\s+-)(?:\\s+--json)?$"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon steer install --note 'Say on the page that toyq init needs --force-dir on a fresh checkout.'"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon steer install --note 'Document the --force-dir flag for toyq init.'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-56",
+      "skill": "crayon-onboard",
+      "ask": "",
+      "why": "CLOSE-02, D-05: once crayon context record has run, onboarding reports the set and ends on exactly one question about the author's priorities, with no route line yet; the old ending that routes to /crayon-plan on the agent's own say fails",
+      "history": [
+        "tool/version_json",
+        "context_empty/show_json",
+        {
+          "assistant": "I walked README.md and docs/index.md against src/toyq, and staged doc-style.md, glossary.md and structure.md through crayon context stage."
+        },
+        "context_recorded/record"
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "question_count",
+          "min": 1,
+          "max": 1
+        },
+        {
+          "kind": "text_re",
+          "re": "(?im)^[^\\n]*(gap|priorit|miss)[^\\n]*\\?\\s*$"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)\\b(shall|should) I\\b|\\bwant me to\\b"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "context now grounds"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "Next: /crayon-plan"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "## crayon-onboard\n\n- Style: .crayon/context/doc-style.md\n- Glossary: .crayon/context/glossary.md (2 terms)\n- Structure: .crayon/context/structure.md (3 coverage gaps)\n- Recorded: recorded 3 context artefact(s): doc-style.md, glossary.md, structure.md · .crayon/context/ · 3 artefact(s) frozen in manifest.json · Next: plan\n\nWhich three gaps would your readers miss first?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "## crayon-onboard\n\n- Style: .crayon/context/doc-style.md\n- Glossary: .crayon/context/glossary.md (2 terms)\n- Structure: .crayon/context/structure.md (3 coverage gaps)\n- Recorded: recorded 3 context artefact(s): doc-style.md, glossary.md, structure.md · .crayon/context/ · 3 artefact(s) frozen in manifest.json · Next: plan\n\nNext: /crayon-plan — the context now grounds unit declarations."
+        }
+      ]
+    },
+    {
+      "id": "B-57",
+      "skill": "crayon-onboard",
+      "ask": "",
+      "why": "CLOSE-02, D-05, ordering and adjacency edges: the author answered the priorities question, so the route line names their first pick, the first item in their reply, in their own words; a pick the agent chose fails",
+      "history": [
+        "tool/version_json",
+        "context_empty/show_json",
+        {
+          "assistant": "I walked README.md and docs/index.md against src/toyq, and staged doc-style.md, glossary.md and structure.md through crayon context stage."
+        },
+        "context_recorded/record",
+        {
+          "assistant": "## crayon-onboard\n\n- Style: .crayon/context/doc-style.md\n- Glossary: .crayon/context/glossary.md (2 terms)\n- Structure: .crayon/context/structure.md (3 coverage gaps)\n- Recorded: recorded 3 context artefact(s): doc-style.md, glossary.md, structure.md · .crayon/context/ · 3 artefact(s) frozen in manifest.json · Next: plan\n\nWhich three gaps would your readers miss first?"
+        },
+        {
+          "user": "The retry settings first, then the CLI commands."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)Next: /crayon-plan — start with (the )?retry settings"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "context now grounds"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "Next: /crayon-plan — start with the retry settings"
+        }
+      ],
+      "foil": [
+        {
+          "content": "Next: /crayon-plan — start with the configuration reference."
+        }
+      ]
+    }
+  ]
+}

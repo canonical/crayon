@@ -20,7 +20,7 @@ Everything is stdlib Python. Models are reached through OpenRouter with the key 
 | Lane | What it asks | Live turns | Graded by | Status |
 |---|---|---|---|---|
 | A | which skill handles this ask? | 1, no tools | exact skill name | built, 15 cases |
-| B | given this `crayon` output, what is the next action? | until the first consequential action | that action, the calls on the way, 4 judged | built, 31 cases |
+| B | given this `crayon` output, what is the next action? | until the first consequential action | that action, the calls on the way, 4 judged | built, 60 cases |
 | C | a whole journey in a real sandbox with a simulated author | many | ledger, `score.py audit`, transcript, 1 judged page | planned |
 
 ## How lane B works
@@ -151,12 +151,36 @@ When the tool's output changes, re-record the states with
 `python3 validation/evals/record_states.py` and review the diff to `states.json`. Do this before
 touching any case.
 
+A skill edit moves every recorded commit sha too, because the fixture repository commits the
+installed skills first. So re-record in the same commit as the skill edit. Never type a commit
+sha into an oracle's assertions, a judge rubric or a judge context; describe the line instead
+(`record: intact at <seven-character commit>`), or match any seven hex characters. A reply
+that quotes what the tool printed splices it in with `@RECORDED{<state>/<label>}`, which
+`lanes.py` replaces with that recorded output when it loads the case.
+
 Prefer the deterministic kinds:
 - `skill_choice`, `tool_call`, `no_tool_call`, `text_re`, `not_text_re` and `not_prescribed`;
-- for an episode: `decisive`, `asks_user`, `bash_sequence` and `before`;
+- for an episode: `decisive`, `asks_user`, `question_count`, `bash_sequence` and `before`.
+  `question_count` bounds how many questions the decisive reply asks, with an inclusive `min`
+  and `max`, counting a question tool's questions or the reply's question marks outside code;
 - `any_of`, for when more than one action is right. Use `judge` only for a judgement call a regex cannot make.
 `not_prescribed` forbids *telling* the user to run a command or running it; mentioning the
-command in a warning is not a failure.
+command in a warning is not a failure. `not_text_re` takes an optional `except_re`: a line
+that matches it is not read, so a mechanical choice's marked default (`Resume at step 1
+(default)`) can sit beside a judgment question the check still reads.
+
+A Lane B pattern can name a macro from `lanes.MACROS`, so the same rule reads the same in every
+case. `TestMacros` in `tests/test_evals.py` proves the last three in both directions, on text
+that must match and text that must not:
+- `@MUTATING`: a `crayon` verb that records anything (`resume --dry-run` only looks);
+- `@PUBLISH`: a git write, a build or a pull request, never the skill's to run;
+- `@MARKER`: a recommended or default marker on a judgment option, such as `(Recommended)`,
+  `(default)` or a star; the order of the options alone is not a marker;
+- `@OFFERS_PUBLISH`: publishing, a pull request or opening a PR, offered as a step
+  (`Next: publish`, `the publish is yours`); naming it, as in `crayon does not publish`
+  or quoting the routed token, is not an offer;
+- `@OFFERS_NOTE`: note text the agent offers in the author's place (`I'll record: …`,
+  `Proposed note: …`); a colon that introduces a question is asking, not offering.
 
 ## Feedback for a later optimiser
 

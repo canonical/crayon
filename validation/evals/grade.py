@@ -224,7 +224,15 @@ def check_text_re(spec, trace, ctx):
 
 
 def check_not_text_re(spec, trace, ctx):
+    """Nothing said matches ``re``; a line matching ``except_re`` is not read.
+
+    ``except_re`` scopes the check: a mechanical question may keep a marked
+    default (``Resume at step 1 (default)``) where a judgment question may not.
+    """
     text = _said(trace)
+    if spec.get("except_re"):
+        text = "\n".join(line for line in text.splitlines()
+                         if not re.search(spec["except_re"], line))
     match = re.search(spec["re"], text)
     if not match:
         return result(True, "text does not match %r" % spec["re"])
@@ -303,6 +311,37 @@ def check_asks_user(spec, trace, ctx):
         return result(True, "asked the author in its reply")
     return result(False, "expected the model to ask the author before acting; it "
                   "ended on %s" % describe_decisive(decisive))
+
+
+#: Code in a reply: a fenced block (three backticks to three backticks, across
+#: lines) or an inline span (one backtick to the next, on one line). A question
+#: mark inside either is quoted output, not a question put to the author.
+_CODE_RE = re.compile(r"```.*?```|`[^`\n]*`", re.DOTALL)
+
+
+def check_question_count(spec, trace, ctx):
+    """The decisive reply asks between ``min`` and ``max`` questions, inclusive.
+
+    A question-tool call counts its questions; a reply counts its question
+    marks outside code. Any other decisive action fails: it asked nothing, it
+    acted. With no ``max`` there is no upper bound; with no ``min`` it is 0.
+    """
+    decisive = _decisive(trace)
+    if decisive["type"] == "call" and decisive["call"].get("name") == "AskUserQuestion":
+        count = len(_args(decisive["call"]).get("questions") or [])
+        where = "its AskUserQuestion call"
+    elif decisive["type"] == "text":
+        count = _CODE_RE.sub("", trace["turns"][-1]["content"] or "").count("?")
+        where = "its reply"
+    else:
+        return result(False, "expected the model to ask the author; it ended on %s"
+                      % describe_decisive(decisive))
+    low, high = spec.get("min", 0), spec.get("max")
+    wanted = ("between %d and %d" % (low, high) if high is not None
+              else "at least %d" % low)
+    if count >= low and (high is None or count <= high):
+        return result(True, "asked %d question(s) in %s" % (count, where))
+    return result(False, "expected %s question(s); %s asked %d" % (wanted, where, count))
 
 
 def check_bash_sequence(spec, trace, ctx):
@@ -421,6 +460,7 @@ KINDS = {
     "not_prescribed": check_not_prescribed,
     "decisive": check_decisive,
     "asks_user": check_asks_user,
+    "question_count": check_question_count,
     "bash_sequence": check_bash_sequence,
     "before": check_before,
     "any_of": check_any_of,
@@ -448,7 +488,22 @@ def validate_assertion(spec):
             raise ValueError("%s assertion is missing %r" % (kind, field))
     if kind == "skill_choice" and spec["expect"] not in SKILL_NAMES + ("none",):
         raise ValueError("skill_choice expects an unknown skill %r" % spec["expect"])
-    for field in ("args_re", "re", "first", "then"):
+    if kind == "question_count":
+        bounds = [field for field in ("min", "max") if field in spec]
+        if not bounds:
+            raise ValueError("question_count needs a 'min', a 'max' or both")
+        for field in bounds:
+            value = spec[field]
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise ValueError("question_count %r must be a whole number, not %r"
+                                 % (field, value))
+            if value < 0:
+                raise ValueError("question_count %r must not be negative: %r"
+                                 % (field, value))
+        if len(bounds) == 2 and spec["min"] > spec["max"]:
+            raise ValueError("question_count 'min' %r is greater than its 'max' %r"
+                             % (spec["min"], spec["max"]))
+    for field in ("args_re", "re", "except_re", "first", "then"):
         if field in spec:
             re.compile(spec[field])
     for pattern in spec.get("prefix", []):

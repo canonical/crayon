@@ -195,22 +195,6 @@ print(module.next_line(sys.argv[2]))
 ' "$CRAYON" "$1"
 }
 
-# The seq of the last `steps-planned` event of a unit.
-last_plan_seq() {
-    python3 -c '
-import json, sys
-seq = None
-for line in open(sys.argv[1], encoding="utf-8"):
-    line = line.strip()
-    if not line:
-        continue
-    event = json.loads(line)
-    if event.get("kind") == "steps-planned":
-        seq = event.get("seq")
-print("null" if seq is None else seq)
-' ".crayon/units/$1/ledger.jsonl"
-}
-
 # The last event of a kind, as one JSON line.
 last_event() {
     python3 -c '
@@ -238,41 +222,6 @@ events = [event for event, _ in records]
 plan = module._last_of(events, "steps-planned")
 print(json.dumps(module.unresolved_steps(events, plan)))
 ' "$CRAYON" "$1"
-}
-
-# The walk-protocol recipe (D-15), as the skill runs it: one redirection, one
-# status, and NO digest anywhere. The tool computes both.
-record_step() {
-    local unit="$1" step="$2" seq="$3" verdict="$4" text="$5"
-    # The mode the evidence CLAIMS. It defaults to `agent` because most fixture
-    # steps are declared that way, but it is a parameter because contract 5.6's
-    # `evidence_mismatch` gate compares it against the mode the PLAN declares —
-    # a fixture that hardcoded one mode for every step was recording a `ta`
-    # step as `agent` and nothing said so (WR-02).
-    local mode="${6:-agent}"
-    local ws=".crayon/staging/${unit}/scratch/evidence"
-    mkdir -p "$ws"
-    printf '%b' "$text" >"$ws/${step}.out"
-    printf '{"verdict": "%s", "exit_code": 0, "mode": "%s", "command": "echo %s"}\n' \
-        "$verdict" "$mode" "$step" >"$ws/${step}.json"
-    "$CRAYON" step "$unit" "$step" --steps-seq "$seq" \
-        --evidence-file "$ws/${step}.json" --output-file "$ws/${step}.out"
-}
-
-# A skipped step: a reason and no output file at all (D-03).
-skip_step() {
-    local unit="$1" step="$2" seq="$3" reason="$4"
-    local ws=".crayon/staging/${unit}/scratch/evidence"
-    mkdir -p "$ws"
-    python3 -c '
-import json, sys
-json.dump(
-    {"verdict": "skipped", "exit_code": 0, "mode": "ta", "reason": sys.argv[2]},
-    open(sys.argv[1], "w", encoding="utf-8"),
-)
-' "$ws/${step}.json" "$reason"
-    "$CRAYON" step "$unit" "$step" --steps-seq "$seq" \
-        --evidence-file "$ws/${step}.json"
 }
 
 THREE_STEPS='[{"id":"one","text":"install the tool","mode":"agent","stateful":false},

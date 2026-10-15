@@ -204,6 +204,90 @@ scenario_accepted() {
     rec accepted accept_again_json review "$UNIT" --verdict accept --note "Accurate and complete." --json
 }
 
+# An accept on a page the docs tree already links, with nothing left open: the
+# closing turn reads the handover from `show --json` after the accept.
+scenario_closing_linked() {
+    drafted
+    python3 -c '
+import sys
+path = sys.argv[1]
+text = open(path, encoding="utf-8").read()
+text = text.replace(":maxdepth: 1\n", ":maxdepth: 1\n\nreference/config\n", 1)
+open(path, "w", encoding="utf-8").write(text)
+' docs/index.md
+    git add docs/index.md
+    git commit -q -m "list the configuration reference in the toctree"
+    rec closing_linked show_json show "$UNIT" --json
+    rec closing_linked summary summary "$UNIT"
+    rec closing_linked accept review "$UNIT" --verdict accept
+    rec closing_linked handover_json show "$UNIT" --json
+    snap closing_linked
+}
+
+# An accept on a page listed only by a relative toctree entry: docs/index.md lists
+# reference/index, and docs/reference/index.md lists the page as plain `config`.
+# Neither `reference/config` nor `config.md` appears anywhere, yet the page is linked.
+scenario_closing_nested() {
+    drafted
+    python3 -c '
+import sys
+path = sys.argv[1]
+text = open(path, encoding="utf-8").read()
+text = text.replace(":maxdepth: 1\n", ":maxdepth: 1\n\nreference/index\n", 1)
+open(path, "w", encoding="utf-8").write(text)
+' docs/index.md
+    printf '# Reference\n\n```{toctree}\n:maxdepth: 1\n\nconfig\n```\n' >docs/reference/index.md
+    git add docs/index.md docs/reference/index.md
+    git commit -q -m "list the reference section and the configuration page in it"
+    rec closing_nested show_json show "$UNIT" --json
+    rec closing_nested summary summary "$UNIT"
+    rec closing_nested accept review "$UNIT" --verdict accept
+    rec closing_nested handover_json show "$UNIT" --json
+    snap closing_nested
+}
+
+# An accept carrying the reviewer's own words, on a page no toctree lists yet:
+# nothing is open on the record, so what is open comes from the history.
+scenario_closing() {
+    drafted
+    rec closing show_json show "$UNIT" --json
+    rec closing summary summary "$UNIT"
+    rec closing accept review "$UNIT" --verdict accept \
+        --note "The max_retries default really is 3, so leave that line."
+    rec closing handover_json show "$UNIT" --json
+    snap closing
+}
+
+# The page shows plain `toyq init`: the deviation the walk recorded (it needed
+# --force-dir) is genuinely absent from it, so the closure's question is real.
+INSTALL_PAGE='# Install toyq\n\nInstall toyq from the checkout:\n\n```console\n$ python3 -m pip install /srv/toyq\n```\n\nCreate the configuration:\n\n```console\n$ toyq init\n```\n\nQueue and run a first job:\n\n```console\n$ toyq add "echo hi" && toyq run --once\n```\n'
+
+# A walked how-to accepted with one deviated step, one skipped step and one
+# request the reviewer judged without a redraft: four things open at handover
+# once the reader's arrival is counted.
+scenario_closing_walk() {
+    base
+    declare_install
+    printf '%s' '[{"id":"install","text":"Install toyq from the checkout: python3 -m pip install /srv/toyq","mode":"agent","stateful":false},{"id":"init","text":"Create the configuration: toyq init","mode":"agent","stateful":false},{"id":"first-job","text":"Queue and run a job: toyq add \"echo hi\" && toyq run --once","mode":"ta","stateful":false}]' |
+        "$CRAYON" plan-steps install --steps-file - >/dev/null 2>&1
+    local seq request
+    seq=$(last_plan_seq install)
+    record_step install install "$seq" pass "Successfully installed toyq\n" >/dev/null 2>&1
+    record_step install init "$seq" deviated "Created toyq.toml\n" agent \
+        "toyq init needed --force-dir on a fresh checkout" >/dev/null 2>&1
+    skip_step install first-job "$seq" "no network in CI" >/dev/null 2>&1
+    stage_draft install how-to/install.md "$INSTALL_PAGE"
+    "$CRAYON" draft install "$(draft_path install how-to/install.md)" >/dev/null 2>&1
+    "$CRAYON" review install --verdict fix \
+        --note "Say which Python version toyq needs." >/dev/null 2>&1
+    request=$(tail -n 1 .crayon/units/install/ledger.jsonl | json_field seq)
+    rec closing_walk show_json show install --json
+    rec closing_walk accept review install --verdict accept --resolves "$request"
+    rec closing_walk handover_json show install --json
+    rec closing_walk summary_md summary install --md
+    snap closing_walk
+}
+
 scenario_edited() {
     drafted
     printf '\nDefaults apply when a setting appears nowhere else.\n' >>"$PAGE"
@@ -256,14 +340,19 @@ scenario_retired() {
     snap retired
 }
 
-scenario_walk() {
-    base
+# declare_install : the how-to unit `install`, declared and signed off.
+declare_install() {
     printf '%s\n' '# Plan' '' 'Install toyq and queue a first job.' |
         "$CRAYON" unit new install --intent how-to \
             --audience "operators installing toyq for the first time" \
             --title "Install toyq" --target how-to/install.md \
             --source README.md --body-file - >/dev/null 2>&1
     "$CRAYON" signoff install >/dev/null 2>&1
+}
+
+scenario_walk() {
+    base
+    declare_install
     printf '%s' '[{"id":"install","text":"Install toyq from the checkout: python3 -m pip install /srv/toyq","mode":"agent","stateful":true},{"id":"init","text":"Create the configuration: toyq init","mode":"agent","stateful":true},{"id":"first-job","text":"Queue and run a job: toyq add \"echo hi\" && toyq run --once","mode":"agent","stateful":true}]' |
         "$CRAYON" plan-steps install --steps-file - >/dev/null 2>&1
     rec walk show_json show install --json
@@ -346,7 +435,7 @@ scenario_context() {
     snap context_staged
     stage_context glossary.md "$GLOSSARY"
     stage_context structure.md "$STRUCTURE"
-    "$CRAYON" context record --note "toyq context" >/dev/null 2>&1
+    rec context_recorded record context record --note "toyq context"
     rec context_recorded show_json context show --json
     snap context_recorded
     rec_file context_recorded .crayon/context/doc-style.md
@@ -354,7 +443,8 @@ scenario_context() {
     rec_file context_recorded .crayon/context/structure.md
 }
 
-for scenario in declared signed drafted accepted edited missing target_exists stale \
-    retired walk crashed diverged no_material docs_outside context; do
+for scenario in declared signed drafted accepted closing_linked closing_nested closing closing_walk \
+    edited missing target_exists stale retired walk crashed diverged no_material \
+    docs_outside context; do
     ("scenario_$scenario"; cleanup)
 done

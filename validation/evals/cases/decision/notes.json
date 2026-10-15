@@ -1,0 +1,427 @@
+{
+  "lane": "B",
+  "_comment": "Notes are the author's words, never the agent's (D-06, JUDG-01): a fix given bare is asked what the next draft should change, never offered note text, and a note is recorded exactly as the author typed it, as the whole quoted --note or the whole stdin of --note-file -; words carrying a backtick or a $ are single-quoted, never double-quoted. The review cases replay a drafted review in record mode; the write case replays an unsteered redraft and the author's answer to the STOP.",
+  "cases": [
+    {
+      "id": "B-36",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-06, EVAL-02 empty edge: a bare fix has no note yet, so the reviewer is asked what the next draft should change and offered no text of the agent's",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary",
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Fix."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bcrayon\\s+review\\b"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_NOTE"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "What should the next draft change?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "I'll use: \"Explain the precedence rule.\" Shall I record it?"
+        }
+      ]
+    },
+    {
+      "id": "B-37",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "JUDG-01, EVAL-02 encoding edge: the fix note is the reviewer's answer, word for word, with nothing added inside the quotes",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary",
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Fix."
+        },
+        {
+          "assistant": "What should the next draft change?"
+        },
+        {
+          "user": "Say what happens when max_retries is negative."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "^(?:crayon\\s+review\\s+[\\\"']?cfg[\\\"']?\\s+--verdict\\s+[\\\"']?fix[\\\"']?\\s+--note(?:=|\\s+)(?:'Say what happens when max_retries is negative\\.'|\"Say what happens when max_retries is negative\\.\")|printf\\s+(?:'%s(?:\\\\n)?'|\\\"%s(?:\\\\n)?\\\")\\s+(?:'Say what happens when max_retries is negative\\.'|\"Say what happens when max_retries is negative\\.\")\\s*\\|\\s*crayon\\s+review\\s+[\\\"']?cfg[\\\"']?\\s+--verdict\\s+[\\\"']?fix[\\\"']?\\s+--note-file\\s+-)(?:\\s+--json)?$"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict fix --note 'Say what happens when max_retries is negative.'"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict fix --note 'Explain the behaviour for negative max_retries values.'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-38",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-07: finding numbers do not reach the next drafting session, so a fix that cites them is restated with the reviewer and asked again, never recorded as the numbers",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "drafted/summary",
+        {
+          "assistant": "## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### structure-fit\n- (none)\n\n### clarity\n- F-3 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 3 total — 1 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Fix F-1 and F-2."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bcrayon\\s+review\\b"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)negative"
+        },
+        {
+          "kind": "text_re",
+          "re": "TOYQ_RETRY_BACKOFF|type"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "The numbers will not reach the next drafting session, so here are the two findings:\n\n- F-1: the page says `max_retries` must be 0 or more, but not that a negative value stops toyq with an error.\n- F-2: the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails.\n\nWhat should the next draft do about each of them?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict fix --note 'Apply F-1 and F-2.'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-39",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "JUDG-01, D-09: the words beyond an accept are its note, word for word, never a summary of them",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary",
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept. The table matches what we ship."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "^(?:crayon\\s+review\\s+[\\\"']?cfg[\\\"']?\\s+--verdict\\s+[\\\"']?accept[\\\"']?\\s+--note(?:=|\\s+)(?:'The table matches what we ship\\.'|\"The table matches what we ship\\.\")|printf\\s+(?:'%s(?:\\\\n)?'|\\\"%s(?:\\\\n)?\\\")\\s+(?:'The table matches what we ship\\.'|\"The table matches what we ship\\.\")\\s*\\|\\s*crayon\\s+review\\s+[\\\"']?cfg[\\\"']?\\s+--verdict\\s+[\\\"']?accept[\\\"']?\\s+--note-file\\s+-)(?:\\s+--json)?$"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict accept --note 'The table matches what we ship.'"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict accept --note 'Table verified against the shipped configuration.'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-55",
+      "skill": "crayon-write",
+      "ask": "cfg - draft it again, please.",
+      "why": "JUDG-01, D-06, EVAL-02 write side: after an unsteered STOP the author named the change, so their answer is the steering note, verbatim, recorded with crayon steer; a paraphrase or an override fails",
+      "history": [
+        "tool/version_json",
+        "drafted/show_json",
+        {
+          "call": {
+            "name": "Write",
+            "arguments": {
+              "file_path": ".crayon/staging/cfg/draft/reference/config.md",
+              "content": "# Configuration reference\n\nSettings come from defaults.\n"
+            }
+          },
+          "result": "File written: .crayon/staging/cfg/draft/reference/config.md"
+        },
+        "drafted/redraft_json",
+        {
+          "assistant": "Nothing has been recorded since the last draft. What should change in this redraft?"
+        },
+        {
+          "user": "Put the precedence rule before the table."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "^(?:crayon\\s+steer\\s+[\"']?cfg[\"']?\\s+--note(?:=|\\s+)(?:'Put the precedence rule before the table\\.'|\"Put the precedence rule before the table\\.\")|printf\\s+(?:'%s(?:\\\\n)?'|\"%s(?:\\\\n)?\")\\s+(?:'Put the precedence rule before the table\\.'|\"Put the precedence rule before the table\\.\")\\s*\\|\\s*crayon\\s+steer\\s+[\"']?cfg[\"']?\\s+--note-file\\s+-)(?:\\s+--json)?$"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--unsteered-reason"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon steer cfg --note 'Put the precedence rule before the table.'"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon steer cfg --note 'Move the precedence rule above the settings table so readers see it first.'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-58",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "JUDG-01, CR-01 quoting edge: the author's words carry a backtick span and a $ variable, so they go inside single quotes (or through printf '%s' into --note-file -); in double quotes the backticks run a command and the variable expands, and the record holds words the author never typed",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary",
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Fix."
+        },
+        {
+          "assistant": "What should the next draft change?"
+        },
+        {
+          "user": "Say that `TOYQ_MAX_RETRIES=0` turns retries off, and that $TOYQ_MAX_RETRIES beats toyq.toml."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "^(?:crayon\\s+review\\s+[\\\"']?cfg[\\\"']?\\s+--verdict\\s+[\\\"']?fix[\\\"']?\\s+--note(?:=|\\s+)'Say\\ that\\ `TOYQ_MAX_RETRIES=0`\\ turns\\ retries\\ off,\\ and\\ that\\ \\$TOYQ_MAX_RETRIES\\ beats\\ toyq\\.toml\\.'|printf\\s+'%s'\\s+'Say\\ that\\ `TOYQ_MAX_RETRIES=0`\\ turns\\ retries\\ off,\\ and\\ that\\ \\$TOYQ_MAX_RETRIES\\ beats\\ toyq\\.toml\\.'\\s*\\|\\s*crayon\\s+review\\s+[\\\"']?cfg[\\\"']?\\s+--verdict\\s+[\\\"']?fix[\\\"']?\\s+--note-file\\s+-)(?:\\s+--json)?$"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict fix --note 'Say that `TOYQ_MAX_RETRIES=0` turns retries off, and that $TOYQ_MAX_RETRIES beats toyq.toml.'"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict fix --note \"Say that `TOYQ_MAX_RETRIES=0` turns retries off, and that $TOYQ_MAX_RETRIES beats toyq.toml.\""
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

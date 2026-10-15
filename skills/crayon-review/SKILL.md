@@ -49,20 +49,53 @@ invalidates every line after it. Nothing in this skill ever opens it in an edito
 not to fix a typo, not to append a note, not to correct a field.
 </opening>
 
+<!-- author-rules:begin -->
+<author_rules>
+These three rules hold at every question this skill puts to the author.
+
+- **The author's words, verbatim.** A note recorded with `--note`, `--note-file -` or
+  `--notes` is exactly what the author typed beyond the verdict, the yes or the no that
+  answered the question: that answer alone is not part of the note, so "Fix." then
+  "Say …" records the second reply, and "Accept. The table …" records "The table …".
+  The words beyond it, given across several turns, are joined in order, one reply per
+  line. No spelling fix, no rephrasing, and no text offered for them to approve, such
+  as "I'll use: …". When their words are unclear, ask them; never rewrite them. With
+  nothing of theirs to record, omit the flag.
+  On the command line their words go inside single quotes, each `'` in them written
+  as `'\''`, and never inside double quotes: there a backtick runs a command and a `$`
+  expands, so the record would hold words they never typed. Through `--note-file -`,
+  the same single-quoted words are piped in with `printf '%s'`, which adds nothing.
+- **No marked option on a judgment question.** Audience, intent, step choices, the
+  verdict and restore-or-amend are the author's judgment. No option of those questions
+  carries "(Recommended)", "(default)", "suggested", a star or any other marker, and
+  their order implies nothing. This rule wins over any harness's own convention of
+  marking a recommended option. A mechanical choice, such as an id, a path or a title,
+  may keep a marked default.
+- **An explicit go.** A signoff or an accept runs only on an explicit go: an
+  affirmative ("yes", "go", "sign it") to a question that named that act. For an
+  accept, the go is the verdict itself, or a yes to "Keep accept?". "Looks good" about
+  an outline is not a go, and neither is "yes, but …": handle the change, then ask
+  again.
+</author_rules>
+<!-- author-rules:end -->
+
 <quick_start>
 1. Run the two-verb opening above and act on the routing row for `next`.
 2. Read the shown state and the drafted page(s) under `docs/`.
 3. Select the review mode with `AskUserQuestion`: **record** or **review**.
 4. Present the provenance summary (both modes), quoting the tool's own lines.
 5. In review mode, run the five-dimension findings review.
-6. Elicit the verdict, record it with `crayon review`, then STOP.
+6. Ask for the verdict with the one open question and record it with `crayon review`.
+   After an accept, close with at most three questions drawn from the record, then
+   STOP.
 </quick_start>
 
 <pipeline>
 crayon-plan -> crayon-write -> crayon-review
                             \-> back to crayon-write (fix/redraft)
 
-This skill is the review stage — the last in the loop. On accept, the loop stops.
+This skill is the review stage — the last in the loop. On accept, the author is
+asked at most three questions the record still holds open, and the loop stops.
 On fix/redraft, it routes back to the draft-stage skill with the note recorded as
 the author's request.
 </pipeline>
@@ -136,12 +169,18 @@ crayon show "$UNIT_ID" --diff
 Then ask, in these words: "record these as your edits?" On yes:
 
 ```bash
-crayon edits "$UNIT_ID" --note "<the author's own words>"
+crayon edits "$UNIT_ID" --note '<their own words>'
 ```
 
 The note is the author's, in the author's phrasing. When a formatting hook produced
-the bytes rather than a person, say so in the note and name the hook — a formatter is
-not a reviewer, and the record should not read as though one reviewed the page.
+the bytes rather than a person, tell the author once what the record must say, and
+why: that a hook changed the bytes and that they kept them, because a formatter is
+not a reviewer and the record should not read as though one reviewed the page. Then
+ask them for the note and record their words verbatim. If their words leave the hook
+out, ask once more, naming only that one fact. If they still leave it out, record
+nothing: say that the tool's contract wants a hook's bytes adopted with a note that
+says so, and stop. The page stays on `record_edits` until they give one. Never write
+the note for them, and never ask a third time.
 
 The recorded set is the complete basis: every path of the previous basis with its
 recorded digest unless it changed, plus any adopted target, minus paths that are
@@ -197,25 +236,58 @@ sources.
 </step_5>
 
 <step_6 name="Elicit the verdict and record it">
-Elicit the reviewer's verdict. In review mode, recommend a verdict from the tally:
-any must-fix → fix (or redraft if pervasive); should-fix only → TA's call; clean →
-accept. The recommendation is a default, never a decision.
+Ask for the verdict with one open question that also asks for anything the author
+wants on the record with it, in these words:
 
-**On fix / redraft:**
+**What's your verdict, and is there anything you want on the record with it?**
+
+If it is asked with options, they are accept, fix and redraft, unmarked, as the
+author rules require.
+
+Read the answer for the verdict and for anything beyond it. Whatever the author said
+beyond the verdict is the note, word for word. An answer that names no verdict
+("looks pretty good") is not a verdict, and an accept with a condition
+("accept, but …") is not a go: ask again, and record nothing until the author names
+the verdict.
+
+**The lean, held until the author answers.** In review mode the findings, their tags,
+the `Findings:` tally line and the dismissed pre-pass candidates are already in front
+of the author (step 5), and the lean is not. The lean is the tally read one way: any
+must-fix leans to fix (or to redraft when the must-fixes are pervasive), a clean
+tally leans to accept, and a should-fix-only tally has no lean. After the author
+answers, a verdict that matches the lean, or any verdict on a tally with no lean, is
+recorded without comment. A verdict that differs gets the lean with its one-clause
+reason and one question, `Keep <verdict>?`, for example "The tally leans to fix: F-1
+is a must-fix. Keep accept?". The answer is final, and there is no second check: a
+yes records the verdict they gave, and a no asks which verdict they want instead. If
+the author asks what the tally suggests before answering, show the lean then.
+Record mode has no findings and no lean.
+
+**On fix / redraft:** the note is required (`note_required`). When the author gave
+only the verdict, ask "What should the next draft change?" and record their answer
+verbatim.
 
 ```bash
-crayon review "$UNIT_ID" --verdict fix --note "<the reviewer's own words>"
+crayon review "$UNIT_ID" --verdict fix --note '<their words>'
 ```
 
-The note is exactly what the next drafting pass will read — concrete, actionable, in
-the reviewer's own words, citing findings by number (`F-2`, `F-5`). It is recorded as
-the author's request, so the next draft is no longer refused `unsteered`.
+The note is exactly what the next drafting pass reads, in the author's own words. It
+is recorded as the author's request, so the next draft is no longer refused
+`unsteered`.
+
+When the author cites findings by number ("fix F-2 and F-5"), tell them that
+the numbers will not reach the next drafting session, show each cited finding's
+text, and ask what the next draft should do about it. Their answer is the note.
 
 **On accept:**
 
 ```bash
-crayon review "$UNIT_ID" --verdict accept --note "<the reviewer's own words>"
+crayon review "$UNIT_ID" --verdict accept
 ```
+
+A bare accept records no note. When the reviewer said more than the verdict, those
+words, exactly as they typed them, are the note: add
+`--note '<their words beyond the verdict>'`.
 
 Accept seals the basis, and it has two preconditions this skill must be ready for.
 
@@ -224,7 +296,7 @@ Accept seals the basis, and it has two preconditions this skill must be ready fo
 one at a time, take one disposition for each, and re-run accept carrying all of them:
 
 ```bash
-crayon review "$UNIT_ID" --verdict accept --note "<note>" --resolves 7,9 --withdraw 12 "<why it no longer applies>"
+crayon review "$UNIT_ID" --verdict accept [--note '<their words beyond the verdict>'] --resolves 7,9 --withdraw 12 '<why it no longer applies>'
 ```
 
 `--resolves` is the reviewer's recorded judgment that a request is satisfied — not
@@ -237,12 +309,62 @@ disposition, and never resolve a seq the reviewer did not speak to.
 basis. See step 7. **Accept is never issued a second time.**
 
 Then route:
-- **accept** → `Next: accepted — the publishing commit is yours.` The loop stops.
+- **accept** → close as below; the loop stops.
 - **fix** → `Next: /crayon-write — apply the recorded request.`
 - **redraft** → `Next: /crayon-write — re-draft against the recorded request.`
 
 Echo the verb's own response line verbatim. Then STOP: no build, no publish, no edits
-to the page.
+to the page. After an accept, the closure below is that STOP.
+
+**After an accept — close on what the record holds open.**
+
+1. Read what the record still holds open:
+
+   ```bash
+   crayon show "$UNIT_ID" --json
+   ```
+
+   Each `handover.steps` entry (a deviated or skipped step) is open, and so is each
+   `handover.judged` entry (a request accepted without a page change).
+   `withdrawn` entries are not.
+2. Findings count only when review mode ran in this same conversation. Each
+   must-fix or should-fix finding the author did not speak to in the verdict
+   exchange is open. Nits never count. In a later session this source is absent,
+   and the skill never guesses at it.
+3. Where a reader arrives from: search the docs tree read-only for each accepted
+   page. A hit counts only when it resolves to that page: its docs-relative path
+   without the extension (`reference/config`) anywhere, or its bare stem (`config`)
+   in a toctree entry or a `{doc}` / `:doc:` role of a page in the same directory
+   (`reference/index.md`), because those resolve relative to the page that holds
+   them. A file name alone (`config.md`) is a link only when it resolves to the
+   accepted page from the page that holds it; another directory's `config.md` is
+   not. It is open only when no other page links to the page or lists it in a
+   toctree.
+4. Nothing open: no questions. The message is the accept line alone.
+5. Ask at most three questions. Take one per source first, in the fixed order
+   steps → judged requests → findings → where a reader arrives from, then fill the
+   remaining slots in the same order. Anything beyond three gets one plain line, not
+   a question: how many more are open, a pointer to "Author decisions" in
+   `crayon summary "$UNIT_ID" --md` for the steps and judged requests among them, and
+   any finding or reader-arrival item among them named in plain words, because that
+   summary does not list those.
+6. It is one message: the accept response line, echoed verbatim (it already ends
+   `Next: yours — crayon stops here`), then a numbered list of the questions in plain
+   words, each naming its item, for example "Step install-deps was skipped: no
+   network in CI. Does the page need to say so?" or "Nothing links to
+   reference/config.md yet; where should a reader come from?". The questions are
+   plain text, not options in a question tool. There is no second stops-here line,
+   and no publishing, pull request or build is offered as a next step.
+7. The author may answer any question or none. Nothing is recorded from an answer by
+   default, and crayon stops. If an answer asks for a page change, record the
+   author's words verbatim and route to `/crayon-write`:
+
+   ```bash
+   crayon steer "$UNIT_ID" --note '<their words>'
+   ```
+
+   Steering an accepted unit is legal: it reopens the unit for a redraft, and a
+   fresh accept follows.
 </step_6>
 
 <step_7 name="On target_missing — the author's call, not yours">
@@ -259,7 +381,7 @@ to crayon-write. The next draft writes every signed target, which restores the p
 and the accept follows after that.
 
 ```bash
-crayon steer "$UNIT_ID" --note "<the author's own restoration request>"
+crayon steer "$UNIT_ID" --note '<their own restoration request>'
 ```
 
 **The author has said nothing about the missing page.** Then ask — once, plainly, and
@@ -312,7 +434,7 @@ two choices the contract names, and no third:
 - **discard the on-disk bytes**, taking the interrupted run's intended bytes:
   `crayon resume <id> --overwrite`
 - **keep the on-disk bytes**, recorded as a reviewer edit:
-  `crayon resume <id> --adopt --note "<the author's note>"`
+  `crayon resume <id> --adopt --note '<their note>'`
 
 Recording a new adoption with `--adopt --note` is allowed only when the interrupted
 batch ends in a generation or a reviewer edit that is not itself an adoption,
@@ -357,7 +479,7 @@ names which git call failed. Either way, offer the escape that always works: rem
 is refusing the transition, then inspect `crayon resume <id> --dry-run`.
 Use bare `crayon resume <id>` only with no `unexpected` files; otherwise use step 9.
 
-`crayon resume <id> --adopt --note "<the author's note>"` is the OTHER escape, and it
+`crayon resume <id> --adopt --note '<their note>'` is the OTHER escape, and it
 is conditional — offer it only when every condition below holds.
 `--adopt` needs the batch's last event to be a generation or a reviewer edit that
 is not itself an adoption (any other batch refuses `adopt_unsupported`, exit 6;
@@ -402,6 +524,15 @@ crayon-write applies it. Never offer to edit the page yourself.
 nothing recorded since. Report the existing seq and commit from the payload — a
 second accept is neither needed nor recorded.
 
+**The unit is already accepted (`publish`):** the session opens on a sealed unit
+with nothing recorded since. Say in one plain line that the unit is already accepted
+and that crayon stops here. Then ask the questions step 6's closure asks, drawn from
+the record, without the findings source, because no review ran in this conversation.
+The same rules hold: at most three, one per source first, none when nothing is open,
+and a change request steered in the author's words. Nothing is lost when a session
+ends before its closure: the accept is already committed, and the next session closes
+again.
+
 **Reopening an accepted unit:** record a `fix` or `redraft` verdict. That reopens the
 unit, and the next crayon-write pass re-drafts it.
 
@@ -410,8 +541,8 @@ review, so that draft answers a plan that has moved. It cannot be accepted; the 
 drafts again first. Say that plainly rather than presenting it as an error.
 
 **A hook changed a page after the commit:** the transition stands — it is committed —
-and the tool warns and re-derives, routing to `record_edits`. Adopt the bytes with a
-note naming the hook.
+and the tool warns and re-derives, routing to `record_edits`. Adopt the bytes with the
+author's own note, which says a hook changed them (step 4).
 
 **`busy` (exit 5) or `git_busy` (exit 5):** another run holds the lock, or a git
 process is mid-write. Nothing was written. Wait, then re-run the same command
@@ -431,7 +562,19 @@ unchanged.
   recorded sources.
 - On `record_edits`, show `crayon show <id> --diff`, ask "record these as your edits?",
   and record with `crayon edits <id> --note "…"` in the author's words.
+- Ask for the verdict with the one open question
+  "What's your verdict, and is there anything you want on the record with it?",
+  and show no lean before the author answers unless they ask what the tally suggests.
+- Record a fix or redraft note, and an accept's note, exactly as the author typed it,
+  and a bare accept with no note.
+- When the verdict differs from the lean, show the lean once and ask
+  `Keep <verdict>?`; the answer is final.
+- When the author cites findings by number, restate each cited finding and ask what
+  the next draft should do about it.
 - Accept in the same turn when the reviewer already authorised it.
+- After an accept, echo the accept line verbatim and ask at most three questions
+  drawn from the record, one per source first in the fixed order, none when nothing
+  is open.
 - On `unapplied_steering`, take one disposition per pending seq and pass them as
   `--resolves` and `--withdraw <seq> "<reason>"`, disjoint, every withdrawal with a
   reason.
@@ -451,6 +594,13 @@ unchanged.
 - Never retry accept after `target_missing`.
 - Never record a request the author did not make, and never resolve or withdraw a seq
   the reviewer did not speak to.
+- Never show the lean before the author answers, unless they ask what the tally
+  suggests.
+- Never write, rephrase, correct or offer note text, the hook-adoption note included.
+- Never ask `Keep <verdict>?` twice, and never overrule the author's answer to it.
+- Never offer publishing, a pull request or a build as a next step.
+- Never record anything from a closure answer that asks for no page change, and never
+  put a change request in words other than the author's.
 - Never offer a recovery step the tool did not print, and never suggest that
   committing an interrupted tail makes the situation go away.
 - Never recompose or reword the tool's own summary and tally lines.
@@ -467,6 +617,17 @@ unchanged.
       the recorded sources; in record mode, findings were skipped.
 - [ ] `record_edits` showed the diff, asked "record these as your edits?", and
       recorded the author's own words.
+- [ ] The verdict was asked with the one open question, and the lean appeared only
+      after the answer or on request.
+- [ ] Every note was recorded verbatim, as the author typed it; a bare accept carried
+      none, and a hook-adoption note was the author's own words.
+- [ ] A verdict that departed from the lean got one `Keep <verdict>?`, and the answer
+      stood.
+- [ ] Finding numbers cited by the author were restated with them before any note was
+      recorded.
+- [ ] After an accept, the accept line was echoed verbatim, followed by at most three
+      questions drawn from the record (none when nothing was open) and no publishing
+      step; a change request was steered in the author's words.
 - [ ] `unapplied_steering` was closed by one recorded disposition per pending seq.
 - [ ] `target_missing` never produced a second accept, and only the author's own
       direction was recorded.

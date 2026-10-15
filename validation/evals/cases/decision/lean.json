@@ -1,0 +1,448 @@
+{
+  "lane": "B",
+  "_comment": "The verdict and the judgment questions are the author's (D-10 to D-13): no option carries a marker, the lean is held until the author gives a verdict, and a verdict that departs from it gets the lean once with one Keep question, whose answer is final.",
+  "cases": [
+    {
+      "id": "B-40",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-13, EVAL-04: the verdict question carries no marked option and offers no publishing step",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary"
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@MARKER"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--verdict"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "What's your verdict, and is there anything you want on the record with it?",
+                    "options": [
+                      {
+                        "label": "accept"
+                      },
+                      {
+                        "label": "fix"
+                      },
+                      {
+                        "label": "redraft"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "What's your verdict, and is there anything you want on the record with it?",
+                    "options": [
+                      {
+                        "label": "accept (Recommended)",
+                        "description": "Seals it; the publishing commit is yours."
+                      },
+                      {
+                        "label": "fix"
+                      },
+                      {
+                        "label": "redraft"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-41",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-10, JUDG-03: in review mode the findings and the tally come before the verdict, and the lean does not",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "drafted/summary"
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "Findings: \\d+ total"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i:recommended\\s+verdict|\\(recommended\\)|\\bI(?:'d|’d|\\s+would)\\s+(?:go\\s+with|recommend|suggest)|\\bmy\\s+lean\\b|\\bthe\\s+lean\\b|\\bleans\\s+to(?:wards)?\\b)"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### structure-fit\n- (none)\n\n### clarity\n- F-3 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 3 total — 1 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### structure-fit\n- (none)\n\n### clarity\n- F-3 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 3 total — 1 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nRecommended verdict: fix — one must-fix.\n\nWhat's your verdict?"
+        }
+      ]
+    },
+    {
+      "id": "B-42",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-11: an accept that departs from the lean gets the lean with its reason and one Keep question, and nothing is recorded yet",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "drafted/summary",
+        {
+          "assistant": "## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### structure-fit\n- (none)\n\n### clarity\n- F-3 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 3 total — 1 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\bkeep accept\\?"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\bfix\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--verdict\\s+accept"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "The tally leans to fix: F-1 is a must-fix. Keep accept?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict accept"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-43",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-11: asked what the tally suggests before giving a verdict, the reviewer is shown the lean then, and the verdict is still theirs",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "drafted/summary",
+        {
+          "assistant": "## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### structure-fit\n- (none)\n\n### clarity\n- F-3 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 3 total — 1 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "What does the tally suggest?"
+        }
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\blean(s|ing)?\\s+(is\\s+|to(wards?)?\\s+)?(a\\s+)?fix\\b|\\btally\\b[^.?\\n]*\\b(suggests?|points?\\s+to|says?|favou?rs?)\\s+(a\\s+)?fix\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bcrayon\\s+review\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "The tally leans to fix: F-1 is a must-fix. What's your verdict?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "That is your call. What's your verdict?"
+        }
+      ]
+    },
+    {
+      "id": "B-51",
+      "skill": "crayon-plan",
+      "ask": "I want a page about how toyq retries failed jobs.",
+      "history": [
+        "tool/version_json",
+        "context_recorded/show_json",
+        {
+          "assistant": "What should a reader be able to do after reading this page?"
+        },
+        {
+          "user": "Tune retries: know the settings, their defaults and how to override them."
+        }
+      ],
+      "why": "D-12, D-13, EVAL-04: the audience is the author's judgment, so it is asked open-ended and no option carries a marker",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@MARKER"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "Who is the page for?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "Who is the page for?",
+                    "options": [
+                      {
+                        "label": "Operators running toyq on servers (Recommended)"
+                      },
+                      {
+                        "label": "Developers"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-52",
+      "skill": "crayon-plan",
+      "ask": "I want a page about how toyq retries failed jobs.",
+      "history": [
+        "tool/version_json",
+        "context_recorded/show_json",
+        {
+          "assistant": "What should a reader be able to do after reading this page?"
+        },
+        {
+          "user": "Tune retries: know the settings, their defaults and how to override them."
+        },
+        {
+          "assistant": "Who is the page for?"
+        },
+        {
+          "user": "Operators running toyq on servers."
+        },
+        {
+          "assistant": "Should this page be something to look settings up in, or steps for changing how retries behave?"
+        },
+        {
+          "user": "Not sure. What do you think?"
+        }
+      ],
+      "why": "D-12, D-13, EVAL-04: asked for its view on the direction, the agent gives the evidence it saw and leaves the choice to the author, with no marked option",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@MARKER"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Read",
+              "arguments": {
+                "file_path": ".crayon/context/structure.md"
+              }
+            }
+          ]
+        },
+        {
+          "content": "Here is what I saw: src/toyq/config.py defines max_retries and retry_backoff_seconds with their defaults and TOYQ_* overrides, and structure.md puts settings under docs/reference/, where readers look things up. Steps for changing behaviour belong under docs/how-to/. Which should this page be: a reference page or a how-to?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "What should this page be?",
+                    "options": [
+                      {
+                        "label": "Reference (Recommended)"
+                      },
+                      {
+                        "label": "How-to"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,390 @@
+{
+  "lane": "B",
+  "_comment": "The explicit go (D-15), pinned in both directions (D-18): a signoff or an accept runs only on an affirmative to a question that named the act, and each no-go case is paired with a go case in which the verb must run, so an agent that never acts passes none of them.",
+  "cases": [
+    {
+      "id": "B-32",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-09, D-15: the reviewer answered the verdict question with a bare accept, so the accept runs, and it carries no note the reviewer never gave",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary",
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "^crayon\\s+review\\s+[\"']?cfg[\"']?\\s+--verdict\\s+[\"']?accept[\"']?(\\s+--json)?$"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--note"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict accept"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict accept --note 'Accepted.'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-33",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-15: an answer that names no verdict is not a verdict, so nothing is recorded and the verdict is asked again",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary",
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Looks pretty good overall."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--verdict"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "That reads as a view of the page rather than a verdict. Is it accept, fix or redraft?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict accept"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-34",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-15: an accept with a condition is not a go, so nothing is recorded until the reviewer settles the condition",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: record"
+        },
+        "drafted/summary",
+        {
+          "assistant": "What's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept, but the backoff default looks wrong to me."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bcrayon\\s+review\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "You have a doubt about the backoff default. Do you want to accept the page as it is, or record a fix that says what the next draft should change about it?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict accept --note 'but the backoff default looks wrong to me.'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-35",
+      "skill": "crayon-review",
+      "ask": "cfg",
+      "opening": "drafted",
+      "why": "D-11, D-15: a yes to Keep accept? is the go, so the accept runs bare, with no second check and no note the reviewer never gave",
+      "history": [
+        {
+          "call": {
+            "name": "AskUserQuestion",
+            "arguments": {
+              "questions": [
+                {
+                  "question": "How do you want to review cfg?",
+                  "options": [
+                    {
+                      "label": "record"
+                    },
+                    {
+                      "label": "review"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "result": "User answered: review"
+        },
+        "drafted/summary",
+        {
+          "assistant": "## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### structure-fit\n- (none)\n\n### clarity\n- F-3 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 3 total — 1 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
+        },
+        {
+          "user": "Accept."
+        },
+        {
+          "assistant": "The tally leans to fix: F-1 is a must-fix. Keep accept?"
+        },
+        {
+          "user": "Yes."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "^crayon\\s+review\\s+[\"']?cfg[\"']?\\s+--verdict\\s+[\"']?accept[\"']?(\\s+--json)?$"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--note"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon review cfg --verdict accept"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "Are you sure? F-1 is a must-fix, and the page would be accepted with it."
+        }
+      ]
+    },
+    {
+      "id": "B-49",
+      "skill": "crayon-plan",
+      "ask": "cfg",
+      "opening": "declared",
+      "why": "D-15, D-18: \"Looks good.\" about the outline is not a go; the plan is read back and the named question asked, and nothing is signed (paired with B-06)",
+      "history": [
+        {
+          "assistant": "The outline for cfg: one table of settings with each key, TOYQ_* override, type and default; precedence stated once; the validation rule for max_retries. Does this cover it?"
+        },
+        {
+          "user": "Looks good."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bcrayon\\s+signoff\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--re-sign"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "The plan for cfg: a reference page for every toyq setting, for operators configuring toyq on a server, from src/toyq/config.py, at reference/config.md. The outline is the one you just saw. Record this and sign it off?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon signoff cfg"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-50",
+      "skill": "crayon-plan",
+      "ask": "cfg",
+      "opening": "declared",
+      "why": "D-15, D-18: \"yes, but …\" is not a go; the change is made or read back and the question asked again, and nothing is signed (paired with B-06)",
+      "history": [
+        {
+          "assistant": "The plan for cfg: a reference page for every toyq setting, for operators configuring toyq on a server, from src/toyq/config.py, at reference/config.md. Record this and sign it off?"
+        },
+        {
+          "user": "Yes, but make the audience operators and developers."
+        }
+      ],
+      "assert": [
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bcrayon\\s+signoff\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--re-sign"
+        },
+        {
+          "kind": "any_of",
+          "of": [
+            {
+              "kind": "decisive",
+              "tool": "Bash",
+              "args_re": "^crayon unit edit cfg\\b"
+            },
+            {
+              "kind": "asks_user"
+            }
+          ]
+        }
+      ],
+      "oracle": [
+        {
+          "content": "The plan for cfg, with the audience changed: a reference page for every toyq setting, for operators and developers configuring toyq on a server, from src/toyq/config.py, at reference/config.md. Record this and sign it off?"
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon signoff cfg"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
