@@ -18,8 +18,8 @@
 #
 #   job            local dry run                                        time
 #   -------------  ---------------------------------------------------  ------
-#   acceptance     bash tests/test_dogen_acceptance.sh                   0m20s
-#                  bash tests/test_dogen_lifecycle.sh                    2m44s
+#   acceptance     bash tests/test_crayon_acceptance.sh                  0m20s
+#                  bash tests/test_crayon_lifecycle.sh                   2m44s
 #   unittest       bash tests/run_matrix.sh  (3.9 / 3.12 / 3.13)         0m27s
 #                  then each module of the job on each interpreter       0m32s
 #                  python3 scripts/planning_lint.py                      0m01s
@@ -86,7 +86,7 @@ jobs:
           # T-18-02: no job in this workflow pushes, and every `run:` step
           # after a checkout executes code authored in the branch under test —
           # `bash tests/install_smoke.sh` extracts and executes shell out of
-          # `docs/install.md`, `python3 tests/check_docs.py` imports `<root>/dogen`
+          # `docs/install.md`, `python3 tests/check_docs.py` imports `<root>/crayon`
           # and runs it as a subprocess, and `bash validation/fixtures.sh` runs
           # branch-authored bash. Never leave the job token in the workspace
           # `.git/config` for any of them to read.
@@ -94,8 +94,8 @@ jobs:
       # T-18-03: the body is the literal local command. No `${{ }}` expression
       # is interpolated into any `run:` in this file — that is the canonical
       # Actions script-injection vector.
-      - run: bash tests/test_dogen_acceptance.sh
-      - run: bash tests/test_dogen_lifecycle.sh
+      - run: bash tests/test_crayon_acceptance.sh
+      - run: bash tests/test_crayon_lifecycle.sh
 
   # CI-01 / 17 D-12: the supported interpreter range, from the runner's tool
   # cache rather than from a fetcher. `tests/run_matrix.sh` is the same three
@@ -124,12 +124,12 @@ jobs:
       # Every module is named explicitly. Never the discovery runner: `tests/`
       # carries no package marker, so discovery finds nothing and reports it
       # as success.
-      - run: python3 -m unittest tests.test_dogen_unit
+      - run: python3 -m unittest tests.test_crayon_unit
       # CR-06: the SAME suite, script form. The two runners reported different
       # counts once — a suite whole under one and truncated under the other
       # reports `OK` either way — so both forms are gate commands and both run
       # here.
-      - run: python3 tests/test_dogen_unit.py
+      - run: python3 tests/test_crayon_unit.py
       - run: python3 -m unittest tests.test_skill_text
       # The planning tree is optional on release branches; both the tests and
       # standalone lint treat zero eligible files as a clean scan.

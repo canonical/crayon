@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# install_smoke.sh — CI-02 / A-37: a stranger installs dogen and reaches a page.
+# install_smoke.sh — CI-02 / A-37: a stranger installs crayon and reaches a page.
 #
 # Usage: bash tests/install_smoke.sh   (run from anywhere; paths resolve from $0)
 #
-# The boundary, stated once: this script is the ONLY test that reaches `dogen`
-# through PATH rather than through the in-tree `./dogen` file. It therefore does
-# NOT source `tests/lib.sh` — that file pins `DOGEN="$REPO_ROOT/dogen.py"` and its
-# `setup_repo` exports `DOGEN_TEST_HOOKS=1`, and either one would let a broken
+# The boundary, stated once: this script is the ONLY test that reaches `crayon`
+# through PATH rather than through the in-tree `./crayon` file. It therefore does
+# NOT source `tests/lib.sh` — that file pins `CRAYON="$REPO_ROOT/crayon.py"` and its
+# `setup_repo` exports `CRAYON_TEST_HOOKS=1`, and either one would let a broken
 # install pass as green (RESEARCH Pitfall 4). The guards worth copying from
 # `tests/lib.sh:176-198` — the three-check `mktemp -d` and the pinned git config
 # — are copied below; nothing else is.
@@ -18,7 +18,7 @@
 # hermetic temp repo. The smoke then drives one unit through the installed tool
 # to a written page that `verify` and `show` both agree exists, and to a refusal
 # that still carries the contract's five-key JSON shape. The guide's own
-# `${DOGEN_SRC:-…}` and `${REPO:-$PWD}` defaults are what make that an override
+# `${CRAYON_SRC:-…}` and `${REPO:-$PWD}` defaults are what make that an override
 # rather than a rewrite. The repository seed (git init, identity, a source and a
 # docs root) is the smoke's own: the installer never initialises a repository.
 #
@@ -88,7 +88,7 @@ assert_eq() {
 # `cd "$X" || exit 1` is not a guard on its own. With an unchecked `mktemp -d`
 # — a full or read-only /tmp, a restrictive TMPDIR — the walk below would
 # `git init`, write `docs/index.md` and commit in the CURRENT directory, which
-# is the dogen repository. The three checks make the failure loud instead.
+# is the crayon repository. The three checks make the failure loud instead.
 SMOKE_HOME=$(mktemp -d) || exit 1
 [ -n "$SMOKE_HOME" ] && [ -d "$SMOKE_HOME" ] || exit 1
 SMOKE_REPO=$(mktemp -d) || exit 1
@@ -121,10 +121,10 @@ if [ "$FENCES" -eq 0 ]; then
 fi
 
 # --- the PATH premise (T-18-07) ----------------------------------------------
-# A developer with dogen already installed globally would sail through this
+# A developer with crayon already installed globally would sail through this
 # whole script without the region's install step doing anything at all. Strip
 # any ambient entry from this script's OWN PATH — loudly, naming the path it
-# resolved to — so the only `dogen` the extracted script can reach is the one
+# resolved to — so the only `crayon` the extracted script can reach is the one
 # it copies itself.
 strip_path_entry() {
     local drop="$1" rebuilt="" entry resolved
@@ -142,17 +142,17 @@ strip_path_entry() {
     printf '%s' "$rebuilt"
 }
 
-ambient=$(command -v dogen 2>/dev/null) || ambient=""
+ambient=$(command -v crayon 2>/dev/null) || ambient=""
 strips=0
 while [ -n "$ambient" ] && [ "$strips" -lt 8 ]; do
     ambient_dir=$(cd "$(dirname "$ambient")" && pwd)
-    echo "install-smoke: note - dropping ambient dogen from PATH: $ambient" >&2
+    echo "install-smoke: note - dropping ambient crayon from PATH: $ambient" >&2
     PATH=$(strip_path_entry "$ambient_dir")
     export PATH
     strips=$((strips + 1))
-    ambient=$(command -v dogen 2>/dev/null) || ambient=""
+    ambient=$(command -v crayon 2>/dev/null) || ambient=""
 done
-assert_eq "a37: no ambient dogen is reachable before the install step runs" \
+assert_eq "a37: no ambient crayon is reachable before the install step runs" \
     "" "$ambient"
 
 # --- seed the stranger's repository ------------------------------------------
@@ -182,7 +182,7 @@ mkdir -p "$SMOKE_HOME/dotfiles/claude" && ln -s "$SMOKE_HOME/dotfiles/claude" "$
 # `~/.local/bin` install lands inside this smoke and nowhere else.
 echo "── running $FENCES fenced block(s) from the INSTALL region ──"
 INSTALL_OUT="$SMOKE_HOME/install.out"
-if HOME="$SMOKE_HOME" DOGEN_SRC="$REPO_ROOT" REPO="$SMOKE_REPO" \
+if HOME="$SMOKE_HOME" CRAYON_SRC="$REPO_ROOT" REPO="$SMOKE_REPO" \
         bash -euo pipefail "$EXTRACTED" >"$INSTALL_OUT" 2>&1; then
     pass "a37: the INSTALL region ran end to end under set -euo pipefail"
 else
@@ -194,20 +194,20 @@ cat "$INSTALL_OUT"
 SMOKE_BIN="$SMOKE_HOME/.local/bin"
 export PATH="$SMOKE_BIN:$PATH"
 
-resolved_dogen=$(command -v dogen 2>/dev/null) || resolved_dogen=""
-assert_eq "a37: the installed dogen resolves inside the smoke's temp bin" \
-    "$SMOKE_BIN/dogen" "$resolved_dogen"
-case "$resolved_dogen" in
+resolved_crayon=$(command -v crayon 2>/dev/null) || resolved_crayon=""
+assert_eq "a37: the installed crayon resolves inside the smoke's temp bin" \
+    "$SMOKE_BIN/crayon" "$resolved_crayon"
+case "$resolved_crayon" in
     "$REPO_ROOT"/*)
-        fail "a37: the resolved dogen is the in-tree file, not the installed copy ($resolved_dogen)"
+        fail "a37: the resolved crayon is the in-tree file, not the installed copy ($resolved_crayon)"
         ;;
     *)
-        pass "a37: the resolved dogen is outside the dogen checkout"
+        pass "a37: the resolved crayon is outside the crayon checkout"
         ;;
 esac
 
 # --- what the installer placed -----------------------------------------------
-for skill in dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review; do
+for skill in crayon-onboard crayon-fetch crayon-plan crayon-write crayon-review; do
     if [ -f "$SMOKE_REPO/.agents/skills/$skill/SKILL.md" ] \
         && [ -f "$SMOKE_REPO/.agents/skills/$skill/references/routing.md" ]; then
         pass "a37: the installer placed $skill under the repo's .agents/skills/"
@@ -215,7 +215,7 @@ for skill in dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review; do
         fail "a37: $skill is missing or incomplete under $SMOKE_REPO/.agents/skills/"
     fi
 done
-for skill in dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review; do
+for skill in crayon-onboard crayon-fetch crayon-plan crayon-write crayon-review; do
     link="$SMOKE_REPO/.claude/skills/$skill"
     if [ -L "$link" ] && [ -f "$link/SKILL.md" ]; then
         pass "a37: the installer linked $skill from .claude/skills/"
@@ -228,10 +228,10 @@ if [ -f "$SMOKE_REPO/.agents/skills/README.md" ]; then
 else
     pass "a37: the installer copied the five skills and nothing else"
 fi
-if grep -qxF '.dogen/staging/' "$SMOKE_REPO/.gitignore" 2>/dev/null; then
-    pass "a37: the installer added .dogen/staging/ to .gitignore"
+if grep -qxF '.crayon/staging/' "$SMOKE_REPO/.gitignore" 2>/dev/null; then
+    pass "a37: the installer added .crayon/staging/ to .gitignore"
 else
-    fail "a37: .dogen/staging/ is not in $SMOKE_REPO/.gitignore"
+    fail "a37: .crayon/staging/ is not in $SMOKE_REPO/.gitignore"
 fi
 verify_only_exit=0
 HOME="$SMOKE_HOME" bash "$REPO_ROOT/install.sh" --verify-only --yes \
@@ -246,40 +246,40 @@ walk_exit=0
 (
     cd "$SMOKE_REPO" \
         && printf '# Plan\n\nOutline the widget API reference.\n' \
-            | dogen unit new "$UNIT" \
+            | crayon unit new "$UNIT" \
                 --intent reference \
                 --audience "developers integrating the widget API" \
                 --title "Widget API" \
                 --target "reference/$UNIT.md" \
                 --source source.md \
                 --body-file - \
-        && dogen signoff "$UNIT" \
-        && dogen steer "$UNIT" --note "Lead with the create call." \
-        && mkdir -p ".dogen/staging/$UNIT/draft" \
+        && crayon signoff "$UNIT" \
+        && crayon steer "$UNIT" --note "Lead with the create call." \
+        && mkdir -p ".crayon/staging/$UNIT/draft" \
         && printf '# Widget API\n\n## create\n\nCreates a widget.\n' \
-            >".dogen/staging/$UNIT/draft/$UNIT.md" \
-        && dogen draft "$UNIT" ".dogen/staging/$UNIT/draft/$UNIT.md"
+            >".crayon/staging/$UNIT/draft/$UNIT.md" \
+        && crayon draft "$UNIT" ".crayon/staging/$UNIT/draft/$UNIT.md"
 ) >/dev/null 2>&1 || walk_exit=$?
-assert_eq "a37: declare, signoff, steer and draft run through the installed dogen" \
+assert_eq "a37: declare, signoff, steer and draft run through the installed crayon" \
     "0" "$walk_exit"
 
 # --- the context verbs through the installed tool ----------------------------
-# What /dogen-onboard and /dogen-fetch do: hand the tool an artefact's text, then
+# What /crayon-onboard and /crayon-fetch do: hand the tool an artefact's text, then
 # record the set. Repo-level, no unit, one commit.
 context_exit=0
 (
     cd "$SMOKE_REPO" \
         && printf '# Style\n\nImperative mood.\n' \
-            | dogen context stage doc-style.md --body-file - --source source.md \
-        && dogen context record --note "smoke: one artefact"
+            | crayon context stage doc-style.md --body-file - --source source.md \
+        && crayon context record --note "smoke: one artefact"
 ) >/dev/null 2>&1 || context_exit=$?
-assert_eq "a37: context stage and record run through the installed dogen" \
+assert_eq "a37: context stage and record run through the installed crayon" \
     "0" "$context_exit"
-if [ -s "$SMOKE_REPO/.dogen/context/doc-style.md" ] \
-    && [ -s "$SMOKE_REPO/.dogen/context/manifest.json" ]; then
-    pass "a37: the record placed the artefact and its manifest under .dogen/context/"
+if [ -s "$SMOKE_REPO/.crayon/context/doc-style.md" ] \
+    && [ -s "$SMOKE_REPO/.crayon/context/manifest.json" ]; then
+    pass "a37: the record placed the artefact and its manifest under .crayon/context/"
 else
-    fail "a37: .dogen/context/ lacks the artefact or the manifest after the record"
+    fail "a37: .crayon/context/ lacks the artefact or the manifest after the record"
 fi
 
 # --- assert from the stranger's vantage point -------------------------------
@@ -290,9 +290,9 @@ else
     fail "a37: no non-empty page at $PAGE"
 fi
 
-verify_json=$(cd "$SMOKE_REPO" && dogen verify "$UNIT" --json 2>/dev/null)
+verify_json=$(cd "$SMOKE_REPO" && crayon verify "$UNIT" --json 2>/dev/null)
 verify_exit=$?
-assert_eq "a37: dogen verify exits 0 over the installed walk" "0" "$verify_exit"
+assert_eq "a37: crayon verify exits 0 over the installed walk" "0" "$verify_exit"
 verify_verdict=$(printf '%s' "$verify_json" | python3 -c '
 import json, sys
 try:
@@ -300,9 +300,9 @@ try:
 except Exception:
     print("UNPARSEABLE")
 ')
-assert_eq "a37: dogen verify --json reports verdict ok" "ok" "$verify_verdict"
+assert_eq "a37: crayon verify --json reports verdict ok" "ok" "$verify_verdict"
 
-show_shape=$(cd "$SMOKE_REPO" && dogen show "$UNIT" --json 2>/dev/null | python3 -c '
+show_shape=$(cd "$SMOKE_REPO" && crayon show "$UNIT" --json 2>/dev/null | python3 -c '
 import json, sys
 try:
     payload = json.load(sys.stdin)
@@ -312,7 +312,7 @@ except Exception:
 paths = payload.get("paths") or []
 print("%s/%d" % (payload.get("state"), len(paths)))
 ')
-assert_eq "a37: dogen show --json reports a drafted state and one path" \
+assert_eq "a37: crayon show --json reports a drafted state and one path" \
     "drafted/1" "$show_shape"
 
 # --- the refusal surface survives a PATH install (GATE-04) -------------------
@@ -320,11 +320,11 @@ assert_eq "a37: dogen show --json reports a drafted state and one path" \
 # `unsteered`: exit 1, exactly one line on stderr, and that line the contract's
 # five-key JSON object. Proving that from the stranger's vantage point is what
 # separates "a tool ran" from "the real tool ran".
-STAGED="$SMOKE_REPO/.dogen/staging/$UNIT/draft/$UNIT.md"
+STAGED="$SMOKE_REPO/.crayon/staging/$UNIT/draft/$UNIT.md"
 REFUSAL_ERR="$SMOKE_HOME/refusal.err"
 printf '# Widget API\n\n## create\n\nCreates a widget. Second pass.\n' >"$STAGED"
 refusal_exit=0
-(cd "$SMOKE_REPO" && dogen draft "$UNIT" ".dogen/staging/$UNIT/draft/$UNIT.md") \
+(cd "$SMOKE_REPO" && crayon draft "$UNIT" ".crayon/staging/$UNIT/draft/$UNIT.md") \
     >/dev/null 2>"$REFUSAL_ERR" || refusal_exit=$?
 assert_eq "a37: an unsteered second draft refuses with exit 1 (GATE-04)" \
     "1" "$refusal_exit"
@@ -354,7 +354,7 @@ sed -n '/^To uninstall, run:$/,/^[^ ]/p' "$INSTALL_OUT" | grep '^  rm ' >"$UNINS
 uninstall_lines=$(wc -l <"$UNINSTALL" | tr -d ' ')
 assert_eq "a37: the installer printed one rm line for the tool, each skill and each link" \
     "11" "$uninstall_lines"
-if grep -qxF "Then delete the line .dogen/staging/ from $SMOKE_REPO/.gitignore." "$INSTALL_OUT"; then
+if grep -qxF "Then delete the line .crayon/staging/ from $SMOKE_REPO/.gitignore." "$INSTALL_OUT"; then
     pass "a37: the installer named the .gitignore line to delete"
 else
     fail "a37: the installer did not name the .gitignore line to delete"
@@ -363,16 +363,16 @@ uninstall_exit=0
 bash -eu "$UNINSTALL" >/dev/null 2>&1 || uninstall_exit=$?
 assert_eq "a37: the printed uninstall commands run cleanly" "0" "$uninstall_exit"
 left=""
-[ -e "$SMOKE_BIN/dogen" ] && left="$left $SMOKE_BIN/dogen"
-for skill in dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review; do
+[ -e "$SMOKE_BIN/crayon" ] && left="$left $SMOKE_BIN/crayon"
+for skill in crayon-onboard crayon-fetch crayon-plan crayon-write crayon-review; do
     [ -e "$SMOKE_REPO/.agents/skills/$skill" ] && left="$left .agents/skills/$skill"
     [ -L "$SMOKE_REPO/.claude/skills/$skill" ] && left="$left .claude/skills/$skill"
 done
 assert_eq "a37: nothing the installer placed is left after the uninstall" "" "$left"
-if [ -d "$SMOKE_REPO/.dogen/units/$UNIT" ]; then
-    pass "a37: the uninstall left the record under .dogen/ in place"
+if [ -d "$SMOKE_REPO/.crayon/units/$UNIT" ]; then
+    pass "a37: the uninstall left the record under .crayon/ in place"
 else
-    fail "a37: the record under .dogen/units/$UNIT is gone after the uninstall"
+    fail "a37: the record under .crayon/units/$UNIT is gone after the uninstall"
 fi
 
 # --- report ------------------------------------------------------------------

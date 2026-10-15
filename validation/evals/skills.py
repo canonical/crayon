@@ -7,7 +7,7 @@ progressive-disclosure shape, and nothing more:
 
 - the *catalog* — each skill's frontmatter ``name`` and ``description`` and
   where its ``SKILL.md`` is installed — is always in the system prompt;
-- invoking a skill (``/dogen-plan <args>``, the form the skills are documented
+- invoking a skill (``/crayon-plan <args>``, the form the skills are documented
   under everywhere) appends that skill's ``SKILL.md`` body to the turn;
 - ``references/*.md`` stay on disk, for the model to read when the body says to.
 
@@ -30,7 +30,7 @@ INSTALLED_AT = ".agents/skills"
 
 def _load_skill_lint():
     spec = importlib.util.spec_from_file_location(
-        "dogen_skill_lint", str(REPO / "scripts" / "skill_lint.py")
+        "crayon_skill_lint", str(REPO / "scripts" / "skill_lint.py")
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -55,7 +55,7 @@ class Skill(object):
 
 
 def load_skills(root=SKILLS_ROOT):
-    skills = [Skill(path) for path in sorted(Path(root).glob("dogen-*")) if path.is_dir()]
+    skills = [Skill(path) for path in sorted(Path(root).glob("crayon-*")) if path.is_dir()]
     if not skills:
         raise RuntimeError("no skills found under %s" % root)
     return {skill.name: skill for skill in skills}
@@ -64,7 +64,7 @@ def load_skills(root=SKILLS_ROOT):
 def bundle_sha256(root=SKILLS_ROOT):
     """One digest over every file a model could be shown: provenance for a run."""
     digest = hashlib.sha256()
-    for path in sorted(Path(root).glob("dogen-*/**/*.md")):
+    for path in sorted(Path(root).glob("crayon-*/**/*.md")):
         digest.update(str(path.relative_to(root)).encode("utf-8") + b"\0")
         digest.update(path.read_bytes() + b"\0")
     return digest.hexdigest()
@@ -93,7 +93,7 @@ following Agent Skills are installed:
 {catalog}
 
 Decide which ONE installed skill should handle the user's request below. Answer \
-with the skill's name only, exactly as listed (for example: dogen-plan). If no \
+with the skill's name only, exactly as listed (for example: crayon-plan). If no \
 installed skill applies, answer: none"""
 
 
@@ -118,11 +118,11 @@ def agent_system_prompt(skills, cwd):
     return AGENT_PROMPT.format(cwd=cwd, catalog=catalog(skills))
 
 
-_INVOKE_RE = re.compile(r"^/(dogen-[a-z]+)\b[ \t]*(.*)$", re.DOTALL)
+_INVOKE_RE = re.compile(r"^/(crayon-[a-z]+)\b[ \t]*(.*)$", re.DOTALL)
 
 
 def expand_invocation(message, skills):
-    """``/dogen-plan args`` -> (skill name, the user turn with the body appended).
+    """``/crayon-plan args`` -> (skill name, the user turn with the body appended).
 
     A message that invokes no installed skill is returned unchanged with a name
     of None.

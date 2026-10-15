@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the dogen model evals against one model or the whole roster.
+"""Run the crayon model evals against one model or the whole roster.
 
 Dev-time evaluation material: never part of the gate, never run in CI. The
 gate runs this kit's offline self-tests (``tests/test_evals.py``); paid runs are
@@ -70,10 +70,10 @@ def model_slug(model_id):
     return re.sub(r"[^A-Za-z0-9._-]+", "__", model_id)
 
 
-def dogen_version():
+def crayon_version():
     try:
         out = subprocess.run(
-            [sys.executable, str(skillmod.REPO / "dogen.py"), "version", "--json"],
+            [sys.executable, str(skillmod.REPO / "crayon.py"), "version", "--json"],
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True,
         ).stdout
         return json.loads(out.decode("utf-8")).get("tool", "unknown")
@@ -180,7 +180,7 @@ def summarise(lane_name, spec, records, ctx, partial, stopped, dry_run):
             "provider_pin": spec.get("provider"),
             "judge": ctx["judge_id"],
             "date": ctx["date"],
-            "dogen_version": ctx["dogen_version"],
+            "crayon_version": ctx["crayon_version"],
             "repo_head": ctx["repo_head"],
             "skills_sha256": ctx["skills_sha256"],
             "total_cases": len(records),
@@ -461,7 +461,7 @@ def main(argv=None):
     ctx = {
         "skills": skillmod.load_skills(),
         "skills_sha256": skillmod.bundle_sha256(),
-        "dogen_version": dogen_version(),
+        "crayon_version": crayon_version(),
         "repo_head": git_head(),
         "judge": judge,
         "judge_id": judge_spec["id"],

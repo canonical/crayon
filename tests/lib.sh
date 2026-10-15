@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# tests/lib.sh — the single shared bash harness for dogen's two bash suites (D-10).
+# tests/lib.sh — the single shared bash harness for crayon's two bash suites (D-10).
 #
-# `tests/test_dogen_acceptance.sh` (the ported A-series) and
-# `tests/test_dogen_lifecycle.sh` (the N-series lifecycle / negative / recovery
+# `tests/test_crayon_acceptance.sh` (the ported A-series) and
+# `tests/test_crayon_lifecycle.sh` (the N-series lifecycle / negative / recovery
 # suite) both source this file, and neither redefines any of it. Everything
-# below moved out of tests/test_dogen_acceptance.sh verbatim, comments included:
+# below moved out of tests/test_crayon_acceptance.sh verbatim, comments included:
 # the WR-07 / WR-08 / WR-09 rationales are load-bearing and travel with the code
 # they justify.
 #
@@ -15,7 +15,7 @@
 # green is the WR-09 vacuous-test guard in `run_test`. A grep gate in this
 # plan's verification asserts the count stays zero.
 #
-# Every test drives the real `dogen` executable in a hermetic temp git repo:
+# Every test drives the real `crayon` executable in a hermetic temp git repo:
 # argparse, the lock, containment, derivation, routing, the six-step write
 # protocol, the trailered pathspec-scoped commit and the post-commit check.
 # Nothing is stubbed. Each test function runs in a SUBSHELL so `cd` cannot leak,
@@ -31,7 +31,7 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-DOGEN="$REPO_ROOT/dogen.py"
+CRAYON="$REPO_ROOT/crayon.py"
 
 PASS=0
 FAIL=0
@@ -186,23 +186,23 @@ print(json.loads(open(sys.argv[1], encoding="utf-8").read()).get("detail"))
 
 # GIT_CONFIG_GLOBAL/SYSTEM are pinned to /dev/null so the developer's global
 # config — commit.gpgsign above all (RESEARCH P-9) — cannot leak into a test
-# repo, and DOGEN_NOW is pinned so every ledger byte, and therefore every chain
+# repo, and CRAYON_NOW is pinned so every ledger byte, and therefore every chain
 # digest, is reproducible.
 setup_repo() {
     export GIT_CONFIG_GLOBAL=/dev/null
     export GIT_CONFIG_SYSTEM=/dev/null
     export GIT_AUTHOR_DATE="2026-01-01T00:00:00+00:00"
     export GIT_COMMITTER_DATE="2026-01-01T00:00:00+00:00"
-    export DOGEN_NOW="2026-01-01T00:00:00+00:00"
-    # WR-07: DOGEN_NOW and DOGEN_CRASH_AT are armed only by this explicit
+    export CRAYON_NOW="2026-01-01T00:00:00+00:00"
+    # WR-07: CRAYON_NOW and CRAYON_CRASH_AT are armed only by this explicit
     # switch, so neither is live in the shipped executable.
-    export DOGEN_TEST_HOOKS=1
-    unset DOGEN_CRASH_AT || true
+    export CRAYON_TEST_HOOKS=1
+    unset CRAYON_CRASH_AT || true
     # WR-08: `cd ""` SUCCEEDS in bash and leaves the shell where it is, so
     # `cd "$TEST_DIR" || exit 1` is not a guard. With an unchecked `mktemp -d`
     # — a full or read-only /tmp, a restrictive TMPDIR — every test below would
     # then `git init`, overwrite `docs/index.md` and commit in the CURRENT
-    # directory, which is the dogen repository, and `cleanup`'s `[ -n ... ]`
+    # directory, which is the crayon repository, and `cleanup`'s `[ -n ... ]`
     # guard would keep it. The three checks make the failure loud instead.
     TEST_DIR=$(mktemp -d) || exit 1
     [ -n "$TEST_DIR" ] && [ -d "$TEST_DIR" ] || exit 1
@@ -223,12 +223,12 @@ cleanup() {
     return 0
 }
 
-# `dogen unit new` with the §6 signature filled in; extra flags pass through.
-dogen_unit_new() {
+# `crayon unit new` with the §6 signature filled in; extra flags pass through.
+crayon_unit_new() {
     local unit="$1" target="$2"
     shift 2
     printf '# Plan\n\nAn outline.\n' |
-        "$DOGEN" unit new "$unit" \
+        "$CRAYON" unit new "$unit" \
             --intent reference \
             --audience "TAs onboarding to the docs repo" \
             --title "Demo" \
@@ -236,8 +236,8 @@ dogen_unit_new() {
             --body-file - "$@"
 }
 
-# Phase-16 IN-03: git's own first line for a pathspec `dogen` would refuse,
-# read from git under the SAME locale `dogen` pins for the probe (IPC_LOCALE).
+# Phase-16 IN-03: git's own first line for a pathspec `crayon` would refuse,
+# read from git under the SAME locale `crayon` pins for the probe (IPC_LOCALE).
 # The assertions that used to hardcode git's English sentence ask git for it
 # instead, so they state the property -- "the detail is git's own words" --
 # rather than one release's translation of them.
@@ -270,12 +270,12 @@ assert quoted + old + quoted in text, "hand_edit_source: %r is not in %s" % (old
 open(path, "w", encoding="utf-8").write(
     text.replace(quoted + old + quoted, quoted + new + quoted)
 )
-' ".dogen/units/${unit}/unit.md" "$from" "$to"
+' ".crayon/units/${unit}/unit.md" "$from" "$to"
 }
 
 ledger_line() {
     local unit="$1" number="$2"
-    sed -n "${number}p" ".dogen/units/${unit}/ledger.jsonl"
+    sed -n "${number}p" ".crayon/units/${unit}/ledger.jsonl"
 }
 
 json_field() {
@@ -422,14 +422,14 @@ HOOK
 
 # --- the shared fixtures both suites read state through (17-11) --------------
 #
-# These were defined in tests/test_dogen_acceptance.sh until plan 17-11 moved
+# These were defined in tests/test_crayon_acceptance.sh until plan 17-11 moved
 # the T-labelled bodies out of it. the ported A-series and the migrated N-series
 # BOTH call them, so neither file can own them: a copy in each is precisely how
 # the two suites drift apart (D-10). They live here, once, like the rest of the
 # harness.
 
 ledger_digest() {
-    sha256_of_text "$(cat ".dogen/units/$1/ledger.jsonl" 2>/dev/null || true)"
+    sha256_of_text "$(cat ".crayon/units/$1/ledger.jsonl" 2>/dev/null || true)"
 }
 
 sha256_of_file() {
@@ -447,27 +447,27 @@ derived() {
     local unit="$1" field="$2"
     python3 -c '
 import importlib.machinery, importlib.util, json, os, sys
-loader = importlib.machinery.SourceFileLoader("dogen", sys.argv[1])
-spec = importlib.util.spec_from_loader("dogen", loader)
+loader = importlib.machinery.SourceFileLoader("crayon", sys.argv[1])
+spec = importlib.util.spec_from_loader("crayon", loader)
 module = importlib.util.module_from_spec(spec)
 loader.exec_module(module)
 state = module.unit_state(os.getcwd(), sys.argv[2])
 value = module.route(state) if sys.argv[3] == "next" else state[sys.argv[3]]
 print(value if isinstance(value, str) else json.dumps(value))
-' "$DOGEN" "$unit" "$field"
+' "$CRAYON" "$unit" "$field"
 }
 
 # CR-05: re-sign the unit onto a target that traverses OUT of the docs root and
 # record a basis for it, all through the tool's own writer so the chain still
 # verifies. This is exactly the artefact an untrusted branch or PR carries:
-# `.dogen/` is committed, so a forged `ledger.jsonl` is ordinary contributor
-# input, and the escaping path is read by the REVIEWER's own `dogen show`.
+# `.crayon/` is committed, so a forged `ledger.jsonl` is ordinary contributor
+# input, and the escaping path is read by the REVIEWER's own `crayon show`.
 forge_escaping_target() {
     local unit="$1" victim="$2"
     python3 -c '
 import importlib.machinery, importlib.util, os, sys
-loader = importlib.machinery.SourceFileLoader("dogen", sys.argv[1])
-spec = importlib.util.spec_from_loader("dogen", loader)
+loader = importlib.machinery.SourceFileLoader("crayon", sys.argv[1])
+spec = importlib.util.spec_from_loader("crayon", loader)
 module = importlib.util.module_from_spec(spec)
 loader.exec_module(module)
 repo, unit, victim = os.getcwd(), sys.argv[2], sys.argv[3]
@@ -497,24 +497,24 @@ events = [
 ]
 module.append_batch(path, module.chain_lines(events))
 sys.stdout.write(relative)
-' "$DOGEN" "$unit" "$victim"
+' "$CRAYON" "$unit" "$victim"
     git add -A >/dev/null 2>&1
     git commit -q -m "fixture: forged escaping target ${unit}" >/dev/null 2>&1
 }
 
-# Stage draft bytes under `.dogen/staging/<id>/draft/` — contract 5.6's only
+# Stage draft bytes under `.crayon/staging/<id>/draft/` — contract 5.6's only
 # sanctioned source for a page. The staging tree is gitignored input, never a
 # recorded artifact.
 stage_draft() {
     local unit="$1" target="$2" content="$3"
-    local path=".dogen/staging/${unit}/draft/${target}"
+    local path=".crayon/staging/${unit}/draft/${target}"
     mkdir -p "$(dirname "$path")"
     # %b so a fixture can spell a real newline as \n inside one argument.
     printf '%b' "$content" >"$path"
 }
 
 draft_path() {
-    printf '.dogen/staging/%s/draft/%s' "$1" "$2"
+    printf '.crayon/staging/%s/draft/%s' "$1" "$2"
 }
 
 # "<path> <sha256> <bytes>" per entry of an event's files[], in recorded order.
@@ -538,10 +538,10 @@ for entry in json.loads(sys.stdin.read()).get("files") or []:
 # A drafted unit: seq 0 ledger, 1 unit-declared, 2 signoff, 3 generation.
 setup_drafted_unit() {
     local unit="$1" target="$2"
-    dogen_unit_new "$unit" "$target" >/dev/null 2>&1
-    "$DOGEN" signoff "$unit" >/dev/null 2>&1
+    crayon_unit_new "$unit" "$target" >/dev/null 2>&1
+    "$CRAYON" signoff "$unit" >/dev/null 2>&1
     stage_draft "$unit" "$target" "Demo\n====\n\nThe drafted body.\n"
-    "$DOGEN" draft "$unit" "$(draft_path "$unit" "$target")" >/dev/null 2>&1
+    "$CRAYON" draft "$unit" "$(draft_path "$unit" "$target")" >/dev/null 2>&1
 }
 
 # The `next` token of a refusal line — the token the skill routes on.
@@ -556,13 +556,13 @@ print(json.loads(open(sys.argv[1], encoding="utf-8").read()).get("next"))
 chain_problems() {
     python3 -c '
 import importlib.machinery, importlib.util, json, sys
-loader = importlib.machinery.SourceFileLoader("dogen", sys.argv[1])
-spec = importlib.util.spec_from_loader("dogen", loader)
+loader = importlib.machinery.SourceFileLoader("crayon", sys.argv[1])
+spec = importlib.util.spec_from_loader("crayon", loader)
 module = importlib.util.module_from_spec(spec)
 loader.exec_module(module)
 text = open(sys.argv[2], encoding="utf-8").read()
 print(json.dumps(module.verify_chain([line for line in text.split("\n") if line])))
-' "$DOGEN" ".dogen/units/$1/ledger.jsonl"
+' "$CRAYON" ".crayon/units/$1/ledger.jsonl"
 }
 
 # --- Runner ------------------------------------------------------------------

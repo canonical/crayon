@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static guardrail: agentskills.io frontmatter invariants for the dogen skill family.
+"""Static guardrail: agentskills.io frontmatter invariants for the crayon skill family.
 
 Asserts per skill: frontmatter ``name`` equals the directory name and matches
 agentskills.io slug rules; ``description`` is present, non-empty (≤1024 chars), and
@@ -22,17 +22,17 @@ _MAX_NAME = 64
 _MAX_DESC = 1024
 
 #: D-14's single-writer rule. Every other skill reaches disk through the tool
-#: (``dogen unit new --body-file -``), so a write-capable tool in its
+#: (``crayon unit new --body-file -``), so a write-capable tool in its
 #: ``allowed-tools`` is a drift to catch, not a capability to use. This is a lint
 #: and a convention: the real write boundary is the tool's own containment check.
-WRITERS = {"dogen-write"}
+WRITERS = {"crayon-write"}
 _WRITE_TOOLS = {"write", "edit", "multiedit", "notebookedit"}
 
 #: contract.md §5.10, verbatim. Compared as literal strings — never parsed,
 #: ordered or rounded as versions.
 _EXPECTED_METADATA = {
-    "metadata.dogen_contract": "1",
-    "metadata.dogen_min_tool": "0.2.0",
+    "metadata.crayon_contract": "1",
+    "metadata.crayon_min_tool": "0.2.0",
 }
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?\n)---\s*\n", re.DOTALL)
@@ -44,7 +44,7 @@ def split_front_matter(text: str) -> tuple[dict, str]:
     Flat ``key: value`` lines land under ``key``, exactly as before. One level of
     nesting is understood: a key whose value is empty, followed by indented
     ``key: value`` lines, yields ``parent.child`` entries (so
-    ``metadata.dogen_contract`` is addressable). This parser is shared verbatim
+    ``metadata.crayon_contract`` is addressable). This parser is shared verbatim
     with ``tests/test_skill_text.py`` so the lint and the S-suite can never
     disagree about what a skill declares.
     """

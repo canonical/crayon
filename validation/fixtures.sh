@@ -36,10 +36,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/../tests/lib.sh"
 
 SCORE="$REPO_ROOT/validation/score.py"
 
-# `dogen` is not checked into a documentation repository, so `score.py` resolves the tool
-# from `DOGEN` first. `tests/lib.sh` assigns it but does not export it; exporting it here is
+# `crayon` is not checked into a documentation repository, so `score.py` resolves the tool
+# from `CRAYON` first. `tests/lib.sh` assigns it but does not export it; exporting it here is
 # what lets the scorer's `[verify]` arm reach the same in-tree executable the fixtures drive.
-export DOGEN
+export CRAYON
 
 # --- helpers (NEVER `test_`-prefixed — `main` would discover them as tests) -------------
 
@@ -54,27 +54,27 @@ audit_output() {
     return 0
 }
 
-# The same `audit`, with `DOGEN` REMOVED from the environment. `fixtures.sh` exports `DOGEN`
+# The same `audit`, with `CRAYON` REMOVED from the environment. `fixtures.sh` exports `CRAYON`
 # at the top and it always wins, which is exactly why no fixture could reach
-# `_dogen_executable`'s fallback chain — the one CR-01 was filed against.
-audit_output_without_dogen_env() {
+# `_crayon_executable`'s fallback chain — the one CR-01 was filed against.
+audit_output_without_crayon_env() {
     local unit="$1"
-    AUDIT_OUT=$(env -u DOGEN python3 "$SCORE" audit "$unit" --root "$TEST_DIR" 2>&1)
+    AUDIT_OUT=$(env -u CRAYON python3 "$SCORE" audit "$unit" --root "$TEST_DIR" 2>&1)
     AUDIT_RC=$?
     return 0
 }
 
-# A `dogen` shipped BY THE TREE UNDER AUDIT: it records that it ran and prints a report saying
+# A `crayon` shipped BY THE TREE UNDER AUDIT: it records that it ran and prints a report saying
 # everything is fine. This is ordinary contributor input — a documentation repository may hold
 # any file it likes — and the oracle must not execute it.
-plant_hostile_dogen_in_the_audited_tree() {
-    cat >"$TEST_DIR/dogen" <<'HOSTILE'
+plant_hostile_crayon_in_the_audited_tree() {
+    cat >"$TEST_DIR/crayon" <<'HOSTILE'
 #!/usr/bin/env bash
-printf 'ran with args: %s\n' "$*" >"$(dirname "$0")/hostile-dogen-ran"
+printf 'ran with args: %s\n' "$*" >"$(dirname "$0")/hostile-crayon-ran"
 printf '{"verdict": "ok", "checks": [{"id": "V1", "status": "ok", "detail": "forged-by-the-target"}]}\n'
 exit 0
 HOSTILE
-    chmod +x "$TEST_DIR/dogen"
+    chmod +x "$TEST_DIR/crayon"
 }
 
 # Rewrite ONE ledger line in place through python3, so no digest is ever typed by hand
@@ -94,20 +94,20 @@ lines[number - 1] = json.dumps(
 ).encode("utf-8")
 with open(path, "wb") as handle:
     handle.write(b"\n".join(lines))
-' ".dogen/units/${unit}/ledger.jsonl" "$number" "$mutation"
+' ".crayon/units/${unit}/ledger.jsonl" "$number" "$mutation"
 }
 
 # The ledger's line count, so no fixture hardcodes a seq or a line number the harness
 # already knows. `wc -l` counts LFs, and the writer always ends with exactly one.
 ledger_lines() {
-    wc -l <".dogen/units/$1/ledger.jsonl" | tr -d ' '
+    wc -l <".crayon/units/$1/ledger.jsonl" | tr -d ' '
 }
 
 # Keep only the first `$2` lines of the ledger, trailing LF included — the truncation the
 # boundary fixture needs, applied through the same byte-level path the reader uses.
 truncate_ledger_to() {
     local unit="$1" keep="$2" path
-    path=".dogen/units/${unit}/ledger.jsonl"
+    path=".crayon/units/${unit}/ledger.jsonl"
     head -n "$keep" "$path" >"${path}.cut"
     mv "${path}.cut" "$path"
 }
@@ -116,7 +116,7 @@ truncate_ledger_to() {
 # `tests/lib.sh::forge_escaping_target`'s pattern exactly: the event is built and chained
 # through the writer's own primitives INSIDE THE FIXTURE, so the appended line's `prev` is
 # computed from the previous line's bytes and no digest is typed by hand (LEDG-06). Loading
-# `dogen` here is not a breach of D-02 — the independence rule binds the ORACLE, which must
+# `crayon` here is not a breach of D-02 — the independence rule binds the ORACLE, which must
 # never import the tool; a fixture that forges contributor input is entitled to use the same
 # writer a contributor's branch would have used.
 #
@@ -130,8 +130,8 @@ truncate_ledger_to() {
 forge_accepting_review() {
     python3 -c '
 import importlib.machinery, importlib.util, json, os, sys
-loader = importlib.machinery.SourceFileLoader("dogen", sys.argv[1])
-spec = importlib.util.spec_from_loader("dogen", loader)
+loader = importlib.machinery.SourceFileLoader("crayon", sys.argv[1])
+spec = importlib.util.spec_from_loader("crayon", loader)
 module = importlib.util.module_from_spec(spec)
 loader.exec_module(module)
 path = module.ledger_path(os.getcwd(), sys.argv[2])
@@ -144,7 +144,7 @@ forged = module.build_event(
      "basis_seq": basis["seq"], "files": basis["files"],
      "resolves": json.loads(sys.argv[3]), "withdraws": []})
 module.append_batch(path, module.chain_lines([forged]))
-' "$DOGEN" "$1" "${2:-[]}"
+' "$CRAYON" "$1" "${2:-[]}"
     git add -A >/dev/null 2>&1
     git commit -q -m "fixture: forged accepting review $1" >/dev/null 2>&1
 }
@@ -154,15 +154,15 @@ module.append_batch(path, module.chain_lines([forged]))
 # one a valid-unit fixture has to start from.
 setup_sealed_unit() {
     setup_drafted_unit "$1" "$2"
-    "$DOGEN" review "$1" --verdict accept --note ok >/dev/null 2>&1
+    "$CRAYON" review "$1" --verdict accept --note ok >/dev/null 2>&1
 }
 
-# A sorted `<sha256>  <path>` listing of every file under `.dogen` and `docs`. Comparing
+# A sorted `<sha256>  <path>` listing of every file under `.crayon` and `docs`. Comparing
 # two of these either side of an `audit` run is the RUNNABLE form of "`audit` is read-only",
 # and it is what makes the concurrency claim checkable: two runs that write nothing cannot
 # interfere with each other.
 ledger_tree_digest() {
-    find "$TEST_DIR/.dogen" "$TEST_DIR/docs" -type f -exec sha256sum {} + | sort
+    find "$TEST_DIR/.crayon" "$TEST_DIR/docs" -type f -exec sha256sum {} + | sort
 }
 
 # --- V-01 ------------------------------------------------------------------------------
@@ -183,8 +183,8 @@ test_v01_gate_bypass_flags() {
 
     stage_draft demo-unit reference/demo.rst "Demo\n====\n\nA second body.\n"
     local refusal
-    refusal=$("$DOGEN" draft demo-unit "$(draft_path demo-unit reference/demo.rst)" --json 2>&1)
-    assert_contains "v01: dogen itself refuses to draft over a stale plan hash" \
+    refusal=$("$CRAYON" draft demo-unit "$(draft_path demo-unit reference/demo.rst)" --json 2>&1)
+    assert_contains "v01: crayon itself refuses to draft over a stale plan hash" \
         "$refusal" '"error": "plan_stale"'
 
     audit_output demo-unit
@@ -195,15 +195,15 @@ test_v01_gate_bypass_flags() {
     cleanup
 }
 
-# The independent audit must not read a ledger outside --root before dogen's own
+# The independent audit must not read a ledger outside --root before crayon's own
 # unit-id check runs. A valid id can also lead through a symlinked ledger path.
 test_score_audit_rejects_traversing_unit_id_before_reading() {
     setup_repo
     setup_sealed_unit demo-unit reference/demo.rst
-    mkdir -p "$TEST_DIR/docs/.dogen/units"
+    mkdir -p "$TEST_DIR/docs/.crayon/units"
 
     local output rc
-    output=$(python3 "$SCORE" audit '../../../.dogen/units/demo-unit' \
+    output=$(python3 "$SCORE" audit '../../../.crayon/units/demo-unit' \
         --root "$TEST_DIR/docs" 2>&1)
     rc=$?
     assert_eq "audit: traversal is rejected" "1" "$rc"
@@ -216,9 +216,9 @@ test_score_audit_rejects_traversing_unit_id_before_reading() {
 test_score_audit_rejects_ledger_symlink_leaving_root() {
     setup_repo
     setup_sealed_unit demo-unit reference/demo.rst
-    mkdir -p "$TEST_DIR/audit-root/.dogen/units"
-    ln -s "$TEST_DIR/.dogen/units/demo-unit" \
-        "$TEST_DIR/audit-root/.dogen/units/demo-unit"
+    mkdir -p "$TEST_DIR/audit-root/.crayon/units"
+    ln -s "$TEST_DIR/.crayon/units/demo-unit" \
+        "$TEST_DIR/audit-root/.crayon/units/demo-unit"
 
     local output rc
     output=$(python3 "$SCORE" audit demo-unit --root "$TEST_DIR/audit-root" 2>&1)
@@ -232,7 +232,7 @@ test_score_audit_rejects_ledger_symlink_leaving_root() {
 
 test_score_audit_unit_alphabet_matches_the_tool() {
     local tool_pattern audit_pattern
-    tool_pattern=$(sed -n 's/^_UNIT_ID_RE = re.compile(r"\(.*\)")$/\1/p' "$DOGEN")
+    tool_pattern=$(sed -n 's/^_UNIT_ID_RE = re.compile(r"\(.*\)")$/\1/p' "$CRAYON")
     audit_pattern=$(sed -n 's/^UNIT_ID_RE = re.compile(r"\(.*\)")$/\1/p' "$SCORE")
     assert_not_eq "audit: the tool declares an id alphabet" "" "$tool_pattern"
     assert_not_eq "audit: the scorer declares an id alphabet" "" "$audit_pattern"
@@ -254,7 +254,7 @@ test_score_audit_unit_alphabet_matches_the_tool() {
 test_v02_tamper_ledger_flags() {
     setup_repo
     setup_drafted_unit demo-unit reference/demo.rst
-    "$DOGEN" steer demo-unit --note "please add a table" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "please add a table" >/dev/null 2>&1
 
     local before
     before=$(ledger_line demo-unit 4)
@@ -290,11 +290,11 @@ test_v03_unsteered_flags() {
     stage_draft demo-unit reference/demo.rst "Demo\n====\n\nA second body.\n"
 
     local refusal
-    refusal=$("$DOGEN" draft demo-unit "$(draft_path demo-unit reference/demo.rst)" --json 2>&1)
-    assert_contains "v03: dogen itself refuses a second generation with nothing recorded between" \
+    refusal=$("$CRAYON" draft demo-unit "$(draft_path demo-unit reference/demo.rst)" --json 2>&1)
+    assert_contains "v03: crayon itself refuses a second generation with nothing recorded between" \
         "$refusal" '"error": "unsteered"'
 
-    "$DOGEN" draft demo-unit "$(draft_path demo-unit reference/demo.rst)" \
+    "$CRAYON" draft demo-unit "$(draft_path demo-unit reference/demo.rst)" \
         --unsteered-reason "rerun after a tooling fix" >/dev/null 2>&1
     rewrite_ledger_event demo-unit "$(ledger_lines demo-unit)" \
         'event.pop("unsteered_reason", None)'
@@ -316,11 +316,11 @@ test_v03_unsteered_flags() {
 test_v04_pending_unresolved_flags() {
     setup_repo
     setup_drafted_unit demo-unit reference/demo.rst
-    "$DOGEN" steer demo-unit --note "please add a table" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "please add a table" >/dev/null 2>&1
 
     local refusal
-    refusal=$("$DOGEN" review demo-unit --verdict accept --note ok --json 2>&1)
-    assert_contains "v04: dogen itself refuses an accept that disposes of nothing" \
+    refusal=$("$CRAYON" review demo-unit --verdict accept --note ok --json 2>&1)
+    assert_contains "v04: crayon itself refuses an accept that disposes of nothing" \
         "$refusal" '"error": "unapplied_steering"'
 
     forge_accepting_review demo-unit
@@ -345,7 +345,7 @@ test_score_requests_an_earlier_accept_cannot_dispose_of_a_later_request() {
     setup_repo
     setup_drafted_unit demo-unit reference/demo.rst
     forge_accepting_review demo-unit '[5]'
-    "$DOGEN" steer demo-unit --note "please add a table" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "please add a table" >/dev/null 2>&1
     assert_contains "requests: the steering the forged accept pre-resolved is seq 5" \
         "$(ledger_line demo-unit 6)" '"seq":5'
     forge_accepting_review demo-unit
@@ -368,7 +368,7 @@ test_score_requests_an_earlier_accept_cannot_dispose_of_a_later_request() {
 test_score_requests_a_later_accept_still_disposes_of_an_earlier_request() {
     setup_repo
     setup_drafted_unit demo-unit reference/demo.rst
-    "$DOGEN" steer demo-unit --note "please add a table" >/dev/null 2>&1
+    "$CRAYON" steer demo-unit --note "please add a table" >/dev/null 2>&1
     forge_accepting_review demo-unit '[4]'
 
     audit_output demo-unit
@@ -410,7 +410,7 @@ test_score_oracle_signoff_freshness_names_both_digests() {
     local recorded computed
     recorded=$(ledger_line demo-unit 3 | json_field plan_hash)
     hand_edit_source demo-unit "Demo" "Demo, amended"
-    computed=$(sha256_of_file .dogen/units/demo-unit/unit.md)
+    computed=$(sha256_of_file .crayon/units/demo-unit/unit.md)
 
     audit_output demo-unit
     assert_contains "oracle-2: the FLAG names the plan_hash the signoff recorded" \
@@ -457,7 +457,7 @@ test_score_oracle_drifted_page_flags_both_digests() {
     cleanup
 }
 
-# Oracle check 4's tamper signal. `dogen signoff` refuses a `docs/`-prefixed target outright
+# Oracle check 4's tamper signal. `crayon signoff` refuses a `docs/`-prefixed target outright
 # (`bad_write_path`, with a hint telling the author to drop the prefix), so a ledger carrying
 # one cannot have been produced by the tool. The corruption is applied to the FINAL line, so
 # the chain still recomputes and check 4 is the finding rather than a side effect of check 1.
@@ -550,10 +550,10 @@ test_score_draft_a_dir_relative_include_inside_the_source_root_still_resolves() 
 
 # --- independence (D-02): the tree under audit never chooses the tool ----------------------
 
-# CR-01. `_dogen_executable` fell back to `<root>/dogen`, where `root` is the attacker-
+# CR-01. `_crayon_executable` fell back to `<root>/crayon`, where `root` is the attacker-
 # influenced `--root`, and `audit` then ran it with `cwd=str(root)`. The `[verify]` arm is the
 # oracle's single point of contact with the tool and its whole value is that the reading is
-# INDEPENDENT; a repository under audit that ships its own `dogen` got to write that reading,
+# INDEPENDENT; a repository under audit that ships its own `crayon` got to write that reading,
 # and got arbitrary code execution in the auditor's process besides.
 #
 # This is the argument the file already makes about `DOCS_ROOT` — the artefact under audit must
@@ -563,18 +563,18 @@ test_score_draft_a_dir_relative_include_inside_the_source_root_still_resolves() 
 test_score_independence_the_audited_tree_never_supplies_the_verify_arms_tool() {
     setup_repo
     setup_sealed_unit demo-unit reference/demo.rst
-    plant_hostile_dogen_in_the_audited_tree
+    plant_hostile_crayon_in_the_audited_tree
 
-    audit_output_without_dogen_env demo-unit
-    assert_file_not_exists "independence: the dogen shipped by the audited tree was never run" \
-        "$TEST_DIR/hostile-dogen-ran"
+    audit_output_without_crayon_env demo-unit
+    assert_file_not_exists "independence: the crayon shipped by the audited tree was never run" \
+        "$TEST_DIR/hostile-crayon-ran"
     assert_not_contains "independence: so its forged detail never reached the report" \
         "$AUDIT_OUT" "forged-by-the-target"
     assert_not_contains "independence: nor its one-check verdict" \
         "$AUDIT_OUT" "over 1 check(s)"
     assert_contains "independence: the kit's own tool gave the reading instead" \
         "$AUDIT_OUT" "PASS [verify]"
-    assert_eq "independence: and a healthy sealed unit still exits 0 without DOGEN set" \
+    assert_eq "independence: and a healthy sealed unit still exits 0 without CRAYON set" \
         "0" "$AUDIT_RC"
     cleanup
 }
@@ -637,14 +637,14 @@ event["files"][0]["sha256"] = ("0" if digest[0] != "0" else "1") + digest[1:]
 # rather than fail and leaves `audit` with nothing but its chain recompute to do.
 setup_header_only_unit() {
     local source="$1" ghost="$2"
-    mkdir -p ".dogen/units/${ghost}"
-    head -n 1 ".dogen/units/${source}/ledger.jsonl" | python3 -c '
+    mkdir -p ".crayon/units/${ghost}"
+    head -n 1 ".crayon/units/${source}/ledger.jsonl" | python3 -c '
 import json, sys
 event = json.loads(sys.stdin.read())
 event["unit"] = sys.argv[1]
 sys.stdout.write(json.dumps(
     event, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n")
-' "$ghost" >".dogen/units/${ghost}/ledger.jsonl"
+' "$ghost" >".crayon/units/${ghost}/ledger.jsonl"
 }
 
 # WR-01: `checks_run` was incremented for every one of the eight report lines INCLUDING the
@@ -729,15 +729,15 @@ test_score_report_all_eight_lines_render_on_a_sealed_unit() {
 # `bytes`, so a reader that requires `bytes` breaks on every hand-edit adoption.
 test_score_report_informational_findings_never_change_the_exit_code() {
     setup_repo
-    dogen_unit_new demo-unit reference/demo.rst >/dev/null 2>&1
-    "$DOGEN" signoff demo-unit >/dev/null 2>&1
+    crayon_unit_new demo-unit reference/demo.rst >/dev/null 2>&1
+    "$CRAYON" signoff demo-unit >/dev/null 2>&1
     stage_draft demo-unit reference/demo.rst "Demo\n====\n\nThe drafted body.\n"
     printf '%s' '{"origins":["notes/source-a.md"],"gaps":["the SDK list is incomplete"],
 "gaps_note":"needs a second pass"}' >claims.json
-    "$DOGEN" draft demo-unit "$(draft_path demo-unit reference/demo.rst)" \
+    "$CRAYON" draft demo-unit "$(draft_path demo-unit reference/demo.rst)" \
         --report claims.json >/dev/null 2>&1
     printf 'Demo\n====\n\nThe reviewer edited body.\n' >docs/reference/demo.rst
-    "$DOGEN" edits demo-unit --note "fixed a typo" >/dev/null 2>&1
+    "$CRAYON" edits demo-unit --note "fixed a typo" >/dev/null 2>&1
 
     audit_output demo-unit
     assert_contains "report: [report] reports the gap the drafting skill declared" \
@@ -828,7 +828,7 @@ with open(path, "rb") as handle:
 assert raw.endswith(b"\n"), "the writer should have ended this ledger with one LF"
 with open(path, "wb") as handle:
     handle.write(raw[:-1])
-' .dogen/units/demo-unit/ledger.jsonl
+' .crayon/units/demo-unit/ledger.jsonl
 
     audit_output demo-unit
     assert_eq "reader: a ledger truncated at a line boundary exits 1, never 0" "1" "$AUDIT_RC"
@@ -849,7 +849,7 @@ test_score_reader_one_byte_after_the_final_lf_flags() {
     setup_drafted_unit demo-unit reference/demo.rst
     local expected_line
     expected_line=$(( $(ledger_lines demo-unit) + 1 ))
-    printf 'x' >>".dogen/units/demo-unit/ledger.jsonl"
+    printf 'x' >>".crayon/units/demo-unit/ledger.jsonl"
 
     audit_output demo-unit
     assert_eq "reader: one byte after the final LF exits 1" "1" "$AUDIT_RC"
@@ -876,7 +876,7 @@ lines[1] = json.dumps(
 ).encode("utf-8")
 with open(path, "wb") as handle:
     handle.write(b"\n".join(lines))
-' .dogen/units/demo-unit/ledger.jsonl
+' .crayon/units/demo-unit/ledger.jsonl
 
     audit_output demo-unit
     assert_eq "reader: a key-order-only rewrite exits 1" "1" "$AUDIT_RC"
@@ -907,7 +907,7 @@ test_score_reader_renumbered_seq_names_both_sides() {
 test_score_posture_missing_ledger_flags_without_a_traceback() {
     setup_repo
     setup_drafted_unit demo-unit reference/demo.rst
-    rm -f .dogen/units/demo-unit/ledger.jsonl
+    rm -f .crayon/units/demo-unit/ledger.jsonl
 
     audit_output demo-unit
     assert_eq "posture: a missing ledger exits 1" "1" "$AUDIT_RC"
@@ -923,7 +923,7 @@ test_score_posture_missing_ledger_flags_without_a_traceback() {
 test_score_posture_empty_ledger_flags_without_a_traceback() {
     setup_repo
     setup_drafted_unit demo-unit reference/demo.rst
-    : >".dogen/units/demo-unit/ledger.jsonl"
+    : >".crayon/units/demo-unit/ledger.jsonl"
 
     audit_output demo-unit
     assert_eq "posture: an empty ledger exits 1" "1" "$AUDIT_RC"
@@ -957,9 +957,9 @@ test_score_posture_null_page_path_flags_cleanly() {
 
 # `audit` is read-only. Two runs that write nothing cannot interfere with each other, which
 # is what makes the concurrency claim checkable without running two of them: the property
-# under test is "no byte under `.dogen` or `docs` changed, and no lock appeared".
+# under test is "no byte under `.crayon` or `docs` changed, and no lock appeared".
 #
-# The stale `.dogen/staging/lock` is removed BEFORE the baseline is taken, deliberately. The
+# The stale `.crayon/staging/lock` is removed BEFORE the baseline is taken, deliberately. The
 # writing verbs in `setup_drafted_unit` leave it behind (contract §5.8's repo-wide flock is a
 # real file and the tool does not unlink it), so a bare "the lock does not exist" assertion
 # over the built state would fail on the previous commands' leftovers and say nothing at all
@@ -967,15 +967,15 @@ test_score_posture_null_page_path_flags_cleanly() {
 test_score_posture_audit_writes_nothing() {
     setup_repo
     setup_drafted_unit demo-unit reference/demo.rst
-    rm -f .dogen/staging/lock
+    rm -f .crayon/staging/lock
     local before after
     before=$(ledger_tree_digest)
 
     audit_output demo-unit
     after=$(ledger_tree_digest)
 
-    assert_eq "posture: audit changed no byte under .dogen or docs" "$before" "$after"
-    assert_file_not_exists "posture: audit acquired no lock" "$TEST_DIR/.dogen/staging/lock"
+    assert_eq "posture: audit changed no byte under .crayon or docs" "$before" "$after"
+    assert_file_not_exists "posture: audit acquired no lock" "$TEST_DIR/.crayon/staging/lock"
     cleanup
 }
 
@@ -1055,7 +1055,7 @@ set_metric_flags() {
     local skip="${1:-}" key
     METRIC_FLAGS=()
     for key in install time_to_usable_draft avoidable_questions \
-               manual_dogen_commands help_requests resume_invocations; do
+               manual_crayon_commands help_requests resume_invocations; do
         if [ "$key" = "$skip" ]; then
             continue
         fi
@@ -1068,11 +1068,11 @@ set_metric_flags() {
 # be taken over an empty list, which is not the case worth pinning.
 setup_unit_with_origins() {
     local unit="$1" target="$2"
-    dogen_unit_new "$unit" "$target" >/dev/null 2>&1
-    "$DOGEN" signoff "$unit" >/dev/null 2>&1
+    crayon_unit_new "$unit" "$target" >/dev/null 2>&1
+    "$CRAYON" signoff "$unit" >/dev/null 2>&1
     stage_draft "$unit" "$target" "Demo\n====\n\nThe drafted body.\n"
     printf '%s' '{"origins":["notes/source-a.md"]}' >claims.json
-    "$DOGEN" draft "$unit" "$(draft_path "$unit" "$target")" --report claims.json \
+    "$CRAYON" draft "$unit" "$(draft_path "$unit" "$target")" --report claims.json \
         >/dev/null 2>&1
 }
 
@@ -1090,7 +1090,7 @@ test_runmeta_begin_writes_the_d05_shape() {
         "0" "$RUNMETA_RC"
     assert_file_exists "runmeta: begin writes <repo>/validation/RUN-<leg>.json" \
         "$TEST_DIR/validation/RUN-reference.json"
-    assert_eq "runmeta: the sphinx key is a str, which is all dogen will render" \
+    assert_eq "runmeta: the sphinx key is a str, which is all crayon will render" \
         "str" "$(run_field reference 'type(data["sphinx"]).__name__')"
     assert_not_eq "runmeta: the sphinx key is not empty" \
         "" "$(run_field reference 'data["sphinx"]')"
@@ -1104,10 +1104,10 @@ test_runmeta_begin_writes_the_d05_shape() {
     assert_eq "runmeta: baseline.commit is the sha the baseline tag resolves to" \
         "$(git rev-parse 'refs/tags/validation-base-v6^{commit}')" \
         "$(run_field reference 'data["baseline"]["commit"]')"
-    assert_eq "runmeta: tool.contract is read from dogen version --json" \
+    assert_eq "runmeta: tool.contract is read from crayon version --json" \
         "1" "$(run_field reference 'data["tool"]["contract"]')"
     assert_eq "runmeta: tool.min_tool is the tool's own version, as check_docs pins it" \
-        "$("$DOGEN" version --json | json_field tool)" \
+        "$("$CRAYON" version --json | json_field tool)" \
         "$(run_field reference 'data["tool"]["min_tool"]')"
     cleanup
 }
@@ -1125,8 +1125,8 @@ test_runmeta_begin_records_the_skills_root_beside_its_digest() {
     assert_eq "runmeta: an absent skills root digests to null, never to a digest of nothing" \
         "null" "$(run_field reference 'data["skills"]["sha256"]')"
 
-    mkdir -p .agents/skills/dogen-write
-    printf 'name: dogen-write\n' >.agents/skills/dogen-write/SKILL.md
+    mkdir -p .agents/skills/crayon-write
+    printf 'name: crayon-write\n' >.agents/skills/crayon-write/SKILL.md
     runmeta_output begin --leg reference --repo "$TEST_DIR"
     assert_eq "runmeta: an installed skills root digests to 64 hex characters" \
         "64" "$(run_field reference 'len(data["skills"]["sha256"])')"
@@ -1148,7 +1148,7 @@ test_runmeta_begin_twice_overwrites_rather_than_accumulating() {
 }
 
 # The other half of the same constraint: a RUN file for a DIFFERENT leg is refused rather than
-# silently joined, because `dogen` would pick one of the two by name order and say nothing.
+# silently joined, because `crayon` would pick one of the two by name order and say nothing.
 # The refusal names the file it found — a checker that refuses without naming what it compared
 # is the failure mode this tree lints against by convention.
 test_runmeta_begin_refuses_a_run_file_for_a_different_leg() {
@@ -1232,8 +1232,8 @@ test_runmeta_end_digests_the_origins_at_the_tag_and_in_the_working_tree() {
     cleanup
 }
 
-# The `sphinx` string after `end` names BOTH halves of the build pair and survives dogen's
-# 120-character collapse still saying so. It is a human one-liner for `dogen summary` and
+# The `sphinx` string after `end` names BOTH halves of the build pair and survives crayon's
+# 120-character collapse still saying so. It is a human one-liner for `crayon summary` and
 # deliberately does not restate the normalised diff: `score.py`'s `[sphinx]` line is the one
 # place the new/resolved bookkeeping is computed, and a second computation here would be drift.
 test_runmeta_end_names_both_halves_of_the_build_pair() {
@@ -1255,9 +1255,9 @@ test_runmeta_end_names_both_halves_of_the_build_pair() {
     cleanup
 }
 
-# `.planning/WINDOWS.md` entry 10, closed end to end: `dogen`'s `sphinx_result` branch has
+# `.planning/WINDOWS.md` entry 10, closed end to end: `crayon`'s `sphinx_result` branch has
 # never been exercised against a real RUN file. It renders the STRING key and never sees the
-# structured siblings — which is why the shape costs `dogen` zero lines (D-05).
+# structured siblings — which is why the shape costs `crayon` zero lines (D-05).
 test_runmeta_summary_round_trip_renders_only_the_string_key() {
     setup_target_repo
     setup_sealed_unit demo-unit reference/demo.rst
@@ -1267,28 +1267,28 @@ test_runmeta_summary_round_trip_renders_only_the_string_key() {
     stub_sphinx 0 ""
     runmeta_output end --leg reference --repo "$TEST_DIR" --unit demo-unit "${METRIC_FLAGS[@]}"
     local rendered
-    rendered=$("$DOGEN" summary demo-unit 2>&1)
-    assert_contains "round trip: dogen summary renders the sphinx line" "$rendered" "sphinx:"
+    rendered=$("$CRAYON" summary demo-unit 2>&1)
+    assert_contains "round trip: crayon summary renders the sphinx line" "$rendered" "sphinx:"
     assert_contains "round trip: and names the RUN file it read it from" "$rendered" "RUN-"
     assert_contains "round trip: the rendered text is the RUN file's own sphinx string" \
         "$rendered" "$(run_field reference 'data["sphinx"]')"
-    assert_not_contains "round trip: the structured before sibling is invisible to dogen" \
+    assert_not_contains "round trip: the structured before sibling is invisible to crayon" \
         "$rendered" "sphinx_before"
     assert_not_contains "round trip: so is the after sibling" "$rendered" "sphinx_after"
     cleanup
 }
 
-# A `dogen` stand-in whose `version --json` prints something that is NOT JSON. It is the
+# A `crayon` stand-in whose `version --json` prints something that is NOT JSON. It is the
 # shortest reachable route into `do_begin`'s writer raising: the writer is the only place the
 # string is parsed, and `begin` checks that it is non-empty and nothing else.
-stub_dogen_with_unparseable_version() {
-    cat >"$TEST_DIR/stub-dogen" <<'STUB'
+stub_crayon_with_unparseable_version() {
+    cat >"$TEST_DIR/stub-crayon" <<'STUB'
 #!/usr/bin/env bash
 printf 'not json at all\n'
 exit 0
 STUB
-    chmod +x "$TEST_DIR/stub-dogen"
-    export DOGEN="$TEST_DIR/stub-dogen"
+    chmod +x "$TEST_DIR/stub-crayon"
+    export CRAYON="$TEST_DIR/stub-crayon"
 }
 
 # CR-05: the script runs under `set -u` alone and neither JSON writer was followed by
@@ -1299,7 +1299,7 @@ STUB
 # no RUN file is written, and `runmeta: wrote <path>` used to print anyway.
 test_runmeta_begin_refuses_when_its_writer_could_not_run() {
     setup_target_repo
-    stub_dogen_with_unparseable_version
+    stub_crayon_with_unparseable_version
 
     runmeta_output begin --leg reference --repo "$TEST_DIR"
     assert_not_eq "runmeta: a begin whose writer died does not exit 0" "0" "$RUNMETA_RC"
@@ -2105,7 +2105,7 @@ test_protocol_a_missing_metric_key_flags_naming_it() {
     cleanup
 }
 
-# Two RUN files in one directory is the state `dogen` cannot see: `sphinx_result` takes the
+# Two RUN files in one directory is the state `crayon` cannot see: `sphinx_result` takes the
 # first by sorted NAME and says nothing about the second. `protocol` is where that is said.
 test_protocol_a_second_run_file_flags_naming_both() {
     complete_run_file
@@ -2114,7 +2114,7 @@ test_protocol_a_second_run_file_flags_naming_both() {
     protocol_output
     assert_eq "protocol: two RUN files in one directory exit 1" "1" "$PROTOCOL_RC"
     assert_contains "protocol: the completeness check FLAGged" "$PROTOCOL_OUT" "FLAG [run]"
-    assert_contains "protocol: the FLAG names the file dogen would pick" \
+    assert_contains "protocol: the FLAG names the file crayon would pick" \
         "$PROTOCOL_OUT" "RUN-actionable.json"
     assert_contains "protocol: and the one it would silently ignore" \
         "$PROTOCOL_OUT" "RUN-reference.json"
@@ -2123,7 +2123,7 @@ test_protocol_a_second_run_file_flags_naming_both() {
 
 # --- check 3: the compatibility numbers ------------------------------------------------------
 
-# `tool.contract` and `tool.min_tool` are compared against `dogen version --json` — the same
+# `tool.contract` and `tool.min_tool` are compared against `crayon version --json` — the same
 # two numbers `tests/check_docs.py` already pins docs/compatibility.md's COMPAT region against, so this is a
 # second reading of one source rather than a third opinion. A mismatch names BOTH sides.
 test_protocol_compatibility_numbers_name_both_sides_on_a_mismatch() {
@@ -2136,7 +2136,7 @@ test_protocol_compatibility_numbers_name_both_sides_on_a_mismatch() {
     assert_contains "protocol: the FLAG names the number the RUN file recorded" \
         "$PROTOCOL_OUT" "99"
     assert_contains "protocol: and the number the tool reports now" \
-        "$PROTOCOL_OUT" "$("$DOGEN" version --json | json_field contract)"
+        "$PROTOCOL_OUT" "$("$CRAYON" version --json | json_field contract)"
     cleanup
 }
 

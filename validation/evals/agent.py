@@ -6,11 +6,11 @@ carry the names the skills declare in their ``allowed-tools`` frontmatter
 ``AskUserQuestion``), with plain JSON-schema parameters. A model is offered only
 the tools its invoked skill declares.
 
-Lane B uses ``run_episode``: the conversation up to a recorded ``dogen`` output
+Lane B uses ``run_episode``: the conversation up to a recorded ``crayon`` output
 is replayed as real tool calls and results, then the model acts, in a real copy
 of the recorded state (``SandboxRepo``). Looking is free: reads, searches,
-inspection commands and read-only ``dogen`` calls run for real there and the
-episode goes on. The first *consequential* action ends it — a ``dogen`` verb
+inspection commands and read-only ``crayon`` calls run for real there and the
+episode goes on. The first *consequential* action ends it — a ``crayon`` verb
 that records, any other command, a write, a question to the author, or a turn
 with no tool call — and that action is what the case grades. It is never run.
 """
@@ -131,9 +131,9 @@ TOOL_SCHEMAS = {
 
 READ_TOOLS = ("Read", "Glob", "Grep")
 
-#: ``dogen`` calls that only look. Any other ``dogen`` call is consequential.
-_READONLY_DOGEN_RE = re.compile(
-    r"^dogen(\s+(version|show|summary|verify|context\s+show|resume\s+\S+\s+--dry-run"
+#: ``crayon`` calls that only look. Any other ``crayon`` call is consequential.
+_READONLY_CRAYON_RE = re.compile(
+    r"^crayon(\s+(version|show|summary|verify|context\s+show|resume\s+\S+\s+--dry-run"
     r"|[a-z-]+(\s+[a-z-]+)?\s+(--help|-h))\b|\s+(--help|-h|--version)\b)"
 )
 #: Shell inspection a careful agent does before acting. Run for real in the
@@ -174,7 +174,7 @@ _QUOTED_RE = re.compile(r"'[^']*'|\"(?:\\.|[^\"\\])*\"")
 #: the staging tree (or one named by a variable), and waiting.
 _SETUP_PART_RE = re.compile(
     r"^([A-Za-z_][A-Za-z0-9_]*=\S*|"
-    r"mkdir\s+-p\s+((/srv/toyq/)?\.dogen/staging/\S+|\$\{?[A-Za-z_]\S*)|"
+    r"mkdir\s+-p\s+((/srv/toyq/)?\.crayon/staging/\S+|\$\{?[A-Za-z_]\S*)|"
     r"sleep\s+\d+(\.\d+)?)$"
 )
 
@@ -278,7 +278,7 @@ def looking(command, python=False):
             if _PYTHON_ACTS_RE.search(part):
                 return False
             continue
-        if not (_INSPECT_RE.match(part) or _READONLY_DOGEN_RE.match(normalise(part))
+        if not (_INSPECT_RE.match(part) or _READONLY_CRAYON_RE.match(normalise(part))
                 or _SETUP_PART_RE.match(part)):
             return False
     return True
@@ -301,7 +301,7 @@ def normalise(command):
     """A command as typed, minus what does not change its meaning here.
 
     Quotes are dropped, whitespace collapsed, and a trailing ``2>&1`` removed,
-    so ``dogen show "cfg" --json 2>&1`` matches ``dogen show cfg --json``.
+    so ``crayon show "cfg" --json 2>&1`` matches ``crayon show cfg --json``.
     """
     command = re.sub(r"\s*2>&1\s*$", "", command.strip())
     command = command.replace('"', "").replace("'", "")
@@ -338,19 +338,19 @@ class Jail(object):
 
     The command sees the sandbox copy at the real ``WORKDIR`` and each sibling
     of it (the throwaway home, a docs root moved beside the repository) at
-    ``/srv/<name>``; ``/usr`` read-only, a ``dogen`` shim on ``/opt/dogen``, an
+    ``/srv/<name>``; ``/usr`` read-only, a ``crayon`` shim on ``/opt/crayon``, an
     empty ``/tmp``, its own process table, and no network. Nothing else of the
     machine running the eval exists in there — not its home, not the checkout
     the eval runs from — so a command that goes looking beyond the repository
     finds nothing to show a model.
     """
 
-    SHIM = "/opt/dogen/bin"
+    SHIM = "/opt/crayon/bin"
     PATH = SHIM + ":/usr/local/bin:/usr/bin:/bin"
 
-    def __init__(self, shim_dir, dogen_py, bwrap="bwrap"):
+    def __init__(self, shim_dir, crayon_py, bwrap="bwrap"):
         self.shim_dir = str(shim_dir)
-        self.dogen_py = str(dogen_py)
+        self.crayon_py = str(crayon_py)
         self.bwrap = bwrap
 
     def argv(self, root, env, command):
@@ -365,7 +365,7 @@ class Jail(object):
             args += ["--ro-bind-try", kept, kept]
         args += ["--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp",
                  "--ro-bind", self.shim_dir, self.SHIM,
-                 "--ro-bind", self.dogen_py, "/opt/dogen/dogen.py"]
+                 "--ro-bind", self.crayon_py, "/opt/crayon/crayon.py"]
         holder = os.path.dirname(root)
         for name in sorted(os.listdir(holder)):
             full = os.path.join(holder, name)
@@ -385,7 +385,7 @@ class SandboxRepo(object):
     The copy lives at ``root``; the model is told it works in ``WORKDIR``, and
     paths are mapped both ways. ``Read``/``Glob``/``Grep`` read the copy. A
     ``Bash`` call that only looks (``looking``) runs for real, in the copy,
-    under a constructed environment: ``PATH`` with a ``dogen`` shim first, a
+    under a constructed environment: ``PATH`` with a ``crayon`` shim first, a
     throwaway ``HOME``, git's global and system config switched off, and
     nothing inherited, so no key or setting of the machine running the eval can
     reach a model's command. With a ``jail`` (:class:`Jail`) it runs inside it,

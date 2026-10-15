@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh — install dogen and its five skills, then verify the install.
+# install.sh — install crayon and its five skills, then verify the install.
 #
 # Usage:
 #   ./install.sh                 walk through every decision; Enter takes the default
@@ -21,7 +21,7 @@
 set -u
 
 # --- defaults ----------------------------------------------------------------
-DOGEN_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CRAYON_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS=""
 REPO=""
 SKILLS_ROOT=""
@@ -35,7 +35,7 @@ answer=""
 
 DEFAULT_TOOL_DIR="$HOME/.local/bin"
 GLOBAL_SKILLS_ROOT="$HOME/.agents/skills"
-SKILL_NAMES="dogen-onboard dogen-fetch dogen-plan dogen-write dogen-review"
+SKILL_NAMES="crayon-onboard crayon-fetch crayon-plan crayon-write crayon-review"
 
 usage() {
     sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -46,11 +46,11 @@ Flags:
   --skills SCOPE        project (default) or global
   --repo DIR            the docs repository (project scope; default: the current directory)
   --skills-root DIR     the discovery root, when your agent does not read .agents/skills/
-  --tool-dir DIR        where the dogen executable is copied (default: ~/.local/bin)
+  --tool-dir DIR        where the crayon executable is copied (default: ~/.local/bin)
   --link                symlink the executable into the checkout instead of copying it
-  --no-gitignore        do not add .dogen/staging/ to the repository's .gitignore
+  --no-gitignore        do not add .crayon/staging/ to the repository's .gitignore
   --no-compat-links     do not link the skills from .claude/skills/ as well
-  --dogen-src DIR       the dogen checkout to install from (default: this script's directory)
+  --crayon-src DIR       the crayon checkout to install from (default: this script's directory)
   --verify-only         change nothing; verify an existing install and report
   --help                this text
 EOF
@@ -72,7 +72,7 @@ while [ $# -gt 0 ]; do
         --link) LINK=1 ;;
         --no-gitignore) GITIGNORE=0 ;;
         --no-compat-links) COMPAT_LINKS=0 ;;
-        --dogen-src) shift; DOGEN_SRC="${1:-}" ;;
+        --crayon-src) shift; CRAYON_SRC="${1:-}" ;;
         --verify-only) VERIFY_ONLY=1 ;;
         -h|--help) usage; exit 0 ;;
         *) die "unknown flag $1 (try --help)" ;;
@@ -80,8 +80,8 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-[ -f "$DOGEN_SRC/dogen.py" ] || die "no dogen.py at $DOGEN_SRC (pass --dogen-src)"
-[ -d "$DOGEN_SRC/skills/dogen-plan" ] || die "no skills under $DOGEN_SRC/skills"
+[ -f "$CRAYON_SRC/crayon.py" ] || die "no crayon.py at $CRAYON_SRC (pass --crayon-src)"
+[ -d "$CRAYON_SRC/skills/crayon-plan" ] || die "no skills under $CRAYON_SRC/skills"
 
 # --- prompting ---------------------------------------------------------------
 # ask VAR "question" "default": with --yes, or with no terminal, the default.
@@ -162,7 +162,7 @@ if [ "$SKILLS" = "project" ]; then
     fi
     REPO="$(cd "$REPO" 2>/dev/null && pwd)" || die "no such directory: $REPO"
     if ! git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        die "$REPO is not a git repository; dogen records into the repository it runs in — initialise one first (git init), then re-run"
+        die "$REPO is not a git repository; crayon records into the repository it runs in — initialise one first (git init), then re-run"
     fi
     if [ -z "$SKILLS_ROOT" ]; then
         SKILLS_ROOT=".agents/skills"
@@ -179,7 +179,7 @@ fi
 
 # --- decision 2: the tool ----------------------------------------------------
 if [ "$LINK" -eq 0 ] && [ -z "$TOOL_DIR" ]; then
-    choose TOOL_DIR "2/3  Where should the dogen executable go?" 1 \
+    choose TOOL_DIR "2/3  Where should the crayon executable go?" 1 \
         "$DEFAULT_TOOL_DIR|a copy; no sudo, the usual place for user tools" \
         "/usr/local/bin|a copy for every user; needs write access to that directory" \
         "link|a symlink into this checkout: git pull upgrades the tool" \
@@ -200,10 +200,10 @@ esac
 
 # --- decision 3: .gitignore --------------------------------------------------
 if [ "$SKILLS" = "project" ] && [ "$GITIGNORE" -eq 1 ] && [ "$VERIFY_ONLY" -eq 0 ]; then
-    if ! grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
-        choose answer "3/3  dogen stages drafts under .dogen/staging/, which is working space. Add it to $REPO/.gitignore?" 1 \
+    if ! grep -qxF '.crayon/staging/' "$REPO/.gitignore" 2>/dev/null; then
+        choose answer "3/3  crayon stages drafts under .crayon/staging/, which is working space. Add it to $REPO/.gitignore?" 1 \
             "yes|append the line" \
-            "no|leave .gitignore alone (dogen's checks will warn)"
+            "no|leave .gitignore alone (crayon's checks will warn)"
         [ "$answer" = "yes" ] || GITIGNORE=0
     fi
 fi
@@ -217,20 +217,20 @@ if [ "$VERIFY_ONLY" -eq 0 ]; then
     say "Installing"
     mkdir -p "$TOOL_DIR" || die "cannot create $TOOL_DIR"
     [ -w "$TOOL_DIR" ] || die "$TOOL_DIR is not writable; pick another --tool-dir, or run the copy yourself with the access you have"
-    rm -f "$TOOL_DIR/dogen"
+    rm -f "$TOOL_DIR/crayon"
     if [ "$LINK" -eq 1 ]; then
-        ln -s "$DOGEN_SRC/dogen.py" "$TOOL_DIR/dogen" || die "cannot link into $TOOL_DIR"
-        say "  linked  $TOOL_DIR/dogen -> $DOGEN_SRC/dogen.py"
+        ln -s "$CRAYON_SRC/crayon.py" "$TOOL_DIR/crayon" || die "cannot link into $TOOL_DIR"
+        say "  linked  $TOOL_DIR/crayon -> $CRAYON_SRC/crayon.py"
     else
-        cp "$DOGEN_SRC/dogen.py" "$TOOL_DIR/dogen" || die "cannot copy into $TOOL_DIR"
-        chmod +x "$TOOL_DIR/dogen"
-        say "  copied  $DOGEN_SRC/dogen.py -> $TOOL_DIR/dogen"
+        cp "$CRAYON_SRC/crayon.py" "$TOOL_DIR/crayon" || die "cannot copy into $TOOL_DIR"
+        chmod +x "$TOOL_DIR/crayon"
+        say "  copied  $CRAYON_SRC/crayon.py -> $TOOL_DIR/crayon"
     fi
 
     mkdir -p "$SKILLS_ROOT" || die "cannot create $SKILLS_ROOT"
     for skill in $SKILL_NAMES; do
         rm -rf "${SKILLS_ROOT:?}/$skill"
-        cp -r "$DOGEN_SRC/skills/$skill" "$SKILLS_ROOT/$skill" || die "cannot copy $skill"
+        cp -r "$CRAYON_SRC/skills/$skill" "$SKILLS_ROOT/$skill" || die "cannot copy $skill"
     done
     say "  copied  $SKILL_NAMES -> $SKILLS_ROOT/"
 
@@ -251,9 +251,9 @@ if [ "$VERIFY_ONLY" -eq 0 ]; then
     fi
 
     if [ "$SKILLS" = "project" ] && [ "$GITIGNORE" -eq 1 ]; then
-        if ! grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
-            printf '.dogen/staging/\n' >>"$REPO/.gitignore"
-            say "  added   .dogen/staging/ to $REPO/.gitignore"
+        if ! grep -qxF '.crayon/staging/' "$REPO/.gitignore" 2>/dev/null; then
+            printf '.crayon/staging/\n' >>"$REPO/.gitignore"
+            say "  added   .crayon/staging/ to $REPO/.gitignore"
         fi
     fi
 fi
@@ -282,24 +282,24 @@ on_path=0
 case ":$PATH:" in
     *":$TOOL_DIR:"*) on_path=1 ;;
 esac
-if [ -x "$TOOL_DIR/dogen" ]; then
-    pass "dogen is at $TOOL_DIR/dogen"
+if [ -x "$TOOL_DIR/crayon" ]; then
+    pass "crayon is at $TOOL_DIR/crayon"
 else
-    fail "no executable dogen at $TOOL_DIR/dogen"
+    fail "no executable crayon at $TOOL_DIR/crayon"
 fi
 if [ "$on_path" -eq 1 ]; then
-    resolved="$(PATH="$PATH" command -v dogen 2>/dev/null)" || resolved=""
-    if [ "$resolved" = "$TOOL_DIR/dogen" ]; then
-        pass "'dogen' on PATH resolves to that file"
+    resolved="$(PATH="$PATH" command -v crayon 2>/dev/null)" || resolved=""
+    if [ "$resolved" = "$TOOL_DIR/crayon" ]; then
+        pass "'crayon' on PATH resolves to that file"
     else
-        fail "'dogen' on PATH resolves to '${resolved:-nothing}', not $TOOL_DIR/dogen — an older copy sits earlier on PATH"
+        fail "'crayon' on PATH resolves to '${resolved:-nothing}', not $TOOL_DIR/crayon — an older copy sits earlier on PATH"
     fi
 else
     warn "$TOOL_DIR is not on PATH; add this line to your shell profile:  export PATH=\"$TOOL_DIR:\$PATH\""
 fi
 
 # version and contract, compared as literal strings with the skills' frontmatter
-version_json="$("$TOOL_DIR/dogen" version --json 2>/dev/null)" || version_json=""
+version_json="$("$TOOL_DIR/crayon" version --json 2>/dev/null)" || version_json=""
 tool_version="$(printf '%s' "$version_json" | python3 -c 'import json,sys
 try:
     d = json.load(sys.stdin); print(d["tool"]); print(d["contract"])
@@ -308,9 +308,9 @@ except Exception:
 tool_ver="$(printf '%s\n' "$tool_version" | sed -n 1p)"
 tool_contract="$(printf '%s\n' "$tool_version" | sed -n 2p)"
 if [ -n "$tool_ver" ] && [ -n "$tool_contract" ]; then
-    pass "the dogen tool runs: version $tool_ver, contract $tool_contract"
+    pass "the crayon tool runs: version $tool_ver, contract $tool_contract"
 else
-    fail "the dogen tool did not run (is python3 on PATH?)"
+    fail "the crayon tool did not run (is python3 on PATH?)"
 fi
 
 # the skills
@@ -322,8 +322,8 @@ for skill in $SKILL_NAMES; do
         fail "$skill is missing or incomplete at $dir"
         continue
     fi
-    want_contract="$(sed -n 's/^  dogen_contract: *//p' "$dir/SKILL.md" | head -1)"
-    want_tool="$(sed -n 's/^  dogen_min_tool: *"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' "$dir/SKILL.md" | head -1)"
+    want_contract="$(sed -n 's/^  crayon_contract: *//p' "$dir/SKILL.md" | head -1)"
+    want_tool="$(sed -n 's/^  crayon_min_tool: *"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' "$dir/SKILL.md" | head -1)"
     if [ -n "$tool_contract" ] && [ "$want_contract" != "$tool_contract" ]; then
         fail "$skill was written against contract $want_contract; the tool answers $tool_contract"
     fi
@@ -366,12 +366,12 @@ if [ "$SKILLS" = "project" ]; then
     if [ -n "$(git -C "$REPO" config user.name)" ] && [ -n "$(git -C "$REPO" config user.email)" ]; then
         pass "git identity is set in $REPO"
     else
-        warn "no git identity in $REPO; dogen commits and needs one:  git config user.name \"You\" && git config user.email you@example.com"
+        warn "no git identity in $REPO; crayon commits and needs one:  git config user.name \"You\" && git config user.email you@example.com"
     fi
-    if grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
-        pass ".dogen/staging/ is ignored"
+    if grep -qxF '.crayon/staging/' "$REPO/.gitignore" 2>/dev/null; then
+        pass ".crayon/staging/ is ignored"
     else
-        warn ".dogen/staging/ is not in $REPO/.gitignore; dogen's checks will warn until it is"
+        warn ".crayon/staging/ is not in $REPO/.gitignore; crayon's checks will warn until it is"
     fi
 fi
 
@@ -383,7 +383,7 @@ print_uninstall() {
     local skill
     say ""
     say "To uninstall, run:"
-    printf '  rm -f %q\n' "$TOOL_DIR/dogen"
+    printf '  rm -f %q\n' "$TOOL_DIR/crayon"
     for skill in $SKILL_NAMES; do
         printf '  rm -rf %q\n' "$SKILLS_ROOT/$skill"
     done
@@ -392,13 +392,13 @@ print_uninstall() {
             printf '  rm -f %q\n' "$compat_base/.claude/skills/$skill"
         done
     fi
-    if [ "$SKILLS" = "project" ] && grep -qxF '.dogen/staging/' "$REPO/.gitignore" 2>/dev/null; then
-        say "Then delete the line .dogen/staging/ from $REPO/.gitignore."
+    if [ "$SKILLS" = "project" ] && grep -qxF '.crayon/staging/' "$REPO/.gitignore" 2>/dev/null; then
+        say "Then delete the line .crayon/staging/ from $REPO/.gitignore."
     fi
     if [ "$LINK" -eq 1 ]; then
-        say "The checkout at $DOGEN_SRC is yours to keep or delete."
+        say "The checkout at $CRAYON_SRC is yours to keep or delete."
     fi
-    say "Uninstalling leaves your pages and the record under .dogen/ in place."
+    say "Uninstalling leaves your pages and the record under .crayon/ in place."
 }
 
 # --- report ------------------------------------------------------------------
@@ -414,7 +414,7 @@ if [ "$failures" -ne 0 ]; then
 fi
 say "install: every check passed, $warnings warning(s)"
 say ""
-say "Next: open your agent in ${REPO:-your docs repository}. Run /dogen-onboard once,"
-say "then /dogen-plan, /dogen-write and /dogen-review."
+say "Next: open your agent in ${REPO:-your docs repository}. Run /crayon-onboard once,"
+say "then /crayon-plan, /crayon-write and /crayon-review."
 print_uninstall
 exit 0
