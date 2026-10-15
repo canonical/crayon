@@ -145,8 +145,16 @@ _INSPECT_RE = re.compile(
     r"basename|dirname|realpath|readlink|nl|jq|column|od|xxd|hexdump|strings|cmp|comm|"
     r"fold|fmt|rev|printenv|env|id|whoami|uname|date|"
     r"(python3?\s+-m\s+)?pip3?\s+(show|list|freeze|index|--version)|python3?\s+(--version|-V)|"
-    r"git(\s+-C\s+\S+)?\s+(status|log|diff|show|ls-files|rev-parse|branch|blame))(?=\s|$)"
+    r"git(\s+(-C\s+\S+|--no-pager))*\s+(status|log|diff|show|ls-files|ls-tree|rev-parse|branch|"
+    r"blame|check-ignore|reflog(?!\s+(expire|delete)\b)))(?=\s|$)"
 )
+#: ``xargs`` and its options: what it runs is checked as the part's command.
+_XARGS_RE = re.compile(
+    r"^xargs((\s+-[0rtx]+)|(\s+(-[nLPsdIE]|--max-args|--delimiter)(=|\s*)\S+))*(\s+|$)")
+#: ``awk`` reads unless its program spawns, redirects, pipes or edits in place;
+#: a ``>`` is read as a redirect even where it compares, so doubt stays acting.
+_AWK_RE = re.compile(r"^g?awk\s")
+_AWK_ACTS_RE = re.compile(r"system|getline|fflush|close\s*\(|[>|]|inplace|--in-place|(^|\s)-f\b")
 #: Shell control flow around the commands of a chain. Its keywords are peeled
 #: off a part before the part's command word is checked, so a ``for`` loop of
 #: ``cat`` calls is looking and a ``for`` loop of ``rm`` calls is not.
@@ -182,18 +190,46 @@ _SETUP_PART_RE = re.compile(
 _SUBSTITUTION_RE = re.compile(r"\$\(([^()]*)\)|`([^`]*)`")
 
 
+def _live(command):
+    """``command`` with what the shell reads literally masked, length kept.
+
+    A single-quoted span and a backslash-escaped character are literal, so a
+    backtick or ``$(`` there runs nothing; inside double quotes both still run.
+    """
+    out, state, index = [], "", 0
+    while index < len(command):
+        char = command[index]
+        if state == "'":
+            out.append("'" if char == "'" else "Q")
+            state = "" if char == "'" else state
+        elif char == "\\" and index + 1 < len(command):
+            out.append("QQ")
+            index += 1
+        elif char == "'" and state == "":
+            out.append(char)
+            state = "'"
+        elif char == '"':
+            out.append(char)
+            state = "" if state == '"' else '"'
+        else:
+            out.append(char)
+        index += 1
+    return "".join(out)
+
+
 def _unsubstitute(command):
     """``command`` with each command substitution replaced by a word, or None.
 
     A substitution is allowed only when what it runs is itself looking, checked
-    innermost first; anything else makes the whole command acting.
+    innermost first; anything else makes the whole command acting. Only a live
+    substitution counts: one inside single quotes or escaped is literal text.
     """
     while True:
-        match = _SUBSTITUTION_RE.search(command)
+        match = _SUBSTITUTION_RE.search(_live(command))
         if match is None:
             return command
-        inner = match.group(1) if match.group(1) is not None else match.group(2)
-        if not looking(inner):
+        group = 1 if match.group(1) is not None else 2
+        if not looking(command[match.start(group):match.end(group)]):
             return None
         command = command[:match.start()] + "SUBST" + command[match.end():]
 
@@ -205,7 +241,7 @@ def _segments(command):
     such a command is never "only looking", whatever its parts are.
     """
     command = _unsubstitute(command)
-    if command is None or "$(" in command or "`" in command:
+    if command is None or "$(" in _live(command) or "`" in _live(command):
         return None
     masked = _QUOTED_RE.sub(lambda m: "Q" * len(m.group(0)), command)
     cleaned = _HARMLESS_REDIRECT_RE.sub(lambda m: " " * len(m.group(0)), masked)
@@ -224,6 +260,15 @@ def _segments(command):
 #: code it builds. Models reach for it to read the ledger or a JSON payload;
 #: the jail makes a mistake in this list cost a throwaway copy, not the host.
 _PYTHON_PART_RE = re.compile(r"^python3?\s+-c\s+")
+#: Reading a module's source names it without running anything; a plain
+#: ``import`` (no ``as``, no ``from``) binds the name and nothing more. Both are
+#: dropped before the script is checked, so ``import subprocess, inspect;
+#: print(inspect.getsource(subprocess.call))`` looks, and any other use of a
+#: name below still acts.
+_PYTHON_READS_RE = re.compile(
+    r"\binspect\.(getsource|getsourcelines|getdoc|signature|getfile|getsourcefile)"
+    r"\(\s*[A-Za-z_][\w.]*\s*\)"
+    r"|(?<!\w)import\s+[\w.]+(\s*,\s*[\w.]+)*(?!\s*(as\b|[\w.,]))")
 _PYTHON_ACTS_RE = re.compile(
     r"\b(shutil|subprocess|socket|urllib|http|requests|ctypes|multiprocessing|importlib|"
     r"tempfile|sqlite3|pty|signal)\b"
@@ -275,7 +320,16 @@ def looking(command, python=False):
         if not part:
             continue
         if python and _PYTHON_PART_RE.match(part):
-            if _PYTHON_ACTS_RE.search(part):
+            if _PYTHON_ACTS_RE.search(_PYTHON_READS_RE.sub("READ", part)):
+                return False
+            continue
+        xargs = _XARGS_RE.match(part)
+        if xargs:
+            part = part[xargs.end():]
+            if not part:
+                continue
+        if _AWK_RE.match(part):
+            if _AWK_ACTS_RE.search(part.split(None, 1)[1]):
                 return False
             continue
         if not (_INSPECT_RE.match(part) or _READONLY_CRAYON_RE.match(normalise(part))

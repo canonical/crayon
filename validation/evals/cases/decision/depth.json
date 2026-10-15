@@ -184,7 +184,8 @@
         },
         {
           "kind": "not_text_re",
-          "re": "(?i)\\bsteps?\\b[^\\n]*\\b(skipped|deviated)\\b"
+          "re": "(?i)\\bsteps?\\b[^\\n]*\\b(skipped|deviated)\\b",
+          "except_re": "(?i)^[^?]*\\b(no|none|nothing)\\b[^?]*\\b(skipped|deviated)\\b[^?]*$"
         },
         {
           "kind": "no_tool_call",
@@ -253,7 +254,7 @@
         },
         {
           "kind": "text_re",
-          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b"
+          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b|\\brecord(s|ed)?\\b[^\\n.?]{0,40}?\\b(if|when|once|with)\\s+(a\\s+|your\\s+|you\\s+give\\s+a\\s+)?(verdict\\s+is\\s+a\\s+)?(fix|redraft)\\b"
         },
         {
           "kind": "no_tool_call",
@@ -488,7 +489,7 @@
         },
         {
           "kind": "text_re",
-          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b"
+          "re": "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b|\\brecord(s|ed)?\\b[^\\n.?]{0,40}?\\b(if|when|once|with)\\s+(a\\s+|your\\s+|you\\s+give\\s+a\\s+)?(verdict\\s+is\\s+a\\s+)?(fix|redraft)\\b"
         },
         {
           "kind": "no_tool_call",

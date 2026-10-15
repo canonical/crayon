@@ -66,8 +66,11 @@ These three rules hold at every question this skill puts to the author.
   nothing of theirs to record, omit the flag.
   On the command line their words go inside single quotes, each `'` in them written
   as `'\''`, and never inside double quotes: there a backtick runs a command and a `$`
-  expands, so the record would hold words they never typed. Through `--note-file -`,
-  the same single-quoted words are piped in with `printf '%s'`, which adds nothing.
+  expands, so the record would hold words they never typed. Type them inside the
+  single quotes as they wrote them, backticks and `$` included: nothing in them is
+  escaped, dropped or wrapped in `$(…)`, because inside single quotes nothing runs or
+  expands. Through `--note-file -`, the same single-quoted words are piped in with
+  `printf '%s'`, which adds nothing.
 - **No marked option on a judgment question.** Audience, intent, step choices, the
   verdict and restore-or-amend are the author's judgment. No option of those questions
   carries "(Recommended)", "(default)", "suggested", a star or any other marker, and
@@ -92,10 +95,15 @@ What the author reads from this skill is in plain words. The record's own words 
   seq 7 for a request. Give no other record entry a number, neither "event 7" nor
   "ledger line 7": say what is already recorded and name its commit. These record
   words stay out of your own prose altogether, not even as an English idiom: say
-  "on what grounds", not "on what basis".
+  "on what grounds", not "on what basis". They stay out in every form and every place
+  you write: seal, seals and sealed are all "accept", since an accept is recorded,
+  never sealed; and an option's label or description, or a refusal or a `--json`
+  value retold in a sentence, is prose too, so `"state": "sealed"` is "accepted" and
+  `already_accepted` is "already accepted".
 - **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
   a sha256, a digest, and a verify or check count never appear in what you say;
-  name a commit by its id, never as a hash. Quote the tallies:
+  name a commit by its id, never as a hash. A page whose bytes the record cites is
+  "current"; say so, never that a digest matches. Quote the tallies:
   the walk tally and the findings tally are the tool's and the rubric's own lines.
 - **The success line, verbatim.** Echo each verb's success response line exactly as the
   tool printed it; it is already plain. These rules cover what you say around it.
@@ -215,17 +223,22 @@ anything yet. Give your view of the audience only when the TA asks for it, state
 evidence — what the siblings or the change show — and never as a marked option. A
 vague answer gets a narrower probe, not a proposal.
 
+When the brief or an answer already states the reader's problem, do not ask the
+problem question: start with the next field it leaves open. A view you give ends that
+turn with the question it informs.
+
 Every intake asks at least two open questions. One of two fixed questions is always
 among them, written exactly as:
 
 - **"What is the reader doing just before they land here?"**
 - **"What do they do right after?"**
 
-Ask whichever the brief and the answers so far leave thinnest; when they leave both
-equally thin or equally full, ask the first. When the brief already fills every
-field — the reader's problem, the audience, the direction, the id, the title, the
-target, the sources and the outline — this question is still asked, before recording
-anything. Its answer is recorded in the TA's words (step 6).
+Ask one of the two, never both: once the TA has answered one, the next question is
+the leave-out question below. Ask whichever the brief and the answers so far leave
+thinnest; when they leave both equally thin or equally full, ask the first. When the
+brief already fills every field — the reader's problem, the audience, the direction,
+the id, the title, the target, the sources and the outline — this question is still
+asked, before recording anything. Its answer is recorded in the TA's words (step 6).
 
 The second fixed question is asked in every intake, after the arrival-or-next question
 and before anything is recorded, even when the brief fills every field. It is written
@@ -272,7 +285,8 @@ Settle the unit's Diataxis direction, then route on it:
 
 A TA-stated direction is honored verbatim. When the TA supplied none, ask for it as an
 open question, and give your view only when the TA asks for it, stated as evidence and
-never as a marked option. If the intake evidence contradicts a stated type, surface
+never as a marked option, and end that turn with the question it informs, so the choice
+stays theirs. If the intake evidence contradicts a stated type, surface
 that tension once, in one line, and let the TA decide.
 </step_4>
 
@@ -319,8 +333,17 @@ printf '%s\n' "$APPROVED_BODY" | crayon unit new "$UNIT_ID" \
 `--also-target` and `--source` repeat, once per additional page or source. `--notes` is
 the TA's own words given in answer to an open question during the intake — at least
 their answers to step 2's arrival-or-next question and to the leave-out question —
-verbatim, replies joined in order, one per line. A "nothing" answer to the leave-out
-question records nothing for it. Settled terms and the outline go into the body,
+verbatim, replies joined in order, one per line; give `--notes` once, because a second
+`--notes` replaces the first. Between two replies type a real line break inside the
+single quotes, never `\n`, which single quotes keep as two characters:
+
+```bash
+--notes 'They arrive from the install guide.
+Leave out the plugin API; it has its own page.'
+```
+
+A "nothing" answer to the leave-out question records nothing for it: no "Nothing.", no
+"Leave out: nothing", and no label of yours before either reply. Settled terms and the outline go into the body,
 which the TA approves; the skill writes no note of its own. Omit `--notes` only when
 the TA gave no such words. The tool writes `unit.md` in its own frontmatter shape, so
 never compose the frontmatter block yourself — pass the fields as flags and let the

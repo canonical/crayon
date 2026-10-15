@@ -69,7 +69,9 @@ PLAIN_WORDS_ONLY_FOILS = {
 #: verdict with those words records it. B-65 and B-75 each carry both (IN-01).
 NOTICE_RES = (
     "(?i)\\b(not|nothing|isn['\u2019]t)\\b[^\\n]{0,60}\\brecorded\\b",
-    "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b",
+    "(?i)\\b(fix|redraft)\\b[^\\n]{0,80}\\brecords?\\b|\\brecord(s|ed)?\\b[^\\n.?]{0,40}?"
+    "\\b(if|when|once|with)\\s+(a\\s+|your\\s+|you\\s+give\\s+a\\s+)?(verdict\\s+is\\s+a\\s+)?"
+    "(fix|redraft)\\b",
 )
 
 def turn(content="", calls=(), finish="stop"):
@@ -623,6 +625,42 @@ class TestCaseFilesAgainstTheirOracles(unittest.TestCase):
         expected = set(case["expect"] for case in lanes.load_a())
         self.assertEqual(expected, set(grade.SKILL_NAMES) | {"none"})
 
+    #: D-12: every hand-typed case count in the docs, and the pattern that reads
+    #: it. The loader is the one definition site; each pattern must match exactly
+    #: once per lane, so a reworded document cannot pass vacuously.
+    COUNT_SITES = (
+        ("docs/evals.md", r"^\| (A|B) \|[^\n]*\| built, (\d+) cases \|$"),
+        ("validation/evals/README.md", r"^\| (A|B) \|[^\n]*\| built, (\d+) cases \|$"),
+        ("CHANGELOG.md", r"Lane (A|B) checks [^()]*?\((\d+) cases\)"),
+    )
+
+    def test_every_documented_case_count_is_the_loaders(self):
+        """D-12: a case added or removed without fixing a typed count goes red."""
+        cases_b = lanes.load_b()
+        expected = {"A": len(lanes.load_a()), "B": len(cases_b)}
+        for relative, pattern in self.COUNT_SITES:
+            found = re.findall(pattern, (ROOT / relative).read_text(encoding="utf-8"),
+                               re.MULTILINE)
+            with self.subTest(document=relative):
+                # Vacuous-pass guard: a pattern that stopped matching proves nothing.
+                self.assertEqual(sorted(lane for lane, _ in found), ["A", "B"],
+                                 "%s: the count pattern matched %r" % (relative, found))
+                for lane, count in found:
+                    self.assertEqual(int(count), expected[lane],
+                                     "%s says lane %s has %s cases; the loader has %d"
+                                     % (relative, lane, count, expected[lane]))
+        relative = "validation/evals/README.md"
+        judged = re.findall(r"that action, the calls on the way, (\d+) judged",
+                            (ROOT / relative).read_text(encoding="utf-8"))
+        loaded = sum(1 for case in cases_b
+                     if any(spec["kind"] == "judge" for spec in case["assert"]))
+        with self.subTest(document=relative, count="judged"):
+            self.assertEqual(len(judged), 1,
+                             "%s: the judged pattern matched %r" % (relative, judged))
+            self.assertEqual(int(judged[0]), loaded,
+                             "%s says lane B has %s judged cases; the loader has %d"
+                             % (relative, judged[0], loaded))
+
 
 def call(name, **args):
     return {"id": "x", "name": name, "arguments": json.dumps(args)}
@@ -854,6 +892,25 @@ class TestMacros(unittest.TestCase):
             trace(turn("crayon never opens a pull request or builds the docs.")),
         ])
 
+    def test_offers_publish_reads_the_routed_token_in_code_as_a_mention(self):
+        """23-03, B-47: the replies glm-5.3 and qwen3.8-27b gave in the first sweep quote the
+        routed token in inline code, which the macro's own comment calls a mention. The
+        bare token, or the token half-quoted, is still an offer."""
+        self.proves("@OFFERS_PUBLISH", caught=[
+            trace(turn("Next: publish")),
+            trace(turn("Next: publish`")),
+            trace(turn("`Next: publish")),
+            trace(turn("The page is accepted. Next: open a PR.")),
+        ], missed=[
+            trace(turn("The opening checks pass: tool `0.2.0`, contract `1`, and "
+                       "`crayon show cfg --json` routes on `next: publish` \u2014 the unit is "
+                       "accepted with its page current, nothing recorded since.")),
+            trace(turn("The tool pairs fine (tool 0.2.0, contract 1). Let me check the routing "
+                       "row for `next: publish`.")),
+            trace(turn("The unit is accepted and current (`next: publish` \u2014 crayon stops "
+                       "here).")),
+        ])
+
     def test_offers_note_catches_note_text_offered_in_the_authors_place(self):
         self.proves("@OFFERS_NOTE", caught=[
             trace(turn('I\'ll use: "Explain what happens when max_retries is exceeded." '
@@ -1012,6 +1069,77 @@ class TestAgentSurface(unittest.TestCase):
                     self.assertIn(expected, result)
         self.assertTrue(os.path.isfile(os.path.join(self.root, "src", "a.py")),
                         "an acting call must never be carried out")
+
+    def test_the_looks_the_first_sweep_misgraded_are_looking(self):
+        """23-03's kit faults: each read-only look below, as a model typed it in the
+        2026-10-11 sweep, ended its episode as the graded action. Each is looking now,
+        and the acting command beside it that shares its shape still is not."""
+        looks = [
+            # 23-03: B-07 glm-5.3 run 1
+            'find /srv/toyq -name "*.py" -not -path "*/.git/*" | xargs ls -la; cat /srv/toyq/pyproject.toml',
+            # 23-03: B-07 glm-5.3 run 3
+            'python3 -c "import subprocess, inspect; print(inspect.getsource(subprocess.call))"',
+            # 23-03: B-47 gpt-5.6-luna run 1
+            "find docs -type f -maxdepth 6 -print 2>/dev/null | sort; grep -RInE 'reference/config|\\{doc\\}`?reference/config|:doc:`reference/config|toctree|config\\.md' docs 2>/dev/null || true",
+            # 23-03: B-56 qwen3.8-27b run 1
+            "git ls-tree -r --name-only 1d10b75 2>/dev/null | grep -E '^docs/' ; echo ---; git ls-tree -r --name-only HEAD | grep -E '^docs/'",
+            # 23-03: B-44 qwen3.8-27b run 3
+            "grep -rn -E 'reference/config|:doc:`config`|\\{doc\\}.*config|`config`' docs/ 2>/dev/null; ls docs docs/reference 2>/dev/null",
+            # 23-03: B-41 deepseek-v4.1-flash run 1
+            'cd /srv/toyq && ls -la .crayon/staging/cfg/draft/reference/ && find .crayon/staging/cfg -type f | xargs ls -la',
+            # 23-03: B-17 deepseek-v4.1-flash run 1
+            'cd /srv/toyq && grep -rn "reference/config\\|{doc}\\`config\\|:doc:\\`config\\|config" docs --include=*.md --include=*.rst --include=*.txt --include=*.py | head -60',
+            # 23-03: B-19 deepseek-v4.1-flash run 1
+            'cd /srv/toyq && git log --all --oneline -- .crayon/staging/cfg/draft/reference/config.md; echo "--- ignored? ---"; git check-ignore -v .crayon/staging/cfg/draft/reference/config.md; echo "---"; wc -c .crayon/staging/cfg/draft/reference/config.md docs/reference/config.md',
+            # 23-03: B-22 deepseek-v4.1-flash run 1
+            'cd /srv/toyq && cat .gitignore 2>/dev/null; echo "--- ignored:"; git check-ignore -v .crayon/staging/cfg/draft/reference/config.md .crayon/staging/lock 2>&1; echo ---; ls -la .crayon/staging/cfg/draft/reference/; echo ---; cat .crayon/staging/lock 2>/dev/null',
+            # 23-03: B-56 deepseek-v4.1-flash run 2
+            'cd /srv/toyq && echo "=== files in d4ab5df (parent) ==="; git ls-tree -r d4ab5df --name-only | head -50; echo; echo "=== was .crayon/context tracked before? ==="; git ls-tree -r d4ab5df --name-only | grep crayon',
+            # 23-03: B-41 deepseek-v4.1-flash run 2
+            "cd /srv/toyq && awk '/## Findings layout/,0' .agents/skills/crayon-review/references/review-rubric.md",
+            # 23-03: B-17 deepseek-v4.1-flash run 2
+            'cd /srv/toyq && git reflog --date=iso | head -20 && echo "=== log with dates ===" && git log --format=\'%h %cI %ci %s\' -6 && echo "=== now ===" && date -Is && echo "=== ls ===" && ls -la --time-style=full-iso .crayon/units/cfg/ && ls -la --time-style=full-iso .crayon/staging 2>/dev/null',
+            # 23-03: B-60 deepseek-v4.1-flash run 3
+            'ls docs 2>/dev/null; echo ---; grep -rn "reference/config\\|{doc}\\`config\\|:doc:\\`config\\|config" docs --include=*.md --include=*.rst -l 2>/dev/null | head -50',
+            # 23-03: B-46 deepseek-v4.1-flash run 3
+            'cd /srv/toyq && ls docs && grep -rn "config" docs --include=* -l; echo ---; grep -rn "reference/config\\|{doc}\\`config\\|:doc:\\`config\\|config$\\|config\\b" docs | head -50',
+            # 23-03: B-63 deepseek-v4.1-flash run 3
+            'cd /srv/toyq; pwd; echo "== force-dir / force_dir =="; grep -rn "force.dir\\|force_dir" . --include=\'*\' -I 2>/dev/null | grep -v \'^./.git/\' | grep -v \'^./.crayon/\'; echo "hits:$?"; echo "== \'once\' in src =="; grep -rn "once" src/ | head; echo "== README install lines =="; grep -n "pip install\\|toyq init\\|toyq run\\|toyq add\\|working directory" README.md; echo "== console/backtick style in page =="; grep -c \'```\' docs/how-to/install.md',
+            # 23-03: B-17 deepseek-v4.1-flash run 3
+            'cd /srv/toyq && grep -rn "config" docs/ --include=*.md --include=*.rst -l; echo "---"; ls docs; echo "---"; grep -rn "reference/config\\|{doc}\\`config\\|:doc:\\`config\\|config\\`\\|config$" docs/ 2>/dev/null | head -50',
+            # 23-03: B-22 deepseek-v4.1-flash run 3
+            'cat .crayon/staging/cfg/draft/reference/config.md; echo "=== docs file ==="; cat docs/reference/config.md; echo "=== baseline tree ==="; git ls-tree -r --name-only HEAD; echo "=== d4ab5df ==="; git ls-tree -r --name-only d4ab5df | head -50',
+            # P-23-12: a pager switched off before a reading verb.
+            "git --no-pager log -1",
+            "git --no-pager diff --stat",
+            "git -C /srv/toyq --no-pager show HEAD:docs/index.md",
+        ]
+        acting = [
+            "git --no-pager commit -m x",
+            "git --no-pager push",
+            "git reflog expire --expire=now --all",
+            "git reflog delete HEAD@{1}",
+            "find . -name '*.py' | xargs rm",
+            "find . -name '*.py' | xargs -I{} sh -c 'rm {}'",
+            "awk '{print > \"out.txt\"}' src/a.py",
+            "awk 'BEGIN { system(\"rm src/a.py\") }'",
+            "awk '{print | \"sh\"}' src/a.py",
+            "awk -i inplace '{print}' src/a.py",
+            "python3 -c \"import subprocess; subprocess.run(['rm', 'a.txt'])\"",
+            "python3 -c \"import subprocess, inspect; subprocess.call('rm a.txt', shell=True)\"",
+            "python3 -c \"import subprocess as s; s.call(['rm', 'a.txt'])\"",
+            "python3 -c \"from subprocess import run; run(['rm', 'a.txt'])\"",
+            "python3 -c \"import subprocess; list(map(subprocess.call, [['rm', 'a.txt']]))\"",
+            "grep -rn 'x' `rm -rf src`",
+            "grep -rn \"$(rm -rf src)\" docs",
+            "echo \"`touch x`\"",
+        ]
+        for command in looks:
+            with self.subTest(looking=command):
+                self.assertTrue(agent.looking(command, python=True))
+        for command in acting:
+            with self.subTest(acting=command):
+                self.assertFalse(agent.looking(command, python=True))
 
     def test_a_written_refusal_answers_the_whole_verb_on_its_unit(self):
         repo = agent.SandboxRepo(self.root, sandbox.bin_dir(),
@@ -1327,7 +1455,6 @@ class TestLaneBCases(unittest.TestCase):
         out = grade.grade(b65["assert"], tr, {"judge": ctx["judge"]})
         self.assertFalse(out["passed"], "the bare verdict question passed B-65")
         self.assertIn("text_re", set(r["kind"] for r in out["results"] if not r["pass"]), out)
-        self.assertEqual(len(cases), 77)
 
     def test_b76_fails_a_steer_recorded_from_a_step_answer(self):
         """WR-05, D-14: a steer is recorded only from a closure answer, never
@@ -1797,7 +1924,7 @@ class TestLaneBCases(unittest.TestCase):
             ("B-46", [grep_config, say(closed_review)], True),
             ("B-46", [grep_config, say(closed_review.replace(
                 "1. F-2", "0. F-2").replace(
-                "3. Nothing links", "1. Nothing links").replace("0. F-2", "3. F-2"))], False),
+                "2. Nothing links", "1. Nothing links").replace("0. F-2", "2. F-2"))], False),
             # WR-12: the question asked is the priorities question, not the next move.
             ("B-56", [say(onboarded)], True),
             ("B-56", [say(onboarded.rsplit("\n\n", 1)[0]
@@ -1866,6 +1993,97 @@ class TestLaneBCases(unittest.TestCase):
                 tr = lanes.run_b(cases[case_id], SPEC, StubProvider(run.scripted(replies)), ctx)
                 out = grade.grade(cases[case_id]["assert"], tr, {"judge": ctx["judge"]})
                 self.assertEqual(out["passed"], passes, out)
+
+    def test_the_first_sweep_right_replies_pass_their_cases(self):
+        """23-03's case faults: replies models gave in the 2026-10-11 sweep that say what
+        the skill text asks failed a case that pinned more than its rule; each passes now,
+        trimmed to the decisive turn. The wrong replies beside them still fail."""
+        ctx = {"skills": skillmod.load_skills(), "cache": False,
+               "judge": (StubProvider(run.stub_judge), SPEC)}
+        cases = dict((case["id"], case) for case in lanes.load_b())
+        verdict = "What's your verdict, and is there anything you want on the record with it?"
+        accepted = ("```\nreviewed cfg: accept · accepted reference/config.md · "
+                    "Next: yours — crayon stops here\n```\n\n")
+        negative = ("The page says `max_retries` must be 0 or more, but not what breaking it "
+                    "does. Should it say that a negative value stops toyq with an error?")
+        arrival = "Nothing links to reference/config.md yet; where should a reader come from?"
+        convert = ("The page does not say that a `TOYQ_*` value must read as the setting's "
+                   "type, so `TOYQ_RETRY_BACKOFF=fast` fails. Should it say so?")
+
+        def say(text):
+            return [{"content": text}]
+
+        planted = [
+            # B-43 (qwen3.8-27b run 2, deepseek-v4.1-flash run 2): the lean in bold is the lean.
+            ("B-43", say("The tally leans to **fix**: F-1 is a must-fix.\n\n" + verdict), True),
+            ("B-43", say("The tally leans to **accept**.\n\n" + verdict), False),
+            # B-46 (qwen3.8-27b runs 2 and 3, deepseek-v4.1-flash run 1): one question per
+            # source first, so the reader-arrival question is second and F-3 fills the third.
+            ("B-46", say(accepted + "1. %s\n2. %s\n3. %s" % (negative, arrival, convert)), True),
+            ("B-46", say(accepted + "1. %s\n2. %s\n3. %s" % (negative, convert, arrival)), False),
+            # B-64 (glm-5.3 run 1, deepseek-v4.1-flash runs 1 and 2): saying no step is open
+            # is not a step question.
+            ("B-64", say("This is a step-free unit, so there is no walk tally to read out. "
+                         "There are also no deviated or skipped steps to put to you, and the "
+                         "page on disk matches the bytes the record cites.\n\n**%s**" % verdict),
+             True),
+            ("B-64", say("The step tally is empty, so there are no deviated or skipped steps "
+                         "to put to you.\n\n**%s**" % verdict), True),
+            ("B-64", say("Did any step of the walk get skipped or deviate? Does the page need "
+                         "to say so?\n\n" + verdict), False),
+            # B-65 and B-75 (qwen3.8-27b run 1, deepseek-v4.1-flash run 2 in each): the record
+            # may come before the fix or redraft verdict that puts the words on it.
+            ("B-65", say("Got it — note that answer isn't recorded yet: it only lands on "
+                         "the record if you give a fix or redraft verdict, and those words "
+                         "become the recorded note.\n\n" + verdict), True),
+            ("B-65", say("Noted — that's not recorded yet: it will only go on the record "
+                         "with a fix or redraft verdict carrying those words.\n\n" + verdict),
+             True),
+            ("B-65", say("Nothing from that answer is recorded yet.\n\nWhat's your verdict: "
+                         "accept, fix or redraft?"), False),
+            ("B-75", say("Noted — nothing is recorded from that yet: a change like that "
+                         "only gets recorded if your verdict is a fix or a redraft carrying "
+                         "those words.\n\n" + verdict), True),
+            ("B-75", say("That page change isn't recorded yet — it only reaches the record "
+                         "if a fix or redraft verdict carries those words.\n\n**%s**" % verdict),
+             True),
+            ("B-75", say("Nothing from your answer is recorded yet; it stays on the record with "
+                         "it as it is.\n\n" + verdict), False),
+        ]
+        for case_id, replies, passes in planted:
+            with self.subTest(case=case_id, replies=replies):
+                tr = lanes.run_b(cases[case_id], SPEC, StubProvider(run.scripted(replies)), ctx)
+                out = grade.grade(cases[case_id]["assert"], tr, {"judge": ctx["judge"]})
+                self.assertEqual(out["passed"], passes, out)
+
+    def test_the_first_sweep_case_premises_hold(self):
+        """23-03's case faults that live in a case's premise rather than its patterns."""
+        cases = dict((case["id"], case) for case in lanes.load_b())
+        # B-28: the judge sees only the model's turns, so it is told the line the replayed
+        # fix printed; a reply quoting that commit is quoting the tool.
+        judge = [a for a in cases["B-28"]["assert"] if a["kind"] == "judge"][0]
+        form = "git: committed <seven-character commit> — crayon: reviewed cfg"
+        self.assertIn(form, judge.get("context", ""))
+        printed = cases["B-28"]["resolved"]["history"][-1]["output"].splitlines()[0]
+        self.assertRegex(printed, "^" + re.escape(form).replace(
+            re.escape("<seven-character commit>"), "[0-9a-f]{7}") + "$")
+        # B-30: crayon-plan opens the intake with a question, so the judge fails asking for
+        # the source and passes an intake question the repository cannot answer.
+        rubric = [a for a in cases["B-30"]["assert"] if a["kind"] == "judge"][0]["rubric"]
+        self.assertNotIn("PASS only if the agent PROPOSES", rubric)
+        self.assertIn("FAIL if it asks the author where the retry logic or settings live",
+                      rubric)
+        self.assertIn("what the reader is doing before they arrive", rubric)
+        # B-56: the scope was confirmed with the author before the walk, as crayon-onboard's
+        # step 1 requires, so the case asks only about the report that follows it.
+        history = cases["B-56"]["history"]
+        asked = [i for i, step in enumerate(history) if isinstance(step, dict)
+                 and "docs/" in step.get("assistant", "") and "README" in step["assistant"]
+                 and step["assistant"].rstrip().endswith("?")]
+        walked = [i for i, step in enumerate(history) if isinstance(step, dict)
+                  and step.get("assistant", "").startswith("I walked")]
+        self.assertTrue(asked and walked and asked[0] < walked[0], history)
+        self.assertIn("user", history[asked[0] + 1])
 
     def test_single_quoted_oracles_record_the_authors_bytes(self):
         """CR-01: the shell hands the tool exactly what the author typed, not a lookalike."""
@@ -2099,6 +2317,30 @@ class TestRosterAndRunner(unittest.TestCase):
                          [("B-01", 3), ("B-02", 1)])
         self.assertTrue(run.destination(combined, "000000").name.endswith("-k3.json"))
 
+    def test_every_summary_says_it_measures_skill_following(self):
+        """EVAL-08 / D-11: a single run's summary and the K-run combine both carry the label."""
+        ctx = {"judge_id": "j", "date": "2026-01-02", "crayon_version": "v",
+               "repo_head": "abc1234", "skills_sha256": "0" * 64}
+        records = [{"id": "A-01", "passed": True, "error": None, "cost": 0.0}]
+        single = run.summarise("A", SPEC, records, ctx, False, None, False)
+        # Typed here on purpose, not read from run.MEASURES, so a rename goes red.
+        self.assertEqual(single["meta"]["measures"], "skill-following")
+        bare = dict(single, meta=dict(single["meta"]))
+        del bare["meta"]["measures"]
+        # The combine writes the key itself rather than inheriting it from a run.
+        combined = run.aggregate([bare, bare, bare])
+        self.assertEqual(combined["meta"]["measures"], "skill-following")
+
+    def test_the_results_readme_labels_the_folder(self):
+        """EVAL-08 / D-11: the folder README labels every summary, old files included."""
+        text = (EVALS / "results" / "README.md").read_text(encoding="utf-8")
+        self.assertIn(run.MEASURES, text)
+        self.assertIn("meta.measures", text)
+        for date in ("2026-09-23", "2026-09-24"):
+            with self.subTest(date=date):
+                self.assertIn(date, text)
+        self.assertNotIn("[[", text)
+
     def test_a_repeated_dry_run_writes_each_run_and_the_counts_to_raw(self):
         with tempfile.TemporaryDirectory() as tmp:
             saved = run.RESULTS, run.RAW
@@ -2112,9 +2354,16 @@ class TestRosterAndRunner(unittest.TestCase):
                 run.RESULTS, run.RAW = saved
             self.assertEqual(code, 0)
             written = sorted(p.name for p in (Path(tmp) / "raw").iterdir())
-            self.assertEqual(len([n for n in written if "run1of2.json" in n or
-                                  "run2of2.json" in n]), 2)
-            self.assertEqual(len([n for n in written if "-k2-" in n and n.endswith("-dry.json")]), 1)
+            runs = [n for n in written if n.endswith("run1of2.json") or
+                    n.endswith("run2of2.json")]
+            self.assertEqual(len(runs), 2)
+            combined = [n for n in written if "-k2-" in n and n.endswith("-dry.json")]
+            self.assertEqual(len(combined), 1)
+            # EVAL-08 / D-11: the label survives from each run into the combine.
+            for name in runs + combined:
+                with self.subTest(file=name):
+                    meta = json.loads((Path(tmp) / "raw" / name).read_text(encoding="utf-8"))
+                    self.assertEqual(meta["meta"]["measures"], run.MEASURES)
 
     def test_an_unknown_model_is_refused_before_anything_runs(self):
         stderr = sys.stderr

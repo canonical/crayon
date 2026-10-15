@@ -6,6 +6,8 @@ your approval before drafting the page and performing an initial review.
 
 crayon can produce four types of Sphinx-ready drafts (MyST Markdown or reStructuredText),
 corresponding to the four Diátaxis categories: tutorial, how-to, reference, and explanation.
+crayon doesn't know your Sphinx theme, extensions or `conf.py`, and it never builds. It learns
+your conventions from your existing docs, through `/crayon-onboard` and `/crayon-fetch`.
 
 You use crayon through five skills in your coding agent.
 
@@ -105,13 +107,24 @@ main branch:
 For the commands and the reasons, see
 [Branches and the record](docs/internals.md#branches-and-the-record).
 
-## What crayon does not do
+## What stays yours
 
-- It does not push, open pull requests, build or publish.
-- It does not draft a page until you approve the plan.
-- It does not label the page as AI-generated. The people who review and merge the page own it.
-- It does not know your Sphinx theme, extensions or `conf.py`, and it never builds. It learns
-  your conventions from your existing docs, through `/crayon-onboard` and `/crayon-fetch`.
+crayon drafts and keeps the record. These decisions are yours:
+
+- **Audience.** Who the page is for and where they arrive from. crayon asks; it doesn't choose.
+- **Scope.** What the page covers and what it leaves out. crayon drafts nothing until you
+  approve the plan.
+- **Accept.** Whether the draft is good enough. You accept it, ask for a fix or ask for a new
+  draft.
+- **Publish.** crayon stops at a local commit. You open the pull request, build and merge.
+  crayon doesn't label the page as AI-generated; the people who review and merge the page own it.
+
+The record shows what was decided and in what order. It can't prove who decided: your
+coding agent runs the commands that approve the plan and accept the draft, so the record can't
+tell your yes from the agent's. Your accept in `/crayon-review` is your own judgment. The person
+who reviews the pull request before it merges is the gate.
+
+If you're not a technical author, ask one to review the page before you merge it.
 
 ## Optional code-to-docs mapping
 

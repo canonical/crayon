@@ -2,11 +2,13 @@
 
 <!-- provenance: new page; condenses validation/evals/README.md and what the first eval rounds found -->
 
-The gate proves the tool. It cannot prove that a model driving the five skills does what they
-say: opens on the two calls, routes on the tool's `next`, asks one question at a time, never
-bypasses the signoff, stops where a refusal says stop. The model evals under
-`validation/evals/` measure that, the same way for every model. This page says what they
-measure, why they are built the way they are, and how to read what they report.
+The model evals under `validation/evals/` measure skill-following: whether a model driving the
+five skills does what the skill text says at a given moment — opens on the two calls, waits for
+the author's go, routes on the tool's `next`, asks one question at a time, never bypasses the
+signoff, stops where a refusal says stop. The evals do not measure the quality of a page, or
+speed or effort saved, and every figure they report is a skill-following figure. The gate proves
+the tool; the evals measure what it cannot, the same way for every model. This page says what
+they measure, why they are built the way they are, and how to read what they report.
 `validation/evals/README.md` is the operational guide: how to run a lane, where results land and
 how to add a case.
 
@@ -24,7 +26,7 @@ started by hand and never run in the gate or in CI. The gate's half is
 | Lane | What it asks | Status |
 |---|---|---|
 | A | which skill handles this ask? | built, 15 cases |
-| B | given this `crayon` output, what is the next action? | built, 31 cases |
+| B | given this `crayon` output, what is the next action? | built, 77 cases |
 | C | a whole journey in a sandbox, with a simulated author | planned |
 
 ## How lane B stays honest
@@ -35,7 +37,7 @@ with the real `crayon.py` and records its output, and the gate re-records it, so
 tool's output turns the gate red rather than leaving lane B replaying stale bytes.
 
 The model then acts in a real copy of the recorded state. Looking is free and runs for real:
-reads, searches, read-only `crayon` verbs, inspection commands, a `python3 -c` script that names
+reads, searches, read-only `crayon` verbs, inspection commands, a `python3 -c` script that uses
 nothing able to write. The first consequential action — a verb that records, any other command,
 a write, a question to the author, a turn with no tool call — ends the episode, is never
 carried out, and is what the case grades.
@@ -71,13 +73,16 @@ every paid call.
 
 Clean, complete runs are committed under `validation/evals/results/`; partial, dry, errored and
 re-graded runs go to the gitignored `results/raw/`, beside the full turns of every case.
+`validation/evals/results/README.md` labels every file in the folder.
 
 The backends are not deterministic even at temperature 0. The same model moves one or two
 points between identical runs, so a single run cannot tell a small change from noise.
 `run.py --repeat K` runs a lane K times and reports each case as passes out of K. A case at K/K
 or 0/K is settled; one in between is flaky, and a change to a skill has to be measured there,
-over repeated runs. The first three-run baseline, on 2026-09-24, had 15 of the 31 lane B cases
-passing every run of every model.
+over repeated runs. In the three-run sweep of 2026-10-11, a skill-following figure and not a
+measure of page quality, 15 of the 15 lane A cases passed every run on all five roster models,
+and 48 of the 77 lane B cases passed every run on glm-5.3 and gpt-5.6-luna, the two models whose
+lane B runs had no errors; the other three models' lane B runs errored, so they are left out.
 
 ## What they changed in crayon
 

@@ -282,7 +282,7 @@
         },
         {
           "kind": "text_re",
-          "re": "(?i)\\blean(s|ing)?\\s+(is\\s+|to(wards?)?\\s+)?(a\\s+)?fix\\b|\\btally\\b[^.?\\n]*\\b(suggests?|points?\\s+to|says?|favou?rs?)\\s+(a\\s+)?fix\\b"
+          "re": "(?i)\\blean(s|ing)?\\s+(is\\s+|to(wards?)?\\s+)?(a\\s+)?(\\*\\*|__|[*_`])?fix\\b|\\btally\\b[^.?\\n]*\\b(suggests?|points?\\s+to|says?|favou?rs?)\\s+(a\\s+)?(\\*\\*|__|[*_`])?fix\\b"
         },
         {
           "kind": "no_tool_call",

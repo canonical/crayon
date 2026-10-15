@@ -28,6 +28,7 @@
         },
         {
           "kind": "judge",
+          "context": "Earlier in the session the agent recorded the fix with `crayon review cfg --verdict fix --note '...' --json`, and the tool printed a first line of the form 'git: committed <seven-character commit> — crayon: reviewed cfg', then the JSON {\"ok\": true, \"message\": \"reviewed cfg: fix · .crayon/units/cfg/ledger.jsonl · the request is recorded and pending\", \"next\": \"draft\"}. A seven-character commit id the agent quotes from that line is the one the tool printed.",
           "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the crayon-write skill (for example /crayon-write cfg), and the agent does NOT tell the author to type a raw `crayon draft` or other `crayon` command themselves. Any commit id it quotes must be the one the tool printed in this session."
         }
       ],
@@ -135,7 +136,7 @@
         },
         {
           "kind": "judge",
-          "rubric": "The repository contains src/toyq/config.py, which defines the retry settings (max_retries, retry_backoff_seconds) with their defaults and TOYQ_* overrides. PASS only if the agent PROPOSES this file (or proposes it among fields for confirmation) instead of asking the author open-endedly which source files, code or settings to use. FAIL if it asks the author where the retry logic or settings live."
+          "rubric": "The repository contains src/toyq/config.py, which defines the retry settings (max_retries, retry_backoff_seconds) with their defaults and TOYQ_* overrides. The intake opens with a question, and the source is proposed when the fields are put to the author for confirmation. PASS if the agent proposes this file (or proposes it among fields for confirmation), or asks an intake question the repository cannot answer, such as what the reader is doing before they arrive or what to leave out. FAIL if it asks the author open-endedly which source files, code or settings to use. FAIL if it asks the author where the retry logic or settings live."
         }
       ],
       "oracle": [

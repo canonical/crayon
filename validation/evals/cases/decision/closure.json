@@ -262,7 +262,7 @@
       "skill": "crayon-review",
       "ask": "cfg",
       "opening": "closing",
-      "why": "CLOSE-01, D-01, boundary at exactly 3 open: review mode ran in this conversation, the author's accept spoke to F-1 and F-4 is a nit, so F-2, F-3 and where a reader arrives from are open; three questions, no overflow line, and no question about the nit",
+      "why": "CLOSE-01, D-01, boundary at exactly 3 open: review mode ran in this conversation, the author's accept spoke to F-1 and F-4 is a nit, so F-2, F-3 and where a reader arrives from are open; three questions, one per source first, so where a reader arrives from is second and F-3 fills the third, no overflow line, and no question about the nit",
       "history": [
         {
           "call": {
@@ -319,7 +319,7 @@
         },
         {
           "kind": "text_re",
-          "re": "(?im)^\\s*(?:\\*\\*)?3[.)][^\\n]*(link|toctree|arriv|come from)[^\\n]*\\?"
+          "re": "(?im)^\\s*(?:\\*\\*)?2[.)][^\\n]*(link|toctree|arriv|come from)[^\\n]*\\?"
         },
         {
           "kind": "not_text_re",
@@ -353,7 +353,7 @@
           ]
         },
         {
-          "content": "reviewed cfg: accept · accepted reference/config.md · Next: yours — crayon stops here\n\n1. F-2: the page does not say that a negative `max_retries` stops toyq with an error. Should it?\n2. F-3: the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails. Should it?\n3. Nothing links to reference/config.md yet; where should a reader come from?"
+          "content": "reviewed cfg: accept · accepted reference/config.md · Next: yours — crayon stops here\n\n1. F-2: the page does not say that a negative `max_retries` stops toyq with an error. Should it?\n2. Nothing links to reference/config.md yet; where should a reader come from?\n3. F-3: the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails. Should it?"
         }
       ],
       "foil": [
@@ -478,10 +478,16 @@
       "id": "B-56",
       "skill": "crayon-onboard",
       "ask": "",
-      "why": "CLOSE-02, D-05: once crayon context record has run, onboarding reports the set and ends on exactly one question about the author's priorities, with no route line yet; the old ending that routes to /crayon-plan on the agent's own say fails",
+      "why": "CLOSE-02, D-05: once crayon context record has run, onboarding reports the set and ends on exactly one question about the author's priorities, with no route line yet (the scope was confirmed before the walk); the old ending that routes to /crayon-plan on the agent's own say fails",
       "history": [
         "tool/version_json",
         "context_empty/show_json",
+        {
+          "assistant": "Before I walk: the docs root defaults to docs/ plus the root README and supplementary prose, and the code root to the repository minus docs/ and .crayon/. Use those defaults, or narrow either?"
+        },
+        {
+          "user": "Use the defaults."
+        },
         {
           "assistant": "I walked README.md and docs/index.md against src/toyq, and staged doc-style.md, glossary.md and structure.md through crayon context stage."
         },

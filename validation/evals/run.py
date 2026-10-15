@@ -18,7 +18,9 @@ Results. A clean, complete, paid run writes one slim summary to
 same day gets a ``-2`` suffix). Anything else — a dry run, a ``--filter``, an
 error, a budget stop — goes to the gitignored ``results/raw/`` with the reason
 in its name, so a partial run can never stand in for a baseline. Every run also
-writes the full turns of every case to ``results/raw/`` as JSON lines.
+writes the full turns of every case to ``results/raw/`` as JSON lines. Every
+summary's ``meta.measures`` says its figures measure skill-following, never the
+quality of a page or speed.
 
 Exit codes, as every checker in this repository: 0 every case passed; 1 at
 least one case failed; 2 a run-level error (API error, empty answer, judge
@@ -55,6 +57,10 @@ RAW = RESULTS / "raw"
 CACHE = HERE / ".cache"
 ROSTER = HERE / "models.json"
 EXCERPT = 1500
+#: EVAL-08's one definition site: what every summary's figures measure. Each new
+#: summary carries it in its meta; validation/evals/results/README.md states it for
+#: the files written before the key existed.
+MEASURES = "skill-following"
 
 
 def load_roster(path=ROSTER):
@@ -176,6 +182,7 @@ def summarise(lane_name, spec, records, ctx, partial, stopped, dry_run):
         "meta": {
             "lane": lane_name,
             "lane_title": lanes.LANES[lane_name]["title"],
+            "measures": MEASURES,
             "model": spec["id"],
             "provider_pin": spec.get("provider"),
             "judge": ctx["judge_id"],
@@ -262,6 +269,7 @@ def aggregate(summaries):
                 if key not in ("passed", "failed", "pass_rate", "cached_cases"))
     passes = sum(case["passes"] for case in cases)
     meta.update(
+        measures=MEASURES,
         runs=k,
         passes=passes,
         pass_rate=round(passes / float(k * len(cases) or 1), 4),

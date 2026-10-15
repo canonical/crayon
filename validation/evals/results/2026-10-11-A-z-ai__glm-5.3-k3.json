@@ -1,0 +1,145 @@
+{
+  "meta": {
+    "lane": "A",
+    "lane_title": "skill selection",
+    "measures": "skill-following",
+    "model": "z-ai/glm-5.3",
+    "provider_pin": {
+      "order": [
+        "z-ai"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "judge": "anthropic/claude-sonnet-5",
+    "date": "2026-10-11",
+    "dogen_version": "0.2.0",
+    "repo_head": "143a4fe",
+    "skills_sha256": "35a2ef1133d66e358133cc0a881fd1fe3ee2c63dc15621766efde4447541e2fc",
+    "total_cases": 15,
+    "errors": 0,
+    "cost_usd": 0.059594,
+    "tokens": {
+      "in": 44019,
+      "out": 9554
+    },
+    "truncated": 0,
+    "partial": false,
+    "dry_run": false,
+    "budget_stop": null,
+    "runs": 3,
+    "passes": 45,
+    "pass_rate": 1.0,
+    "stable_pass": 15,
+    "stable_fail": 0,
+    "flaky": 0,
+    "cached_cases": 0
+  },
+  "cases": [
+    {
+      "id": "A-01",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00353
+    },
+    {
+      "id": "A-02",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003527
+    },
+    {
+      "id": "A-03",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003816
+    },
+    {
+      "id": "A-04",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003646
+    },
+    {
+      "id": "A-05",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004099
+    },
+    {
+      "id": "A-06",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002723
+    },
+    {
+      "id": "A-07",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011097
+    },
+    {
+      "id": "A-08",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004806
+    },
+    {
+      "id": "A-09",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00276
+    },
+    {
+      "id": "A-10",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002547
+    },
+    {
+      "id": "A-11",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002784
+    },
+    {
+      "id": "A-12",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00321
+    },
+    {
+      "id": "A-13",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005331
+    },
+    {
+      "id": "A-14",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003275
+    },
+    {
+      "id": "A-15",
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002443
+    }
+  ]
+}

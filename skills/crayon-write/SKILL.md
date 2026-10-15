@@ -71,8 +71,11 @@ These three rules hold at every question this skill puts to the author.
   nothing of theirs to record, omit the flag.
   On the command line their words go inside single quotes, each `'` in them written
   as `'\''`, and never inside double quotes: there a backtick runs a command and a `$`
-  expands, so the record would hold words they never typed. Through `--note-file -`,
-  the same single-quoted words are piped in with `printf '%s'`, which adds nothing.
+  expands, so the record would hold words they never typed. Type them inside the
+  single quotes as they wrote them, backticks and `$` included: nothing in them is
+  escaped, dropped or wrapped in `$(…)`, because inside single quotes nothing runs or
+  expands. Through `--note-file -`, the same single-quoted words are piped in with
+  `printf '%s'`, which adds nothing.
 - **No marked option on a judgment question.** Audience, intent, step choices, the
   verdict and restore-or-amend are the author's judgment. No option of those questions
   carries "(Recommended)", "(default)", "suggested", a star or any other marker, and
@@ -97,10 +100,15 @@ What the author reads from this skill is in plain words. The record's own words 
   seq 7 for a request. Give no other record entry a number, neither "event 7" nor
   "ledger line 7": say what is already recorded and name its commit. These record
   words stay out of your own prose altogether, not even as an English idiom: say
-  "on what grounds", not "on what basis".
+  "on what grounds", not "on what basis". They stay out in every form and every place
+  you write: seal, seals and sealed are all "accept", since an accept is recorded,
+  never sealed; and an option's label or description, or a refusal or a `--json`
+  value retold in a sentence, is prose too, so `"state": "sealed"` is "accepted" and
+  `already_accepted` is "already accepted".
 - **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
   a sha256, a digest, and a verify or check count never appear in what you say;
-  name a commit by its id, never as a hash. Quote the tallies:
+  name a commit by its id, never as a hash. A page whose bytes the record cites is
+  "current"; say so, never that a digest matches. Quote the tallies:
   the walk tally and the findings tally are the tool's and the rubric's own lines.
 - **The success line, verbatim.** Echo each verb's success response line exactly as the
   tool printed it; it is already plain. These rules cover what you say around it.
@@ -189,7 +197,8 @@ A second generation with nothing recorded between it and the last one is refused
 `unsteered` (exit 1). **This is a STOP, not a retry.** Do not re-run the draft, do
 not compose a reason to get past the gate, and do not paraphrase the conversation
 into a note. Stop, ask the author what they want changed, and record their answer in
-their own words. A request to redraft that names no change — "draft it again" — is
+their own words. The STOP touches nothing on disk: the staged draft stays where it is,
+with no `rm`, no clean-up and no re-staging before the author answers. A request to redraft that names no change — "draft it again" — is
 exactly what this STOP is for; it is not a note. Never write, copy or delete a staged
 or published file to get a different draft:
 
@@ -218,7 +227,9 @@ text. In a session that did not propose the plan, that listing IS the plan: neve
 re-propose or re-record it, and never read the ledger for it. Offer resume as the
 default: show the tally as the tool printed it, trust every resolved step, and
 continue at the first unresolved one; a step marked stateful still takes its
-just-in-time permission gate before it runs. The workspace under
+just-in-time permission gate before it runs. Before that gate, run nothing toward the
+step: no probe of the tools it needs (`pip --version`, `python3 -m ensurepip`, `which`),
+no `--help` and no dry run. Ask the gate first. The workspace under
 `.crayon/staging/<id>/scratch/` persists across sessions.
 
 **Investigate and propose ONE annotated plan.** Read the unit's declared sources and
@@ -509,7 +520,8 @@ Next: /crayon-review — review the draft.
 ```
 
 State each entry of `gaps` from the report.json you staged in step 4 as one line, in
-the first person and specifically, for example "I didn't run `toyq migrate`; the page
+the first person, naming what that entry names (the setting, the command or the claim,
+as the entry gives it), never a gap of your own in its place, and specifically, for example "I didn't run `toyq migrate`; the page
 describes it from cli.py." With an empty `gaps` list the report adds nothing: no hedge
 and no reminder to check the page. Read the gaps from your report.json, not from
 `crayon summary`, whose known gaps also list the `gaps_note`. There is never a section

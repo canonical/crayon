@@ -3084,6 +3084,123 @@ def attributed_fields(text):
     return found
 
 
+class TestS25FirstSweepRules(unittest.TestCase):
+    """S-25 — the rules the first skill-following sweep found too weak to hold (23-03, D-16).
+
+    Each literal is typed, as in S-15 and S-20, and names the case it answers. A
+    mirrored block is read from its authoring site; S-15 and S-20 assert the copies.
+    """
+
+    #: The plain-words block (B-17, B-40, B-61).
+    PLAIN = (
+        "seal, seals and sealed",
+        "an option's label or description",
+        '`"state": "sealed"` is "accepted"',
+        "never that a digest matches",
+    )
+    #: The author-rules block (B-59).
+    AUTHOR = (
+        "backticks and `$` included",
+        "nothing in them is escaped, dropped or wrapped",
+    )
+    #: crayon-review, by step.
+    REVIEW = (
+        (2, "ask no mode question"),                                       # B-77
+        ("3a", "They are the last thing in that message"),                 # B-62, B-63
+        ("3a", "Nothing is recorded from that answer yet: a fix or redraft verdict with "
+               "those words records it."),                                 # B-65
+        ("3a", "spoke to other steps and not to it"),                      # B-76
+        ("3a", "the other sources still count"),                           # B-66
+        (5, "then the line is required"),                                  # B-67
+        (5, "is no ground"),                                               # B-68
+        (6, "is the verdict, not an accept authorised in advance"),        # B-42
+        (6, "show the lean then, and end that message with the verdict question"),  # B-43
+        (6, "Your message ends on that question"),                         # B-20
+        (6, "An accept that did not name a finding is not an answer to it"),  # B-46
+        (6, "Search for the bare stem as well as the path"),               # B-60
+        (6, "Number the questions in the order they were taken"),          # B-45
+        (6, "never a question-tool call"),                                 # B-11
+    )
+    #: review-rubric.md (B-41, B-74) and provenance-summary.md (B-31).
+    RUBRIC = (
+        "all six dimension headings, `### focus` included",
+        "total first",
+        "names what the notes left out",
+    )
+    PROVENANCE = "never a bulleted re-composition of them"
+    #: crayon-plan, by step.
+    PLAN = (
+        (2, "do not ask the problem question"),                            # B-53
+        (2, "Ask one of the two, never both"),                             # B-71
+        (4, "end that turn with the question it informs"),                 # B-52
+        (6, "give `--notes` once"),                                        # B-72
+        (6, "a real line break"),                                          # B-72
+        (6, "no label of yours"),                                          # B-54, B-73
+        (6, 'no "Nothing."'),                                              # B-54, B-73
+    )
+    #: crayon-write, by step.
+    WRITE = (
+        ("1a", "Before that gate, run nothing toward the step"),           # B-08
+        ("1u", "The STOP touches nothing on disk"),                        # B-19
+        (6, "never a gap of your own in its place"),                       # B-69
+    )
+
+    def step(self, body, number, what):
+        if isinstance(number, int):
+            found = skill_step_body(body, number)
+        else:
+            match = re.search(r"<step_%s\b[^>]*>" % number, body)
+            found = None
+            if match:
+                rest = body[match.end():]
+                found = rest.split("</step_%s>" % number, 1)[0]
+        self.assertIsNotNone(found, "%s has no step %s" % (what, number))
+        return folded(found)
+
+    def test_s25_the_plain_words_block_names_every_form_and_place(self):
+        block = folded(plain_words_bytes().decode("utf-8"))
+        for literal in self.PLAIN:
+            with self.subTest(literal=literal):
+                assert_contains(self, block, literal, "the plain-words block")
+
+    def test_s25_the_author_rules_keep_the_words_as_typed(self):
+        block = folded(author_rules_bytes().decode("utf-8"))
+        for literal in self.AUTHOR:
+            with self.subTest(literal=literal):
+                assert_contains(self, block, literal, "the author-rules block")
+
+    def test_s25_review_states_each_rule_where_it_binds(self):
+        body = body_of(SKILLS_ROOT / "crayon-review")
+        for number, literal in self.REVIEW:
+            with self.subTest(step=number, literal=literal):
+                assert_contains(self, self.step(body, number, "crayon-review"), literal,
+                                "crayon-review step %s" % number)
+
+    def test_s25_the_review_references_ask_for_the_tool_lines_and_every_heading(self):
+        rubric = folded(REVIEW_RUBRIC.read_text(encoding="utf-8"))
+        for literal in self.RUBRIC:
+            with self.subTest(literal=literal):
+                assert_contains(self, rubric, literal, "review-rubric.md")
+        provenance = folded(PROVENANCE_REFERENCE.read_text(encoding="utf-8"))
+        assert_contains(self, provenance, self.PROVENANCE, "provenance-summary.md")
+        assert_omits(self, provenance, "Present the fields in plain language",
+                     "provenance-summary.md")
+
+    def test_s25_plan_states_each_rule_where_it_binds(self):
+        body = body_of(PLAN_SKILL)
+        for number, literal in self.PLAN:
+            with self.subTest(step=number, literal=literal):
+                assert_contains(self, self.step(body, number, "crayon-plan"), literal,
+                                "crayon-plan step %s" % number)
+
+    def test_s25_write_states_each_rule_where_it_binds(self):
+        body = body_of(SKILLS_ROOT / "crayon-write")
+        for number, literal in self.WRITE:
+            with self.subTest(step=number, literal=literal):
+                assert_contains(self, self.step(body, number, "crayon-write"), literal,
+                                "crayon-write step %s" % number)
+
+
 class TestS10ReferenceFiles(unittest.TestCase):
     """S-10 — a reference file is shipped text and is held to the same rules."""
 

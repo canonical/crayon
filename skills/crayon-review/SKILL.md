@@ -63,8 +63,11 @@ These three rules hold at every question this skill puts to the author.
   nothing of theirs to record, omit the flag.
   On the command line their words go inside single quotes, each `'` in them written
   as `'\''`, and never inside double quotes: there a backtick runs a command and a `$`
-  expands, so the record would hold words they never typed. Through `--note-file -`,
-  the same single-quoted words are piped in with `printf '%s'`, which adds nothing.
+  expands, so the record would hold words they never typed. Type them inside the
+  single quotes as they wrote them, backticks and `$` included: nothing in them is
+  escaped, dropped or wrapped in `$(…)`, because inside single quotes nothing runs or
+  expands. Through `--note-file -`, the same single-quoted words are piped in with
+  `printf '%s'`, which adds nothing.
 - **No marked option on a judgment question.** Audience, intent, step choices, the
   verdict and restore-or-amend are the author's judgment. No option of those questions
   carries "(Recommended)", "(default)", "suggested", a star or any other marker, and
@@ -89,10 +92,15 @@ What the author reads from this skill is in plain words. The record's own words 
   seq 7 for a request. Give no other record entry a number, neither "event 7" nor
   "ledger line 7": say what is already recorded and name its commit. These record
   words stay out of your own prose altogether, not even as an English idiom: say
-  "on what grounds", not "on what basis".
+  "on what grounds", not "on what basis". They stay out in every form and every place
+  you write: seal, seals and sealed are all "accept", since an accept is recorded,
+  never sealed; and an option's label or description, or a refusal or a `--json`
+  value retold in a sentence, is prose too, so `"state": "sealed"` is "accepted" and
+  `already_accepted` is "already accepted".
 - **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
   a sha256, a digest, and a verify or check count never appear in what you say;
-  name a commit by its id, never as a hash. Quote the tallies:
+  name a commit by its id, never as a hash. A page whose bytes the record cites is
+  "current"; say so, never that a digest matches. Quote the tallies:
   the walk tally and the findings tally are the tool's and the rubric's own lines.
 - **The success line, verbatim.** Echo each verb's success response line exactly as the
   tool printed it; it is already plain. These rules cover what you say around it.
@@ -108,7 +116,8 @@ What the author reads from this skill is in plain words. The record's own words 
 <quick_start>
 1. Run the two-verb opening above and act on the routing row for `next`.
 2. Read the shown state and the drafted page(s) under `docs/`.
-3. Select the review mode with `AskUserQuestion`: **record** or **review**.
+3. Select the review mode with `AskUserQuestion`: **record** or **review**; none when
+   the reviewer already authorised the accept.
 4. Present the provenance summary (both modes), quoting the tool's own lines, and
    end it with every deviated or skipped step put to the author as a question
    (step 3a), before any finding and before the verdict question; when the
@@ -162,6 +171,10 @@ Ask the reviewer, with `AskUserQuestion`, which mode they want:
 
 The raw page source is not dumped by default in either mode — offer it only if the
 reviewer asks.
+
+When the reviewer already authorised the accept in the request that opened this
+session, for example "install - accept it.", ask no mode question: after the opening,
+run the accept in this same turn (step 6), and the closure asks what is open.
 </step_2>
 
 <step_3 name="Present the provenance summary">
@@ -203,10 +216,16 @@ no cap. Each question names its step and its reason in plain words, for example
 "Step init deviated: <its reason>. Does the page need to say so?". Quote each id and
 reason as the tool gives them, and add no count of your own: the tally stays the
 tool's own line. The questions are plain text, not options in a question tool.
+They are the last thing in that message, in either mode: no finding, no lean and no
+verdict question follows them there. The findings (review mode) and the verdict
+question wait for the author's reply.
 
 The author may answer any, all or none. Nothing is recorded from an answer: no steer and no note.
 When an answer asks for a page change, say in one line that it is not recorded until
-the verdict, and that a fix or redraft verdict with those words records it.
+the verdict, and that a fix or redraft verdict with those words records it. Say both
+halves, for example "Nothing is recorded from that answer yet: a fix or redraft verdict
+with those words records it.", and in record mode ask the verdict question in the same
+message.
 The review then moves on, to the findings in review mode (step 5) and to the verdict
 question in record mode (step 6). The author's answer to the verdict question is the
 note. A fix or redraft given with no words still gets "What should the next draft
@@ -214,8 +233,11 @@ change?".
 
 The closure after an accept in this conversation does not ask again a step whose
 answer asked for no page change, and a step left unanswered is not asked again. A step
+is left unanswered when the author's reply spoke to other steps and not to it: a
+reply about step init alone leaves first-job unanswered. A step
 whose answer asked for one comes back there, named with the change the author asked
-for (step 6).
+for (step 6). Closing a step closes only that step; the other sources still count, so
+where a reader arrives from is asked when nothing links to the page.
 </step_3a>
 
 <step_4 name="On record_edits — adopt the bytes before judging them">
@@ -286,8 +308,11 @@ when this conversation ran `crayon draft` for this unit, or when the `model` lin
 record it on a draft, from what you are told about the model you run as, never guessed;
 when you cannot, only the first ground applies. When neither holds, because the
 recorded model is another one, or is empty with the origin `unknown`, and the draft ran
-in another session, there are no grounds: say nothing about it. With grounds, put one
-line in the first person directly before the findings, for example:
+in another session, there are no grounds: say nothing about it. An earlier turn of
+this conversation that ran `crayon draft` for this unit counts, whichever skill ran it;
+then the line is required. A `model` line that names another model, such as
+`example/drafting-model-1`, is no ground. With grounds, put one line in the first
+person directly before the findings, for example:
 
 > I drafted this page, so this is a self-review; I'm likely to miss what I got wrong the first time. Weigh these findings with that in mind.
 
@@ -347,8 +372,12 @@ answers, a verdict that matches the lean, or any verdict on a tally with no lean
 recorded without comment. A verdict that differs gets the lean with its one-clause
 reason and one question, `Keep <verdict>?`, for example "The tally leans to fix: F-1
 is a must-fix. Keep accept?". The answer is final, and there is no second check: a
-yes records the verdict they gave, and a no asks which verdict they want instead. If
-the author asks what the tally suggests before answering, show the lean then.
+yes records the verdict they gave, and a no asks which verdict they want instead. An
+"Accept." given in answer to the verdict question is the verdict, not an accept
+authorised in advance: on a tally with a must-fix it differs from the lean, so it gets
+the lean and `Keep accept?` first, and nothing runs until the answer. If the author
+asks what the tally suggests before answering, show the lean then, and end that
+message with the verdict question.
 Record mode has no findings and no lean.
 
 **On fix / redraft:** the note is required (`note_required`). When the author gave
@@ -377,12 +406,16 @@ A bare accept records no note. When the reviewer said more than the verdict, tho
 words, exactly as they typed them, are the note: add
 `--note '<their words beyond the verdict>'`.
 
-Accept seals the basis, and it has two preconditions this skill must be ready for.
+Accept records the pages as accepted, and it has two preconditions this skill must be
+ready for.
 
 **`unapplied_steering` (exit 1)** — requests are still pending, and the refusal's
 `detail` lists the pending requests' numbers. Nothing is closed by silence:
-put each pending request to the reviewer one at a time, as "request <n>" with its note,
-then take one disposition for each, and re-run accept carrying all of them:
+put each pending request to the reviewer one at a time, as "request <n>" with its note.
+Your message ends on that question for the first pending request, for example
+"Request 4 asks: <its note>. Has the page dealt with it, or should it be withdrawn, and
+why?", and nothing runs until the reviewer answers. Then take one disposition for
+each, and re-run accept carrying all of them:
 
 ```bash
 crayon review "$UNIT_ID" --verdict accept [--note '<their words beyond the verdict>'] --resolves 7,9 --withdraw 12 '<why it no longer applies>'
@@ -422,10 +455,13 @@ to the page. After an accept, the closure below is that STOP.
    open too. `withdrawn` entries are not.
 2. Findings count only when review mode ran in this same conversation. Each
    must-fix or should-fix finding the author did not speak to in the verdict
-   exchange is open. Nits never count. In a later session this source is absent,
-   and the skill never guesses at it.
+   exchange is open. An accept that did not name a finding is not an answer to it: an
+   accept with no words leaves every must-fix and should-fix finding open.
+   Nits never count. In a later session this source is absent, and the skill never
+   guesses at it.
 3. Where a reader arrives from: search the docs tree read-only for each accepted
-   page. A hit counts only when it resolves to that page: its docs-relative path
+   page. Search for the bare stem as well as the path: a toctree line `config` in
+   `reference/index.md` links to `reference/config.md`. A hit counts only when it resolves to that page: its docs-relative path
    without the extension (`reference/config`) anywhere, or its bare stem (`config`)
    in a toctree entry or a `{doc}` / `:doc:` role of a page in the same directory
    (`reference/index.md`), because those resolve relative to the page that holds
@@ -440,13 +476,18 @@ to the page. After an accept, the closure below is that STOP.
    a question: how many more are open, a pointer to "Author decisions" in
    `crayon summary "$UNIT_ID" --md` for the steps and judged requests among them, and
    any finding or reader-arrival item among them named in plain words, because that
-   summary does not list those.
+   summary does not list those. Number the questions in the order they were taken:
+   with two steps, one judged request and nothing linking to the page, the three are
+   the first step, the judged request and where a reader arrives from, and the second
+   step goes to the plain line.
 6. It is one message: the accept response line, echoed verbatim (it already ends
    `Next: yours — crayon stops here`), then a numbered list of the questions in plain
    words, each naming its item, for example "Step install-deps was skipped: no
    network in CI. Does the page need to say so?" or "Nothing links to
    reference/config.md yet; where should a reader come from?". The questions are
-   plain text, not options in a question tool. There is no second stops-here line,
+   plain text, not options in a question tool: the closure is a reply, never a
+   question-tool call, after an accept in this session and on a unit accepted in an
+   earlier one. There is no second stops-here line,
    and no publishing, pull request or build is offered as a next step.
 7. The author may answer any question or none. Nothing is recorded from an answer by
    default, and crayon stops. If an answer asks for a page change, record the
@@ -647,7 +688,8 @@ unchanged.
 <must>
 - Open every session with `crayon version --json` then `crayon show <id> --json`, and
   act on the routing row for `next`.
-- Offer two selectable modes up front (record vs review) via `AskUserQuestion`.
+- Offer two selectable modes up front (record vs review) via `AskUserQuestion`, unless
+  the reviewer already authorised the accept.
 - Present the provenance summary in both modes, quoting the tool's own lines.
 - After the provenance summary, in both modes, put every deviated or skipped step in
   `handover.steps` to the author as a question, in one numbered list, before any

@@ -1,8 +1,8 @@
 # Model evals
 
-Dev-time evaluation material, like the rest of `validation/`. This kit measures how well a model,
-driving the five crayon skills, does what the skills say. It does not re-test the tool itself: the
-gate already covers that.
+Dev-time evaluation material, like the rest of `validation/`. This kit measures skill-following:
+how well a model, driving the five crayon skills, does what the skills say. It does not measure the
+quality of a page or speed, and it does not re-test the tool itself: the gate already covers that.
 
 The same skill text and the same neutral loop are given to every model, so a score difference
 belongs to the model. No agent harness sits in between:
@@ -53,7 +53,7 @@ Looking costs nothing and does not end the episode. It runs for real in that cop
 - reading, globbing and grepping;
 - read-only `crayon` calls;
 - inspection commands, including chains joined by `&&`, `;` or `|`;
-- a `python3 -c` script that names nothing able to write, delete, spawn a process, reach the
+- a `python3 -c` script that uses nothing able to write, delete, spawn a process, reach the
   network or run code it builds, and only inside the jail;
 - staging-directory setup and waiting.
 
@@ -125,6 +125,10 @@ counts go to `results/<date>-<lane>-<model>-kK.json`, under the same rules.
 
 Baselines are per (candidate, judge) pair. When the judge changes, add a new row; don't edit the
 old one.
+
+Every summary written from now on carries `meta.measures`, set to `skill-following`.
+`results/README.md` labels the whole folder, including the 2026-09-23 and 2026-09-24 files written
+before the key.
 
 ## The roster and the spend cap
 
