@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "B-28",
-      "skill": "dogen-review",
+      "skill": "crayon-review",
       "ask": "cfg",
       "sandbox": "fixed",
       "history": [
@@ -15,7 +15,7 @@
         },
         "drafted/fix_json"
       ],
-      "why": "routing voice: the next step is named as a skill, never as a raw dogen command to type",
+      "why": "routing voice: the next step is named as a skill, never as a raw crayon command to type",
       "assert": [
         {
           "kind": "no_tool_call",
@@ -24,27 +24,27 @@
         },
         {
           "kind": "text_re",
-          "re": "dogen-write"
+          "re": "crayon-write"
         },
         {
           "kind": "judge",
-          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the dogen-write skill (for example /dogen-write cfg), and the agent does NOT tell the author to type a raw `dogen draft` or other `dogen` command themselves. Any commit id it quotes must be db7b3f4, the one the tool printed."
+          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the crayon-write skill (for example /crayon-write cfg), and the agent does NOT tell the author to type a raw `crayon draft` or other `crayon` command themselves. Any commit id it quotes must be db7b3f4, the one the tool printed."
         }
       ],
       "oracle": [
         {
-          "content": "Recorded your fix request (commit db7b3f4); it is pending. Next, invoke /dogen-write cfg to redraft the page with it."
+          "content": "Recorded your fix request (commit db7b3f4); it is pending. Next, invoke /crayon-write cfg to redraft the page with it."
         }
       ],
       "foil": [
         {
-          "content": "Recorded. Now run `dogen draft cfg` yourself to regenerate the page."
+          "content": "Recorded. Now run `crayon draft cfg` yourself to regenerate the page."
         }
       ]
     },
     {
       "id": "B-29",
-      "skill": "dogen-plan",
+      "skill": "crayon-plan",
       "ask": "I want a page about how toyq retries failed jobs.",
       "history": [
         "tool/version_json",
@@ -58,7 +58,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "\\bdogen\\s+unit\\s+new\\b"
+          "args_re": "\\bcrayon\\s+unit\\s+new\\b"
         },
         {
           "kind": "judge",
@@ -72,7 +72,7 @@
             {
               "name": "Read",
               "arguments": {
-                "file_path": ".dogen/context/doc-style.md"
+                "file_path": ".crayon/context/doc-style.md"
               }
             }
           ]
@@ -88,7 +88,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen unit new retries --intent reference --audience operators --title Retries --target reference/retries.md --body-file -"
+                "command": "crayon unit new retries --intent reference --audience operators --title Retries --target reference/retries.md --body-file -"
               }
             }
           ]
@@ -97,7 +97,7 @@
     },
     {
       "id": "B-30",
-      "skill": "dogen-plan",
+      "skill": "crayon-plan",
       "ask": "I want a page about how toyq retries failed jobs.",
       "history": [
         "tool/version_json",
@@ -126,7 +126,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "\\bdogen\\s+unit\\s+new\\b"
+          "args_re": "\\bcrayon\\s+unit\\s+new\\b"
         },
         {
           "kind": "judge",
@@ -157,7 +157,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen unit new retries --intent reference --audience operators --title Retries --target reference/retries.md --body-file -"
+                "command": "crayon unit new retries --intent reference --audience operators --title Retries --target reference/retries.md --body-file -"
               }
             }
           ]
@@ -166,7 +166,7 @@
     },
     {
       "id": "B-31",
-      "skill": "dogen-review",
+      "skill": "crayon-review",
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -206,13 +206,13 @@
         },
         {
           "kind": "judge",
-          "context": "Earlier in the session `dogen summary cfg` printed:\nConfiguration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current",
+          "context": "Earlier in the session `crayon summary cfg` printed:\nConfiguration reference\nfiles changed:\n  reference/config.md\nintent: reference\naudience: operators configuring toyq on a server\nrecord: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current",
           "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example 'record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current') rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
         }
       ],
       "oracle": [
         {
-          "content": "Provenance, as dogen summary printed it:\n\n    files changed: reference/config.md\n    record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current\n\nWhat is your verdict: accept, fix or redraft?"
+          "content": "Provenance, as crayon summary printed it:\n\n    files changed: reference/config.md\n    record: verify ok at 38186c2 (19 checks, 0 warn, 0 fail) · page: current\n\nWhat is your verdict: accept, fix or redraft?"
         }
       ],
       "foil": [

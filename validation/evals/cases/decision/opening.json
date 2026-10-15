@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "B-01",
-      "skill": "dogen-review",
+      "skill": "crayon-review",
       "ask": "cfg",
       "max_turns": 3,
       "sandbox": "drafted",
@@ -13,8 +13,8 @@
         {
           "kind": "bash_sequence",
           "prefix": [
-            "^dogen version --json$",
-            "^dogen show cfg --json$"
+            "^crayon version --json$",
+            "^crayon show cfg --json$"
           ]
         }
       ],
@@ -25,7 +25,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen version --json"
+                "command": "crayon version --json"
               }
             }
           ]
@@ -36,7 +36,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen show cfg --json"
+                "command": "crayon show cfg --json"
               }
             }
           ]
@@ -72,7 +72,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen show cfg --json"
+                "command": "crayon show cfg --json"
               }
             }
           ]
@@ -81,7 +81,7 @@
     },
     {
       "id": "B-02",
-      "skill": "dogen-onboard",
+      "skill": "crayon-onboard",
       "ask": "",
       "max_turns": 3,
       "sandbox": "context_empty",
@@ -90,8 +90,8 @@
         {
           "kind": "bash_sequence",
           "prefix": [
-            "^dogen version --json$",
-            "^dogen context show --json$"
+            "^crayon version --json$",
+            "^crayon context show --json$"
           ]
         }
       ],
@@ -102,7 +102,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen version --json"
+                "command": "crayon version --json"
               }
             }
           ]
@@ -113,7 +113,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen context show --json"
+                "command": "crayon context show --json"
               }
             }
           ]
@@ -129,7 +129,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen context show --json"
+                "command": "crayon context show --json"
               }
             }
           ]
@@ -138,13 +138,13 @@
     },
     {
       "id": "B-03",
-      "skill": "dogen-review",
+      "skill": "crayon-review",
       "ask": "cfg",
       "sandbox": "drafted",
       "why": "stop rule: a contract other than 1 stops the session before show",
       "history": [
         {
-          "cmd": "dogen version --json",
+          "cmd": "crayon version --json",
           "exit": 0,
           "output": "{\"tool\": \"0.2.0\", \"contract\": 2}"
         }
@@ -153,7 +153,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "^dogen\\s+(?!version\\b)"
+          "args_re": "^crayon\\s+(?!version\\b)"
         },
         {
           "kind": "text_re",
@@ -162,7 +162,7 @@
       ],
       "oracle": [
         {
-          "content": "The installed dogen implements contract 2; this skill is written for contract 1, so I have to stop here. Install a dogen that speaks contract 1, or skills for contract 2."
+          "content": "The installed crayon implements contract 2; this skill is written for contract 1, so I have to stop here. Install a crayon that speaks contract 1, or skills for contract 2."
         }
       ],
       "foil": [
@@ -172,7 +172,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen show cfg --json"
+                "command": "crayon show cfg --json"
               }
             }
           ]
@@ -181,13 +181,13 @@
     },
     {
       "id": "B-04",
-      "skill": "dogen-plan",
+      "skill": "crayon-plan",
       "ask": "cfg",
       "sandbox": "declared",
       "why": "stop rule: a tool older than min_tool 0.2.0 stops the session",
       "history": [
         {
-          "cmd": "dogen version --json",
+          "cmd": "crayon version --json",
           "exit": 0,
           "output": "{\"tool\": \"0.1.9\", \"contract\": 1}"
         }
@@ -196,7 +196,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "^dogen\\s+(?!version\\b)"
+          "args_re": "^crayon\\s+(?!version\\b)"
         },
         {
           "kind": "text_re",
@@ -205,7 +205,7 @@
       ],
       "oracle": [
         {
-          "content": "dogen 0.1.9 is older than the 0.2.0 this skill needs, so I have to stop. Upgrade dogen and invoke /dogen-plan again."
+          "content": "crayon 0.1.9 is older than the 0.2.0 this skill needs, so I have to stop. Upgrade crayon and invoke /crayon-plan again."
         }
       ],
       "foil": [
@@ -215,7 +215,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen show cfg --json"
+                "command": "crayon show cfg --json"
               }
             }
           ]

@@ -13,17 +13,17 @@
 # The boundary, stated once: this script writes into and runs git against ANOTHER repository —
 # the target documentation repo holding the unit under measurement — not against a hermetic
 # temp tree. It therefore does NOT source `tests/lib.sh`: that file pins
-# `DOGEN="$REPO_ROOT/dogen.py"` at the in-tree executable and its `setup_repo` exports
-# `DOGEN_TEST_HOOKS=1`, and either one would make a measurement of the target repo a
+# `CRAYON="$REPO_ROOT/crayon.py"` at the in-tree executable and its `setup_repo` exports
+# `CRAYON_TEST_HOOKS=1`, and either one would make a measurement of the target repo a
 # measurement of this one. The guards worth copying from `tests/lib.sh:191-199` — the
 # three-check `mktemp -d` and the pinned git config — are copied below; nothing else is.
 #
 # What it writes: `<repo>/validation/RUN-<leg>.json`, in the D-05 shape. The `sphinx` key is a
-# plain non-empty STRING because `dogen`'s `sphinx_result()` (dogen:7209-7243) accepts nothing
+# plain non-empty STRING because `crayon`'s `sphinx_result()` (dogen:7209-7243) accepts nothing
 # else — it scans `RUN-*.json` in sorted NAME order, takes the first usable one, collapses the
 # value to 120 characters and renders it. The structured `sphinx_before` / `sphinx_after` /
 # `sphinx_attribution` siblings are invisible to the tool and belong entirely to
-# `validation/score.py`'s `[sphinx]` line. That shape is why the RUN file costs `dogen` zero
+# `validation/score.py`'s `[sphinx]` line. That shape is why the RUN file costs `crayon` zero
 # lines, and it is why there must be exactly ONE RUN file per working tree: with two, the tool
 # would silently pick one by name order and say nothing.
 #
@@ -52,7 +52,7 @@
 # Every JSON read and write goes through `python3`, never `jq` (RESEARCH Assumption A1): `jq`
 # is not a documented prerequisite of this repository and is not guaranteed on the runner, so
 # a single `jq` call would make the RUN file unwritable precisely where it matters most. Every
-# `git`, `dogen` and `sphinx-build` call uses a list-form argument vector with `-C <dir>` and
+# `git`, `crayon` and `sphinx-build` call uses a list-form argument vector with `-C <dir>` and
 # never a shell string (T-19-17).
 #
 # Exit codes follow the project's 0/1/2 lint contract (tests/check_traces.py, and
@@ -76,21 +76,21 @@ export GIT_CONFIG_SYSTEM=/dev/null
 
 # The Sphinx binary and the tool, both indirections rather than fixed paths. `SPHINX_BUILD` is
 # what lets the fixtures point at a stub and lets CI — which has no Sphinx and no
-# `docs/.venv` — run them at all; `DOGEN` is what `score.py` already reads, because `dogen` is
+# `docs/.venv` — run them at all; `CRAYON` is what `score.py` already reads, because `crayon` is
 # not checked into a documentation repository. The fallback order is `score.py`'s own
-# (`_dogen_executable`): the environment, then this kit's in-tree file, then PATH.
-if [ -n "${DOGEN:-}" ]; then
-    DOGEN_BIN="$DOGEN"
-elif [ -f "$REPO_ROOT/dogen.py" ]; then
-    DOGEN_BIN="$REPO_ROOT/dogen.py"
+# (`_crayon_executable`): the environment, then this kit's in-tree file, then PATH.
+if [ -n "${CRAYON:-}" ]; then
+    CRAYON_BIN="$CRAYON"
+elif [ -f "$REPO_ROOT/crayon.py" ]; then
+    CRAYON_BIN="$REPO_ROOT/crayon.py"
 else
-    DOGEN_BIN="dogen"
+    CRAYON_BIN="crayon"
 fi
 
 # The six rev8 3.2 metric keys, in the session template's own order
 # This tuple is the definition; nothing below re-types it.
 METRIC_KEYS=(install time_to_usable_draft avoidable_questions
-             manual_dogen_commands help_requests resume_invocations)
+             manual_crayon_commands help_requests resume_invocations)
 
 # A conservative leg name, validated BEFORE it becomes a filename (T-19-17). A leg is a
 # pre-registered file under `validation/legs/`, so the alphabet is the one those names use.
@@ -253,7 +253,7 @@ print(hashlib.sha256("\n".join(sorted(rows)).encode("utf-8")).hexdigest())
 # `baseline` is sha256 over the sorted `(blob-sha, path)` listing of every path the units'
 # generations name in `origins[]`, taken from the baseline tag's tree; `context` is that same
 # list recomputed from the WORKING TREE at `end`. `protocol`'s fourth check asserts the two are
-# equal. A HEAD comparison is deliberately not used: every dogen verb commits, so the target's
+# equal. A HEAD comparison is deliberately not used: every crayon verb commits, so the target's
 # HEAD at `end` necessarily differs from its HEAD at `begin` and the comparison could never
 # hold. `origins[]` entries are plain STRINGS in v2.0 (dogen:4832-4856), which is why the
 # digest is over the paths they name rather than over per-read commit stamps.
@@ -262,7 +262,7 @@ print(hashlib.sha256("\n".join(sorted(rows)).encode("utf-8")).hexdigest())
 collect_origins() {
     local unit
     for unit in "${UNITS[@]}"; do
-        local ledger="$REPO/.dogen/units/$unit/ledger.jsonl"
+        local ledger="$REPO/.crayon/units/$unit/ledger.jsonl"
         [ -f "$ledger" ] || refuse "no ledger for unit $unit: expected a file at $ledger"
         python3 -c '
 import json, sys
@@ -449,7 +449,7 @@ do_begin() {
         while IFS= read -r existing; do
             [ -n "$existing" ] || continue
             if [ "$(basename "$existing")" != "RUN-${LEG}.json" ]; then
-                refuse "$RUN_DIR already holds $(basename "$existing"), a RUN file for another leg; dogen scans RUN-*.json in sorted name order and would silently pick one of the two"
+                refuse "$RUN_DIR already holds $(basename "$existing"), a RUN file for another leg; crayon scans RUN-*.json in sorted name order and would silently pick one of the two"
             fi
         done < <(find "$RUN_DIR" -maxdepth 1 -name 'RUN-*.json' | LC_ALL=C sort)
     fi
@@ -465,9 +465,9 @@ do_begin() {
         refuse "the baseline ref $BASELINE_REF does not resolve to a commit in $REPO"
 
     local version_json tool_path tool_sha
-    version_json=$("$DOGEN_BIN" version --json 2>/dev/null) || version_json=""
-    [ -n "$version_json" ] || refuse "could not read $DOGEN_BIN version --json; set DOGEN to the tool"
-    tool_path=$(command -v "$DOGEN_BIN" 2>/dev/null) || tool_path=""
+    version_json=$("$CRAYON_BIN" version --json 2>/dev/null) || version_json=""
+    [ -n "$version_json" ] || refuse "could not read $CRAYON_BIN version --json; set CRAYON to the tool"
+    tool_path=$(command -v "$CRAYON_BIN" 2>/dev/null) || tool_path=""
     if [ -n "$tool_path" ] && [ -f "$tool_path" ]; then
         tool_sha=$(python3 -c '
 import hashlib, sys
@@ -612,7 +612,7 @@ print(json.loads(open(sys.argv[1], encoding="utf-8").read())["baseline"]["commit
     printf '%s\n' "${METRICS[@]}" >"$LIST_DIR/metrics.txt"
     printf '%s\n' "${ATTRIBUTES[@]}" >"$LIST_DIR/attributes.txt"
 
-    # Rewritten ATOMICALLY: a sibling temp file, then a rename. A reader — `dogen summary`
+    # Rewritten ATOMICALLY: a sibling temp file, then a rename. A reader — `crayon summary`
     # included — never sees a half-written RUN file.
     python3 -c '
 import json, os, sys
@@ -637,7 +637,7 @@ before_half = "exit %s, %d warn" % (
     before.get("exit"),
     len([line for line in (before.get("diagnostics") or "").split("\n") if line.strip()]),
 )
-# Both halves, in one string that still says both after dogen 120-character collapse. The
+# Both halves, in one string that still says both after crayon 120-character collapse. The
 # new/resolved bookkeeping is deliberately NOT restated here: `score.py` `[sphinx]` line is
 # the one place it is computed, and a second computation over un-normalised text would drift.
 data["sphinx"] = "before %s - after %s" % (before_half, after_half)

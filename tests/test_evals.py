@@ -217,29 +217,29 @@ class TestAssertionKinds(unittest.TestCase):
         return grade.KINDS[spec["kind"]](spec, tr, ctx or {})
 
     def test_skill_choice_needs_exactly_the_expected_name(self):
-        spec = {"kind": "skill_choice", "expect": "dogen-plan"}
-        self.assertTrue(self.check(spec, trace(turn("dogen-plan")))["pass"])
-        self.assertTrue(self.check(spec, trace(turn("`dogen-plan`.")))["pass"])
-        both = self.check(spec, trace(turn("dogen-plan, then dogen-write")))
+        spec = {"kind": "skill_choice", "expect": "crayon-plan"}
+        self.assertTrue(self.check(spec, trace(turn("crayon-plan")))["pass"])
+        self.assertTrue(self.check(spec, trace(turn("`crayon-plan`.")))["pass"])
+        both = self.check(spec, trace(turn("crayon-plan, then crayon-write")))
         self.assertFalse(both["pass"])
-        self.assertIn("dogen-write", both["feedback"])
+        self.assertIn("crayon-write", both["feedback"])
         self.assertFalse(self.check(spec, trace(turn("the planning skill")))["pass"])
         none = {"kind": "skill_choice", "expect": "none"}
         self.assertTrue(self.check(none, trace(turn("none")))["pass"])
-        self.assertFalse(self.check(none, trace(turn("dogen-review")))["pass"])
+        self.assertFalse(self.check(none, trace(turn("crayon-review")))["pass"])
 
     def test_tool_call_first_and_any(self):
-        tr = trace(turn(calls=[bash("dogen version --json"), bash("dogen show u --json")]))
-        first = {"kind": "tool_call", "tool": "Bash", "args_re": r"^dogen version --json$"}
+        tr = trace(turn(calls=[bash("crayon version --json"), bash("crayon show u --json")]))
+        first = {"kind": "tool_call", "tool": "Bash", "args_re": r"^crayon version --json$"}
         self.assertTrue(self.check(first, tr)["pass"])
-        wrong_first = {"kind": "tool_call", "tool": "Bash", "args_re": r"^dogen show"}
+        wrong_first = {"kind": "tool_call", "tool": "Bash", "args_re": r"^crayon show"}
         self.assertFalse(self.check(wrong_first, tr)["pass"])
         anywhere = dict(wrong_first, which="any")
         self.assertTrue(self.check(anywhere, tr)["pass"])
         self.assertFalse(self.check(first, trace(turn("no tools")))["pass"])
 
     def test_no_tool_call_with_and_without_a_filter(self):
-        tr = trace(turn(calls=[bash("dogen draft u")]))
+        tr = trace(turn(calls=[bash("crayon draft u")]))
         self.assertFalse(self.check({"kind": "no_tool_call"}, tr)["pass"])
         self.assertTrue(self.check({"kind": "no_tool_call"}, trace(turn("stop")))["pass"])
         self.assertTrue(self.check({"kind": "no_tool_call", "args_re": "git commit"},
@@ -254,7 +254,7 @@ class TestAssertionKinds(unittest.TestCase):
         spec = {"kind": "not_prescribed", "re": r"git commit"}
         warned = trace(turn("Do not run `git commit` yourself; the tool owns commits."))
         self.assertTrue(self.check(spec, warned)["pass"])
-        never = trace(turn("dogen makes the commit, so never `git commit` by hand."))
+        never = trace(turn("crayon makes the commit, so never `git commit` by hand."))
         self.assertTrue(self.check(spec, never)["pass"])
         told = trace(turn("Next, run `git commit -am wip` to save your work."))
         self.assertFalse(self.check(spec, told)["pass"])
@@ -288,7 +288,7 @@ class TestAssertionKinds(unittest.TestCase):
     def test_a_malformed_assertion_is_rejected_before_any_call(self):
         for bad in ({"kind": "nope"}, {"kind": "text_re"},
                     {"kind": "tool_call", "args_re": "("},
-                    {"kind": "skill_choice", "expect": "dogen-publish"}):
+                    {"kind": "skill_choice", "expect": "crayon-publish"}):
             with self.assertRaises((ValueError, re.error)):
                 grade.validate_assertion(bad)
 
@@ -332,13 +332,13 @@ class TestSkillsReachTheModelNeutrally(unittest.TestCase):
             self.assertIn(".agents/skills/%s/SKILL.md" % name, text)
 
     def test_invocation_appends_the_body_and_nothing_else_does(self):
-        name, expanded = skillmod.expand_invocation("/dogen-review my-unit", self.skills)
-        self.assertEqual(name, "dogen-review")
-        self.assertTrue(expanded.startswith("/dogen-review my-unit"))
-        self.assertIn(self.skills["dogen-review"].body.strip()[:200], expanded)
+        name, expanded = skillmod.expand_invocation("/crayon-review my-unit", self.skills)
+        self.assertEqual(name, "crayon-review")
+        self.assertTrue(expanded.startswith("/crayon-review my-unit"))
+        self.assertIn(self.skills["crayon-review"].body.strip()[:200], expanded)
         self.assertEqual(skillmod.expand_invocation("please review", self.skills),
                          (None, "please review"))
-        self.assertEqual(skillmod.expand_invocation("/dogen-nope x", self.skills)[0], None)
+        self.assertEqual(skillmod.expand_invocation("/crayon-nope x", self.skills)[0], None)
 
     def test_no_prompt_and_no_kit_file_names_a_harness(self):
         surfaces = {
@@ -415,12 +415,12 @@ class TestEpisodeKinds(unittest.TestCase):
         return grade.KINDS[spec["kind"]](spec, tr, {})
 
     def test_decisive_matches_the_action_that_ended_the_episode(self):
-        signoff = call("Bash", command="dogen signoff cfg")
+        signoff = call("Bash", command="crayon signoff cfg")
         tr = episode({"type": "call", "call": signoff},
-                     turn(calls=[bash("dogen show cfg"), bash("dogen signoff cfg")]))
-        spec = {"kind": "decisive", "tool": "Bash", "args_re": r"^dogen signoff cfg$"}
+                     turn(calls=[bash("crayon show cfg"), bash("crayon signoff cfg")]))
+        spec = {"kind": "decisive", "tool": "Bash", "args_re": r"^crayon signoff cfg$"}
         self.assertTrue(self.check(spec, tr)["pass"])
-        self.assertFalse(self.check(dict(spec, args_re="^dogen draft"), tr)["pass"])
+        self.assertFalse(self.check(dict(spec, args_re="^crayon draft"), tr)["pass"])
         self.assertFalse(self.check({"kind": "decisive", "type": "text"}, tr)["pass"])
         stopped = episode({"type": "text"}, turn("I have to stop."))
         self.assertTrue(self.check({"kind": "decisive", "type": "text"}, stopped)["pass"])
@@ -435,27 +435,27 @@ class TestEpisodeKinds(unittest.TestCase):
                                    episode({"type": "text"}, turn("Shall I sign it off?")))["pass"])
         self.assertFalse(self.check({"kind": "asks_user"},
                                     episode({"type": "text"}, turn("Signing it off now.")))["pass"])
-        acted = episode({"type": "call", "call": call("Bash", command="dogen edits cfg")}, turn())
+        acted = episode({"type": "call", "call": call("Bash", command="crayon edits cfg")}, turn())
         self.assertFalse(self.check({"kind": "asks_user"}, acted)["pass"])
 
     def test_text_kinds_read_the_questions_too(self):
         question = call("AskUserQuestion", questions=[
             {"question": "How should I ground this?",
-             "options": [{"label": "Run /dogen-onboard first"}]}])
+             "options": [{"label": "Run /crayon-onboard first"}]}])
         tr = episode({"type": "call", "call": question},
                      {"content": "", "tool_calls": [question], "finish_reason": "tool_calls",
                       "usage": {"prompt_tokens": 0, "completion_tokens": 0, "cost": 0.0}})
-        self.assertTrue(self.check({"kind": "text_re", "re": "dogen-onboard"}, tr)["pass"])
+        self.assertTrue(self.check({"kind": "text_re", "re": "crayon-onboard"}, tr)["pass"])
 
     def test_bash_sequence_and_before(self):
-        tr = trace(turn(calls=[("Read", {"file_path": "x"}), bash("dogen version --json")]),
-                   turn(calls=[bash("dogen show cfg --json")]))
-        seq = {"kind": "bash_sequence", "prefix": ["^dogen version", "^dogen show cfg --json$"]}
+        tr = trace(turn(calls=[("Read", {"file_path": "x"}), bash("crayon version --json")]),
+                   turn(calls=[bash("crayon show cfg --json")]))
+        seq = {"kind": "bash_sequence", "prefix": ["^crayon version", "^crayon show cfg --json$"]}
         self.assertTrue(self.check(seq, tr)["pass"])
-        self.assertFalse(self.check(dict(seq, prefix=["^dogen show"]), tr)["pass"])
-        order = {"kind": "before", "first": "--dry-run", "then": "^dogen resume cfg$"}
-        good = trace(turn(calls=[bash("dogen resume cfg --dry-run"), bash("dogen resume cfg")]))
-        bad = trace(turn(calls=[bash("dogen resume cfg"), bash("dogen resume cfg --dry-run")]))
+        self.assertFalse(self.check(dict(seq, prefix=["^crayon show"]), tr)["pass"])
+        order = {"kind": "before", "first": "--dry-run", "then": "^crayon resume cfg$"}
+        good = trace(turn(calls=[bash("crayon resume cfg --dry-run"), bash("crayon resume cfg")]))
+        bad = trace(turn(calls=[bash("crayon resume cfg"), bash("crayon resume cfg --dry-run")]))
         self.assertTrue(self.check(order, good)["pass"])
         self.assertFalse(self.check(order, bad)["pass"])
         self.assertFalse(self.check(order, trace(turn("no calls")))["pass"])
@@ -473,12 +473,12 @@ class TestAgentSurface(unittest.TestCase):
     """E-07 — tools per skill, the sandbox, and where an episode ends."""
 
     def setUp(self):
-        self.holder = tempfile.mkdtemp(prefix="dogen-eval-test-")
+        self.holder = tempfile.mkdtemp(prefix="crayon-eval-test-")
         root = Path(self.holder) / "repo"
         (root / "src").mkdir(parents=True)
         (root / "src" / "a.py").write_text("retries = 3\n", encoding="utf-8")
-        (root / ".agents" / "skills" / "dogen-plan").mkdir(parents=True)
-        (root / ".agents" / "skills" / "dogen-plan" / "SKILL.md").write_text("body", encoding="utf-8")
+        (root / ".agents" / "skills" / "crayon-plan").mkdir(parents=True)
+        (root / ".agents" / "skills" / "crayon-plan" / "SKILL.md").write_text("body", encoding="utf-8")
         self.root = str(root)
 
     def tearDown(self):
@@ -487,14 +487,14 @@ class TestAgentSurface(unittest.TestCase):
 
     def repo(self):
         return agent.SandboxRepo(self.root, sandbox.bin_dir(),
-                                 [{"exact": "dogen show cfg --json", "output": "{}", "exit": 0}],
+                                 [{"exact": "crayon show cfg --json", "output": "{}", "exit": 0}],
                                  jail=sandbox.jail())
 
     def test_a_skill_is_offered_exactly_the_tools_it_declares(self):
         loaded = skillmod.load_skills()
         names = lambda s: [t["function"]["name"] for t in agent.tools_for(loaded[s])]
-        self.assertIn("Write", names("dogen-write"))
-        for other in ("dogen-plan", "dogen-review", "dogen-onboard", "dogen-fetch"):
+        self.assertIn("Write", names("crayon-write"))
+        for other in ("crayon-plan", "crayon-review", "crayon-onboard", "crayon-fetch"):
             with self.subTest(skill=other):
                 self.assertNotIn("Write", names(other))
                 self.assertNotIn("Edit", names(other))
@@ -507,21 +507,21 @@ class TestAgentSurface(unittest.TestCase):
             (call("Read", file_path="../../etc/hostname"), False, "outside the repository"),
             (call("Glob", pattern="src/*.py"), False, "src/a.py"),
             (call("Grep", pattern="retr"), False, "src/a.py:1:retries = 3"),
-            (call("Bash", command='dogen show "cfg" --json 2>&1'), False, "{}"),
+            (call("Bash", command='crayon show "cfg" --json 2>&1'), False, "{}"),
             (call("Bash", command="cat src/a.py"), False, "retries = 3"),
             (call("Bash", command="ls -la /srv/toyq && ls /srv/toyq/src 2>/dev/null"), False, "a.py"),
             (call("Bash", command="pwd"), False, "/srv/toyq"),
             (call("Bash", command='grep -rn "retr\\|x" src | grep -v zzz'), False, "retries"),
-            (call("Bash", command="WS=.dogen/staging/x/scratch && mkdir -p $WS/evidence"), False, ""),
+            (call("Bash", command="WS=.crayon/staging/x/scratch && mkdir -p $WS/evidence"), False, ""),
             (call("Bash", command='for f in src/*; do case "$f" in *.pyc) ;; *) cat "$f" ;; esac; done'),
              False, "retries"),
             (call("Bash", command="if [ -f src/a.py ]; then cat src/a.py; fi"), False, "retries"),
             (call("Bash", command="which git; pip show nothing-installed 2>/dev/null | head -2"), False, ""),
             (call("Bash", command="for f in src/*; do rm $f; done"), True, None),
             (call("Bash", command="if [ -f src/a.py ]; then rm src/a.py; fi"), True, None),
-            (call("Bash", command="dogen signoff cfg"), True, None),
-            (call("Bash", command="dogen resume cfg"), True, None),
-            (call("Bash", command="sleep 2; dogen draft cfg x"), True, None),
+            (call("Bash", command="crayon signoff cfg"), True, None),
+            (call("Bash", command="crayon resume cfg"), True, None),
+            (call("Bash", command="sleep 2; crayon draft cfg x"), True, None),
             (call("Bash", command="cat src/a.py > /tmp/x"), True, None),
             (call("Bash", command="find . -name a.py -delete"), True, None),
             (call("Bash", command="ls $(pwd)"), False, "src"),
@@ -551,37 +551,37 @@ class TestAgentSurface(unittest.TestCase):
 
     def test_a_written_refusal_answers_the_whole_verb_on_its_unit(self):
         repo = agent.SandboxRepo(self.root, sandbox.bin_dir(),
-                                 [{"prefix": "dogen show cfg", "output": "{\"error\": \"x\"}",
+                                 [{"prefix": "crayon show cfg", "output": "{\"error\": \"x\"}",
                                    "exit": 2}])
-        for command in ("dogen show cfg --json", "dogen show cfg", 'dogen show "cfg" --diff'):
+        for command in ("crayon show cfg --json", "crayon show cfg", 'crayon show "cfg" --diff'):
             with self.subTest(command=command):
                 out, acted = repo.serve(call("Bash", command=command))
                 self.assertFalse(acted)
                 self.assertIn('"error"', out)
-        out, _ = repo.serve(call("Bash", command="dogen show cfgx"))
+        out, _ = repo.serve(call("Bash", command="crayon show cfgx"))
         self.assertNotIn('"error": "x"', out)
 
     def test_a_model_command_never_sees_the_runner_environment(self):
-        os.environ["DOGEN_EVAL_CANARY"] = "canary-value"
+        os.environ["CRAYON_EVAL_CANARY"] = "canary-value"
         try:
-            out, _ = self.repo().serve(call("Bash", command="echo $DOGEN_EVAL_CANARY $OPENROUTER_API_KEY"))
+            out, _ = self.repo().serve(call("Bash", command="echo $CRAYON_EVAL_CANARY $OPENROUTER_API_KEY"))
         finally:
-            del os.environ["DOGEN_EVAL_CANARY"]
+            del os.environ["CRAYON_EVAL_CANARY"]
         self.assertNotIn("canary-value", out)
         self.assertNotIn("sk-", out)
 
     def test_history_writes_land_inside_the_repository_only(self):
         repo = self.repo()
-        repo.write(".dogen/staging/cfg/draft/p.md", "draft")
-        self.assertIn("draft", repo.read({"file_path": ".dogen/staging/cfg/draft/p.md"}))
+        repo.write(".crayon/staging/cfg/draft/p.md", "draft")
+        self.assertIn("draft", repo.read({"file_path": ".crayon/staging/cfg/draft/p.md"}))
         with self.assertRaises(ValueError):
             repo.write("../escape.md", "x")
 
     def test_an_episode_ends_on_the_first_consequential_call(self):
         replies = run.scripted([
             {"tool_calls": [{"name": "Read", "arguments": {"file_path": "src/a.py"}}]},
-            {"tool_calls": [{"name": "Bash", "arguments": {"command": "dogen signoff cfg"}},
-                            {"name": "Bash", "arguments": {"command": "dogen draft cfg x"}}]},
+            {"tool_calls": [{"name": "Bash", "arguments": {"command": "crayon signoff cfg"}},
+                            {"name": "Bash", "arguments": {"command": "crayon draft cfg x"}}]},
         ])
         out = agent.run_episode(StubProvider(replies), SPEC, [], [], self.repo())
         self.assertEqual(out["decisive"]["type"], "call")
@@ -597,7 +597,7 @@ class TestAgentSurface(unittest.TestCase):
 
     def test_a_replayed_history_is_well_formed_tool_traffic(self):
         messages = agent.history_messages([
-            {"cmd": "dogen version --json", "exit": 0, "output": "{}"},
+            {"cmd": "crayon version --json", "exit": 0, "output": "{}"},
             {"call": {"name": "Write", "arguments": {"file_path": "x", "content": "y"}},
              "result": "written"},
             {"user": "yes"},
@@ -613,7 +613,7 @@ class TestJail(unittest.TestCase):
     """E-09 — a model's looking command sees the sandbox and nothing of the machine."""
 
     def setUp(self):
-        self.holder = tempfile.mkdtemp(prefix="dogen-eval-jail-")
+        self.holder = tempfile.mkdtemp(prefix="crayon-eval-jail-")
         root = Path(self.holder) / "repo"
         root.mkdir()
         (root / "a.txt").write_text("inside\n", encoding="utf-8")
@@ -640,10 +640,10 @@ class TestJail(unittest.TestCase):
         self.assertEqual(sorted(self.run_looking("ls /srv")[0].split()), ["home", "toyq"])
 
     def test_nothing_names_the_checkout_or_the_home_it_lives_in(self):
-        out, _ = self.run_looking("env; which dogen; pwd; cat a.txt; dogen version --json")
+        out, _ = self.run_looking("env; which crayon; pwd; cat a.txt; crayon version --json")
         for secret in (str(ROOT), os.path.expanduser("~")):
             self.assertNotIn(secret, out)
-        self.assertIn("/opt/dogen/bin/dogen", out)
+        self.assertIn("/opt/crayon/bin/crayon", out)
         self.assertIn("/srv/toyq", out)
         self.assertIn("inside", out)
         self.assertIn('"contract"', out)
@@ -714,16 +714,16 @@ class TestLaneBCases(unittest.TestCase):
                 {"name": "Bash", "arguments": {"command": command}}]}
 
         planted = [
-            ("B-27", [bash("dogen show cfg --json && " + draft)], True),
-            ("B-27", [bash("dogen show cfg"), bash("sleep 2; " + draft + " --json")], True),
-            ("B-27", [bash("dogen show cfg"), bash(draft + " --model x")], False),
+            ("B-27", [bash("crayon show cfg --json && " + draft)], True),
+            ("B-27", [bash("crayon show cfg"), bash("sleep 2; " + draft + " --json")], True),
+            ("B-27", [bash("crayon show cfg"), bash(draft + " --model x")], False),
             ("B-18", [bash("sleep 5 && " + draft)], True),
-            ("B-06", [bash("cd %s && dogen signoff cfg" % agent.WORKDIR)], True),
-            ("B-06", [bash("cd /tmp && dogen signoff cfg")], False),
-            ("B-27", [bash("dogen show cfg"), bash(draft + '; echo "exit:$?"')], True),
+            ("B-06", [bash("cd %s && crayon signoff cfg" % agent.WORKDIR)], True),
+            ("B-06", [bash("cd /tmp && crayon signoff cfg")], False),
+            ("B-27", [bash("crayon show cfg"), bash(draft + '; echo "exit:$?"')], True),
             ("B-08", [bash("pwd; echo " + "a" * 64)], False),
             ("B-08", [bash("python3 -m toyq.cli init 2>&1 | head -5")], False),
-            ("B-08", [bash("python3 -c \"print(open('.dogen/units/install/ledger.jsonl').read())\"")],
+            ("B-08", [bash("python3 -c \"print(open('.crayon/units/install/ledger.jsonl').read())\"")],
              False),
         ]
         for case_id, replies, passes in planted:
@@ -739,8 +739,8 @@ class TestLaneBCases(unittest.TestCase):
                 ("Request 4 is still pending. Before acceptance, should this request be recorded "
                  "as:\n- **Resolved**\n- **Withdrawn**", True),
                 ("Which unit should I review?", True),
-                ("Stopped: cfg is unsteered. dogen stops here.", False),
-                ("Recorded. Next: /dogen-write cfg.", False)):
+                ("Stopped: cfg is unsteered. crayon stops here.", False),
+                ("Recorded. Next: /crayon-write cfg.", False)):
             with self.subTest(text=text):
                 episode = dict(trace(turn(text)), decisive={"type": "text"})
                 out = grade.check_asks_user({}, episode, {})
@@ -748,8 +748,8 @@ class TestLaneBCases(unittest.TestCase):
 
     def test_the_opening_sequence_reads_quoted_arguments_as_plain(self):
         out = grade.check_bash_sequence(
-            {"prefix": ["^dogen version --json$", "^dogen show cfg --json$"]},
-            trace(turn("", [bash("dogen version --json"), bash('dogen show "cfg" --json 2>&1')])),
+            {"prefix": ["^crayon version --json$", "^crayon show cfg --json$"]},
+            trace(turn("", [bash("crayon version --json"), bash('crayon show "cfg" --json 2>&1')])),
             {})
         self.assertTrue(out["pass"], out)
 
@@ -757,9 +757,9 @@ class TestLaneBCases(unittest.TestCase):
         replies = [{"content": "", "tool_calls": [
                        {"name": "Bogen", "arguments": {"command": "cat docs/index.md"}}]},
                    {"content": "Which unit should I review?"}]
-        tools = agent.tools_for(skillmod.load_skills()["dogen-review"])
+        tools = agent.tools_for(skillmod.load_skills()["crayon-review"])
         messages = [{"role": "user", "content": "go"}]
-        repo = agent.SandboxRepo(tempfile.mkdtemp(prefix="dogen-eval-bogen-"), sandbox.bin_dir())
+        repo = agent.SandboxRepo(tempfile.mkdtemp(prefix="crayon-eval-bogen-"), sandbox.bin_dir())
         out = agent.run_episode(StubProvider(run.scripted(replies)), SPEC, messages, tools, repo)
         self.assertEqual(out["decisive"], {"type": "text"})
         self.assertEqual(len(out["turns"]), 2)
@@ -770,10 +770,10 @@ class TestLaneBCases(unittest.TestCase):
     def test_an_action_is_graded_without_its_wrapping(self):
         def text(command):
             return grade.call_text({"name": "Bash", "arguments": json.dumps({"command": command})})
-        self.assertEqual(text('dogen version --json; echo "---exit: $?"'), "dogen version --json")
-        self.assertEqual(text("cd /srv/toyq && dogen signoff cfg && git log -1"), "dogen signoff cfg")
-        self.assertEqual(text("dogen signoff cfg; rm -f x"), "dogen signoff cfg; rm -f x")
-        self.assertEqual(text("dogen draft cfg x | tee out"), "dogen draft cfg x | tee out")
+        self.assertEqual(text('crayon version --json; echo "---exit: $?"'), "crayon version --json")
+        self.assertEqual(text("cd /srv/toyq && crayon signoff cfg && git log -1"), "crayon signoff cfg")
+        self.assertEqual(text("crayon signoff cfg; rm -f x"), "crayon signoff cfg; rm -f x")
+        self.assertEqual(text("crayon draft cfg x | tee out"), "crayon draft cfg x | tee out")
         self.assertEqual(text('echo "a; ls"'), 'echo "a; ls"')
 
     def test_lane_b_covers_all_five_skills_and_every_group(self):

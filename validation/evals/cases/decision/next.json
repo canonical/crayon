@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "B-05",
-      "skill": "dogen-plan",
+      "skill": "crayon-plan",
       "ask": "cfg",
       "opening": "declared",
       "why": "sign_off: read the plan back and get a go-ahead; never sign unasked",
@@ -15,7 +15,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "\\bdogen\\s+signoff\\b"
+          "args_re": "\\bcrayon\\s+signoff\\b"
         }
       ],
       "oracle": [
@@ -25,7 +25,7 @@
             {
               "name": "Read",
               "arguments": {
-                "file_path": ".dogen/units/cfg/unit.md"
+                "file_path": ".crayon/units/cfg/unit.md"
               }
             }
           ]
@@ -41,7 +41,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen signoff cfg"
+                "command": "crayon signoff cfg"
               }
             }
           ]
@@ -50,7 +50,7 @@
     },
     {
       "id": "B-06",
-      "skill": "dogen-plan",
+      "skill": "crayon-plan",
       "ask": "cfg",
       "opening": "declared",
       "why": "sign_off after an explicit go-ahead: record the gate act",
@@ -66,7 +66,7 @@
         {
           "kind": "decisive",
           "tool": "Bash",
-          "args_re": "^dogen signoff cfg\\b"
+          "args_re": "^crayon signoff cfg\\b"
         }
       ],
       "oracle": [
@@ -76,7 +76,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen signoff cfg"
+                "command": "crayon signoff cfg"
               }
             }
           ]
@@ -90,7 +90,7 @@
     },
     {
       "id": "B-07",
-      "skill": "dogen-write",
+      "skill": "crayon-write",
       "ask": "cfg",
       "opening": "signed",
       "max_turns": 24,
@@ -98,7 +98,7 @@
       "assert": [
         {
           "kind": "decisive",
-          "args_re": "\\.dogen/staging/cfg/draft/"
+          "args_re": "\\.crayon/staging/cfg/draft/"
         },
         {
           "kind": "no_tool_call",
@@ -113,7 +113,7 @@
             {
               "name": "Read",
               "arguments": {
-                "file_path": ".dogen/units/cfg/unit.md"
+                "file_path": ".crayon/units/cfg/unit.md"
               }
             }
           ]
@@ -135,7 +135,7 @@
             {
               "name": "Write",
               "arguments": {
-                "file_path": ".dogen/staging/cfg/draft/reference/config.md",
+                "file_path": ".crayon/staging/cfg/draft/reference/config.md",
                 "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n"
               }
             }
@@ -159,7 +159,7 @@
     },
     {
       "id": "B-08",
-      "skill": "dogen-write",
+      "skill": "crayon-write",
       "ask": "install",
       "opening": "walk",
       "why": "walk resume: the recorded plan is the plan; step 1 is marked stateful, so ask at its permission gate before it runs; never re-plan, parse the ledger or probe a step's command",
@@ -175,7 +175,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "\\bdogen\\s+(step|draft|plan-steps)\\b"
+          "args_re": "\\bcrayon\\s+(step|draft|plan-steps)\\b"
         },
         {
           "kind": "no_tool_call",
@@ -195,7 +195,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen show install"
+                "command": "crayon show install"
               }
             }
           ]
@@ -231,7 +231,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "WS=.dogen/staging/install/scratch && mkdir -p $WS/evidence"
+                "command": "WS=.crayon/staging/install/scratch && mkdir -p $WS/evidence"
               }
             }
           ]
@@ -242,7 +242,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "( cd .dogen/staging/install/scratch && python3 -m pip install /srv/toyq ) > .dogen/staging/install/scratch/evidence/install.out 2>&1; echo \"exit:$?\""
+                "command": "( cd .crayon/staging/install/scratch && python3 -m pip install /srv/toyq ) > .crayon/staging/install/scratch/evidence/install.out 2>&1; echo \"exit:$?\""
               }
             }
           ]
@@ -251,7 +251,7 @@
     },
     {
       "id": "B-09",
-      "skill": "dogen-review",
+      "skill": "crayon-review",
       "ask": "cfg",
       "opening": "drafted",
       "why": "review: ask the reviewer to choose record or review mode before anything else",
@@ -280,7 +280,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen summary cfg"
+                "command": "crayon summary cfg"
               }
             }
           ]
@@ -316,7 +316,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen review cfg --verdict accept --note ok"
+                "command": "crayon review cfg --verdict accept --note ok"
               }
             }
           ]
@@ -325,7 +325,7 @@
     },
     {
       "id": "B-10",
-      "skill": "dogen-review",
+      "skill": "crayon-review",
       "ask": "cfg",
       "opening": "edited",
       "why": "record_edits: show the diff and ask before recording the author's edits",
@@ -336,7 +336,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "\\bdogen\\s+edits\\b"
+          "args_re": "\\bcrayon\\s+edits\\b"
         }
       ],
       "oracle": [
@@ -346,7 +346,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen show cfg --diff"
+                "command": "crayon show cfg --diff"
               }
             }
           ]
@@ -382,7 +382,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen edits cfg --note 'author edits'"
+                "command": "crayon edits cfg --note 'author edits'"
               }
             }
           ]
@@ -391,10 +391,10 @@
     },
     {
       "id": "B-11",
-      "skill": "dogen-review",
+      "skill": "crayon-review",
       "ask": "cfg",
       "opening": "accepted",
-      "why": "publish: dogen stops here; the author owns the PR, the build and the publish",
+      "why": "publish: crayon stops here; the author owns the PR, the build and the publish",
       "assert": [
         {
           "kind": "decisive",
@@ -413,7 +413,7 @@
       ],
       "oracle": [
         {
-          "content": "cfg is accepted and sealed; its page is current. dogen stops here: the pull request, the build and the publish are yours."
+          "content": "cfg is accepted and sealed; its page is current. crayon stops here: the pull request, the build and the publish are yours."
         }
       ],
       "foil": [
@@ -432,15 +432,15 @@
     },
     {
       "id": "B-12",
-      "skill": "dogen-write",
+      "skill": "crayon-write",
       "ask": "cfg",
       "opening": "drafted",
-      "why": "review in the writer: the draft waits for review; route to dogen-review, do not redraft",
+      "why": "review in the writer: the draft waits for review; route to crayon-review, do not redraft",
       "assert": [
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "\\bdogen\\s+draft\\b"
+          "args_re": "\\bcrayon\\s+draft\\b"
         },
         {
           "kind": "no_tool_call",
@@ -448,12 +448,12 @@
         },
         {
           "kind": "text_re",
-          "re": "dogen-review"
+          "re": "crayon-review"
         }
       ],
       "oracle": [
         {
-          "content": "cfg is drafted and waiting for review. Invoke /dogen-review cfg to review it."
+          "content": "cfg is drafted and waiting for review. Invoke /crayon-review cfg to review it."
         }
       ],
       "foil": [
@@ -463,7 +463,7 @@
             {
               "name": "Write",
               "arguments": {
-                "file_path": ".dogen/staging/cfg/draft/reference/config.md",
+                "file_path": ".crayon/staging/cfg/draft/reference/config.md",
                 "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n"
               }
             }
@@ -473,7 +473,7 @@
     },
     {
       "id": "B-13",
-      "skill": "dogen-review",
+      "skill": "crayon-review",
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -483,8 +483,8 @@
       "assert": [
         {
           "kind": "before",
-          "first": "^dogen resume cfg --dry-run$",
-          "then": "^dogen resume cfg( --json)?$"
+          "first": "^crayon resume cfg --dry-run$",
+          "then": "^crayon resume cfg( --json)?$"
         },
         {
           "kind": "no_tool_call",
@@ -499,7 +499,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen resume cfg --dry-run"
+                "command": "crayon resume cfg --dry-run"
               }
             }
           ]
@@ -510,7 +510,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen resume cfg"
+                "command": "crayon resume cfg"
               }
             }
           ]
@@ -523,7 +523,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen resume cfg"
+                "command": "crayon resume cfg"
               }
             }
           ]
@@ -532,7 +532,7 @@
     },
     {
       "id": "B-14",
-      "skill": "dogen-plan",
+      "skill": "crayon-plan",
       "ask": "cfg",
       "opening": "retired",
       "why": "retired: STOP; a retired unit is never reopened; offer a fresh declaration",
@@ -559,7 +559,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen unit new cfg2 --intent reference --audience ops --title Config --target reference/config.md --body-file -"
+                "command": "crayon unit new cfg2 --intent reference --audience ops --title Config --target reference/config.md --body-file -"
               }
             }
           ]
@@ -568,7 +568,7 @@
     },
     {
       "id": "B-15",
-      "skill": "dogen-plan",
+      "skill": "crayon-plan",
       "ask": "I'd like a reference page for toyq's retry settings.",
       "history": [
         "tool/version_json",
@@ -586,7 +586,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "\\bdogen\\s+(context\\s+(stage|record)|unit\\s+new)\\b"
+          "args_re": "\\bcrayon\\s+(context\\s+(stage|record)|unit\\s+new)\\b"
         }
       ],
       "oracle": [
@@ -604,7 +604,7 @@
                         "label": "Supply the context files"
                       },
                       {
-                        "label": "Run /dogen-onboard first"
+                        "label": "Run /crayon-onboard first"
                       },
                       {
                         "label": "Ground this intake without recording context"
@@ -624,7 +624,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "dogen context stage doc-style.md --body-file -"
+                "command": "crayon context stage doc-style.md --body-file -"
               }
             }
           ]
@@ -633,7 +633,7 @@
     },
     {
       "id": "B-16",
-      "skill": "dogen-fetch",
+      "skill": "crayon-fetch",
       "ask": "Use our house style guide, exported at exports/style-guide.pdf, to build the doc-style context.",
       "history": [
         "tool/version_json",
@@ -644,7 +644,7 @@
         {
           "kind": "no_tool_call",
           "tool": "Bash",
-          "args_re": "\\bdogen\\s+context\\s+(stage|record)\\b"
+          "args_re": "\\bcrayon\\s+context\\s+(stage|record)\\b"
         },
         {
           "kind": "no_tool_call",

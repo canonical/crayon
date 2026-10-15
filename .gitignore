@@ -6,9 +6,9 @@
 .DS_Store
 *.swp
 
-# dogen passenger handoff staging — MUST stay scoped to the staging path:
-# a blanket .dogen/ ignore would hide the committed .dogen/units/<id>/unit.md.
-.dogen/staging/
+# crayon passenger handoff staging — MUST stay scoped to the staging path:
+# a blanket .crayon/ ignore would hide the committed .crayon/units/<id>/unit.md.
+.crayon/staging/
 .worktrees/
 
 # Python bytecode from the stdlib test runners (no package, no venv).

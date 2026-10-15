@@ -24,13 +24,13 @@ import agent
 from openrouter import ProviderError
 
 SKILL_NAMES = (
-    "dogen-onboard",
-    "dogen-fetch",
-    "dogen-plan",
-    "dogen-write",
-    "dogen-review",
+    "crayon-onboard",
+    "crayon-fetch",
+    "crayon-plan",
+    "crayon-write",
+    "crayon-review",
 )
-_CHOICE_RE = re.compile(r"\b(dogen-(?:onboard|fetch|plan|write|review)|none)\b")
+_CHOICE_RE = re.compile(r"\b(crayon-(?:onboard|fetch|plan|write|review)|none)\b")
 
 #: Words that turn a mention into a warning: "never run `git commit`" names the
 #: command without prescribing it. Read on the text BEFORE the match, on the
@@ -201,7 +201,7 @@ def check_no_tool_call(spec, trace, ctx):
     """No call matches ``tool``/``args_re``; with neither, no call at all.
 
     A call the episode carried out as looking (``served_ids``) is skipped: it
-    was read-only by construction, so ``dogen signoff --help`` is not a signoff.
+    was read-only by construction, so ``crayon signoff --help`` is not a signoff.
     """
     served = set(trace.get("served_ids") or ())
     # The whole command as typed: nothing forbidden hides in a looking tail.
@@ -307,7 +307,7 @@ def check_asks_user(spec, trace, ctx):
 
 def check_bash_sequence(spec, trace, ctx):
     """The first shell commands, in order, match ``prefix``."""
-    # Quotes and a trailing `2>&1` change nothing: `dogen show "cfg"` is `dogen show cfg`.
+    # Quotes and a trailing `2>&1` change nothing: `crayon show "cfg"` is `crayon show cfg`.
     commands = [agent.normalise(call_text(call)) for call in _all_calls(trace)
                 if call.get("name") == "Bash"]
     for index, pattern in enumerate(spec["prefix"]):

@@ -3,16 +3,16 @@
 #
 # Usage: bash validation/evals/fixtures/states.sh OUT.jsonl   (from the repository root)
 #
-# Lane B shows a model a history of `dogen` calls and asks for the next action.
+# Lane B shows a model a history of `crayon` calls and asks for the next action.
 # That history must be what the tool really prints, byte for byte, so it is
 # recorded here and never typed by hand. Each scenario builds one state in a
 # hermetic temp repo from tests/lib.sh (the one definition site for that
 # fixture), copies in the toyq project, drives the real verbs, and appends one
 # JSON line per recorded command:
 #
-#   {"state": ..., "label": ..., "cmd": "dogen ...", "exit": N, "output": "..."}
+#   {"state": ..., "label": ..., "cmd": "crayon ...", "exit": N, "output": "..."}
 #
-# `cmd` is the command as an agent types it (`dogen ...`). `output` is stdout and
+# `cmd` is the command as an agent types it (`crayon ...`). `output` is stdout and
 # stderr together, as a shell tool shows them. `validation/evals/record_states.py`
 # folds these lines into cases/decision/states.json, and tests/test_evals.py
 # re-records and compares, so a change in the tool's output turns the gate red
@@ -29,7 +29,7 @@ OUT="${1:?usage: states.sh OUT.jsonl}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 case "$OUT" in /*) ;; *) OUT="$PWD/$OUT" ;; esac
 : >"$OUT"
-export DOGEN="$ROOT/dogen.py"
+export CRAYON="$ROOT/crayon.py"
 # shellcheck source=../../../tests/lib.sh
 source "$ROOT/tests/lib.sh"
 
@@ -37,24 +37,24 @@ UNIT=cfg
 TARGET=reference/config.md
 PAGE="docs/$TARGET"
 
-# rec STATE LABEL ARGS... : run `dogen ARGS...`, record it as typed.
+# rec STATE LABEL ARGS... : run `crayon ARGS...`, record it as typed.
 rec() {
     local state="$1" label="$2" out rc
     shift 2
-    out=$("$DOGEN" "$@" 2>&1)
+    out=$("$CRAYON" "$@" 2>&1)
     rc=$?
     python3 -c '
 import json, shlex, sys
 state, label, rc, out = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4]
-cmd = " ".join(["dogen"] + [shlex.quote(arg) for arg in sys.argv[5:]])
+cmd = " ".join(["crayon"] + [shlex.quote(arg) for arg in sys.argv[5:]])
 print(json.dumps({"state": state, "label": label, "cmd": cmd, "exit": rc, "output": out}))
 ' "$state" "$label" "$rc" "$out" "$@" >>"$OUT"
 }
 
 # rec_unit STATE UNIT : the unit's plan and ledger, as a model reading the repo sees them.
 rec_unit() {
-    rec_file "$1" ".dogen/units/$2/unit.md"
-    rec_file "$1" ".dogen/units/$2/ledger.jsonl"
+    rec_file "$1" ".crayon/units/$2/unit.md"
+    rec_file "$1" ".crayon/units/$2/ledger.jsonl"
 }
 
 # rec_file STATE PATH : record a file's bytes for the case's virtual tree.
@@ -73,7 +73,7 @@ snap() {
     cp -a . "$SNAPDIR/$1"
 }
 
-# The three onboarding artefacts, as dogen-onboard would stage them for toyq.
+# The three onboarding artefacts, as crayon-onboard would stage them for toyq.
 DOC_STYLE='# Doc style\n\nImpersonal, present tense. Short sentences.\n'
 GLOSSARY='# Glossary\n\n- **job**: one queued shell command.\n- **retry**: a re-run of a failed job.\n'
 STRUCTURE='# Structure\n\n- docs/reference/: settings and commands.\n- docs/how-to/: task guides.\n'
@@ -81,7 +81,7 @@ STRUCTURE='# Structure\n\n- docs/reference/: settings and commands.\n- docs/how-
 # stage_context NAME BODY : stage one context artefact through the tool.
 stage_context() {
     # shellcheck disable=SC2059 # the bodies are printf formats on purpose
-    printf "$2" | "$DOGEN" context stage "$1" --body-file - >/dev/null 2>&1
+    printf "$2" | "$CRAYON" context stage "$1" --body-file - >/dev/null 2>&1
 }
 
 # base_bare : the toyq project with the skills installed, and no context yet.
@@ -97,7 +97,7 @@ import sys
 source = Path(sys.argv[1])
 tracked = subprocess.check_output([
     "git", "-C", str(source), "ls-files", "-z", "--",
-    "validation/evals/fixtures/toyq", "skills/dogen-*",
+    "validation/evals/fixtures/toyq", "skills/crayon-*",
 ])
 for name in tracked.split(b"\0"):
     if not name:
@@ -108,9 +108,9 @@ for name in tracked.split(b"\0"):
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source / path, target)
 PY
-    printf '.dogen/staging/\n' >.gitignore
+    printf '.crayon/staging/\n' >.gitignore
     git add -A
-    git commit -q -m "toyq project, dogen skills installed"
+    git commit -q -m "toyq project, crayon skills installed"
 }
 
 # base : base_bare plus a recorded context, so a unit session grounds without
@@ -120,7 +120,7 @@ base() {
     stage_context doc-style.md "$DOC_STYLE"
     stage_context glossary.md "$GLOSSARY"
     stage_context structure.md "$STRUCTURE"
-    "$DOGEN" context record --note "toyq context" >/dev/null 2>&1
+    "$CRAYON" context record --note "toyq context" >/dev/null 2>&1
 }
 
 declare_cfg() {
@@ -132,7 +132,7 @@ declare_cfg() {
         '- One table of settings.' \
         '- Precedence, stated once.' \
         '- The validation rule for max_retries.' |
-        "$DOGEN" unit new "$UNIT" --intent reference \
+        "$CRAYON" unit new "$UNIT" --intent reference \
             --audience "operators configuring toyq on a server" \
             --title "Configuration reference" --target "$TARGET" \
             --source src/toyq/config.py --body-file - >/dev/null 2>&1
@@ -148,9 +148,9 @@ PAGE_V2='# Configuration reference\n\nSettings come from defaults, then `toyq.to
 drafted() {
     base
     declare_cfg
-    "$DOGEN" signoff "$UNIT" >/dev/null 2>&1
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
     stage_page "$PAGE_V1"
-    "$DOGEN" draft "$UNIT" "$(draft_path "$UNIT" "$TARGET")" >/dev/null 2>&1
+    "$CRAYON" draft "$UNIT" "$(draft_path "$UNIT" "$TARGET")" >/dev/null 2>&1
 }
 
 scenario_declared() {
@@ -169,7 +169,7 @@ scenario_declared() {
 scenario_signed() {
     base
     declare_cfg
-    "$DOGEN" signoff "$UNIT" >/dev/null 2>&1
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
     rec signed show_json show "$UNIT" --json
     rec signed show show "$UNIT"
     rec_unit signed "$UNIT"
@@ -196,7 +196,7 @@ scenario_drafted() {
 
 scenario_accepted() {
     drafted
-    "$DOGEN" review "$UNIT" --verdict accept --note "Accurate and complete." >/dev/null 2>&1
+    "$CRAYON" review "$UNIT" --verdict accept --note "Accurate and complete." >/dev/null 2>&1
     rec accepted show_json show "$UNIT" --json
     rec_unit accepted "$UNIT"
     rec_file accepted "$PAGE"
@@ -226,7 +226,7 @@ scenario_missing() {
 scenario_target_exists() {
     base
     declare_cfg
-    "$DOGEN" signoff "$UNIT" >/dev/null 2>&1
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
     mkdir -p "$(dirname "$PAGE")"
     printf '# Configuration\n\nHand-written notes.\n' >"$PAGE"
     rec target_exists show_json show "$UNIT" --json
@@ -238,8 +238,8 @@ scenario_target_exists() {
 scenario_stale() {
     base
     declare_cfg
-    "$DOGEN" signoff "$UNIT" >/dev/null 2>&1
-    "$DOGEN" unit edit "$UNIT" --audience "operators and developers configuring toyq" >/dev/null 2>&1
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
+    "$CRAYON" unit edit "$UNIT" --audience "operators and developers configuring toyq" >/dev/null 2>&1
     rec stale show_json show "$UNIT" --json
     rec_unit stale "$UNIT"
     snap stale
@@ -250,7 +250,7 @@ scenario_stale() {
 scenario_retired() {
     base
     declare_cfg
-    "$DOGEN" unit retire "$UNIT" --note "Superseded by the settings guide." >/dev/null 2>&1
+    "$CRAYON" unit retire "$UNIT" --note "Superseded by the settings guide." >/dev/null 2>&1
     rec retired show_json show "$UNIT" --json
     rec_unit retired "$UNIT"
     snap retired
@@ -259,13 +259,13 @@ scenario_retired() {
 scenario_walk() {
     base
     printf '%s\n' '# Plan' '' 'Install toyq and queue a first job.' |
-        "$DOGEN" unit new install --intent how-to \
+        "$CRAYON" unit new install --intent how-to \
             --audience "operators installing toyq for the first time" \
             --title "Install toyq" --target how-to/install.md \
             --source README.md --body-file - >/dev/null 2>&1
-    "$DOGEN" signoff install >/dev/null 2>&1
+    "$CRAYON" signoff install >/dev/null 2>&1
     printf '%s' '[{"id":"install","text":"Install toyq from the checkout: python3 -m pip install /srv/toyq","mode":"agent","stateful":true},{"id":"init","text":"Create the configuration: toyq init","mode":"agent","stateful":true},{"id":"first-job","text":"Queue and run a job: toyq add \"echo hi\" && toyq run --once","mode":"agent","stateful":true}]' |
-        "$DOGEN" plan-steps install --steps-file - >/dev/null 2>&1
+        "$CRAYON" plan-steps install --steps-file - >/dev/null 2>&1
     rec walk show_json show install --json
     rec walk show show install
     rec_unit walk install
@@ -275,7 +275,7 @@ scenario_walk() {
 scenario_crashed() {
     base
     declare_cfg
-    DOGEN_CRASH_AT=append "$DOGEN" signoff "$UNIT" >/dev/null 2>&1
+    CRAYON_CRASH_AT=append "$CRAYON" signoff "$UNIT" >/dev/null 2>&1
     rec crashed show_json show "$UNIT" --json
     rec_unit crashed "$UNIT"
     snap crashed
@@ -288,7 +288,7 @@ scenario_crashed() {
 # matches HEAD (ledger_diverged).
 scenario_diverged() {
     drafted
-    local ledger=".dogen/units/$UNIT/ledger.jsonl" saved
+    local ledger=".crayon/units/$UNIT/ledger.jsonl" saved
     saved=$(mktemp)
     cp "$ledger" "$saved"
     python3 -c '
@@ -298,7 +298,7 @@ lines = open(path, encoding="utf-8").read().splitlines(True)
 lines[1] = lines[1].replace("reference", "referenc3", 1)
 open(path, "w", encoding="utf-8").write("".join(lines))
 ' "$ledger"
-    git commit -q -a --amend -m "dogen: drafted $UNIT"
+    git commit -q -a --amend -m "crayon: drafted $UNIT"
     cp "$saved" "$ledger"
     rm -f "$saved"
     rec diverged show_json show "$UNIT" --json
@@ -309,7 +309,7 @@ open(path, "w", encoding="utf-8").write("".join(lines))
 # manifest to resume from (recovery_unsupported, detail no_material).
 scenario_no_material() {
     drafted
-    local ledger=".dogen/units/$UNIT/ledger.jsonl" saved
+    local ledger=".crayon/units/$UNIT/ledger.jsonl" saved
     saved=$(mktemp)
     cp "$ledger" "$saved"
     python3 -c '
@@ -318,7 +318,7 @@ path = sys.argv[1]
 lines = open(path, encoding="utf-8").read().splitlines(True)
 open(path, "w", encoding="utf-8").write("".join(lines[:-1]))
 ' "$ledger"
-    git commit -q -a --amend -m "dogen: drafted $UNIT"
+    git commit -q -a --amend -m "crayon: drafted $UNIT"
     cp "$saved" "$ledger"
     rm -f "$saved"
     rec no_material show_json show "$UNIT" --json
@@ -346,12 +346,12 @@ scenario_context() {
     snap context_staged
     stage_context glossary.md "$GLOSSARY"
     stage_context structure.md "$STRUCTURE"
-    "$DOGEN" context record --note "toyq context" >/dev/null 2>&1
+    "$CRAYON" context record --note "toyq context" >/dev/null 2>&1
     rec context_recorded show_json context show --json
     snap context_recorded
-    rec_file context_recorded .dogen/context/doc-style.md
-    rec_file context_recorded .dogen/context/glossary.md
-    rec_file context_recorded .dogen/context/structure.md
+    rec_file context_recorded .crayon/context/doc-style.md
+    rec_file context_recorded .crayon/context/glossary.md
+    rec_file context_recorded .crayon/context/structure.md
 }
 
 for scenario in declared signed drafted accepted edited missing target_exists stale \

@@ -1,4 +1,4 @@
-# dogen — Agent Guide
+# crayon — Agent Guide
 
 This file is the entry point for any coding agent working in this repository, and the root of
 its wiki. A link written as a slug in double square brackets resolves to the page of that name
@@ -9,36 +9,36 @@ fences. Everywhere else a page is cited by its path. After editing this file or 
 
 ## What this repo is
 
-dogen drafts review-ready, Sphinx-publishable documentation (MyST or rST, Diátaxis-structured)
+crayon drafts review-ready, Sphinx-publishable documentation (MyST or rST, Diátaxis-structured)
 from human-pointed sources, with a recorded human signoff before any substantial draft, and
-stops at one traceable local commit. It is one stdlib-only Python file, `dogen.py`, driven by
+stops at one traceable local commit. It is one stdlib-only Python file, `crayon.py`, driven by
 five portable Agent Skills. Its behaviour is fixed by [[contract]], frozen at the git tag
 `contract-v1`; where the contract and any other document disagree, the contract wins.
 
 ## Core rules (always apply)
 
-- The deterministic tool is the gate: guarantees live in `dogen.py`, never in skill prose or the
+- The deterministic tool is the gate: guarantees live in `crayon.py`, never in skill prose or the
   model's discretion; never weaken a check for a nicer prompt ([[architecture]]).
-- No substantial draft without a recorded signoff; `draft` refuses until `dogen signoff` is on
+- No substantial draft without a recorded signoff; `draft` refuses until `crayon signoff` is on
   record and the plan hash is current ([[contract]]).
-- dogen drafts and stops: one local commit per transition, `.dogen/` and `docs/` only, `Dogen-*`
+- crayon drafts and stops: one local commit per transition, `.crayon/` and `docs/` only, `Crayon-*`
   trailers; it never pushes, builds, publishes or opens pull requests ([[architecture]]).
 - The ledger is the record of truth, append-only and hash-chained; no line is ever edited, not
   even a step's status, and state is derived, never stored ([[conventions]]).
-- `dogen-write` is the sole writer, enforced by the fail-closed allowlist in
-  `scripts/skill_lint.py`; no skill writes the canonical page, the ledger or `.dogen/context/`
-  — context artefacts reach disk through `dogen context stage` and `record` ([[context]]).
+- `crayon-write` is the sole writer, enforced by the fail-closed allowlist in
+  `scripts/skill_lint.py`; no skill writes the canonical page, the ledger or `.crayon/context/`
+  — context artefacts reach disk through `crayon context stage` and `record` ([[context]]).
 - The tool owns its commits: never run a competing `git add` or `git commit` for a gated
   transition ([[conventions]]).
 - A fixture, a routing row, a threshold or a gate command has one definition site and is
   mirrored mechanically; a hand copy is drift ([[development]]).
 - Stdlib only, Python 3.9 syntax, no package, no venv, no third-party runner ([[architecture]]).
 - Harness-agnostic: no agent harness is named, detected or preferred on any surface; skills are
-  invoked as `/dogen-onboard`, `/dogen-fetch`, `/dogen-plan`, `/dogen-write`, `/dogen-review`
+  invoked as `/crayon-onboard`, `/crayon-fetch`, `/crayon-plan`, `/crayon-write`, `/crayon-review`
   everywhere ([[install]]).
-- Sphinx-oriented, stack-agnostic: the output is Sphinx-publishable, but dogen knows no theme,
+- Sphinx-oriented, stack-agnostic: the output is Sphinx-publishable, but crayon knows no theme,
   extension, `conf.py` or stack and never builds; house conventions arrive only through
-  `.dogen/context/` ([[context]]).
+  `.crayon/context/` ([[context]]).
 - Formatting hooks are adopted, never fought ([[hooks]]).
 - Every non-zero exit is one JSON line with `error`, `unit`, `detail`, `hint`, `next`; branch on
   `error`, never on the exit code ([[architecture]]).
@@ -47,18 +47,18 @@ five portable Agent Skills. Its behaviour is fixed by [[contract]], frozen at th
 
 Every command below must be green before a commit lands. This is the gate in full; there is no
 shorter version, and a claim of completeness that omits one is the failure mode the list exists
-against. It is pinned by the `GATE_COMMANDS` tuple in `tests/test_dogen_unit.py`: every string
+against. It is pinned by the `GATE_COMMANDS` tuple in `tests/test_crayon_unit.py`: every string
 appears here and in [[development]] verbatim, every `tests/test_*.py` module appears in it, and
 every `run:` body in `.github/workflows/ci.yml` is one of them.
 
 ```bash
-python3 -m unittest tests.test_dogen_unit        # the unit suite
-python3 tests/test_dogen_unit.py                 # the SAME suite, script form
+python3 -m unittest tests.test_crayon_unit       # the unit suite
+python3 tests/test_crayon_unit.py                # the SAME suite, script form
 python3 -m unittest tests.test_skill_text        # the skill-text contracts
 python3 -m unittest tests.test_planning_lint     # the anonymization lint's own tests
 python3 -m unittest tests.test_check_docs        # the docs-accuracy checker's own tests
-bash tests/test_dogen_lifecycle.sh               # the lifecycle / recovery suite
-bash tests/test_dogen_acceptance.sh              # the acceptance suite
+bash tests/test_crayon_lifecycle.sh              # the lifecycle / recovery suite
+bash tests/test_crayon_acceptance.sh             # the acceptance suite
 bash tests/install_smoke.sh                      # the stranger's install path, end to end
 bash validation/fixtures.sh                      # the validation kit's four corruption fixtures
 python3 scripts/skill_lint.py                    # the SKILL.md frontmatter gate
@@ -79,11 +79,11 @@ command proves, and what pins what, is in [[development]].
 
 ## Skills
 
-Five portable skills under `skills/`, to the agentskills.io spec: `dogen-onboard` (walk the
-repository's docs and record the context artefacts through the tool), `dogen-fetch` (the same
-from declared external sources, with provenance), `dogen-plan` (declare and sign off),
-`dogen-write` (the sole writer; drafts from sources, or from an evidence-gated step walk for
-tutorials and how-tos) and `dogen-review` (record the verdict). The family contract and
+Five portable skills under `skills/`, to the agentskills.io spec: `crayon-onboard` (walk the
+repository's docs and record the context artefacts through the tool), `crayon-fetch` (the same
+from declared external sources, with provenance), `crayon-plan` (declare and sign off),
+`crayon-write` (the sole writer; drafts from sources, or from an evidence-gated step walk for
+tutorials and how-tos) and `crayon-review` (record the verdict). The family contract and
 the routing table are in `skills/README.md`; the table is mirrored byte-identically into each
 skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copies are equal.
 
@@ -103,13 +103,13 @@ skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copi
 ## The tree
 
 ```
-dogen.py                           ← the gate: one stdlib-only Python file (contract-v1),
-                                     installed on PATH as `dogen`
+crayon.py                          ← the gate: one stdlib-only Python file (contract-v1),
+                                     installed on PATH as `crayon`
 install.sh                         ← the interactive installer; --yes takes every default,
                                      --verify-only checks an existing install; ends by
                                      printing the uninstall commands for the paths it used
-README.md                          ← the reader's entry point: what dogen is, install, use;
-                                     names skills only, never a `dogen` command
+README.md                          ← the reader's entry point: what crayon is, install, use;
+                                     names skills only, never a `crayon` command
 AGENTS.md                          ← this file: the agent guide and the wiki's root
 CHANGELOG.md                       ← the release record
 LICENSE                            ← LGPL-3.0-only, the tool
@@ -137,26 +137,26 @@ docs/                              ← the wiki: flat, one page per slug, bracke
 skills/                            ← the human-facing surface
 ├── README.md                      ← verb table, routing table (the authoring site), install
 ├── LICENSE                        ← Apache-2.0, the skills only
-├── dogen-onboard/
+├── crayon-onboard/
 │   ├── SKILL.md                   ← repo walk → doc-style, glossary, structure, through the tool
 │   └── references/                ← glossary-stance.md, routing.md, structure-stance.md,
 │                                     style-stance.md (the stance authoring site)
-├── dogen-fetch/
+├── crayon-fetch/
 │   ├── SKILL.md                   ← declared external sources → the same artefacts, provenance
 │   └── references/                ← glossary-stance.md, routing.md, source-contract.md,
 │                                     structure-stance.md, style-stance.md (stances mirrored)
-├── dogen-plan/
+├── crayon-plan/
 │   ├── SKILL.md                   ← declare + HITL signoff; Socratic intake, routes on Diátaxis
 │   └── references/                ← actionable-intake.md, context-bootstrap.md,
 │                                     explanation-intake.md, reference-intake.md, routing.md,
 │                                     socratic-technique.md
-├── dogen-write/
+├── crayon-write/
 │   ├── SKILL.md                   ← the SOLE writer: drafts from sources or from a step walk
 │   └── references/                ← episode-taxonomy.md, explanation-stance.md,
 │                                     how-to-stance.md, reference-stance.md, routing.md,
 │                                     tutorial-stance.md, walk-protocol.md,
 │                                     writing-standards.md
-└── dogen-review/
+└── crayon-review/
     ├── SKILL.md                   ← review + record the verdict (accept/fix/redraft)
     └── references/                ← provenance-summary.md, review-rubric.md, routing.md
 
@@ -190,7 +190,7 @@ validation/                        ← the validation kit: the evidence apparatu
     └── results/                   ← committed clean summaries; raw/ is gitignored
 
 tests/
-├── test_dogen_unit.py             ← the unit suite; also the home of the line budget, of the
+├── test_crayon_unit.py            ← the unit suite; also the home of the line budget, of the
 │                                     GATE_COMMANDS tuple and of the pin over this listing
 ├── test_skill_text.py             ← the skill-text contracts and the routing-mirror equality
 ├── test_planning_lint.py          ← the anonymization lint's own tests
@@ -198,20 +198,20 @@ tests/
 ├── test_wiki_lint.py              ← the wiki lint's own tests
 ├── test_evals.py                  ← the model-eval kit's offline self-tests: transport, kinds,
 │                                     every case against its own oracle
-├── test_dogen_lifecycle.sh        ← the lifecycle / recovery suite (hermetic temp git repos)
-├── test_dogen_acceptance.sh       ← the acceptance suite, A-01 … A-38
+├── test_crayon_lifecycle.sh       ← the lifecycle / recovery suite (hermetic temp git repos)
+├── test_crayon_acceptance.sh      ← the acceptance suite, A-01 … A-38
 ├── lib.sh                         ← the fixtures both bash suites share; ONE definition site
 ├── install_smoke.sh               ← CI-02 / A-37: run docs/install.md's INSTALL region, then
 │                                     one unit through the installed tool
 ├── check_traces.py                ← the contract trace-table checker
 ├── check_docs.py                  ← the docs-accuracy checker: links, verbs, reasons, compat
 │                                     and the release record, across the documents it names
-├── size_guard.py                  ← VERB-09's line budget over `dogen.py`, reported and enforced
+├── size_guard.py                  ← VERB-09's line budget over `crayon.py`, reported and enforced
 └── run_matrix.sh                  ← local-only: the unit suite on 3.9 / 3.12 / 3.13
 ```
 
 The `docs/`, `scripts/`, `tests/` and `validation/` sections are pinned against the real tree
-in both directions by `tests/test_dogen_unit.py`; a file that ships and is not listed goes red,
+in both directions by `tests/test_crayon_unit.py`; a file that ships and is not listed goes red,
 and so does a listed name that does not exist. One tracked-elsewhere file is deliberately absent
 and named in that suite's `UNSHIPPED_PATHS`: `before-after.md` under `docs/`. The `skills/`
 section and the root block are outside the pin; the two `.html` files at the root are v1-era
@@ -221,8 +221,8 @@ records kept as they are on `main`.
 
 | File | Purpose |
 |------|---------|
-| `dogen.py` | the tool; every guarantee is code here |
+| `crayon.py` | the tool; every guarantee is code here |
 | `docs/contract.md` | the normative specification; wins every disagreement |
 | `skills/README.md` | the skill family contract and the single-source routing table |
-| `tests/test_dogen_unit.py` | the suite that pins the gate, the tree, CI and the line budget |
+| `tests/test_crayon_unit.py` | the suite that pins the gate, the tree, CI and the line budget |
 | `scripts/wiki_lint.py` | the checker for this file and `docs/` |

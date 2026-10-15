@@ -2,7 +2,7 @@
 
 <!-- provenance: moved from AGENTS.md (Conventions) when AGENTS.md became the router -->
 
-The working rules for anyone changing dogen, its skills or its documents. Each is stated once
+The working rules for anyone changing crayon, its skills or its documents. Each is stated once
 here; `AGENTS.md` carries the one-line form and points back.
 
 ## Markup and structure of drafted pages
@@ -23,8 +23,8 @@ never an edit to the event that planned it. Never hand-edit the file; the rules 
 
 The tool owns its commits. Never run a competing `git add -A` or `git commit` in a skill for a
 gated transition or for a context record. Every transition commits explicit pathspecs under
-`.dogen/` and `docs/` with `Dogen-*` trailers; the one repo-level transition, `context record`,
-commits `.dogen/context/` the same way with no `Dogen-Unit` ([[architecture]]).
+`.crayon/` and `docs/` with `Crayon-*` trailers; the one repo-level transition, `context record`,
+commits `.crayon/context/` the same way with no `Crayon-Unit` ([[architecture]]).
 
 ## Single definition site
 
@@ -41,8 +41,8 @@ pins each, are listed in [[development]].
   (`docs/<slug>.md`), never with the bracket notation.
 - The README is the reader's entry point and is written for a Technical Author, not for an
   agent; it never names a harness.
-- The reader uses dogen through the skills. `README.md` and the reader-facing pages
-  ([[contents]], [[install]], [[context]], [[upgrade]], [[hooks]]) name no `dogen <verb>`
+- The reader uses crayon through the skills. `README.md` and the reader-facing pages
+  ([[contents]], [[install]], [[context]], [[upgrade]], [[hooks]]) name no `crayon <verb>`
   outside a final section headed `## Under the hood`; tool detail lives there or on the pages
   that are under the hood throughout, such as [[internals]]. Write them in plain, controlled
   English: short sentences, one action per step. `tests/check_docs.py` enforces the command

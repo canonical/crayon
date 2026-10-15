@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mechanical validation scorer and independent oracle for dogen (dev-time eval tooling).
+"""Mechanical validation scorer and independent oracle for crayon (dev-time eval tooling).
 
 Subcommands:
 
@@ -9,8 +9,8 @@ Subcommands:
                                        ``.. include::`` resolved one level first)
   score.py audit <unit-id> [--root <repo>]
                                      — the independent oracle over
-                                       ``.dogen/units/<id>/ledger.jsonl`` plus ONE
-                                       ``dogen verify --json`` reading, compared
+                                       ``.crayon/units/<id>/ledger.jsonl`` plus ONE
+                                       ``crayon verify --json`` reading, compared
   score.py protocol [dir]            — conformance gate over one pre-registered leg: rev8
                                        §10's six checks over the RUN file in ``dir``
                                        (default ``<ROOT>/validation``) and the leg file it
@@ -67,15 +67,15 @@ audit hostage to facts the validation leg does not control.
 Independence (D-02) — a rule, not a comment on one line
 -------------------------------------------------------
 
-The oracle reaches the tool ONLY by running ``dogen verify <unit> --json`` in a subprocess,
+The oracle reaches the tool ONLY by running ``crayon verify <unit> --json`` in a subprocess,
 and reads the ledger with its own reader (``read_ledger`` below), which restates contract
 §5.2's envelope and serialization rule from the CONTRACT, not from the implementation. It
-never imports the ``dogen`` module and never calls ``canonical_line``, ``chain_prev`` or any
+never imports the ``crayon`` module and never calls ``canonical_line``, ``chain_prev`` or any
 other tool primitive, because an oracle that shares code with the tool goes green on the very
 bug it exists to catch. The kit is stdlib-only: every parse here is ``json.loads``.
 
-WHICH program that subprocess runs is part of the same rule. ``_dogen_executable`` resolves it
-from the KIT's side only — ``DOGEN``, then ``<ROOT>/dogen``, then ``PATH``, each made absolute
+WHICH program that subprocess runs is part of the same rule. ``_crayon_executable`` resolves it
+from the KIT's side only — ``CRAYON``, then ``<ROOT>/crayon``, then ``PATH``, each made absolute
 — and never from the tree under audit, which would let the audited repository write the reading
 the oracle trusts (CR-01).
 
@@ -203,7 +203,7 @@ INCLUDE_RE = re.compile(r"^\s*\.\. include:: (.+?)\s*$", flags=re.M)
 REQUIRED_RUN_KEYS = ("leg", "harness", "model", "tool", "skills", "baseline", "context",
                      "metrics", "transcript", "sphinx", "sphinx_before", "sphinx_after")
 REQUIRED_METRIC_KEYS = ("install", "time_to_usable_draft", "avoidable_questions",
-                        "manual_dogen_commands", "help_requests", "resume_invocations")
+                        "manual_crayon_commands", "help_requests", "resume_invocations")
 
 # The headings a pre-registered leg file must carry — the v2.0 home of what v1 required of
 # `RESULTS.md`. Both leg files in this tree carry all of them; the actionable leg's extra
@@ -668,7 +668,7 @@ def _json_documents(text: str) -> list:
 
 
 #: The separator ``verify`` joins one check row's segments with. Restated here from the
-#: OBSERVED report rather than imported from ``dogen``'s ``SEGMENT`` (D-02: the oracle never
+#: OBSERVED report rather than imported from ``crayon``'s ``SEGMENT`` (D-02: the oracle never
 #: imports the tool), and used for exactly one thing — splitting ``V14``'s detail back into the
 #: ``"<path>: <status>"`` rows it was built from, so the pair predicate reads a STATUS and not
 #: a page path. A drift here degrades to "the whole detail is one row", which reads a status
@@ -705,17 +705,17 @@ def _v19_finding_ok(detail: str) -> bool:
     return "plan_stale: " not in detail
 
 
-def _dogen_executable() -> str | None:
+def _crayon_executable() -> str | None:
     """The tool to run for the ``[verify]`` arm, resolved from the KIT's side only.
 
-    ``DOGEN`` in the environment wins — ``dogen`` is not checked into a target documentation
+    ``CRAYON`` in the environment wins — ``crayon`` is not checked into a target documentation
     repository, so the environment variable is the path the validation legs actually use —
-    then this KIT's own ``<ROOT>/dogen``, then the bare name on ``PATH``. Returns ``None`` when
+    then this KIT's own ``<ROOT>/crayon``, then the bare name on ``PATH``. Returns ``None`` when
     the tool cannot be found at all, which the caller reports as a FLAG rather than a crash.
 
-    NEVER ``<root>/dogen``, where ``root`` is the tree under audit (CR-01). That fallback let
+    NEVER ``<root>/crayon``, where ``root`` is the tree under audit (CR-01). That fallback let
     the audited repository choose the program whose reading the oracle trusts: a three-line
-    ``dogen`` shipped in the target made ``audit`` print ``PASS [verify] … verdict 'ok'`` and
+    ``crayon`` shipped in the target made ``audit`` print ``PASS [verify] … verdict 'ok'`` and
     exit 0, and ran as the auditing user besides. The ``[verify]`` arm is the oracle's single
     point of contact with the tool and its whole value is that it is an INDEPENDENT reading;
     an executable the audited tree supplies is not one. This is the argument ``DOCS_ROOT``
@@ -728,16 +728,16 @@ def _dogen_executable() -> str | None:
     never covered which program is executed, so it was not the guard here.
 
     Both resolved paths are made ABSOLUTE: ``audit`` runs the subprocess with ``cwd=root``, and
-    a relative ``DOGEN`` (or a ``which`` hit from a ``PATH`` carrying ``.``) would otherwise be
+    a relative ``CRAYON`` (or a ``which`` hit from a ``PATH`` carrying ``.``) would otherwise be
     resolved by ``subprocess`` against the audited tree — the same defect one indirection out.
     """
-    from_env = os.environ.get("DOGEN")
+    from_env = os.environ.get("CRAYON")
     if from_env:
         return str(Path(from_env).resolve())
-    in_kit = ROOT / "dogen.py"
+    in_kit = ROOT / "crayon.py"
     if in_kit.is_file():
         return str(in_kit)
-    found = shutil.which("dogen")
+    found = shutil.which("crayon")
     return str(Path(found).resolve()) if found else None
 
 
@@ -750,7 +750,7 @@ def _oracle_2(events: list, root: Path, unit_id: str) -> tuple:
     reader of the record actually has: is the plan that was signed still the plan on disk?
     """
     signoff = _last(events, "signoff")
-    unit_md = root / ".dogen" / "units" / unit_id / "unit.md"
+    unit_md = root / ".crayon" / "units" / unit_id / "unit.md"
     if signoff is None:
         _note("oracle-2", "no signoff event on record, so there is no plan_hash to compare "
                           f"against {unit_md}")
@@ -841,7 +841,7 @@ def _oracle_4(events: list, root: Path, unit_id: str) -> tuple:
 
     Two assertions over the same ``files[]`` and the last signoff's ``targets``: the recorded
     ``path`` is a signoff target exactly, and joining ``docs/`` onto it yields no ``docs/docs/``
-    segment. ``dogen signoff`` REFUSES a ``docs/``-prefixed target outright — ``bad_write_path``,
+    segment. ``crayon signoff`` REFUSES a ``docs/``-prefixed target outright — ``bad_write_path``,
     with a hint telling the author to drop the leading prefix — so a ledger carrying one cannot
     have been produced by the tool. That is what makes this an independent tamper signal and
     not a style check, and it is why check 4 has no ``verify`` counterpart to disagree with.
@@ -880,7 +880,7 @@ def _oracle_4(events: list, root: Path, unit_id: str) -> tuple:
             problems.append(
                 f"{where} records path {path!r}, which already carries the {prefix!r} prefix: "
                 f"joining the docs root onto it yields {prefix + path!r}, a "
-                f"{prefix + DOCS_ROOT}/ segment. dogen signoff refuses such a target, so this "
+                f"{prefix + DOCS_ROOT}/ segment. crayon signoff refuses such a target, so this "
                 "path was not written by the tool")
         elif path not in targets:
             if basis.get("kind") == "reviewer-edit":
@@ -962,7 +962,7 @@ def _line_edits(events: list, root: Path, unit_id: str) -> tuple:
 def _line_model(events: list, root: Path, unit_id: str) -> tuple:
     """``[model]`` — the last generation's model claim. Informational. ``(gating, ran, ok)``.
 
-    There is no ``dogen model set`` in v2.0 and no configured model identity to read: the model
+    There is no ``crayon model set`` in v2.0 and no configured model identity to read: the model
     is a PER-GENERATION CLAIM, passed as ``draft --model`` / ``--model-origin`` and defaulting
     to ``""`` / ``"unknown"``. That default is the HONEST one — it records that nobody claimed a
     model rather than guessing one — so it is reported and never FLAGged, which is exactly why
@@ -1185,10 +1185,10 @@ def _line_sphinx(events: list, root: Path, unit_id: str) -> tuple:
     not say the build finished is not evidence that it did.
 
     The RUN file is UNTRACKED, unvalidated working-tree input (WR-11) that both this kit and
-    ``dogen summary`` read. Every read below is behind an explicit type guard and every
+    ``crayon summary`` read. Every read below is behind an explicit type guard and every
     malformed shape FLAGs naming what was missing — a traceback at the reader is the outcome
     T-19-16 is filed against. The file scanned is the FIRST by sorted name, the same one
-    ``dogen``'s ``sphinx_result`` would pick.
+    ``crayon``'s ``sphinx_result`` would pick.
     """
     gating = True
     run_directory = root / "validation"
@@ -1375,7 +1375,7 @@ REPORT_LINES = (
 
 
 def audit(unit_id: str, root: Path = ROOT) -> int:
-    """The independent oracle over one unit, plus one ``dogen verify`` reading (D-02/D-04).
+    """The independent oracle over one unit, plus one ``crayon verify`` reading (D-02/D-04).
 
     Returns the process exit code and never calls ``sys.exit`` itself, so ``main`` stays the
     single place this program decides how to leave: 0 clean, 1 violation, 2 nothing checked.
@@ -1394,7 +1394,7 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
     if not UNIT_ID_RE.fullmatch(unit_id):
         _flag(False, "io", f"invalid unit id {unit_id!r}; expected {UNIT_ID_RE.pattern}")
         return 1
-    ledger_path = _resolved_under(root, f".dogen/units/{unit_id}/ledger.jsonl")
+    ledger_path = _resolved_under(root, f".crayon/units/{unit_id}/ledger.jsonl")
     if ledger_path is None:
         _flag(False, "io", f"ledger path for unit {unit_id!r} leaves audit root {root}")
         return 1
@@ -1439,12 +1439,12 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
     # List argv, never a shell string, so a retargeted root or a crafted unit id cannot
     # inject arguments (T-11-05). Both streams are captured: `verify` exits 6 on a FAIL
     # among V1-V13 with the full report already flushed to stdout.
-    tool = _dogen_executable()
+    tool = _crayon_executable()
     verify_payload = None
     if tool is None:
         verify_ok = _flag(False, "verify",
-                          "no dogen executable to read with: DOGEN unset, "
-                          f"{ROOT / 'dogen'} absent, and none on PATH. The tree under audit "
+                          "no crayon executable to read with: CRAYON unset, "
+                          f"{ROOT / 'crayon'} absent, and none on PATH. The tree under audit "
                           "is deliberately not searched (CR-01)")
     else:
         done = subprocess.run(
@@ -1475,7 +1475,7 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
                 found = "printed no JSON object at all: %r" % (streams[:200] or "(nothing)")
             verify_ok = _flag(
                 False, "verify",
-                "dogen verify produced no report to compare against (exit "
+                "crayon verify produced no report to compare against (exit "
                 f"{done.returncode}); expected a JSON document carrying a 'checks' key, "
                 f"{found}")
         else:
@@ -1487,7 +1487,7 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
             # status-level findings are legitimate on a live repository.
             verify_ok = _flag(
                 verdict != "fail", "verify",
-                "dogen verify reports verdict %r over %d check(s); failing: %s"
+                "crayon verify reports verdict %r over %d check(s); failing: %s"
                 % (verdict, len(rows), ", ".join(failed) if failed else "none"))
     checks_run += 1
     violation = violation or not verify_ok
@@ -1640,13 +1640,13 @@ def protocol(directory: Path = ROOT / "validation") -> int:
 
         1 ``[run]``        the RUN file is complete — every key in ``REQUIRED_RUN_KEYS`` and
                            every one of the six ``REQUIRED_METRIC_KEYS`` — and there is exactly
-                           ONE RUN file, because ``dogen``'s ``sphinx_result`` takes the first
+                           ONE RUN file, because ``crayon``'s ``sphinx_result`` takes the first
                            by sorted name and says nothing about a second
         2 ``[transcript]`` ``transcript.sha256`` is present and non-null. ``runmeta.sh end``
                            writes ``null`` BY DESIGN (Pitfall 6) and the AUTHOR fills it from
                            outside the session, so this check is the two-step's second half
                            made enforceable rather than hoped for
-        3 ``[compat]``     ``tool.contract`` and ``tool.min_tool`` against ``dogen version
+        3 ``[compat]``     ``tool.contract`` and ``tool.min_tool`` against ``crayon version
                            --json``, read through the same list-argv subprocess form the
                            ``[verify]`` arm uses. ``min_tool`` is the tool's own ``__version__``,
                            which ``version --json`` reports as ``tool`` — exactly the pairing
@@ -1702,7 +1702,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
     # --- check 1 of 6: the RUN file is complete -------------------------------------------
     problems = []
     if len(run_files) > 1:
-        problems.append("%d RUN files are present (%s); dogen's sphinx_result takes %s, the "
+        problems.append("%d RUN files are present (%s); crayon's sphinx_result takes %s, the "
                         "first by sorted name, and says nothing about the rest"
                         % (len(run_files), ", ".join(path.name for path in run_files),
                            run_path.name))
@@ -1753,7 +1753,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
     # --- check 3 of 6: the compatibility numbers ------------------------------------------
     tool_record = data.get("tool") if isinstance(data, dict) else None
     reported = None
-    executable = _dogen_executable()
+    executable = _crayon_executable()
     if executable is not None:
         # List argv, never a shell string (T-19-05/T-19-17), and the same reading the
         # `[verify]` arm takes: one subprocess, parsed with this kit's own json.
@@ -1765,9 +1765,9 @@ def protocol(directory: Path = ROOT / "validation") -> int:
                 break
     if reported is None:
         violation |= not _flag(False, "compat",
-                               "no `dogen version --json` reading to compare against: DOGEN "
+                               "no `crayon version --json` reading to compare against: CRAYON "
                                "unset, %s absent, and none on PATH. The tree the RUN file sits "
-                               "in is deliberately not searched (CR-01)" % (ROOT / "dogen.py",))
+                               "in is deliberately not searched (CR-01)" % (ROOT / "crayon.py",))
     elif not isinstance(tool_record, dict):
         violation |= not _flag(False, "compat",
                                "the RUN file records tool as %r, expected an object carrying "
@@ -1776,7 +1776,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
         # `min_tool` is the tool's own __version__, reported as `tool` — the pairing
         # tests/check_docs.py:584-590 pins README's COMPAT region against.
         expected = {"contract": reported.get("contract"), "min_tool": reported.get("tool")}
-        splits = ["%s is %r on the RUN file and %r from `dogen version --json`"
+        splits = ["%s is %r on the RUN file and %r from `crayon version --json`"
                   % (key, tool_record.get(key), value)
                   for key, value in sorted(expected.items())
                   if str(tool_record.get(key)) != str(value)]
@@ -1894,7 +1894,7 @@ def main(argv: list[str] | None = None) -> int:
     draft.add_argument("path", type=Path, help="the page to score")
 
     unit = sub.add_parser("audit", help="the independent oracle over one unit (gates)")
-    unit.add_argument("unit_id", help="the unit id, as in .dogen/units/<id>/")
+    unit.add_argument("unit_id", help="the unit id, as in .crayon/units/<id>/")
     unit.add_argument("--root", type=Path, default=ROOT,
                       help="repository root to audit (default: %(default)s)")
 
