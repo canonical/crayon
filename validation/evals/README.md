@@ -120,6 +120,10 @@ from the cache). That keeps a partial run from
 ever standing in for a baseline. Each run also leaves the full turns of every case in
 `results/raw/*.turns.jsonl`.
 
+An empty answer, or a judge reply that is not a verdict, is sent again once, uncached, and a
+summary's `meta.retries` counts those retries. An answer still empty after its retry is a
+run-level error, and the run is filed as `errored`.
+
 With `--repeat K`, each run goes to `results/raw/` as `…-runIofK.json`, and the per-case pass
 counts go to `results/<date>-<lane>-<model>-kK.json`, under the same rules.
 
@@ -148,7 +152,11 @@ error.
 
 `caps.sweep_usd` caps a whole invocation. `caps.per_model_usd` caps each model, the judge
 included, and scales with `--repeat`. The cap is checked before every paid call. With
-`--jobs N`, the overshoot is at most the `N - 1` calls already in flight.
+`--jobs N`, the overshoot is at most the `N - 1` calls already in flight, plus any call answered
+with an error status, a body that cannot be parsed as JSON or an API error body, none of which is
+charged. A call whose answer is lost after its request was sent, before the status line or while
+the body is read, is charged an estimate (the bytes of its request as prompt tokens and its
+`max_tokens` as completion tokens, at the price in the roster) and is not retried.
 
 ## Adding a case
 
@@ -159,10 +167,11 @@ Every case has an oracle, a known-good reply. `tests/test_evals.py` asserts that
 oracle passes its own assertions. It also asserts that every other skill fails a Lane A case,
 and that every Lane B case's `foil` fails. So a broken or vacuous expectation turns the gate red,
 not a model's score. In one conversation (the same skill, ask, sandbox, prelude and history),
-every case's oracle passes every other case's assertions, so no reply is both an oracle and a
-foil there; a foil need not fail its siblings. A known-good reply that quotes recorded output with
-`@RECORDED{…}` puts it in a fenced block, while a success response line, which carries no sha,
-is typed. `tests/test_evals.py` checks both.
+every case's oracle passes every deterministic assertion of every other case, so no reply is
+both an oracle and a foil there. A judged assertion runs against an always-pass stub offline, so
+this guard does not check it. A foil need not fail its siblings. A known-good reply that quotes
+recorded output with `@RECORDED{…}` puts it in a fenced block, while a success response line,
+which carries no sha, is typed. `tests/test_evals.py` checks both.
 
 When the tool's output changes, re-record the states with
 `python3 validation/evals/record_states.py` and review the diff to `states.json`. Do this before

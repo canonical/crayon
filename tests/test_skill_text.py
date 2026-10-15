@@ -21,7 +21,12 @@ gate (the committed skills satisfy every declared contract), a negative keystone
 guard (an empty or mis-rooted scan cannot masquerade as valid).
 
 Coverage:
-  S-01  frontmatter — name, both compatibility numbers, a non-empty tool list
+  S-01  frontmatter — name, both compatibility numbers, a non-empty tool list;
+        ``min_tool`` is ``crayon.py``'s ``__version__``, read as text through the
+        lint, and every prose copy of it (each body's stop rule and its "older"
+        example, the README's table row and prose, every
+        ``metadata.crayon_min_tool: "…"`` under ``skills/`` and in contract
+        5.10) names that version (D-07)
   S-02  single writer — only ``crayon-write`` holds a write-capable tool
   S-03  routing-copy equality (D-13) — the three mirrors equal the README block,
         and every reason and every ``next`` token has a row
@@ -135,7 +140,8 @@ Coverage:
         counts and seqs; no routing row's what-to-do cell carries a record word
         the grader reads, outside code (22-14: WR-03); a commit is named by its
         id, never as a hash, and the relayed references say chained and Git
-        commit id (22-14: WR-03); the block quotes the tallies
+        commit id (22-14: WR-03), and ``page: current`` compares the bytes crayon
+        recorded, never a recorded digest (24 D-13); the block quotes the tallies
         and names every form the check reads, and write step 5 echoes the
         response line the tool prints after its ``git: committed`` line (22-09)
   S-21  uncertainty is said in the first person, only where the record grounds it
@@ -200,6 +206,13 @@ Coverage:
         ``<must>`` and ``<success_criteria>`` owe every promised inventory less
         what the author's leave-out notes exclude, unless a later recorded
         request asks for it (22-15: IN-03)
+  S-26  no skill names an eval fixture (D-18, D-19) — the token set is read from
+        the fixture definitions (the tracked toyq tree and its config module's
+        ``DEFAULTS`` and ``ENV_OVERRIDES``, ``states.sh``'s unit ids, targets,
+        step ids and models, the recorded models in ``states.json``), never
+        listed here; an ordinary word that is also a fixture id (``install``,
+        ``init``, ``config``) counts only in a fixture shape, every other token
+        as a whole token; and a planted token is caught
 """
 
 from __future__ import annotations
@@ -208,8 +221,10 @@ import ast
 import importlib.machinery
 import importlib.util
 import itertools
+import json
 import pathlib
 import re
+import subprocess
 import sys
 import unittest
 
@@ -218,6 +233,9 @@ SKILLS_ROOT = ROOT / "skills"
 README = SKILLS_ROOT / "README.md"
 CONTRACT = ROOT / "docs" / "contract.md"
 SKILL_LINT_PATH = ROOT / "scripts" / "skill_lint.py"
+#: D-07: the compatibility row shape and contract 5.10's heading are read from
+#: the docs checker, their one definition site.
+CHECK_DOCS_PATH = ROOT / "tests" / "check_docs.py"
 #: WR-03 (22-14): the grader whose record-word regex the S-20 row scan reuses.
 EVALS_ROOT = ROOT / "validation" / "evals"
 GRADE_PATH = EVALS_ROOT / "grade.py"
@@ -309,6 +327,35 @@ def _load_skill_lint():
 
 
 skill_lint = _load_skill_lint()
+
+
+def _load_check_docs():
+    """Import ``tests/check_docs.py`` by path, for its compatibility row shape.
+
+    D-07: ``COMPAT_ROW_RE``, ``COMPAT_HEADING`` and ``heading_section`` are the
+    docs checker's, so the README row and contract 5.10's section are found the
+    way ``check_compat`` finds them. Loading the module runs no check and reads
+    no tool: ``check_docs`` touches ``crayon.py`` only inside ``main``.
+    """
+    loader = importlib.machinery.SourceFileLoader(
+        "check_docs_for_skill_text", str(CHECK_DOCS_PATH)
+    )
+    spec = importlib.util.spec_from_loader("check_docs_for_skill_text", loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
+check_docs = _load_check_docs()
+
+#: D-07: the prose copies of ``min_tool``. Each SKILL.md body's stop rule names
+#: it, and its example names a version older than it; the README's prose does
+#: the same in its own shape; and a ``metadata.crayon_min_tool: "…"`` mention may
+#: wrap after its colon, as contract 5.10's does.
+_STOP_RULE_RE = re.compile(r"older than `min_tool` `([^`]+)`")
+_OLDER_EXAMPLE_RE = re.compile(r"`([^`]+)` is older than `([^`]+)`")
+_README_STOP_RE = re.compile(r"older than `min_tool ([^`]+)` \(`([^`]+)` is older\)")
+_MIN_TOOL_MENTION_RE = re.compile(r'metadata\.crayon_min_tool:\s+"([^"]+)"')
 
 
 def _load_grade():
@@ -506,13 +553,121 @@ class TestS01Frontmatter(unittest.TestCase):
 
     def test_s01_both_compatibility_numbers_are_the_literal_strings(self):
         # contract 5.10: compared as literal strings, never parsed as versions.
+        # D-07: the expected min_tool is the lint's, and the lint's is the
+        # tool's own __version__, so no version is typed here.
+        expected = skill_lint._EXPECTED_METADATA["metadata.crayon_min_tool"]
+        self.assertEqual(expected, skill_lint.tool_version(ROOT))
         for skill_dir in skill_dirs():
             with self.subTest(skill=skill_dir.name):
                 frontmatter = frontmatter_of(skill_dir)
                 self.assertEqual(frontmatter.get("metadata.crayon_contract"), "1")
                 self.assertEqual(
-                    frontmatter.get("metadata.crayon_min_tool"), "0.2.0"
+                    frontmatter.get("metadata.crayon_min_tool"),
+                    expected,
+                    "%s/SKILL.md: metadata.crayon_min_tool is not crayon.py's "
+                    "__version__ %r" % (skill_dir.name, expected),
                 )
+
+    def test_s01_every_version_site_names_the_tools_version(self):
+        """D-07: every prose copy of ``min_tool`` names ``crayon.py``'s ``__version__``.
+
+        ``check_compat`` reads only the COMPAT region and contract 5.10's table,
+        and the lint only the frontmatter, so the copies a model actually reads
+        had no check: each body's stop rule and its "older" example, the
+        README's table row and prose, and every ``metadata.crayon_min_tool: "…"``
+        mention. The example is the one other version literal allowed, and it
+        must differ from the tool's. Compared as literal strings, never parsed.
+        """
+        version = skill_lint.tool_version(ROOT)
+        stop_rules = 0
+        for skill_dir in skill_dirs():
+            where = "%s/SKILL.md" % skill_dir.name
+            text = folded(body_of(skill_dir))
+            named = _STOP_RULE_RE.findall(text)
+            examples = _OLDER_EXAMPLE_RE.findall(text)
+            with self.subTest(site=where + " stop rule"):
+                self.assertTrue(named, "%s: no `older than `min_tool` `…`` stop rule" % where)
+                for value in named:
+                    self.assertEqual(
+                        value, version,
+                        "%s: the stop rule says older than `min_tool` `%s`, but "
+                        "crayon.py's __version__ is %r" % (where, value, version),
+                    )
+            with self.subTest(site=where + " older example"):
+                self.assertTrue(examples, "%s: no `X` is older than `Y` example" % where)
+                for older, newer in examples:
+                    self.assertEqual(
+                        newer, version,
+                        "%s: the example says `%s` is older than `%s`, but "
+                        "crayon.py's __version__ is %r" % (where, older, newer, version),
+                    )
+                    self.assertNotEqual(
+                        older, version,
+                        "%s: the example's older version is the tool's own %r"
+                        % (where, version),
+                    )
+            if named:
+                stop_rules += 1
+
+        readme = README.read_text(encoding="utf-8")
+        rows = [
+            match.group(2)
+            for match in map(check_docs.COMPAT_ROW_RE.match, readme.splitlines())
+            if match and match.group(1) == "min_tool"
+        ]
+        with self.subTest(site="skills/README.md compatibility row"):
+            self.assertEqual(
+                rows, [version],
+                "skills/README.md: expected exactly one `min_tool` row reading "
+                "%r, found %r" % (version, rows),
+            )
+        with self.subTest(site="skills/README.md stop prose"):
+            prose = _README_STOP_RE.findall(folded(readme))
+            self.assertTrue(prose, "skills/README.md: no `min_tool V` (`X` is older) prose")
+            for value, older in prose:
+                self.assertEqual(
+                    value, version,
+                    "skills/README.md: the prose says older than `min_tool %s`, "
+                    "but crayon.py's __version__ is %r" % (value, version),
+                )
+                self.assertNotEqual(
+                    older, version,
+                    "skills/README.md: the example's older version is the tool's "
+                    "own %r" % version,
+                )
+
+        sites = [
+            (str(path.relative_to(ROOT)), path.read_text(encoding="utf-8"))
+            for path in sorted(SKILLS_ROOT.rglob("*.md"))
+        ]
+        section = check_docs.heading_section(
+            CONTRACT.read_text(encoding="utf-8"), check_docs.COMPAT_HEADING
+        )
+        self.assertIsNotNone(section, "docs/contract.md has no %r section"
+                             % check_docs.COMPAT_HEADING)
+        sites.append(("docs/contract.md 5.10", section))
+        contract_mentions = 0
+        for where, text in sites:
+            for value in _MIN_TOOL_MENTION_RE.findall(text):
+                if where.startswith("docs/contract.md"):
+                    contract_mentions += 1
+                with self.subTest(site=where + " metadata.crayon_min_tool mention"):
+                    self.assertEqual(
+                        value, version,
+                        '%s: says metadata.crayon_min_tool: "%s", but crayon.py\'s '
+                        "__version__ is %r" % (where, value, version),
+                    )
+
+        # Vacuous-pass guard: a drifted regex must not pass over nothing.
+        self.assertGreaterEqual(
+            stop_rules, len(EXPECTED_SKILLS),
+            "found the stop rule in only %d SKILL.md bodies" % stop_rules,
+        )
+        self.assertEqual(len(rows), 1, "skills/README.md min_tool rows: %r" % rows)
+        self.assertGreaterEqual(
+            contract_mentions, 1,
+            "no metadata.crayon_min_tool mention found in contract 5.10",
+        )
 
     def test_s01_allowed_tools_parses_to_a_non_empty_list(self):
         for skill_dir in skill_dirs():
@@ -1796,6 +1951,22 @@ class TestS15AuthorRules(unittest.TestCase):
         drifted = text[:start] + flipped + text[start + 1:]
         self.assertFalse(carries_block_once(drifted, self.block))
 
+    def test_s15_the_block_follows_the_opening(self):
+        """21 IN-02: the README promises the block "directly after `</opening>`",
+        so `</opening>` and one blank line immediately precede its begin
+        sentinel: the author rules in plan, write and review, the plain-words
+        rules in the two context skills."""
+        for names, sentinel in ((RULE_SKILLS, b"<!-- author-rules:begin -->"),
+                                (CONTEXT_SKILLS, b"<!-- plain-words:begin -->")):
+            for name in names:
+                text = (SKILLS_ROOT / name / "SKILL.md").read_bytes()
+                with self.subTest(skill=name):
+                    self.assertEqual(text.count(sentinel), 1,
+                                     "%s carries no single %r" % (name, sentinel))
+                    self.assertIn(b"</opening>\n\n" + sentinel, text,
+                                  "%s: %r must follow `</opening>` and one blank line"
+                                  % (name, sentinel))
+
 
 class TestS16TheVerdict(unittest.TestCase):
     """S-16 — the verdict is the author's: a bare accept records no note (D-09)."""
@@ -2037,6 +2208,38 @@ class TestS17TheClosure(unittest.TestCase):
                     % (word, description),
                 )
 
+    def test_review_step_1_lets_a_pending_request_be_settled_at_the_verdict(self):
+        """21 IN-09: a request pending on a generation routes `draft`, yet that
+        generation can be reviewed and the request settled at the accept."""
+        step = skill_step_body(self.body, 1)
+        self.assertIsNotNone(step, "crayon-review has no step 1")
+        for literal in ("route the TA to crayon-write",
+                        "unless the draft is owed only to a request pending on a generation",
+                        "resolving or withdrawing it at the accept",
+                        "`unapplied_steering`"):
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(step), literal, "crayon-review step 1")
+
+    def test_the_closure_runs_only_on_a_publish_route(self):
+        """21 IN-10: an accept that routes anywhere but `publish` (a hook that
+        rewrote a page routes `record_edits`) follows its row, not the closure;
+        on an accepted unit the questions are what the record still shows open."""
+        step = skill_step_body(self.body, 6)
+        self.assertIsNotNone(step, "crayon-review has no step 6")
+        assert_contains(self, folded(step),
+                        "The closure runs only when the accept's emitted `next` is "
+                        "`publish`; for any other `next`, follow its routing row.",
+                        "crayon-review step 6")
+        section = tagged_section(self.body, "edge_cases")
+        self.assertIsNotNone(section, "crayon-review has no <edge_cases>")
+        entry = labelled_entry(section, "The unit is already accepted")
+        self.assertIsNotNone(entry, "crayon-review has no already-accepted edge case")
+        for literal in ("the questions the record still shows open",
+                        "ends the closure with nothing recorded"):
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(entry), literal,
+                                "crayon-review's already-accepted edge case")
+
 
 PLAN_SKILL = SKILLS_ROOT / "crayon-plan"
 SOCRATIC_REFERENCE = PLAN_SKILL / "references" / "socratic-technique.md"
@@ -2081,6 +2284,15 @@ class TestS18TheIntake(unittest.TestCase):
     def setUp(self):
         self.body = body_of(PLAN_SKILL)
         self.socratic = SOCRATIC_REFERENCE.read_text(encoding="utf-8")
+
+    def test_the_origin_reason_is_true(self):
+        """21 IN-07: no skill tells the review skill to read a request's origin;
+        `--origin plan` matters because `crayon summary` lists the request under
+        "Author decisions" as from the plan rather than as steering."""
+        text = folded(self.socratic)
+        assert_omits(self, text, "the review skill is told to read", "socratic-technique.md")
+        assert_contains(self, text, "--origin plan", "socratic-technique.md")
+        assert_contains(self, text, "Author decisions", "socratic-technique.md")
 
     def test_s18_every_intake_asks_one_of_two_fixed_questions(self):
         step = skill_step_body(self.body, 2)
@@ -2377,6 +2589,10 @@ class TestS20PlainWords(unittest.TestCase):
         provenance = folded(PROVENANCE_REFERENCE.read_text(encoding="utf-8"))
         assert_contains(self, provenance, "append-only and chained", "provenance-summary.md")
         assert_omits(self, provenance, "hash-chained", "provenance-summary.md")
+        # 22 IN-04 (24 D-13): `page: current` compares bytes, in the plain words
+        # the reviewer relays, never "the recorded digest".
+        assert_contains(self, provenance, "the bytes crayon recorded", "provenance-summary.md")
+        assert_omits(self, provenance, "recorded digest", "provenance-summary.md")
         source = folded(SOURCE_CONTRACT.read_text(encoding="utf-8"))
         assert_contains(self, source, "Git commit id", "source-contract.md")
         assert_omits(self, source, "commit hash", "source-contract.md")
@@ -2740,7 +2956,7 @@ class TestS21Uncertainty(unittest.TestCase):
             "gaps",
             "not from `crayon summary`",
             EMPTY_GAPS_ADD_NOTHING,
-            "I didn't run `toyq migrate`; the page describes it from cli.py.",
+            "I didn't run `relay sync`; the page describes it from server.py.",
         ):
             with self.subTest(literal=literal):
                 assert_contains(self, step, literal, "crayon-write step 6")
@@ -3199,6 +3415,257 @@ class TestS25FirstSweepRules(unittest.TestCase):
             with self.subTest(step=number, literal=literal):
                 assert_contains(self, self.step(body, number, "crayon-write"), literal,
                                 "crayon-write step %s" % number)
+
+
+#: D-19: the eval fixtures whose values the shipped skills must not carry. Each
+#: path below is a definition site the S-26 token set is READ from; none of the
+#: tokens is copied into this module.
+FIXTURES_ROOT = EVALS_ROOT / "fixtures"
+#: The project lane B's states are recorded against. Its TRACKED tree is read
+#: (``git ls-files``), so an untracked ``__pycache__`` on disk adds nothing.
+FIXTURE_PROJECT = FIXTURES_ROOT / "toyq"
+#: The recorder: its ``UNIT=``/``TARGET=`` lines, ``unit new`` ids, ``--target``
+#: paths, step-plan ``"id"`` values and ``--model`` ids.
+STATES_SH = FIXTURES_ROOT / "states.sh"
+#: The recorded states: the non-empty ``model`` values the replayed outputs carry.
+STATES_JSON = EVALS_ROOT / "cases" / "decision" / "states.json"
+
+#: The fixture's config module defines its settings as these two dict literals:
+#: every key of both, and every value of the second, is a fixture token.
+_CONFIG_DICTS = ("DEFAULTS", "ENV_OVERRIDES")
+_CONFIG_DICT_VALUES = ("ENV_OVERRIDES",)
+
+#: ``states.sh`` shapes, each with whether its value is a docs target path (whose
+#: extension-less form and stem are fixture tokens too).
+_STATES_SH_PATTERNS = (
+    (re.compile(r"^UNIT=([A-Za-z0-9][\w.-]*)", re.MULTILINE), False),
+    (re.compile(r"^TARGET=([A-Za-z0-9][\w./-]*)", re.MULTILINE), True),
+    (re.compile(r"\bunit new ([A-Za-z0-9][\w.-]*)"), False),
+    (re.compile(r"--target ([A-Za-z0-9][\w./-]*)"), True),
+    (re.compile(r'"id"\s*:\s*"([^"]+)"'), False),
+    (re.compile(r"--model ([A-Za-z0-9][\w./-]*)"), False),
+)
+
+#: Where a recorded state names its model: the ``--json`` key, the human
+#: ``model:`` line, and the ``--model`` flag of the recorded command.
+_RECORDED_MODEL_PATTERNS = (
+    re.compile(r'"model"\s*:\s*"([^"]+)"'),
+    re.compile(r"^model: (\S+)", re.MULTILINE),
+    re.compile(r"--model ([A-Za-z0-9][\w./-]*)"),
+)
+
+#: The fixture ids that are also ordinary English words. Each matches only in a
+#: fixture shape (:func:`_ordinary_shapes`); every other derived token is
+#: distinctive and matches as a whole token anywhere, so a new fixture id fails
+#: closed until it is classified here. A classification, not the token set: S-26
+#: requires every member to be derived from the fixtures, so it cannot go stale.
+ORDINARY_WORDS = frozenset({"config", "init", "install"})
+
+#: The vacuous-pass floor: a derivation that stopped reading a definition site
+#: must not pass by matching nothing.
+REQUIRED_FIXTURE_TOKENS = ("cfg", "install", "toyq", "db_path", "example/drafting-model-1")
+
+
+def _target_forms(path):
+    """A docs target path, its extension-less form and its stem."""
+    stem_path = re.sub(r"\.(?:md|rst)$", "", path)
+    return {path, stem_path, stem_path.rsplit("/", 1)[-1]}
+
+
+def _fixture_project_tokens():
+    """The project's name, its package and module names, and its config keys.
+
+    Read from the tracked tree. The top-level scaffolding every Python project
+    carries (``README.md``, ``pyproject.toml``, ``docs/index.md``, dunder
+    modules) is not distinctive and is not a token.
+    """
+    rel = FIXTURE_PROJECT.relative_to(ROOT).as_posix()
+    listed = subprocess.run(
+        ["git", "ls-files", "--", rel], cwd=str(ROOT),
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        universal_newlines=True, check=False,
+    ).stdout.splitlines()
+    tokens = set()
+    for name in listed:
+        parts = pathlib.PurePosixPath(name).relative_to(rel).parts
+        if len(parts) != 3 or parts[0] != "src":
+            continue
+        tokens.update((FIXTURE_PROJECT.name, parts[1]))
+        if parts[2].startswith("__"):
+            continue
+        tokens.add(parts[2])
+        if not parts[2].endswith(".py"):
+            continue
+        tree = ast.parse((ROOT / name).read_text(encoding="utf-8"))
+        for node in tree.body:
+            if not (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name)
+                    and node.targets[0].id in _CONFIG_DICTS):
+                continue
+            value = ast.literal_eval(node.value)
+            tokens.update(str(key) for key in value)
+            if node.targets[0].id in _CONFIG_DICT_VALUES:
+                tokens.update(str(item) for item in value.values())
+    return tokens
+
+
+def _states_sh_tokens():
+    """The unit ids, targets, step ids and model ids ``states.sh`` records."""
+    text = STATES_SH.read_text(encoding="utf-8")
+    tokens = set()
+    for pattern, is_target in _STATES_SH_PATTERNS:
+        for value in pattern.findall(text):
+            tokens.update(_target_forms(value) if is_target else {value})
+    return tokens
+
+
+def _strings_in(value):
+    """Every string inside a parsed JSON value."""
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            for text in _strings_in(item):
+                yield text
+    elif isinstance(value, list):
+        for item in value:
+            for text in _strings_in(item):
+                yield text
+
+
+def _recorded_model_tokens():
+    """The non-empty ``model`` values in the recorded states."""
+    data = json.loads(STATES_JSON.read_text(encoding="utf-8"))
+    tokens = set()
+    for text in _strings_in(data):
+        for pattern in _RECORDED_MODEL_PATTERNS:
+            tokens.update(value for value in pattern.findall(text) if value)
+    return tokens
+
+
+def fixture_token_sources():
+    """``{definition site: tokens it yields}``, one entry per site D-19 names."""
+    return {
+        "the toyq tree": _fixture_project_tokens(),
+        "states.sh": _states_sh_tokens(),
+        "states.json": _recorded_model_tokens(),
+    }
+
+
+def fixture_tokens():
+    """Every eval-fixture token, the union over :func:`fixture_token_sources`."""
+    return set().union(*fixture_token_sources().values())
+
+
+def _ordinary_shapes(word):
+    """``(shape, regex)`` for the fixture shapes an ordinary word counts in."""
+    w = re.escape(word)
+    return (
+        ("a docs file name", r"(?<![\w/.-])%s\.(?:md|rst)(?![\w-])" % w),
+        ("a step id", r"\b[Ss]tep\s+%s(?![\w-])" % w),
+        ("a JSON id", r'"id"\s*:\s*"%s"' % w),
+        ("a quoted unit id opening an ask", '"%s\\s+[-–—]\\s' % w),
+        ("a bare id in code", r"`%s`" % w),
+    )
+
+
+def fixture_hits(text, tokens):
+    """``[(line, token, shape)]`` for every fixture token ``text`` carries."""
+    hits = []
+    for token in sorted(tokens):
+        if token in ORDINARY_WORDS:
+            shapes = _ordinary_shapes(token)
+        else:
+            shapes = (("a whole token", r"(?<![\w-])%s(?![\w-])" % re.escape(token)),)
+        for shape, pattern in shapes:
+            for match in re.finditer(pattern, text):
+                hits.append((text.count("\n", 0, match.start()) + 1, token, shape))
+    return sorted(hits)
+
+
+class TestS26NoEvalFixtureInSkills(unittest.TestCase):
+    """S-26 — no shipped skill names the eval fixtures that grade it (D-18, D-19).
+
+    Skill text tuned to its own eval cases inflates the skill-following figure
+    and gives real users examples that mean nothing to them. The tokens are read
+    from the fixture definitions, never listed here: a new fixture value is
+    guarded the moment it is defined.
+    """
+
+    def test_s26_the_token_set_is_read_from_the_fixtures(self):
+        sources = fixture_token_sources()
+        for site, found in sources.items():
+            with self.subTest(site=site):
+                self.assertTrue(found, "%s yields no fixture token" % site)
+        self.assertIn("example/drafting-model-1", sources["states.json"],
+                      "states.json's recorded model is not read")
+        tokens = fixture_tokens()
+        for token in REQUIRED_FIXTURE_TOKENS:
+            with self.subTest(token=token):
+                self.assertIn(token, tokens, "the derived token set lacks %r" % token)
+        for word in sorted(ORDINARY_WORDS):
+            with self.subTest(word=word):
+                self.assertIn(word, tokens,
+                              "ORDINARY_WORDS names %r, which no fixture defines" % word)
+
+    def test_s26_no_skill_file_names_an_eval_fixture(self):
+        tokens = fixture_tokens()
+        files = sorted(SKILLS_ROOT.rglob("*.md"))
+        self.assertGreaterEqual(
+            len(files), len(EXPECTED_SKILLS) + EXPECTED_REFERENCE_COUNT + 1,
+            "the skills scan found too few files to be meaningful")
+        found = []
+        for path in files:
+            text = path.read_text(encoding="utf-8")
+            for line, token, shape in fixture_hits(text, tokens):
+                found.append("%s:%d: %s (%s)"
+                             % (path.relative_to(ROOT).as_posix(), line, token, shape))
+        self.assertEqual(found, [], "skill text names an eval fixture:\n  "
+                         + "\n  ".join(found))
+
+    def test_s26_a_planted_token_is_caught(self):
+        tokens = fixture_tokens()
+        plantings = (
+            (PLAN_SKILL, "A model such as example/drafting-model-1 is no ground.",
+             "example/drafting-model-1"),
+            (SKILLS_ROOT / "crayon-write", 'Ask the author about "step init" first.', "init"),
+        )
+        for skill, sentence, token in plantings:
+            with self.subTest(token=token):
+                body = body_of(skill).rstrip("\n") + "\n" + sentence + "\n"
+                line = body.count("\n")
+                caught = [(at, name) for at, name, _ in fixture_hits(body, tokens)]
+                self.assertIn((line, token), caught,
+                              "a planted %r on line %d is not reported" % (token, line))
+
+
+class TestS27ClosingRunRules(unittest.TestCase):
+    """S-27 — the skill text the Phase 24 closing run found two ways to read (D-28).
+
+    Each literal is typed, and names the case it answers.
+    """
+
+    #: B-23: crayon-write's routing row for ``re_sign`` names the signoff verb, and
+    #: its step 1 routes the act back to crayon-plan. The step says which wins.
+    WRITE_STEP_1 = (
+        "though its routing row names the verb",
+        "run no `crayon signoff` and no `crayon unit edit`, and offer neither",
+        "route back to crayon-plan",
+    )
+    WRITE_MUST_NOT = "Never run or offer `crayon signoff` or `crayon unit edit`"
+
+    def setUp(self):
+        self.body = body_of(SKILLS_ROOT / "crayon-write")
+
+    def test_s27_write_routes_the_signoff_to_plan_over_its_routing_row(self):
+        step = skill_step_body(self.body, 1)
+        self.assertIsNotNone(step, "crayon-write has no step 1")
+        for literal in self.WRITE_STEP_1:
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(step), literal, "crayon-write step 1")
+        section = tagged_section(self.body, "must_not")
+        self.assertIsNotNone(section, "crayon-write has no <must_not>")
+        assert_contains(self, folded(section), self.WRITE_MUST_NOT, "crayon-write <must_not>")
 
 
 class TestS10ReferenceFiles(unittest.TestCase):

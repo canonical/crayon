@@ -54,7 +54,7 @@ verb's preconditions, no-ops and gates is [[contract]] §5.7 and §6.
 | `resume` | Completes an interrupted transition in two passes: classify, then write. `--dry-run` writes nothing. | `<id> [--dry-run\|--overwrite\|--adopt --note]` |
 | `show` | Read-only: the derived state, per-path drift, pending requests, step tallies and `Next:`. | `<id> [--json\|--diff]` |
 | `summary` | Read-only: the unit for a human reviewer. `--md` is paste-ready pull-request text. | `<id> [--json\|--md]` |
-| `verify` | Read-only: contract §5.9's V1–V19 over the whole record. Plain by default; `--verbose` prints the full report. | `<id> [--json\|--verbose]` |
+| `verify` | Read-only: contract §5.9's V1–V19 over the whole record. Plain by default; `--verbose` prints the full report. | `<id> [--json] [--verbose]` |
 | `version` | Read-only: the tool version and the contract number. | `[--json]` |
 
 <!-- VERBS:END -->

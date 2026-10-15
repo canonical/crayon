@@ -4,7 +4,7 @@ description: Surfaces a drafted documentation unit for human review through two 
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 metadata:
   crayon_contract: 1
-  crayon_min_tool: "0.2.0"
+  crayon_min_tool: "0.3.0"
 ---
 <objective>
 Surface a drafted documentation unit for human review and record the reviewer's
@@ -29,8 +29,8 @@ crayon show "$UNIT_ID" --json        # the derived state, and the routed `next`
 ```
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
-`tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+`tool` older than `min_tool` `0.3.0`. Both numbers are compared as literal strings —
+never parsed or rounded as versions. `0.2.0` is older than `0.3.0`: stop, say which
 number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 
@@ -157,8 +157,11 @@ since the last generation with its disposition, the step tally, reviewer edits, 
 Then read the drafted page(s) under `docs/` at the paths the plan declares.
 
 If the routed `next` is `draft` or `walk`, the unit has no generation to review —
-route the TA to crayon-write. Every other token has a row in `references/routing.md`;
-act on it.
+route the TA to crayon-write, unless the draft is owed only to a request pending on a
+generation that exists. Then the author may review that generation and settle the
+request at the verdict, resolving or withdrawing it at the accept (step 6 and the
+`unapplied_steering` row), or have it redrafted. Every other token has a row in
+`references/routing.md`; act on it.
 </step_1>
 
 <step_2 name="Select the review mode">
@@ -173,7 +176,7 @@ The raw page source is not dumped by default in either mode — offer it only if
 reviewer asks.
 
 When the reviewer already authorised the accept in the request that opened this
-session, for example "install - accept it.", ask no mode question: after the opening,
+session, for example "<unit> - accept it.", ask no mode question: after the opening,
 run the accept in this same turn (step 6), and the closure asks what is open.
 </step_2>
 
@@ -213,7 +216,7 @@ Otherwise end the provenance-summary message with every entry as a question abou
 the page, in one numbered list, in the order `handover.steps` lists them, with
 no cap. Each question names its step and its reason in plain words, for example
 "Step install-deps was skipped: no network in CI. Does the page need to say so?" or
-"Step init deviated: <its reason>. Does the page need to say so?". Quote each id and
+"Step seed-db deviated: <its reason>. Does the page need to say so?". Quote each id and
 reason as the tool gives them, and add no count of your own: the tally stays the
 tool's own line. The questions are plain text, not options in a question tool.
 They are the last thing in that message, in either mode: no finding, no lean and no
@@ -234,7 +237,7 @@ change?".
 The closure after an accept in this conversation does not ask again a step whose
 answer asked for no page change, and a step left unanswered is not asked again. A step
 is left unanswered when the author's reply spoke to other steps and not to it: a
-reply about step init alone leaves first-job unanswered. A step
+reply about step fetch-deps alone leaves seed-db unanswered. A step
 whose answer asked for one comes back there, named with the change the author asked
 for (step 6). Closing a step closes only that step; the other sources still count, so
 where a reader arrives from is asked when nothing links to the page.
@@ -311,10 +314,11 @@ recorded model is another one, or is empty with the origin `unknown`, and the dr
 in another session, there are no grounds: say nothing about it. An earlier turn of
 this conversation that ran `crayon draft` for this unit counts, whichever skill ran it;
 then the line is required. A `model` line that names another model, such as
-`example/drafting-model-1`, is no ground. With grounds, put one line in the first
+`vendor/model-a`, is no ground. With grounds, put one line in the first
 person directly before the findings, for example:
 
-> I drafted this page, so this is a self-review; I'm likely to miss what I got wrong the first time. Weigh these findings with that in mind.
+> I drafted this page, so this is a self-review; I'm likely to miss what I got wrong the
+first time. Weigh these findings with that in mind.
 
 Record mode has no findings and no such line, and the line is never repeated at the
 verdict.
@@ -418,7 +422,8 @@ why?", and nothing runs until the reviewer answers. Then take one disposition fo
 each, and re-run accept carrying all of them:
 
 ```bash
-crayon review "$UNIT_ID" --verdict accept [--note '<their words beyond the verdict>'] --resolves 7,9 --withdraw 12 '<why it no longer applies>'
+crayon review "$UNIT_ID" --verdict accept [--note '<their words beyond the verdict>'] \
+  --resolves 7,9 --withdraw 12 '<why it no longer applies>'
 ```
 
 `--resolves` is the reviewer's recorded judgment that a request is satisfied — not
@@ -438,7 +443,9 @@ Then route:
 Echo the verb's own response line verbatim. Then STOP: no build, no publish, no edits
 to the page. After an accept, the closure below is that STOP.
 
-**After an accept — close on what the record holds open.**
+**After an accept — close on what the record holds open.** The closure runs only
+when the accept's emitted `next` is `publish`; for any other `next`, follow its
+routing row.
 
 1. Read what the record still holds open:
 
@@ -449,10 +456,10 @@ to the page. After an accept, the closure below is that STOP.
    Each `handover.steps` entry (a deviated or skipped step) is open,
    except a step this conversation already put to the author in step 3a, unless its
    answer asked for a page change; a step left unanswered is not asked again. A step
-   whose answer asked for a page change is open: its question names the change the author asked for, in their
-   words. In a later session, every step counts again, because the asking is not on
-   the record. Each `handover.judged` entry (a request accepted without a page change) is
-   open too. `withdrawn` entries are not.
+   whose answer asked for a page change is open: its question names the change the
+   author asked for, in their words. In a later session, every step counts again,
+   because the asking is not on the record. Each `handover.judged` entry (a request
+   accepted without a page change) is open too. `withdrawn` entries are not.
 2. Findings count only when review mode ran in this same conversation. Each
    must-fix or should-fix finding the author did not speak to in the verdict
    exchange is open. An accept that did not name a finding is not an answer to it: an
@@ -460,15 +467,15 @@ to the page. After an accept, the closure below is that STOP.
    Nits never count. In a later session this source is absent, and the skill never
    guesses at it.
 3. Where a reader arrives from: search the docs tree read-only for each accepted
-   page. Search for the bare stem as well as the path: a toctree line `config` in
-   `reference/index.md` links to `reference/config.md`. A hit counts only when it resolves to that page: its docs-relative path
-   without the extension (`reference/config`) anywhere, or its bare stem (`config`)
-   in a toctree entry or a `{doc}` / `:doc:` role of a page in the same directory
-   (`reference/index.md`), because those resolve relative to the page that holds
-   them. A file name alone (`config.md`) is a link only when it resolves to the
-   accepted page from the page that holds it; another directory's `config.md` is
-   not. It is open only when no other page links to the page or lists it in a
-   toctree.
+   page. Search for the bare stem as well as the path: a toctree line `webhooks` in
+   `reference/index.md` links to `reference/webhooks.md`. A hit counts only when it
+   resolves to that page: its docs-relative path without the extension
+   (`reference/webhooks`) anywhere, or its bare stem (`webhooks`) in a toctree entry or
+   a `{doc}` / `:doc:` role of a page in the same directory (`reference/index.md`),
+   because those resolve relative to the page that holds them. A file name alone
+   (`webhooks.md`) is a link only when it resolves to the accepted page from the page
+   that holds it; another directory's `webhooks.md` is not. It is open only when no
+   other page links to the page or lists it in a toctree.
 4. Nothing open: no questions. The message is the accept line alone.
 5. Ask at most three questions. Take one per source first, in the fixed order
    steps → judged requests → findings → where a reader arrives from, then fill the
@@ -484,7 +491,7 @@ to the page. After an accept, the closure below is that STOP.
    `Next: yours — crayon stops here`), then a numbered list of the questions in plain
    words, each naming its item, for example "Step install-deps was skipped: no
    network in CI. Does the page need to say so?" or "Nothing links to
-   reference/config.md yet; where should a reader come from?". The questions are
+   reference/webhooks.md yet; where should a reader come from?". The questions are
    plain text, not options in a question tool: the closure is a reply, never a
    question-tool call, after an accept in this session and on a unit accepted in an
    earlier one. There is no second stops-here line,
@@ -663,6 +670,8 @@ neither needed nor recorded.
 with nothing recorded since. Say in one plain line that the unit is already accepted
 and that crayon stops here. Then ask the questions step 6's closure asks, drawn from
 the record, without the findings source, because no review ran in this conversation.
+Before asking, say in one line that these are the questions the record still shows
+open, and that a reply saying they were settled ends the closure with nothing recorded.
 The same rules hold: at most three, one per source first, none when nothing is open,
 and a change request steered in the author's words. Nothing is lost when a session
 ends before its closure: the accept is already committed, and the next session closes

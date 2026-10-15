@@ -4,7 +4,7 @@ description: Drafts a review-ready, Sphinx-publishable page (MyST or rST — the
 allowed-tools: Read, Bash, Glob, Grep, Write, Edit
 metadata:
   crayon_contract: 1
-  crayon_min_tool: "0.2.0"
+  crayon_min_tool: "0.3.0"
 ---
 <objective>
 Draft a review-ready, Sphinx-publishable page for a unit that has already been
@@ -37,8 +37,8 @@ crayon show "$UNIT_ID" --json        # the derived state, and the routed `next`
 ```
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
-`tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+`tool` older than `min_tool` `0.3.0`. Both numbers are compared as literal strings —
+never parsed or rounded as versions. `0.2.0` is older than `0.3.0`: stop, say which
 number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 
@@ -178,7 +178,10 @@ Three routed answers stop the drafting branch before it starts:
   (`target_exists`). Either way this skill does not write over the page: hand off to
   crayon-review's edits flow, which adopts the bytes with `crayon edits <id> --note "…"`.
   Drafting over an unadopted page is how an author's work disappears.
-- **`sign_off` / `re_sign`** — route back to crayon-plan.
+- **`sign_off` / `re_sign`** — the signoff is crayon-plan's act, not this skill's,
+  though its routing row names the verb: run no `crayon signoff` and no
+  `crayon unit edit`, and offer neither. Say the plan needs its signoff before
+  drafting, and route back to crayon-plan with `/crayon-plan <id>`.
 - **`steer`** — a signed target is missing after a seal. The restoration request is
   recorded first; see the unsteered STOP below.
 
@@ -198,9 +201,10 @@ A second generation with nothing recorded between it and the last one is refused
 not compose a reason to get past the gate, and do not paraphrase the conversation
 into a note. Stop, ask the author what they want changed, and record their answer in
 their own words. The STOP touches nothing on disk: the staged draft stays where it is,
-with no `rm`, no clean-up and no re-staging before the author answers. A request to redraft that names no change — "draft it again" — is
-exactly what this STOP is for; it is not a note. Never write, copy or delete a staged
-or published file to get a different draft:
+with no `rm`, no clean-up and no re-staging before the author answers. A request to
+redraft that names no change — "draft it again" — is exactly what this STOP is for; it
+is not a note. Never write, copy or delete a staged or published file to get a different
+draft:
 
 ```bash
 crayon steer "$UNIT_ID" --note '<their own words>'
@@ -253,7 +257,7 @@ The plan is a JSON array on stdin, one object per step:
 
 ```json
 [
-  {"id": "install", "text": "Install the CLI", "mode": "agent", "stateful": false},
+  {"id": "fetch-deps", "text": "Fetch the dependencies", "mode": "agent", "stateful": false},
   {"id": "login", "text": "Log in to the service", "mode": "ta", "stateful": true}
 ]
 ```
@@ -514,18 +518,20 @@ Report the recorded draft:
 - Draft: .crayon/staging/<unit-id>/draft/<target>
 - Recorded: <the response line, verbatim>
 - Progress: drafted
-- <one line per entry of `gaps` in the report.json you staged: first person, naming the command you did not run, the claim with no source, or the behaviour you inferred; none when `gaps` is empty>
+- <one line per entry of `gaps` in the report.json you staged: first person, naming the
+  command you did not run, the claim with no source, or the behaviour you inferred; none
+  when `gaps` is empty>
 
 Next: /crayon-review — review the draft.
 ```
 
 State each entry of `gaps` from the report.json you staged in step 4 as one line, in
 the first person, naming what that entry names (the setting, the command or the claim,
-as the entry gives it), never a gap of your own in its place, and specifically, for example "I didn't run `toyq migrate`; the page
-describes it from cli.py." With an empty `gaps` list the report adds nothing: no hedge
-and no reminder to check the page. Read the gaps from your report.json, not from
-`crayon summary`, whose known gaps also list the `gaps_note`. There is never a section
-of doubts and never a general caveat.
+as the entry gives it), never a gap of your own in its place, and specifically, for
+example "I didn't run `relay sync`; the page describes it from server.py." With an empty
+`gaps` list the report adds nothing: no hedge and no reminder to check the page. Read
+the gaps from your report.json, not from `crayon summary`, whose known gaps also list the
+`gaps_note`. There is never a section of doubts and never a general caveat.
 
 For an actionable unit, also surface the walk tallies — **as the tool printed them**.
 The response and `crayon show` both carry a tally of the form `passed 4 · skipped 1
@@ -607,6 +613,8 @@ applies. Say so before a step prints anything the author would not publish.
   exception.
 - Never draft over a page the tool has not told you to write; `page_drift` and
   `target_exists` route to crayon-review's edits flow.
+- Never run or offer `crayon signoff` or `crayon unit edit`; `sign_off` and `re_sign`
+  route back to crayon-plan.
 - Never hand-edit the ledger.
 - Never commit, stage, push, or build — the tool's seam owns the commit.
 - Never assert a fact you have not read at its origin.

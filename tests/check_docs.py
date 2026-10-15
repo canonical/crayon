@@ -25,11 +25,11 @@ What it claims, and nothing wider:
 4. **Links** — every in-repo markdown link in the documented set resolves to a
    path that exists, and every ``#anchor`` to a heading in the target file.
 5. **Release record** — ``CHANGELOG.md``'s topmost ``## [x.y.z]`` section
-   carries an ISO date and none of ``RELEASE_PLACEHOLDERS``. The 0.2.0 section
-   also carries each actual-delivery fact in ``RELEASE_020_REQUIRED_FACTS`` and
-   none of the abandoned-plan claims in ``RELEASE_020_FORBIDDEN_CLAIMS``. A
-   file with no versioned heading scanned nothing and is a ``2``, never a clean
-   run (REL-02, CI-03).
+   carries an ISO date and none of ``RELEASE_PLACEHOLDERS``. The ``[0.2.0]``
+   section, wherever it sits, carries each actual-delivery fact in
+   ``RELEASE_020_REQUIRED_FACTS`` and none of the abandoned-plan claims in
+   ``RELEASE_020_FORBIDDEN_CLAIMS``. A file with no versioned heading scanned
+   nothing and is a ``2``, never a clean run (REL-02, CI-03).
 6. **Traces** — ``tests/check_traces.py``'s ``main()`` is called and folded into
    the tally. There is exactly one trace-table parser in this repository and it
    is not here (17 D-09).
@@ -712,14 +712,31 @@ def check_skills_first(root, documents, report):
     report.ok(observable, len(scanned), "reader-facing documents")
 
 
+def _section_body(changelog, heading):
+    """The body under ``heading``, to the next ``## `` heading or the end.
+
+    The same line-wise idiom ``heading_section`` uses, so an older release
+    below and ``[Unreleased]`` above are both outside the slice, while ``###``
+    and ``####`` subsections stay inside it.
+    """
+    body_lines = []
+    for line in changelog[heading.end() :].splitlines():
+        if _SECTION_RE.match(line):
+            break
+        body_lines.append(line)
+    return "\n".join(body_lines)
+
+
 def check_release_record(changelog, report):
     """REL-02 / CI-03: the released section is dated and historically bounded.
 
-    The topmost ``## [x.y.z]`` heading is the latest published release record.
-    Every version must carry a date and no marker in
-    :data:`RELEASE_PLACEHOLDERS`. The 0.2.0 record has one additional bounded
-    check: its body must retain the actual delivery facts and must not restore
-    the exact abandoned-plan claims.
+    The topmost ``## [x.y.z]`` heading is the latest published release record:
+    it must carry a date, and its section no marker in
+    :data:`RELEASE_PLACEHOLDERS`. The ``[0.2.0]`` section, found by version
+    wherever it sits, has one additional bounded check: its body must retain
+    the actual delivery facts and must not restore the exact abandoned-plan
+    claims, so cutting a later release above it does not switch the pins off
+    (D-03). A changelog with no ``[0.2.0]`` section skips that check.
 
     A changelog with no versioned heading at all is a ``2``, never a ``0``: an
     absent, empty or unreleased-only file has no released section, so reporting
@@ -744,16 +761,7 @@ def check_release_record(changelog, report):
             [heading.group(0).strip()],
         )
         fired = True
-    # The section body, to the next `## ` heading or the end of the file — the
-    # same line-wise idiom `heading_section` uses, so an older release below and
-    # `[Unreleased]` above are both outside the slice.
-    body_lines = []
-    for line in changelog[heading.end() :].splitlines():
-        if _SECTION_RE.match(line):
-            break
-        body_lines.append(line)
-    body = "\n".join(body_lines)
-    prose = " ".join(body.split())
+    body = _section_body(changelog, heading)
     for marker in RELEASE_PLACEHOLDERS:
         if marker in body:
             report.violation(
@@ -765,7 +773,9 @@ def check_release_record(changelog, report):
                 [marker],
             )
             fired = True
-    if heading.group(1) == "0.2.0":
+    release_020 = next((h for h in headings if h.group(1) == "0.2.0"), None)
+    if release_020 is not None:
+        prose = " ".join(_section_body(changelog, release_020).split())
         for fact in RELEASE_020_REQUIRED_FACTS:
             if fact not in prose:
                 report.violation(

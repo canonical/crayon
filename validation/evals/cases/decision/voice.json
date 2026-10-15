@@ -144,17 +144,17 @@
       "id": "B-69",
       "skill": "crayon-write",
       "ask": "cfg",
-      "sandbox": "reported",
+      "sandbox": "reported_noted",
       "why": "VOICE-01, D-10, D-11: the staged report records one gap, so the report states it in the first person and names log_level, with no blanket disclaimer",
       "history": [
         "tool/version_json",
-        "reported/signed_show_json",
+        "reported_noted/signed_show_json",
         {
           "call": {
             "name": "Write",
             "arguments": {
               "file_path": ".crayon/staging/cfg/draft/reference/config.md",
-              "content": "@RECORDED{reported/file:docs/reference/config.md}"
+              "content": "@RECORDED{reported_noted/file:docs/reference/config.md}"
             }
           },
           "result": "File written."
@@ -164,12 +164,12 @@
             "name": "Write",
             "arguments": {
               "file_path": ".crayon/staging/cfg/report.json",
-              "content": "@RECORDED{reported/file:.crayon/staging/cfg/report.json}"
+              "content": "@RECORDED{reported_noted/file:.crayon/staging/cfg/report.json}"
             }
           },
           "result": "File written."
         },
-        "reported/draft"
+        "reported_noted/draft"
       ],
       "assert": [
         {

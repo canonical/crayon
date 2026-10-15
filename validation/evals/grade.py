@@ -22,7 +22,7 @@ import json
 import re
 
 import agent
-from openrouter import ProviderError
+from openrouter import ProviderError, empty_turn
 
 SKILL_NAMES = (
     "crayon-onboard",
@@ -150,8 +150,12 @@ def _matches(call, spec, text=call_text):
 
 
 def turn_error(turn):
-    """A run-level defect in a turn, or None. Never a case failure."""
-    if not turn["content"].strip() and not turn["tool_calls"]:
+    """A run-level defect in a turn, or None. Never a case failure.
+
+    An empty answer here is one still empty after its one retry (D-24): the
+    runner records it as an error and files the run ``errored``.
+    """
+    if empty_turn(turn):
         return "empty answer (finish_reason=%r)" % turn.get("finish_reason")
     text = turn["content"]
     if len(text) >= _DEGENERATE_MIN_CHARS:
@@ -330,6 +334,10 @@ def check_asks_user(spec, trace, ctx):
 #: code to the grader: it is read as prose.
 _CODE_RE = re.compile(r"```.*?```|~~~.*?~~~|`[^`\n]*`", re.DOTALL)
 
+#: 21 IN-03: :data:`_CODE_RE` for counting questions, where a fence left open
+#: also runs to the end of the reply: what follows it is quoted output too.
+_QUESTION_CODE_RE = re.compile(r"```.*?(?:```|\Z)|~~~.*?(?:~~~|\Z)|`[^`\n]*`", re.DOTALL)
+
 #: WR-04: the plain-words rule's own forms, exactly these, which the author never
 #: reads in prose: seal, seals, sealed; basis; seq, seqs; plan_hash or plan hash;
 #: hash, hashes; sha256 or sha-256; digest, digests; event N; ledger line N. Whole
@@ -358,16 +366,20 @@ def check_plain_words(spec, trace, ctx):
 def check_question_count(spec, trace, ctx):
     """The decisive reply asks between ``min`` and ``max`` questions, inclusive.
 
-    A question-tool call counts its questions; a reply counts its question
-    marks outside code. Any other decisive action fails: it asked nothing, it
-    acted. With no ``max`` there is no upper bound; with no ``min`` it is 0.
+    A question-tool call counts its questions, and only when they are a list:
+    a JSON string is not counted by its characters. A reply counts its
+    question marks outside code, where a final fence left open runs to the end
+    of the reply (21 IN-03). Any other decisive action fails: it asked
+    nothing, it acted. With no ``max`` there is no upper bound; with no
+    ``min`` it is 0.
     """
     decisive = _decisive(trace)
     if decisive["type"] == "call" and decisive["call"].get("name") == "AskUserQuestion":
-        count = len(_args(decisive["call"]).get("questions") or [])
+        questions = _args(decisive["call"]).get("questions")
+        count = len(questions) if isinstance(questions, list) else 0
         where = "its AskUserQuestion call"
     elif decisive["type"] == "text":
-        count = _CODE_RE.sub("", trace["turns"][-1]["content"] or "").count("?")
+        count = _QUESTION_CODE_RE.sub("", trace["turns"][-1]["content"] or "").count("?")
         where = "its reply"
     else:
         return result(False, "expected the model to ask the author; it ended on %s"
@@ -380,11 +392,38 @@ def check_question_count(spec, trace, ctx):
     return result(False, "expected %s question(s); %s asked %d" % (wanted, where, count))
 
 
+#: A part that changes nothing and reads nothing of the repository: a print
+#: (``echo "exit=$?"``), a no-op (``true``, ``:``) or ``pwd``.
+_INERT_PART_RE = re.compile(r"^(echo|printf|true|:|pwd)(\s|$)")
+
+
+def _chain_commands(call):
+    """The commands one Bash call runs, in order, less what changes nothing.
+
+    A chain (``a; b``, ``a && b``) runs each of its parts in turn, as two calls in
+    one turn do, so each part is a command of its own. A leading ``cd`` into the
+    working directory is dropped, and so is a print, a no-op or ``pwd`` after a
+    command (``|| true``, ``; pwd``): it changes nothing and reads nothing of the
+    repository, as :func:`call_text` drops a looking tail. A part that reads the
+    repository between the opening's commands, such as ``; ls docs``, stays a
+    command of its own and binds.
+    """
+    commands = []
+    for part in agent.chain_parts(_CD_WORKDIR_RE.sub("", _typed(call), count=1)):
+        if commands and _INERT_PART_RE.match(part) and agent.looking(part):
+            continue
+        commands.append(part)
+    return commands
+
+
 def check_bash_sequence(spec, trace, ctx):
-    """The first shell commands, in order, match ``prefix``."""
+    """The first shell commands, in order, match ``prefix``.
+
+    Each command of a chain counts on its own, in the order it runs.
+    """
     # Quotes and a trailing `2>&1` change nothing: `crayon show "cfg"` is `crayon show cfg`.
-    commands = [agent.normalise(call_text(call)) for call in _all_calls(trace)
-                if call.get("name") == "Bash"]
+    commands = [agent.normalise(command) for call in _all_calls(trace)
+                if call.get("name") == "Bash" for command in _chain_commands(call)]
     for index, pattern in enumerate(spec["prefix"]):
         if index >= len(commands):
             return result(False, "expected shell command %d to match %r; only %d "
@@ -474,15 +513,33 @@ def check_judge(spec, trace, ctx):
     prompt = JUDGE_INSTRUCTIONS.format(
         rubric=spec["rubric"].strip(), context=context, response=render_turns(trace)
     )
-    try:
-        turn = provider.complete(
-            judge_spec, [{"role": "user", "content": prompt}], scope="judge"
-        )
-    except ProviderError as exc:
-        raise GradeError("judge API error: %s" % exc)
-    verdict = parse_verdict(turn["content"])
+    messages = [{"role": "user", "content": prompt}]
     ctx.setdefault("judge_cost", 0.0)
-    ctx["judge_cost"] += turn["usage"]["cost"]
+    try:
+        turn = provider.complete(judge_spec, messages, scope="judge")
+        ctx["judge_cost"] += turn["usage"]["cost"]
+        try:
+            verdict = parse_verdict(turn["content"])
+        except GradeError:
+            # D-24: an unparsable reply is asked again once, uncached, and
+            # counted; a second one propagates as the run-level error. A provider
+            # with a cache forgets the unparsable reply before the retry and
+            # remembers the retry once it parses, so a later cached run replays
+            # the graded verdict; a provider with only `complete` is unchanged.
+            forget = getattr(provider, "forget", None)
+            if forget is not None:
+                forget(judge_spec, messages)
+            turn = provider.complete(judge_spec, messages, cache=False, scope="judge")
+            ctx["judge_retries"] = ctx.get("judge_retries", 0) + 1
+            ctx["judge_cost"] += turn["usage"]["cost"]
+            verdict = parse_verdict(turn["content"])
+            remember = getattr(provider, "remember", None)
+            if remember is not None:
+                remember(judge_spec, messages, turn)
+    except ProviderError as exc:
+        # A judge call paid for before the error still counts (24-23, WR-02).
+        ctx["judge_cost"] += exc.cost
+        raise GradeError("judge API error: %s" % exc)
     return result(verdict["pass"], "judge: %s" % verdict.get("reason", ""),
                   score=verdict["score"] / 5.0)
 

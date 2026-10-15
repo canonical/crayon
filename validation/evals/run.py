@@ -115,39 +115,80 @@ def stub_judge(spec, messages, tools):
 
 
 def run_one(lane, case, spec, provider, ctx):
-    """One case -> one record. Errors are recorded, never raised (but budget)."""
+    """One case -> one record. Errors are recorded, never raised (but budget).
+
+    Any exception from ``lane["run"]`` or the grader other than a budget stop is
+    the case's run-level error (24-30, WR-17), so one malformed turn costs its
+    case, not the remaining cases and models.
+
+    A budget stop is raised with the case's paid cost on it (24-27, WR-11): the
+    lane's own turns carry theirs, and this adds the judge's spend and, when the
+    lane finished, its trace's turns, so ``run_lane`` records what the case paid.
+    That is every case's paid cost, not the run's whole spend (``summarise``).
+
+    The bookkeeping after the lane and the grader is under the same backstop
+    (24-33, WR-18 of the review at 802e0e3): a turn it cannot read is the case's
+    ``run error:``, with the cost already counted kept, never raised to ``run_lane``.
+    """
     started = time.time()
     record = {"id": case["id"], "passed": False, "error": None, "score": 0.0,
               "cost": 0.0, "cached": False}
     trace = None
+    case_ctx = {"judge": ctx.get("judge")}
     try:
         trace = lane["run"](case, spec, provider, ctx)
         for turn in trace["turns"]:
             problem = grade.turn_error(turn)
             if problem:
                 raise ProviderError(problem)
-        case_ctx = {"judge": ctx.get("judge")}
         graded = grade.grade(case["assert"], trace, case_ctx)
         record.update(passed=graded["passed"], score=round(graded["score"], 3))
         failed = [{"kind": item["kind"], "feedback": item["feedback"]}
                   for item in graded["results"] if not item["pass"]]
         if failed:
             record["failed"] = failed
-        record["cost"] += case_ctx.get("judge_cost", 0.0)
+    except BudgetExceeded as exc:
+        # The judge's spend, and a finished lane's turns, reach no record unless
+        # the stop carries them (24-27, WR-11); each is added here only.
+        exc.cost += case_ctx.get("judge_cost", 0.0)
+        if trace is not None:
+            exc.cost += sum(turn["usage"]["cost"] for turn in trace["turns"])
+        raise
     except (ProviderError, grade.GradeError) as exc:
         record["error"] = str(exc)
-    if trace is not None:
-        turns = trace["turns"]
-        record["cost"] += sum(turn["usage"]["cost"] for turn in turns)
-        record["cached"] = all(turn.get("cached") for turn in turns)
-        record["served_by"] = sorted(set(t.get("served_by", "") for t in turns) - {""})
-        record["tokens"] = {
-            "in": sum(t["usage"]["prompt_tokens"] for t in turns),
-            "out": sum(t["usage"]["completion_tokens"] for t in turns),
-        }
-        record["truncated"] = any(t.get("finish_reason") == "length" for t in turns)
-        if not record["passed"]:
-            record["answer"] = grade.render_turns(trace)[:EXCERPT]
+        # Paid calls whose turns the error carried off (24-23, WR-02).
+        record["cost"] += getattr(exc, "cost", 0.0)
+    except Exception as exc:  # noqa: BLE001 - the backstop is the point
+        # Any other error from the lane or the grader is this case's run-level
+        # error, never the sweep's (24-30, WR-17 of the review at 1ba4892); a budget
+        # stop is re-raised by its own arm above and still reaches ``run_lane``.
+        record["error"] = "run error: %s: %s" % (type(exc).__name__, exc)
+        record["cost"] += getattr(exc, "cost", 0.0)
+    try:
+        # A judge call that was made is spent whether or not its verdict parsed.
+        record["cost"] += case_ctx.get("judge_cost", 0.0)
+        if trace is not None:
+            # D-24: the one-time retries of an empty answer or an unparsable judge
+            # reply, counted, never hidden.
+            record["retries"] = trace.get("retries", 0) + case_ctx.get("judge_retries", 0)
+            turns = trace["turns"]
+            # The cost first, so a line below that raises still leaves it counted.
+            record["cost"] += sum(turn["usage"]["cost"] for turn in turns)
+            record["cached"] = all(turn.get("cached") for turn in turns)
+            record["served_by"] = sorted(set(t.get("served_by", "") for t in turns) - {""})
+            record["tokens"] = {
+                "in": sum(t["usage"]["prompt_tokens"] for t in turns),
+                "out": sum(t["usage"]["completion_tokens"] for t in turns),
+            }
+            record["truncated"] = any(t.get("finish_reason") == "length" for t in turns)
+            if not record["passed"]:
+                record["answer"] = grade.render_turns(trace)[:EXCERPT]
+    except Exception as exc:  # noqa: BLE001 - the backstop over the bookkeeping
+        # 24-33, WR-18 (802e0e3): a turn the bookkeeping cannot read is the case's
+        # run-level error, never the sweep's; an error already recorded stays, and
+        # the cost already added is kept.
+        record["error"] = record["error"] or "run error: %s: %s" % (type(exc).__name__, exc)
+        record["passed"] = False
     record["cost"] = round(record["cost"], 6)
     record["latency_ms"] = int((time.time() - started) * 1000)
     return record, trace
@@ -167,8 +208,13 @@ def run_lane(lane_name, cases, spec, provider_for, ctx, jobs):
                 record, trace = future.result()
             except BudgetExceeded as exc:
                 stopped = str(exc)
+                # A case that paid before the cap stopped it ran: it is recorded as
+                # stopped, with what it paid; only one refused before any paid call
+                # is "not run" (24-27, WR-11).
+                cost = round(exc.cost, 6)
                 records.append({"id": case["id"], "passed": False,
-                                "error": "not run: %s" % exc, "score": 0.0, "cost": 0.0})
+                                "error": ("stopped: %s" if cost > 0.0 else "not run: %s") % exc,
+                                "score": 0.0, "cost": cost})
                 continue
             records.append(record)
             traces[case["id"]] = trace
@@ -176,6 +222,14 @@ def run_lane(lane_name, cases, spec, provider_for, ctx, jobs):
 
 
 def summarise(lane_name, spec, records, ctx, partial, stopped, dry_run):
+    """One lane on one model -> its summary: the meta, then every case's record.
+
+    ``cost_usd`` is the sum of every case's paid cost, a stopped case's included.
+    It is not the run's whole spend: ``preflight_judge`` (once a run) and
+    ``preflight_model`` (once per model) charge the budget too and are on no case
+    record, so on a paid run the ``spent $… of $…`` line ``main`` prints is above
+    the sum of the summaries' ``cost_usd`` (24-30, IN-12 of the review at 1ba4892).
+    """
     errors = sum(1 for r in records if r["error"])
     passed = sum(1 for r in records if r["passed"])
     return {
@@ -201,6 +255,7 @@ def summarise(lane_name, spec, records, ctx, partial, stopped, dry_run):
                 "out": sum(r.get("tokens", {}).get("out", 0) for r in records),
             },
             "truncated": sum(1 for r in records if r.get("truncated")),
+            "retries": sum(r.get("retries", 0) for r in records),
             "cached_cases": sum(1 for r in records if r.get("cached")),
             "partial": partial,
             "dry_run": dry_run,
@@ -281,6 +336,7 @@ def aggregate(summaries):
         tokens={"in": sum(m["tokens"]["in"] for m in metas),
                 "out": sum(m["tokens"]["out"] for m in metas)},
         truncated=sum(m["truncated"] for m in metas),
+        retries=sum(m.get("retries", 0) for m in metas),
         cached_cases=0,
         budget_stop=next((m["budget_stop"] for m in metas if m["budget_stop"]), None),
     )
@@ -350,6 +406,18 @@ def preflight_judge(provider, judge_spec):
         grade.parse_verdict(turn["content"])
     except (ProviderError, grade.GradeError) as exc:
         raise SystemExit("judge preflight failed (%s): %s" % (judge_spec["id"], exc))
+
+
+def preflight_stop(exc, which, spec, budget):
+    """A budget reached at a preflight, ended as a budget stop: code 2, not a traceback.
+
+    A roster's last in-flight calls can spend past the cap without a case being
+    refused, so the next model's preflight is the first call refused (24-30, WR-16
+    of the review at 1ba4892). It is handled as a lane's stop is.
+    """
+    print("budget stop: %s (at %s for %s)" % (exc, which, spec["id"]), file=sys.stderr)
+    print("spent $%.4f of $%.2f" % (budget.spent, budget.cap))
+    return 2
 
 
 def run_repeated(name, cases, spec, provider_for, ctx, args, stamp):
@@ -463,7 +531,10 @@ def main(argv=None):
             return 2
         judge = (paid, judge_spec)
         if needs_judge:
-            preflight_judge(paid, judge_spec)
+            try:
+                preflight_judge(paid, judge_spec)
+            except BudgetExceeded as exc:
+                return preflight_stop(exc, "preflight_judge", judge_spec, budget)
 
     now = datetime.datetime.now()
     ctx = {
@@ -481,7 +552,10 @@ def main(argv=None):
     worst = 0
     for spec in models:
         if not args.dry_run:
-            problem = preflight_model(paid, spec)
+            try:
+                problem = preflight_model(paid, spec)
+            except BudgetExceeded as exc:
+                return preflight_stop(exc, "preflight_model", spec, budget)
             if problem:
                 print("-- %-30s SKIPPED: unreachable on its pinned backend: %s"
                       % (spec["id"], problem[:400]))

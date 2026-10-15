@@ -79,7 +79,7 @@ Transcribed from `docs/contract.md` §6. No skill may invoke a flag that is not 
 | `context stage <name> --body-file -\|F [--source]…` | repo-level; tool-owned staging | — |
 | `context record [--model --model-origin] [--note]` | repo-level; one commit, no unit | — (manifest) |
 | `context show [--json]` | read-only | — |
-| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json\|--verbose]`, `version [--json]` | read-only | — |
+| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json] [--verbose]`, `version [--json]` | read-only | — |
 
 Every transition emits one local git commit with `Crayon-Unit:` / `Crayon-Phase:`
 trailers and explicit pathspecs (never a directory, never the whole repo). The one
@@ -279,15 +279,15 @@ to be readable at runtime.
 | Number | Value |
 |---|---|
 | `contract` | `1` |
-| `min_tool` | `0.2.0` |
+| `min_tool` | `0.3.0` |
 
 Every skill declares both in its frontmatter as `metadata.crayon_contract: 1` and
-`metadata.crayon_min_tool: "0.2.0"`, and opens by reading `crayon version --json`, which
+`metadata.crayon_min_tool: "0.3.0"`, and opens by reading `crayon version --json`, which
 answers `{"tool","contract"}`. The two numbers are compared as **literal strings** —
 never parsed or rounded as versions.
 
 A skill stops for exactly two reasons: the tool answers anything other than
-`contract 1`, or its `tool` version is older than `min_tool 0.2.0` (`0.1.9` is older). Anything else is a
+`contract 1`, or its `tool` version is older than `min_tool 0.3.0` (`0.2.0` is older). Anything else is a
 routing row above, not a stop.
 
 ## Hooks

@@ -6,7 +6,9 @@ agentskills.io slug rules; ``description`` is present, non-empty (≤1024 chars)
 contains no bare ``: `` (colon+space) that would break a real YAML parser; the
 single-writer rule (only :data:`WRITERS` may hold a write-capable tool, D-14); and
 both compatibility numbers from ``docs/contract.md`` §5.10, compared as literal
-strings and never parsed as versions.
+strings and never parsed as versions. ``min_tool`` is read from ``crayon.py``'s
+``__version__`` line, its one definition site, as text: the tool is never
+imported.
 
 Exit codes: 0 = clean, 1 = violation, 2 = vacuous pass (0 skills scanned).
 """
@@ -16,7 +18,8 @@ import re
 import sys
 from pathlib import Path
 
-SKILLS_ROOT = Path(__file__).resolve().parents[1] / "skills"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SKILLS_ROOT = REPO_ROOT / "skills"
 _NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _MAX_NAME = 64
 _MAX_DESC = 1024
@@ -28,11 +31,31 @@ _MAX_DESC = 1024
 WRITERS = {"crayon-write"}
 _WRITE_TOOLS = {"write", "edit", "multiedit", "notebookedit"}
 
-#: contract.md §5.10, verbatim. Compared as literal strings — never parsed,
-#: ordered or rounded as versions.
+#: The tool's version line, anchored to a whole line of ``crayon.py``.
+_VERSION_RE = re.compile(r'^__version__ = "([^"]+)"$', re.MULTILINE)
+
+
+def tool_version(root):
+    """The tool's ``__version__``, read from ``<root>/crayon.py`` as text.
+
+    D-07: ``crayon.py`` is the one definition site of the version, so every copy
+    that names it is read from here or asserted against it, never typed. The
+    tool is not imported. No match is an error, never an empty-string pass, and
+    the value is a literal string, never parsed as a version (contract §5.10).
+    """
+    text = (Path(root) / "crayon.py").read_text(encoding="utf-8")
+    match = _VERSION_RE.search(text)
+    if match is None:
+        raise RuntimeError("crayon.py carries no __version__ line")
+    return match.group(1)
+
+
+#: contract.md §5.10. Compared as literal strings — never parsed, ordered or
+#: rounded as versions. ``min_tool`` is the tool's own ``__version__``, read from
+#: ``crayon.py``, its one definition site (D-07); the lint types no version.
 _EXPECTED_METADATA = {
     "metadata.crayon_contract": "1",
-    "metadata.crayon_min_tool": "0.2.0",
+    "metadata.crayon_min_tool": tool_version(REPO_ROOT),
 }
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?\n)---\s*\n", re.DOTALL)

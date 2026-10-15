@@ -54,10 +54,28 @@
         "signed/show_json",
         {
           "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/units/cfg/unit.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
+          "call": {
             "name": "Write",
             "arguments": {
               "file_path": ".crayon/staging/cfg/draft/reference/config.md",
-              "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n"
+              "content": "@RECORDED{drafted/file:docs/reference/config.md}"
             }
           },
           "result": "File written: .crayon/staging/cfg/draft/reference/config.md"

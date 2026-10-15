@@ -146,7 +146,7 @@
         {
           "cmd": "crayon version --json",
           "exit": 0,
-          "output": "{\"tool\": \"0.2.0\", \"contract\": 2}"
+          "output": "{\"tool\": \"0.3.0\", \"contract\": 2}"
         }
       ],
       "assert": [
@@ -184,12 +184,12 @@
       "skill": "crayon-plan",
       "ask": "cfg",
       "sandbox": "declared",
-      "why": "stop rule: a tool older than min_tool 0.2.0 stops the session",
+      "why": "stop rule: a tool older than min_tool 0.3.0 stops the session",
       "history": [
         {
           "cmd": "crayon version --json",
           "exit": 0,
-          "output": "{\"tool\": \"0.1.9\", \"contract\": 1}"
+          "output": "{\"tool\": \"0.2.0\", \"contract\": 1}"
         }
       ],
       "assert": [
@@ -200,12 +200,12 @@
         },
         {
           "kind": "text_re",
-          "re": "0\\.1\\.9|0\\.2\\.0"
+          "re": "0\\.2\\.0|0\\.3\\.0"
         }
       ],
       "oracle": [
         {
-          "content": "crayon 0.1.9 is older than the 0.2.0 this skill needs, so I have to stop. Upgrade crayon and invoke /crayon-plan again."
+          "content": "crayon 0.2.0 is older than the 0.3.0 this skill needs, so I have to stop. Upgrade crayon and invoke /crayon-plan again."
         }
       ],
       "foil": [

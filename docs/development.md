@@ -152,10 +152,11 @@ kit to is everything that needs no model:
 - every case file, against its own known-good reply;
 - the always-on plain-words check on every Lane B case, and the rule that every foil fails one
   of its own assertions, not only that check;
-- the kit's own guards: every oracle passes every other case in its conversation, so no reply
-  is both an oracle and a foil there; quoted tool output in a known-good reply sits in a fenced
-  block; a prelude holds recorded refs, user and assistant turns only; and the plain-words rule
-  and the check name the same forms;
+- the kit's own guards: every oracle passes every deterministic assertion of every other case
+  in its conversation, so no reply is both an oracle and a foil there (a judged assertion runs
+  against an always-pass stub offline); quoted tool output in a known-good reply sits in a
+  fenced block; a prelude holds recorded refs, user and assistant turns only; and the
+  plain-words rule and the check name the same forms;
 - the rule that no prompt or kit file names an agent harness.
 
 [[evals]] explains what the evals measure and how to read their results;

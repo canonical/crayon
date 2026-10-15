@@ -17,7 +17,8 @@
         },
         {
           "kind": "question_count",
-          "min": 1
+          "min": 1,
+          "max": 1
         },
         {
           "kind": "text_re",

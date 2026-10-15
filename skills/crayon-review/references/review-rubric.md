@@ -192,7 +192,7 @@ Two mandatory checks inside this dimension:
   digression, an inventory the outline did not promise, background the audience
   already has. Anything the author said to leave out is `[must-fix]`, and the finding
   names what the notes left out, for example `F-2 [must-fix] the page documents
-  db_path, which the intake notes leave out (reference/config.md:9)` (completeness
+  delivery_timeout, which the intake notes leave out (reference/webhooks.md:9)` (completeness
   settles how the notes stand against the inventory and a later request); other
   over-inclusion is `[should-fix]` or `[nit]`.
 - **Complete but disconnected.** Every outline item is present, but the sections
@@ -336,12 +336,13 @@ A clean dimension shows `(none)`; a skipped one shows
 `(not assessed — <reason>)`. The block always has all six dimension headings, `### focus`
 included, each with its findings or `(none)`, and it ends with the tally line in exactly
 the form below, total first: `Findings: 4 total — 1 must-fix, 2 should-fix, 1 nit.`, and
-`Findings: 0 total — 0 must-fix, 0 should-fix, 0 nit.` for a clean review. The block is presented in the conversation and is
-**never written to a file** — only the reviewer's resulting verdict is recorded,
-via `crayon review <id> --verdict <accept|fix|redraft>`, with the reviewer's own
-words as `--note "…"`: required for fix and redraft, and present on an accept only
-when the reviewer gave words beyond the verdict (a fix/redraft verdict's note lands
-in the steering stream automatically, so it is exactly what the next draft reads).
+`Findings: 0 total — 0 must-fix, 0 should-fix, 0 nit.` for a clean review. The block is
+presented in the conversation and is **never written to a file** — only the reviewer's
+resulting verdict is recorded, via `crayon review <id> --verdict <accept|fix|redraft>`,
+with the reviewer's own words as `--note "…"`: required for fix and redraft, and present
+on an accept only when the reviewer gave words beyond the verdict (a fix/redraft
+verdict's note lands in the steering stream automatically, so it is exactly what the
+next draft reads).
 
 ```
 ## crayon-review — findings: <unit-id>
