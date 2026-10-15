@@ -61,6 +61,31 @@ continue work on such a page:
 - **The install shape.** One file on your `PATH` and five skill folders. No package, no virtual
   environment, no dependencies.
 
+## 6. Coming from dogen
+
+crayon used to be called dogen. The rename changed every name the tool and the skills use, so a
+dogen install and a record dogen wrote are both left behind. Moving across takes three steps.
+
+1. Remove the old tool and skills:
+
+   ```bash
+   rm -f ~/.local/bin/dogen
+   rm -rf ~/.agents/skills/dogen-*
+   rm -f ~/.claude/skills/dogen-*
+   ```
+
+   In each docs repository where you installed the skills, also remove `.agents/skills/dogen-*`
+   and the `.claude/skills/dogen-*` links, and commit that.
+2. Install crayon as described in [[install]]. In each docs repository, replace the
+   `.dogen/staging/` line in `.gitignore` with `.crayon/staging/`. An install into the repository
+   adds the new line; delete the old one yourself.
+3. Leave `.dogen/` where it is. crayon reads only `.crayon/`, and it finds a unit's commits by
+   their `Crayon-*` trailers, so it cannot continue a record dogen wrote, even under the same
+   contract number. The old record stays readable as history. Do not move it into `.crayon/`.
+   To keep working on such a page, run `/crayon-plan` for it again. The page already exists, so
+   the plan hands you to `/crayon-review`, which asks whether to record the current page as the
+   starting point.
+
 ## Under the hood
 
 `crayon version --json` answers `{"tool", "contract"}`. Each skill declares `crayon_contract`
