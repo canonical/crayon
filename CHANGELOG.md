@@ -9,6 +9,13 @@ significance still have one order a reader can predict.
 
 ## [Unreleased]
 
+dogen is now crayon. The command is `crayon` (the file `crayon.py`), the skills are
+`crayon-onboard`, `crayon-fetch`, `crayon-plan`, `crayon-write` and `crayon-review`, the record
+lives under `.crayon/`, the commit trailers are `Crayon-*`, the variables are `CRAYON_*`, and the
+repository is `https://github.com/canonical/crayon`. crayon does not read a record dogen wrote
+under `.dogen/`. [docs/upgrade.md](docs/upgrade.md) says how to move a machine and a repository
+across. The contract number stays `1`.
+
 ### Added
 
 - `validation/evals/` — model evals. They measure how well a model drives the five skills

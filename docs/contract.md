@@ -1,6 +1,6 @@
 # crayon contract v1
 
-<!-- provenance: frozen at tag contract-v1; the internal_error reason row, the context verbs (§5.1, §5.5, §5.7, §6) and the step plan in `show` were added after the freeze -->
+<!-- provenance: frozen at tag contract-v1; the internal_error reason row, the context verbs (§5.1, §5.5, §5.7, §6) and the step plan in `show` were added after the freeze, and its names were later renamed from dogen to crayon (the tool, `.crayon/`, the `Crayon-*` trailers and the `crayon_*` metadata keys) -->
 
 The normative contract for the `crayon` tool: what it writes, what it refuses, and what the
 record it leaves behind does and does not prove. This document is frozen at git tag
