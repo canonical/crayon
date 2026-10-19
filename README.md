@@ -115,6 +115,12 @@ For the commands and the reasons, see
 
 ## Optional code-to-docs mapping
 
+>[!WARNING]
+> This approach will expose your code and documentation to an open source
+> embedding model. It should **not** be used for code or documentation that is
+> not public.
+
+
 `/crayon-plan` can perform a live crawl of the code to extract information relevant to a draft. This
 approach doesn't create any lasting artifacts, but may have limited capacity in a large code base.
 
