@@ -147,7 +147,9 @@ READ_TOOLS = ("Read", "Glob", "Grep")
 #: names it as ``@MUTATING``, so the episode rule and the cases read the same.
 MUTATING_PATTERN = (r"\bcrayon(\.py)?\s+(unit\s+(new|edit|retire)|context\s+(stage|record)|"
                     r"triage\s+record|signoff|steer|plan-steps|step|draft|edits|review|"
-                    r"resume(?![^\n]*--dry-run))\b")
+                    r"resume(?![^\n]*--dry-run))\b"
+                    # A verb asked for its help, in the same command, records nothing.
+                    r"(?![^\n;&|]*\s(-h|--help)\b)")
 MUTATING_RE = re.compile(MUTATING_PATTERN)
 
 

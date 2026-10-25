@@ -46,6 +46,7 @@ Scope decisions, stated so they are decisions and not accidents:
 import argparse
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -106,8 +107,27 @@ class Lint:
     def read(self, path):
         return path.read_text(encoding="utf-8", errors="replace")
 
+    def unignored(self):
+        """The files git does not ignore, relative to the root; None outside a work tree.
+
+        A run of the model evals copies whole repositories under the ignored
+        ``validation/evals/.cache/``, and deletes them as it goes: a walk that read
+        them would lint someone else's tree, and could lose a file mid-read.
+        """
+        try:
+            done = subprocess.run(
+                ["git", "-C", str(self.root), "ls-files", "-z", "--cached", "--others",
+                 "--exclude-standard"],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        except OSError:
+            return None
+        if done.returncode != 0:
+            return None
+        return set(name for name in done.stdout.decode("utf-8", "replace").split("\0") if name)
+
     def scan_files(self, skip_dirs=()):
         files = []
+        listed = self.unignored()
         for name in SCAN_DIRS:
             base = self.root / name
             if not base.is_dir() or name in skip_dirs:
@@ -116,6 +136,8 @@ class Lint:
                 if not path.is_file() or path.suffix not in SCAN_SUFFIXES:
                     continue
                 if any(part in SKIP_PARTS for part in path.relative_to(self.root).parts):
+                    continue
+                if listed is not None and path.relative_to(self.root).as_posix() not in listed:
                     continue
                 files.append(path)
         for path in sorted(self.root.glob("*.md")):

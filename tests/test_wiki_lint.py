@@ -87,6 +87,14 @@ class Synthetic(unittest.TestCase):
     def test_clean_tree(self):
         self.assertEqual(self.checks(), (0, []))
 
+    def test_a_file_git_ignores_is_not_scanned(self):
+        self.write("scripts/tool.py", '"""Per [[alpha]]."""\n')
+        self.write(".gitignore", "scripts/tool.py\n")
+        subprocess.run(["git", "init", "-q", str(self.tmp)], check=True)
+        self.assertEqual(self.checks(), (0, []))
+        (self.tmp / ".gitignore").unlink()
+        self.assertIn("link-outside-wiki", self.checks()[1])
+
     def test_missing_entry_point(self):
         (self.tmp / "AGENTS.md").unlink()
         self.assertIn("entry-identity", self.checks()[1])

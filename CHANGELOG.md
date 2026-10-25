@@ -288,6 +288,8 @@ across. The contract number stays `1`.
 
 ### Fixed
 
+- `scripts/wiki_lint.py` reads only files git does not ignore, so the copies a model-eval run
+  makes, and deletes, under `validation/evals/.cache/` are never linted or lost mid-read.
 - Lane B's `@OFFERS_PUBLISH` pattern reads `next: publish` quoted whole in inline code as a
   mention of the routed token, as its own comment says, not as publishing offered. The bare
   token is still an offer. Case B-47.

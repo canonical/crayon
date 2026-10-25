@@ -2664,6 +2664,18 @@ class TestEpisodeRule(unittest.TestCase):
         self.assertFalse(agent.mutating("crayon resume cfg --dry-run"))
         self.assertTrue(agent.mutating("crayon resume cfg --dry-run && crayon resume cfg"))
 
+    def test_a_recording_verb_asked_for_its_help_only_reads(self):
+        for command in ("crayon signoff --help", "crayon unit edit -h",
+                        "crayon draft --help 2>&1 | head -40",
+                        "cd /srv/toyq && crayon summary cfg; echo ---; crayon draft --help"):
+            with self.subTest(command=command):
+                self.assertFalse(agent.mutating(command))
+        for command in ("crayon signoff cfg && crayon draft --help",
+                        "crayon draft --help; crayon signoff cfg",
+                        "crayon signoff cfg 2>&1; echo --help"):
+            with self.subTest(command=command):
+                self.assertTrue(agent.mutating(command))
+
     def test_a_triage_record_records_and_an_export_only_reads(self):
         self.assertTrue(agent.mutating(
             "crayon triage record --base HEAD~1 --head HEAD --needs-docs no --note 'x'"))
