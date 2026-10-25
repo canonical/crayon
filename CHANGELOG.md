@@ -18,6 +18,16 @@ across. The contract number stays `1`.
 
 ### Added
 
+- `crayon triage record` and `crayon triage export`, an opt-in record of documentation-triage
+  advice. `crayon-plan` hands every triage advice to `triage record`, which keeps it only when the
+  repository's owner has run `git config crayon.collect true`: one chained line in
+  `.crayon/triage/log.jsonl` (the commit range, the changed paths, the advice and a note, never a
+  diff) and one commit with no unit. With the setting off it writes nothing and says so.
+  `triage export` sets each record beside the unit it led to and labels whether the change needed
+  documentation: an accepted unit says yes; a retired one, or none within 30 days, says no.
+  `validation/triage/measure.py` reports how often the advice was right, and
+  `validation/triage/build_dataset.py` builds a fine-tuning dataset from 300 labelled records or
+  more. Contract 1 holds, recorded in `docs/contract.md` §5.10.
 - `crayon show --json` and `crayon summary --json` carry `handover`, always present, with
   `steps` (the current plan's deviated and skipped steps), `judged` (the requests the latest
   accept resolved with no generation or reviewer edit between the request and the accept) and
@@ -49,7 +59,7 @@ across. The contract number stays `1`.
   supported only if it passes every critical case three of three times on the current skills.
   They measure skill-following, not the quality of a page, or speed or effort saved.
   Lane A checks skill selection (15 cases). Lane B checks the next action after real, recorded
-  `crayon` output (77 cases): the model acts in a copy of the state inside a Workshop container,
+  `crayon` output (79 cases): the model acts in a copy of the state inside a Workshop container,
   as an unprivileged user with an environment built from scratch, and the first call that would
   change the copy's files or git index, or that names a recording verb, ends the episode and is
   graded. Every case names the skill rule it protects and whether it is critical, carries a reply

@@ -9140,6 +9140,141 @@ test_n47_t36_a_hand_edit_after_the_record_is_reported_never_refused() {
     cleanup
 }
 
+# --- N-48: the opt-in triage record ------------------------------------------
+
+# A repo with one code change after the initial commit; prints nothing.
+setup_triage_repo() {
+    setup_repo
+    # The documented install ignores `.crayon/staging/`, where the lock lives.
+    printf '.crayon/staging/\n' >.gitignore
+    git add .gitignore && git commit -q -m "ignore staging"
+    mkdir -p src
+    printf 'retries = 3\n' >src/config.py
+    git add src/config.py && git commit -q -m "add retries"
+}
+
+triage_line_count() {
+    if [ -f .crayon/triage/log.jsonl ]; then wc -l <.crayon/triage/log.jsonl | tr -d ' '; else echo 0; fi
+}
+
+test_n48_t37_triage_record_with_collection_off_writes_nothing() {
+    setup_triage_repo
+    local head_before rc
+    head_before=$(git rev-parse HEAD)
+    "$CRAYON" triage record --base HEAD~1 --head HEAD --needs-docs yes \
+        --page reference/config.rst --type reference --unit-id config-ref \
+        --note "retries is a new setting" >out.txt 2>err.txt
+    rc=$?
+    assert_eq "an off record exits 0" "0" "$rc"
+    assert_contains "it says collection is off" "$(cat out.txt)" "collection is off"
+    assert_contains "it names the switch" "$(cat out.txt)" "git config crayon.collect true"
+    assert_eq "no commit" "$head_before" "$(git rev-parse HEAD)"
+    assert_file_not_exists "no triage log" ".crayon/triage"
+    assert_eq "the record and the project are clean" "" "$(git status --porcelain -- .crayon src docs)"
+    assert_contains "--json says recorded false" \
+        "$("$CRAYON" triage record --base HEAD~1 --head HEAD --needs-docs no --note x --json 2>&1)" \
+        '"recorded": false'
+    cleanup
+}
+
+test_n48_t37b_triage_record_with_collection_on_commits_one_chained_line_each() {
+    setup_triage_repo
+    git config crayon.collect true
+    local head_before rc trailers
+    head_before=$(git rev-parse HEAD)
+    "$CRAYON" triage record --base HEAD~1 --head HEAD --needs-docs yes \
+        --page reference/config.rst --type reference --unit-id config-ref \
+        --note "retries is a new setting" >out.txt 2>err.txt
+    rc=$?
+    assert_eq "an on record exits 0" "0" "$rc"
+    assert_contains "it reports the record" "$(cat out.txt)" "recorded triage 0: needs documentation"
+    assert_contains "it reports the commit on stderr" "$(cat err.txt)" "git: committed"
+    assert_eq "the commit subject is the repo-level phase" "crayon: triage recorded" \
+        "$(git log -1 --format=%s)"
+    assert_eq "the one pathspec is the log" ".crayon/triage/log.jsonl" \
+        "$(git show --name-only --format= HEAD)"
+    trailers=$(git log -1 --format='%(trailers)')
+    assert_contains "Crayon-Phase names the triage record" "$trailers" "Crayon-Phase: triage-recorded"
+    assert_contains "Crayon-Head is the head before" "$trailers" "Crayon-Head: ${head_before:0:16}"
+    assert_not_contains "no Crayon-Unit: the record belongs to the repo" "$trailers" "Crayon-Unit"
+    assert_eq "the record and the project are clean" "" "$(git status --porcelain -- .crayon src docs)"
+
+    "$CRAYON" triage record --base HEAD~2 --head HEAD~1 --needs-docs no \
+        --note "a typo fix in a comment" >/dev/null 2>&1
+    assert_eq "a second record appends a line" "2" "$(triage_line_count)"
+    local fields
+    fields=$(python3 -c '
+import hashlib, json
+lines = open(".crayon/triage/log.jsonl", encoding="utf-8").read().splitlines()
+first, second = (json.loads(line) for line in lines)
+print(first["seq"], first["prev"], second["seq"],
+      second["prev"] == hashlib.sha256(lines[0].encode("utf-8")).hexdigest(),
+      ",".join(first["paths"]), first["needs_docs"], first["type"], first["unit"],
+      ",".join(first["pages"]), second["needs_docs"], second["unit"])
+')
+    assert_eq "seq 0 then 1, the second chained to the first's bytes; the paths are git's" \
+        "0 None 1 True src/config.py True reference config-ref reference/config.rst False None" \
+        "$fields"
+    cleanup
+}
+
+test_n48_t37c_an_unchanged_range_and_an_unknown_revision_are_refused() {
+    setup_triage_repo
+    git config crayon.collect true
+    local head_before rc
+    head_before=$(git rev-parse HEAD)
+    "$CRAYON" triage record --base HEAD --head HEAD --needs-docs no --note x >/dev/null 2>err.json
+    rc=$?
+    assert_eq "an empty range exits 2" "2" "$rc"
+    assert_json_error "an empty range is bad_target" err.json "bad_target"
+    "$CRAYON" triage record --base no-such-rev --head HEAD --needs-docs no --note x >/dev/null 2>err.json
+    rc=$?
+    assert_eq "an unknown base exits 2" "2" "$rc"
+    assert_json_error "an unknown base is bad_target" err.json "bad_target"
+    "$CRAYON" triage record --base HEAD~1 --head HEAD --needs-docs yes --page /abs.rst \
+        --note x >/dev/null 2>err.json
+    rc=$?
+    assert_eq "an absolute page exits 2" "2" "$rc"
+    assert_eq "no commit after three refusals" "$head_before" "$(git rev-parse HEAD)"
+    assert_file_not_exists "no triage log after three refusals" ".crayon/triage"
+    cleanup
+}
+
+test_n48_t38_triage_export_labels_each_record_by_what_the_authors_did() {
+    setup_triage_repo
+    git config crayon.collect true
+    "$CRAYON" triage record --base HEAD~1 --head HEAD --needs-docs yes \
+        --page reference/config.rst --type reference --unit-id config-ref \
+        --note "retries is a new setting" >/dev/null 2>&1
+    printf '# a comment\n' >>src/config.py
+    git add src/config.py && git commit -q -m "comment"
+    "$CRAYON" triage record --base HEAD~1 --head HEAD --needs-docs no \
+        --note "a comment only" >/dev/null 2>&1
+    setup_drafted_unit config-ref reference/config.rst
+    "$CRAYON" review config-ref --verdict accept --note "reads right" >/dev/null 2>&1
+
+    local rows
+    rows=$("$CRAYON" triage export --json 2>/dev/null | python3 -c '
+import json, sys
+for row in json.load(sys.stdin)["rows"]:
+    o = row["outcome"]
+    print(row["seq"], row["label"], row["label_source"], o["unit"], o["matched_by"], o["intent"])
+')
+    assert_eq "the advised unit was accepted: needed; the other is not known yet" \
+        "0 True accepted unit config-ref unit id reference
+1 None within 30 days None None None" "$rows"
+
+    rows=$(CRAYON_NOW="2026-02-15T00:00:00+00:00" "$CRAYON" triage export --json 2>/dev/null |
+        python3 -c '
+import json, sys
+print([(row["label"], row["label_source"]) for row in json.load(sys.stdin)["rows"]][1])
+')
+    assert_eq "past the window with no unit: not needed" "(False, 'no unit within 30 days')" "$rows"
+    assert_contains "the plain line counts the labels" "$("$CRAYON" triage export 2>&1)" \
+        "2 triage record(s)"
+    cleanup
+}
+
 # --- the whole verb surface, version, legacy units ----------------------------
 
 # Every unimplemented verb once refused identically through a shared stub: one

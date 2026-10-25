@@ -18,7 +18,7 @@ does that. `docs/evals.md` explains the design; this file is how to run the eval
 | Lane | What it asks | Live turns | Graded by | Status |
 |---|---|---|---|---|
 | A | which skill handles this ask? | 1, no tools | exact skill name | built, 15 cases |
-| B | given this `crayon` output, what is the next action? | until the first action | that action and the calls on the way | built, 77 cases |
+| B | given this `crayon` output, what is the next action? | until the first action | that action and the calls on the way | built, 79 cases |
 
 Every case names the rule it protects (`protects`: an S-id from `tests/test_skill_text.py`, or
 `catalog` for lane A) and whether it is `critical`. A case is critical when it checks that the

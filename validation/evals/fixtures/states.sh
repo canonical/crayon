@@ -551,12 +551,40 @@ scenario_context() {
     rec_file context_recorded .crayon/context/structure.md
 }
 
+# scenario_triage : a change to toyq lands after the context was recorded, and the
+# author asks whether it needs documentation. The repository has not turned triage
+# collection on, so `triage record` writes nothing.
+scenario_triage() {
+    base
+    python3 - <<'PY' || { echo "setup failed: add max_queue_size" >&2; exit 1; }
+from pathlib import Path
+path = Path("src/toyq/config.py")
+text = path.read_text(encoding="utf-8")
+for old, new in (
+    ('    "log_level": "info",\n}', '    "log_level": "info",\n    "max_queue_size": 1000,\n}'),
+    ('    "log_level": "TOYQ_LOG_LEVEL",\n}',
+     '    "log_level": "TOYQ_LOG_LEVEL",\n    "max_queue_size": "TOYQ_MAX_QUEUE_SIZE",\n}'),
+    ("    log_level: str\n", "    log_level: str\n    max_queue_size: int\n"),
+):
+    assert text.count(old) == 1, old
+    text = text.replace(old, new)
+path.write_text(text, encoding="utf-8")
+PY
+    git commit -q -am "Add max_queue_size: refuse new jobs past this many queued" ||
+        { echo "setup failed: commit max_queue_size" >&2; exit 1; }
+    rec triage_change show_json context show --json
+    snap triage_change
+    rec triage_change record_off triage record --base HEAD~1 --head HEAD --needs-docs yes \
+        --page reference/config.md --type reference --unit-id cfg \
+        --note 'max_queue_size is a new setting and no page documents the settings'
+}
+
 # A setup step that fails exits its scenario's subshell 1, the temp repo is still
 # cleaned up, and the recorder stops: a broken fixture never freezes a wrong
 # baseline. record_states.py runs this with check=True.
 for scenario in declared signed drafted accepted closing_linked closing_nested closing closing_walk \
     walk_drafted reported reported_clean reported_noted edited missing target_exists stale retired walk crashed \
-    diverged no_material docs_outside context; do
+    diverged no_material docs_outside context triage; do
     (trap cleanup EXIT; "scenario_$scenario"; exit 0) ||
         { echo "setup failed: scenario $scenario" >&2; exit 1; }
 done

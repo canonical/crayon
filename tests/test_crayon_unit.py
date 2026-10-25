@@ -2816,6 +2816,60 @@ def parser_verb_table(parser, prefix=""):
     return table
 
 
+def load_triage_script(name):
+    """``validation/triage/<name>.py`` as a module, its directory importable."""
+    folder = str(ROOT / "validation" / "triage")
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    spec = importlib.util.spec_from_file_location(name, os.path.join(folder, name + ".py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def triage_row(needs_docs, label, at="2026-01-01T00:00:00+00:00", advised=None, intent=None,
+               repo="a"):
+    """One ``triage export`` row, as the scripts read it."""
+    return {"repo": repo, "at": at, "base": "b", "head": "h", "paths": ["src/x.py"],
+            "advice": {"needs_docs": needs_docs, "pages": [], "type": advised, "unit": None},
+            "outcome": {"intent": intent, "targets": []}, "label": label,
+            "label_source": "accepted unit" if label else "no unit within 30 days"}
+
+
+class TestTriageScripts(unittest.TestCase):
+    """validation/triage: the measurement comes first, and a dataset needs enough records."""
+
+    def test_measure_reports_precision_and_recall_of_the_advice(self):
+        measure = load_triage_script("measure")
+        rows = [triage_row(True, True, advised="reference", intent="reference"),
+                triage_row(True, False), triage_row(False, True),
+                triage_row(True, True, advised="how-to", intent="reference"),
+                triage_row(False, None)]
+        report = measure.measure(rows)
+        self.assertEqual((report["records"], report["labelled"]), (5, 4))
+        self.assertEqual(report["needs_docs"]["precision"], 0.667)
+        self.assertEqual(report["needs_docs"]["recall"], 0.667)
+        self.assertEqual(report["type_matches"], {"matched": 1, "compared": 2})
+
+    def test_the_dataset_splits_by_time_and_keeps_a_held_out_repository_out_of_training(self):
+        build = load_triage_script("build_dataset")
+        rows = [triage_row(True, True, at="2026-01-%02dT00:00:00+00:00" % day) for day in range(1, 21)]
+        rows.append(triage_row(True, True, repo="b"))
+        parts = build.split(rows, hold_out_repo="b")
+        self.assertEqual([len(parts[name]) for name in ("train", "calibration", "test")], [16, 2, 3])
+        self.assertTrue(max(r["at"] for r in parts["train"]) < min(r["at"] for r in parts["calibration"]))
+        self.assertNotIn("b", [r["repo"] for r in parts["train"] + parts["calibration"]])
+
+    def test_the_dataset_is_refused_below_the_minimum(self):
+        build = load_triage_script("build_dataset")
+        build.export = lambda repo, crayon="crayon": [triage_row(True, True)] * (build.MIN_ROWS - 1)
+        build.reachable = lambda row: True
+        with tempfile.TemporaryDirectory() as out, contextlib.redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(build.main(["--repo", "x", "--out", out]), 2)
+            self.assertEqual(os.listdir(out), [])
+        self.assertIn("at least %d" % build.MIN_ROWS, err.getvalue())
+
+
 class TestVerbTable(unittest.TestCase):
     """U-08 — ``crayon --help`` is the contract's §6 verb table, row for row.
 
@@ -2845,6 +2899,8 @@ class TestVerbTable(unittest.TestCase):
                 "steer",
                 "step",
                 "summary",
+                "triage export",
+                "triage record",
                 "unit edit",
                 "unit new",
                 "unit retire",

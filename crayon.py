@@ -10477,6 +10477,243 @@ def cmd_context_show(args):
     return respond(segments, next_token, as_json, state)
 
 
+# --- triage: the opt-in record of documentation-triage advice ---------------
+#
+# crayon-plan's triage section answers "does this change need documentation?"
+# with advice and stops. With the repository's ``crayon.collect`` git setting
+# true, ``triage record`` keeps that advice, hash-chained and committed, so that
+# ``triage export`` can later set it beside what the authors did: the unit they
+# declared, signed off and accepted for the change, or none. The records are
+# references only (a commit range, the changed paths, pages, a type, a note),
+# never the diff itself.
+
+TRIAGE_DIR = os.path.join(".crayon", "triage")
+TRIAGE_LOG = "log.jsonl"
+TRIAGE_PHASE = "triage-recorded"
+#: How long after a triage record a unit for the same paths still counts as the
+#: change's outcome, and how long a record waits before "no unit" labels it.
+TRIAGE_WINDOW_DAYS = 30
+
+
+def collection_on(repo):
+    """Is the triage mode on: ``git config crayon.collect`` reads ``true``?"""
+    done = git(["config", "--get", "crayon.collect"], repo)
+    return done.returncode == 0 and done.stdout.strip().lower() == "true"
+
+
+def resolve_commit(repo, rev, field):
+    """``rev`` as a full commit id, or ``bad_target``."""
+    if not isinstance(rev, str) or not rev or rev.startswith("-"):
+        raise Refusal("bad_target", detail="%s %r is not a revision" % (field, rev),
+                      hint="pass a commit, branch or tag, for example main or HEAD~3")
+    done = git(["rev-parse", "--verify", "--quiet", rev + "^{commit}"], repo)
+    if done.returncode != 0:
+        raise Refusal("bad_target", detail="%s %r names no commit" % (field, rev),
+                      hint="pass a commit, branch or tag that exists in this repository")
+    return done.stdout.strip()
+
+
+def triage_log_path(repo):
+    return os.path.join(os.fspath(repo), TRIAGE_DIR, TRIAGE_LOG)
+
+
+def cmd_triage_record(args):
+    """``triage record`` — keep one triage advice, when the repository turned collection on.
+
+    Off (the default), it writes nothing and says so: the skill always calls it,
+    so the tool, not the model, decides whether anything is kept. On, stages a
+    to f in a repo-level verb's shape: **a** lock; **b** the revisions, the
+    advice and the note; **c** a range that changed at least one path; **f**
+    append one line to ``.crayon/triage/log.jsonl`` and commit it alone.
+    """
+    as_json = bool(getattr(args, "json", False))
+    repo = git_root()
+    if not collection_on(repo):
+        return respond(
+            ["triage not recorded: collection is off for this repository",
+             "git config crayon.collect true turns it on"],
+            context_next(repo), as_json, payload={"recorded": False})
+    with unit_lock(repo):
+        git_busy_guard(repo)
+        base = resolve_commit(repo, args.base, "--base")
+        head = resolve_commit(repo, args.head, "--head")
+        pages = [validate_target(page) for page in (args.page or [])]
+        unit = validate_unit_id(args.unit_id) if args.unit_id else None
+        note = validate_note(args.note)
+        identity = git_identity(repo)
+        changed = git(["diff", "--name-only", "-z", base, head], repo)
+        paths = sorted(name for name in changed.stdout.split("\0") if name)
+        if changed.returncode != 0 or not paths:
+            raise Refusal("bad_target",
+                          detail="no path changed between %s and %s" % (base[:7], head[:7]),
+                          hint="pass the commit before the change as --base and its last "
+                               "commit as --head",
+                          next_token=context_next(repo))
+        path = triage_log_path(repo)
+        lines = []
+        if os.path.exists(path):
+            lines = [raw for _, raw in read_events(path)]
+        event = {
+            "seq": len(lines),
+            "prev": chain_prev(lines[-1]) if lines else None,
+            "at": utc_now(),
+            "actor": identity,
+            "tool_version": __version__,
+            "contract": CONTRACT,
+            "commit": git_head(repo),
+            "base": base,
+            "head": head,
+            "paths": paths,
+            "needs_docs": args.needs_docs == "yes",
+            "pages": pages,
+            "type": args.type,
+            "unit": unit,
+            "note": note,
+        }
+        text = "".join(line + "\n" for line in lines) + canonical_line(event) + "\n"
+        relative = os.path.join(TRIAGE_DIR, TRIAGE_LOG)
+        files = [(relative, text.encode("utf-8"))]
+        guard_write_paths(repo, "", files)
+        guard_placeable_paths(repo, "", files)
+        guard_ignored_paths(repo, "", [relative])
+        before_index = index_snapshot(repo)
+        publish_atomic(os.path.join(os.fspath(repo), relative), files[0][1])
+        added = git_add(repo, [relative])
+        if added.returncode != 0:
+            raise Refusal("bad_write_path",
+                          detail="git add refused the triage record: %s"
+                          % (added.stderr.strip().splitlines() or ["(no message)"])[0],
+                          hint="fix what git reports, then record the triage again",
+                          next_token=context_next(repo))
+        committed = git_commit(
+            repo, "crayon: triage recorded", collapse_note(note),
+            [("Crayon-Phase", TRIAGE_PHASE), ("Crayon-Head", (event["commit"] or "0" * 40)[:16])],
+            [relative])
+        if committed.returncode != 0:
+            raise Refusal("bad_write_path",
+                          detail="git commit refused the triage record: %s"
+                          % (committed.stderr.strip().splitlines() or ["(no message)"])[0],
+                          hint="fix what git reports, then record the triage again",
+                          next_token=context_next(repo))
+        diagnostic("git: committed %s — crayon: triage recorded"
+                   % git(["rev-parse", "--short", "HEAD"], repo).stdout.strip())
+        changed_files, extra = post_commit_check(
+            repo, [{"path": relative, "after_sha": sha256_bytes(files[0][1])}], [relative],
+            before_index)
+        report_hook_changes({"changed": changed_files, "extra": extra}, repo)
+    return respond(
+        ["recorded triage %d: %s" % (event["seq"], "needs documentation" if event["needs_docs"]
+                                     else "no documentation change"),
+         "%d changed path(s)" % len(paths), relative],
+        context_next(repo), as_json, payload={"recorded": True, "seq": event["seq"]})
+
+
+def _triage_time(text):
+    """An ``at`` as an aware datetime, or None when it is not the tool's format."""
+    try:
+        moment = datetime.datetime.strptime(text, "%Y-%m-%dT%H:%M:%S+00:00")
+    except (TypeError, ValueError):
+        return None
+    return moment.replace(tzinfo=datetime.timezone.utc)
+
+
+def _triage_outcome(record, units):
+    """What the authors did after one triage record: the unit it led to, if any.
+
+    A unit is linked by the id the record advised, or else, within the window,
+    by a signed source or target the record's changed paths or pages name.
+    """
+    matched, how = None, None
+    if record.get("unit") and record["unit"] in units:
+        matched, how = record["unit"], "unit id"
+    when = _triage_time(record.get("at"))
+    if matched is None and when is not None:
+        window = datetime.timedelta(days=TRIAGE_WINDOW_DAYS)
+        named = set(record.get("paths") or []) | set(record.get("pages") or [])
+        for unit, events in sorted(units.items()):
+            declared = next((e for e in events if e.get("kind") == "unit-declared"), None)
+            declared_at = _triage_time((declared or {}).get("at"))
+            if declared_at is None or not when <= declared_at <= when + window:
+                continue
+            signed = set()
+            for event in events:
+                if event.get("kind") == "signoff":
+                    signed |= set(s.get("path") for s in event.get("sources") or []
+                                  if isinstance(s, dict))
+                    signed |= set(event.get("targets") or [])
+            if signed & named:
+                matched, how = unit, "changed paths"
+                break
+    outcome = {"unit": matched, "matched_by": how, "intent": None, "targets": [],
+               "verdict": None, "accepted": False, "retired": False}
+    if matched is None:
+        return outcome
+    events = units[matched]
+    signoff = next((e for e in reversed(events) if e.get("kind") == "signoff"), None)
+    review = next((e for e in reversed(events) if e.get("kind") == "review"), None)
+    outcome.update(
+        intent=(signoff or {}).get("intent"),
+        targets=list((signoff or {}).get("targets") or []),
+        verdict=(review or {}).get("verdict"),
+        accepted=bool(review and review.get("verdict") == "accept"),
+        retired=any(e.get("kind") == "retired" for e in events),
+    )
+    return outcome
+
+
+def _triage_label(record, outcome, now):
+    """``(label, source)``: did the change need documentation, as the outcome shows?
+
+    An accepted unit says yes; a retired one, or no unit once the window has
+    passed, says no; anything else is not known yet, and is left unlabelled.
+    """
+    if outcome["accepted"]:
+        return True, "accepted unit"
+    if outcome["retired"]:
+        return False, "retired unit"
+    if outcome["unit"] is not None:
+        return None, "unit in progress"
+    when = _triage_time(record.get("at"))
+    if when is None:
+        return None, "no date"
+    if now - when >= datetime.timedelta(days=TRIAGE_WINDOW_DAYS):
+        return False, "no unit within %d days" % TRIAGE_WINDOW_DAYS
+    return None, "within %d days" % TRIAGE_WINDOW_DAYS
+
+
+def cmd_triage_export(args):
+    """``triage export`` — read-only: every triage record beside what the authors did."""
+    as_json = bool(getattr(args, "json", False))
+    repo = git_root()
+    path = triage_log_path(repo)
+    records = [event for event, _ in read_events(path)] if os.path.exists(path) else []
+    units = {}
+    units_root = os.path.join(os.fspath(repo), ".crayon", "units")
+    if os.path.isdir(units_root):
+        for unit in sorted(os.listdir(units_root)):
+            ledger = os.path.join(units_root, unit, "ledger.jsonl")
+            if os.path.isfile(ledger):
+                units[unit] = [event for event, _ in read_events(ledger, unit)]
+    # utc_now() so a fixture's CRAYON_NOW fixes the window as it fixes ``at``.
+    now = _triage_time(utc_now()) or datetime.datetime.now(datetime.timezone.utc)
+    rows = []
+    for record in records:
+        outcome = _triage_outcome(record, units)
+        label, source = _triage_label(record, outcome, now)
+        rows.append({
+            "seq": record.get("seq"), "at": record.get("at"), "base": record.get("base"),
+            "head": record.get("head"), "paths": record.get("paths") or [],
+            "advice": {"needs_docs": record.get("needs_docs"), "pages": record.get("pages") or [],
+                       "type": record.get("type"), "unit": record.get("unit")},
+            "note": record.get("note"), "outcome": outcome, "label": label,
+            "label_source": source,
+        })
+    labelled = sum(1 for row in rows if row["label"] is not None)
+    return respond(
+        ["%d triage record(s)" % len(rows), "%d with a label" % labelled],
+        context_next(repo), as_json, payload={"rows": rows})
+
+
 # --- argparse (the §6 verb table) -----------------------------------------
 
 
@@ -10596,6 +10833,37 @@ def build_parser():
         "show", parents=[common], help="read-only: the published, staged and drifted artefacts"
     )
     context_show.set_defaults(func=cmd_context_show)
+
+    triage = verbs.add_parser(
+        "triage", help="record or export documentation-triage advice (opt-in per repository)"
+    )
+    triage_verbs = triage.add_subparsers(dest="triage_verb")
+
+    triage_record = triage_verbs.add_parser(
+        "record",
+        parents=[common],
+        help="keep one triage advice, when git config crayon.collect is true",
+    )
+    triage_record.add_argument("--base", required=True, help="the commit before the change")
+    triage_record.add_argument("--head", required=True, help="the change's last commit")
+    triage_record.add_argument(
+        "--needs-docs", required=True, choices=("yes", "no"),
+        help="the advice: does the change need a documentation change",
+    )
+    triage_record.add_argument(
+        "--page", action="append", default=[],
+        help="a docs-relative page the change affects (repeatable)",
+    )
+    triage_record.add_argument("--type", choices=INTENTS, help="the Diátaxis type advised")
+    triage_record.add_argument("--unit-id", help="the unit the advice would declare")
+    triage_record.add_argument("--note", required=True, help="why, in one or two sentences")
+    triage_record.set_defaults(func=cmd_triage_record)
+
+    triage_export = triage_verbs.add_parser(
+        "export", parents=[common],
+        help="read-only: every triage record beside what the authors did",
+    )
+    triage_export.set_defaults(func=cmd_triage_export)
 
     sign = verbs.add_parser(
         "signoff",
