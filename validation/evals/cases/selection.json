@@ -6,90 +6,120 @@
       "id": "A-01",
       "ask": "Before we write any docs for the new retry settings, I want to pin down what the page is for, who reads it and which source files it should cover, and get that signed off.",
       "expect": "crayon-plan",
+      "protects": "catalog",
+      "critical": false,
       "why": "plain plan: declare and sign off"
     },
     {
       "id": "A-02",
       "ask": "The unit config-reference is declared and signed off. Please draft the page now.",
       "expect": "crayon-write",
+      "protects": "catalog",
+      "critical": false,
       "why": "plain write: a signed-off unit"
     },
     {
       "id": "A-03",
       "ask": "There's a draft for the config-reference unit. I'd like to go over it with you and record whether I accept it.",
       "expect": "crayon-review",
+      "protects": "catalog",
+      "critical": false,
       "why": "plain review: a drafted unit, verdict"
     },
     {
       "id": "A-04",
       "ask": "We've never set up the documentation context for this repo. Walk our README and docs tree and build the style guide, glossary and structure notes.",
       "expect": "crayon-onboard",
+      "protects": "catalog",
+      "critical": false,
       "why": "plain onboard: repo walk"
     },
     {
       "id": "A-05",
       "ask": "Our house style guide lives in a PDF export on my laptop at ~/exports/style-guide.pdf. Use it to produce the doc-style context for this repo.",
       "expect": "crayon-fetch",
+      "protects": "catalog",
+      "critical": false,
       "why": "plain fetch: a declared external source"
     },
     {
       "id": "A-06",
       "ask": "I just changed the default timeout in the HTTP client from 30s to 60s. Does that change need documentation?",
       "expect": "crayon-plan",
+      "protects": "catalog",
+      "critical": false,
       "why": "near miss: triage ask, advise only; plan serves it"
     },
     {
       "id": "A-07",
       "ask": "Nothing has been declared yet, but I need a reference page for the CLI flags today. Just write it.",
       "expect": "crayon-plan",
+      "protects": "catalog",
+      "critical": false,
       "why": "near miss: 'write' wording, but no signed-off unit exists"
     },
     {
       "id": "A-08",
       "ask": "Take the terminology page at https://example.com/docs/glossary.html and turn it into our glossary context.",
       "expect": "crayon-fetch",
+      "protects": "catalog",
+      "critical": false,
       "why": "near miss: glossary, but from a URL, not the repo"
     },
     {
       "id": "A-09",
       "ask": "We renamed half the commands last month. Refresh the glossary and structure notes from the docs that are in the repo now.",
       "expect": "crayon-onboard",
+      "protects": "catalog",
+      "critical": false,
       "why": "near miss: refresh from the repo itself"
     },
     {
       "id": "A-10",
       "ask": "Can you look over the draft of the install-howto unit and tell me what needs fixing before I sign it off as done?",
       "expect": "crayon-review",
+      "protects": "catalog",
+      "critical": false,
       "why": "near miss: 'sign off' wording, but it is a drafted unit's verdict"
     },
     {
       "id": "A-11",
       "ask": "The install-howto unit is signed off. Walk through the installation steps for real, capture what each one prints, and produce the how-to page from that.",
       "expect": "crayon-write",
+      "protects": "catalog",
+      "critical": false,
       "why": "near miss: an evidence-gated step walk is the writer's branch"
     },
     {
       "id": "A-12",
       "ask": "I'd like a tutorial for first-time users of the plugin API. Help me work out what it should teach and who it's for, then record it.",
       "expect": "crayon-plan",
+      "protects": "catalog",
+      "critical": false,
       "why": "near miss: tutorial intent, but not yet declared"
     },
     {
       "id": "A-13",
       "ask": "I have a tarball of the old Confluence space exported to ./legacy-docs-export/. Build the structure and doc-gaps context from that export.",
       "expect": "crayon-fetch",
+      "protects": "catalog",
+      "critical": false,
       "why": "near miss: a local export is a declared non-repo source"
     },
     {
       "id": "A-14",
       "ask": "Run sphinx-build on the docs folder and publish the HTML to our docs site.",
       "expect": "none",
+      "protects": "catalog",
+      "critical": false,
       "why": "none: building and publishing are outside every skill"
     },
     {
       "id": "A-15",
       "ask": "The parser crashes on empty input with an IndexError. Fix the bug in src/parser.py.",
       "expect": "none",
+      "protects": "catalog",
+      "critical": false,
       "why": "none: a code change, not documentation"
     }
   ]

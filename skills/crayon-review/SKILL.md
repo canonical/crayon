@@ -215,7 +215,8 @@ With no entry, ask nothing about steps and go on.
 Otherwise end the provenance-summary message with every entry as a question about
 the page, in one numbered list, in the order `handover.steps` lists them, with
 no cap. Each question names its step and its reason in plain words, for example
-"Step install-deps was skipped: no network in CI. Does the page need to say so?" or
+"Step install-deps was skipped: the package mirror was unreachable. Does the page need to say
+so?" or
 "Step seed-db deviated: <its reason>. Does the page need to say so?". Quote each id and
 reason as the tool gives them, and add no count of your own: the tally stays the
 tool's own line. The questions are plain text, not options in a question tool.
@@ -489,8 +490,8 @@ routing row.
    step goes to the plain line.
 6. It is one message: the accept response line, echoed verbatim (it already ends
    `Next: yours — crayon stops here`), then a numbered list of the questions in plain
-   words, each naming its item, for example "Step install-deps was skipped: no
-   network in CI. Does the page need to say so?" or "Nothing links to
+   words, each naming its item, for example "Step install-deps was skipped: the package
+   mirror was unreachable. Does the page need to say so?" or "Nothing links to
    reference/webhooks.md yet; where should a reader come from?". The questions are
    plain text, not options in a question tool: the closure is a reply, never a
    question-tool call, after an accept in this session and on a unit accepted in an

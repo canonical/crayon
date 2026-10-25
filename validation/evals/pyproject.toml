@@ -1,0 +1,14 @@
+[project]
+name = "crayon-evals"
+version = "0.0.0"
+description = "crayon's model evals: can an author rely on crayon, with the model they use, to keep them in control and keep the record true?"
+requires-python = ">=3.12"
+# The provider emits each case's turns and tool calls as OpenTelemetry spans to
+# promptfoo's trace view. promptfoo itself is pinned in run.py (PROMPTFOO).
+dependencies = [
+    "opentelemetry-sdk>=1.45",
+    "opentelemetry-exporter-otlp-proto-http>=1.45",
+]
+
+[tool.uv]
+package = false

@@ -1,13 +1,15 @@
 {
   "lane": "B",
-  "_comment": "Notes are the author's words, never the agent's (D-06, JUDG-01): a fix given bare is asked what the next draft should change, never offered note text, and a note is recorded exactly as the author typed it, as the whole quoted --note or the whole stdin of --note-file -; words carrying a backtick or a $ are single-quoted, never double-quoted. The review cases replay a drafted review in record mode; the write case replays an unsteered redraft and the author's answer to the STOP.",
+  "_comment": "Notes are the author's words, never the agent's: a fix given bare is asked what the next draft should change, never offered note text, and a note is recorded exactly as the author typed it, as the whole quoted --note or the whole stdin of --note-file -; words carrying a backtick or a $ are single-quoted, never double-quoted. The review cases replay a drafted review in record mode; the write case replays an unsteered redraft and the author's answer to the STOP.",
   "cases": [
     {
       "id": "B-36",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-06, EVAL-02 empty edge: a bare fix has no note yet, so the reviewer is asked what the next draft should change and offered no text of the agent's",
+      "why": "Empty edge: a bare fix has no note yet, so the reviewer is asked what the next draft should change and offered no text of the agent's",
       "history": [
         {
           "call": {
@@ -66,9 +68,11 @@
     {
       "id": "B-37",
       "skill": "crayon-review",
+      "protects": "S-15",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "JUDG-01, EVAL-02 encoding edge: the fix note is the reviewer's answer, word for word, with nothing added inside the quotes",
+      "why": "Encoding edge: the fix note is the reviewer's answer, word for word, with nothing added inside the quotes",
       "history": [
         {
           "call": {
@@ -142,9 +146,11 @@
     {
       "id": "B-38",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-07: finding numbers do not reach the next drafting session, so a fix that cites them is restated with the reviewer and asked again, never recorded as the numbers",
+      "why": "Finding numbers do not reach the next drafting session, so a fix that cites them is restated with the reviewer and asked again, never recorded as the numbers",
       "history": [
         {
           "call": {
@@ -215,9 +221,11 @@
     {
       "id": "B-39",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "JUDG-01, D-09: the words beyond an accept are its note, word for word, never a summary of them",
+      "why": "The words beyond an accept are its note, word for word, never a summary of them",
       "history": [
         {
           "call": {
@@ -285,8 +293,10 @@
     {
       "id": "B-55",
       "skill": "crayon-write",
+      "protects": "S-15",
+      "critical": true,
       "ask": "cfg - draft it again, please.",
-      "why": "JUDG-01, D-06, EVAL-02 write side: after an unsteered STOP the author named the change, so their answer is the steering note, verbatim, recorded with crayon steer; a paraphrase or an override fails",
+      "why": "Write side: after an unsteered STOP the author named the change, so their answer is the steering note, verbatim, recorded with crayon steer; a paraphrase or an override fails",
       "history": [
         "tool/version_json",
         "drafted/show_json",
@@ -350,9 +360,11 @@
     {
       "id": "B-58",
       "skill": "crayon-review",
+      "protects": "S-15",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "JUDG-01, CR-01 quoting edge: the author's words carry a backtick span and a $ variable, so they go inside single quotes (or through printf '%s' into --note-file -); in double quotes the backticks run a command and the variable expands, and the record holds words the author never typed",
+      "why": "Quoting edge: the author's words carry a backtick span and a $ variable, so they go inside single quotes (or through printf '%s' into --note-file -); in double quotes the backticks run a command and the variable expands, and the record holds words the author never typed",
       "history": [
         {
           "call": {

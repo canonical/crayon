@@ -1,13 +1,15 @@
 {
   "lane": "B",
-  "_comment": "Review depth. A deviated or skipped step of a walk is put to the author as a question about the page during review, in both modes, after the provenance summary and before any findings or the verdict, and nothing is recorded from the answer (CLOSE-03, D-12 to D-15); and focus, review's sixth dimension, makes material the author's intake notes say to leave out a must-fix (JUDG-05, D-18, D-19). Every case opens on walk_drafted unless it says otherwise, and replays the mode answer as B-41 does. A step answer that asks for a page change is told in one line that it is not recorded until the verdict, and after a bare accept the closure asks that step again (CR-01, D-15 amended); B-65 and B-75 pin the notice in two conversations. When the reviewer already authorised the accept, step 3a is skipped and the accept runs at once; the closure asks the steps (WR-05, D-12 amended).",
+  "_comment": "Review depth. A deviated or skipped step of a walk is put to the author as a question about the page during review, in both modes, after the provenance summary and before any findings or the verdict, and nothing is recorded from the answer; and focus, review's sixth dimension, makes material the author's intake notes say to leave out a must-fix. Every case opens on walk_drafted unless it says otherwise, and replays the mode answer as B-41 does. A step answer that asks for a page change is told in one line that it is not recorded until the verdict, and after a bare accept the closure asks that step again; B-65 and B-75 pin the notice in two conversations. When the reviewer already authorised the accept, step 3a is skipped and the accept runs at once; the closure asks the steps.",
   "cases": [
     {
       "id": "B-62",
       "skill": "crayon-review",
+      "protects": "S-23",
+      "critical": true,
       "ask": "install",
       "opening": "walk_drafted",
-      "why": "CLOSE-03, D-12, D-13: after the provenance summary in record mode, both steps are asked in one numbered list before the verdict",
+      "why": "After the provenance summary in record mode, both steps are asked in one numbered list before the verdict",
       "history": [
         {
           "call": {
@@ -74,9 +76,11 @@
     {
       "id": "B-63",
       "skill": "crayon-review",
+      "protects": "S-23",
+      "critical": true,
       "ask": "install",
       "opening": "walk_drafted",
-      "why": "D-12, D-13: in review mode the step questions come before any finding",
+      "why": "In review mode the step questions come before any finding",
       "history": [
         {
           "call": {
@@ -147,9 +151,11 @@
     {
       "id": "B-64",
       "skill": "crayon-review",
+      "protects": "S-23",
+      "critical": false,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "CLOSE-03 empty edge: a reference unit has no handover.steps, so no step question is asked and the verdict question follows",
+      "why": "Empty edge: a reference unit has no handover.steps, so no step question is asked and the verdict question follows",
       "history": [
         {
           "call": {
@@ -207,9 +213,11 @@
     {
       "id": "B-65",
       "skill": "crayon-review",
+      "protects": "S-23",
+      "critical": true,
       "ask": "install",
       "opening": "walk_drafted",
-      "why": "D-14: nothing is recorded from a step answer, even one that asks for a change; CR-01: the author is told in one line that it is not recorded until the verdict, then the verdict question follows, and its answer is the note",
+      "why": "Nothing is recorded from a step answer, even one that asks for a change; the author is told in one line that it is not recorded until the verdict, then the verdict question follows, and its answer is the note",
       "history": [
         {
           "call": {
@@ -292,9 +300,11 @@
     {
       "id": "B-66",
       "skill": "crayon-review",
+      "protects": "S-23",
+      "critical": false,
       "ask": "install",
       "opening": "walk_drafted",
-      "why": "D-15, CLOSE-03 adjacency: both steps were put to the author during this review, so the closure does not count them; nothing else is open but where a reader arrives from",
+      "why": "Adjacency: both steps were put to the author during this review, so the closure does not count them; nothing else is open but where a reader arrives from",
       "history": [
         {
           "call": {
@@ -391,9 +401,11 @@
     {
       "id": "B-74",
       "skill": "crayon-review",
+      "protects": "S-24",
+      "critical": false,
       "ask": "cfg",
       "opening": "reported",
-      "why": "JUDG-05, D-18, D-19: the author's intake notes say to leave out db_path and the page lists it, so the focus dimension carries a must-fix; a review that runs only the old dimensions misses it. The intake notes narrow the plan's every-setting inventory, so db_path is not owed by the coverage-vs-outline check, and a later recorded request would outrank the notes; the page carries db_path, so focus makes it a must-fix (WR-02)",
+      "why": "The author's intake notes say to leave out db_path and the page lists it, so the focus dimension carries a must-fix; a review that runs only the old dimensions misses it. The intake notes narrow the plan's every-setting inventory, so db_path is not owed by the coverage-vs-outline check, and a later recorded request would outrank the notes; the page carries db_path, so focus makes it a must-fix",
       "history": [
         {
           "call": {
@@ -450,9 +462,11 @@
     {
       "id": "B-75",
       "skill": "crayon-review",
+      "protects": "S-23",
+      "critical": true,
       "ask": "install",
       "opening": "walk_drafted",
-      "why": "CR-01 with mixed answers, D-14 unchanged, D-15 amended: init is left as it is and first-job's answer asks for a page change, so one line says it is not recorded until the verdict and that a fix or redraft verdict with those words records it, then the verdict question; the bare verdict question lets the request pass unremarked",
+      "why": "With mixed answers: init is left as it is and first-job's answer asks for a page change, so one line says it is not recorded until the verdict and that a fix or redraft verdict with those words records it, then the verdict question; the bare verdict question lets the request pass unremarked",
       "history": [
         {
           "call": {
@@ -523,9 +537,11 @@
     {
       "id": "B-76",
       "skill": "crayon-review",
+      "protects": "S-23",
+      "critical": false,
       "ask": "install",
       "opening": "walk_drafted",
-      "why": "CR-01, D-15 amended: the answer to step init asked for a page change, so after a bare accept the closure brings init back as its first question; first-job got no change request, its question left unanswered, so it is not asked again; the cap and the source order are unchanged, so the closure asks two questions, the step first and where a reader arrives from second; a closure that asks only where a reader arrives from drops the request",
+      "why": "The answer to step init asked for a page change, so after a bare accept the closure brings init back as its first question; first-job got no change request, its question left unanswered, so it is not asked again; the cap and the source order are unchanged, so the closure asks two questions, the step first and where a reader arrives from second; a closure that asks only where a reader arrives from drops the request",
       "history": [
         {
           "call": {
@@ -626,9 +642,11 @@
     {
       "id": "B-77",
       "skill": "crayon-review",
+      "protects": "S-23",
+      "critical": false,
       "ask": "install - accept it.",
       "opening": "walk_drafted",
-      "why": "WR-05, D-12 amended: the reviewer already authorised the accept, so it runs in this turn with no step question before it; step 3a is skipped and the closure asks the steps afterwards, because none was put to the author in this conversation (B-45 pins that half); a reply that holds the accept to ask the steps first contradicts the pre-authorised accept",
+      "why": "The reviewer already authorised the accept, so it runs in this turn with no step question before it; step 3a is skipped and the closure asks the steps afterwards, because none was put to the author in this conversation (B-45 pins that half); a reply that holds the accept to ask the steps first contradicts the pre-authorised accept",
       "assert": [
         {
           "kind": "decisive",

@@ -6048,7 +6048,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "python3 tests/size_guard.py",
         "python3 -m unittest tests.test_wiki_lint",
         "python3 scripts/wiki_lint.py",
-        "python3 -m unittest tests.test_evals",
+        "uv run --project validation/evals python -m unittest tests.test_evals",
     )
 
     #: The gate command that deliberately has no separate CI step,
@@ -6062,19 +6062,19 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "python3 tests/check_traces.py",
     }
     #: The mirror of the above: a `run:` body CI executes that
-    #: `GATE_COMMANDS` does not declare. AGENTS.md pins the shell suites at
-    #: warning level in prose ("that exact command, with that exact file
-    #: scope, is what CI's `shellcheck` job runs") rather than as a tuple
-    #: entry, because the binary is preinstalled on the image and the command
-    #: is not one a developer runs as part of the gate. The `unittest`
-    #: job's ripgrep install is the second: `tests.test_evals` runs `rg` for
-    #: real through the agent's looking path and its expansion cross product
-    #: fails by name on a missing tool rather than skip a cell, and the
-    #: ubuntu-24.04 image does not ship it. A developer machine has it or the
-    #: suite says so.
+    #: `GATE_COMMANDS` does not declare, each with its reason. The shellcheck
+    #: command is pinned in AGENTS.md prose rather than as a tuple entry,
+    #: because the binary is preinstalled on the image and the command is not
+    #: one a developer runs as part of the gate; the version check before it
+    #: fails by name when an image update changes the version
+    #: docs/shellcheck.md names. The `evals` job installs what the image does
+    #: not ship: ripgrep, which the episode's Grep tool runs, and uv, which builds
+    #: the kit's environment. A developer machine has both or the suite says so.
     CI_EXTRA = {
+        "shellcheck --version | grep -qx 'version: 0.9.0'",
         "shellcheck -S warning install.sh tests/*.sh validation/*.sh",
         "sudo apt-get update && sudo apt-get install -y --no-install-recommends ripgrep",
+        "python3 -m pip install uv==0.12.5",
     }
 
     #: One ``run:`` key of a workflow step, in EITHER key order. ``- run: …``

@@ -53,7 +53,9 @@ stage` and `crayon context record`, which digest and commit it ([[context]]).
 ## Constraints
 
 - **Stdlib-only.** No third-party dependency anywhere in the product tree, enforced by the
-  suite. The lints under `scripts/` are standalone stdlib utilities, not a second core.
+  suite. The lints under `scripts/` are standalone stdlib utilities, not a second core. The
+  model evals under `validation/evals/` are not the product and have their own environment
+  ([[evals]]).
 - **Harness-agnostic.** Any agent that reads `SKILL.md` and can run shell commands works; the
   installer serves both discovery roots in use, `.agents/skills/` and `.claude/skills/`. No
   harness is named, preferred or detected anywhere on the surface.

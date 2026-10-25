@@ -1,13 +1,15 @@
 {
   "lane": "B",
-  "_comment": "The explicit go (D-15), pinned in both directions (D-18): a signoff or an accept runs only on an affirmative to a question that named the act, and each no-go case is paired with a go case in which the verb must run, so an agent that never acts passes none of them.",
+  "_comment": "The explicit go, pinned in both directions: a signoff or an accept runs only on an affirmative to a question that named the act, and each no-go case is paired with a go case in which the verb must run, so an agent that never acts passes none of them.",
   "cases": [
     {
       "id": "B-32",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-09, D-15: the reviewer answered the verdict question with a bare accept, so the accept runs, and it carries no note the reviewer never gave",
+      "why": "The reviewer answered the verdict question with a bare accept, so the accept runs, and it carries no note the reviewer never gave",
       "history": [
         {
           "call": {
@@ -80,9 +82,11 @@
     {
       "id": "B-33",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-15: an answer that names no verdict is not a verdict, so nothing is recorded and the verdict is asked again",
+      "why": "An answer that names no verdict is not a verdict, so nothing is recorded and the verdict is asked again",
       "history": [
         {
           "call": {
@@ -145,9 +149,11 @@
     {
       "id": "B-34",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-15: an accept with a condition is not a go, so nothing is recorded until the reviewer settles the condition",
+      "why": "An accept with a condition is not a go, so nothing is recorded until the reviewer settles the condition",
       "history": [
         {
           "call": {
@@ -210,9 +216,11 @@
     {
       "id": "B-35",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-11, D-15: a yes to Keep accept? is the go, so the accept runs bare, with no second check and no note the reviewer never gave",
+      "why": "A yes to Keep accept? is the go, so the accept runs bare, with no second check and no note the reviewer never gave",
       "history": [
         {
           "call": {
@@ -283,9 +291,11 @@
     {
       "id": "B-49",
       "skill": "crayon-plan",
+      "protects": "S-18",
+      "critical": true,
       "ask": "cfg",
       "opening": "declared",
-      "why": "D-15, D-18: \"Looks good.\" about the outline is not a go; the plan is read back and the named question asked, and nothing is signed (paired with B-06)",
+      "why": "\"Looks good.\" about the outline is not a go; the plan is read back and the named question asked, and nothing is signed (paired with B-06)",
       "history": [
         {
           "assistant": "The outline for cfg: one table of settings with each key, TOYQ_* override, type and default; precedence stated once; the validation rule for max_retries. Does this cover it?"
@@ -331,9 +341,11 @@
     {
       "id": "B-50",
       "skill": "crayon-plan",
+      "protects": "S-18",
+      "critical": true,
       "ask": "cfg",
       "opening": "declared",
-      "why": "D-15, D-18: \"yes, but …\" is not a go; the change is made or read back and the question asked again, and nothing is signed (paired with B-06)",
+      "why": "\"yes, but …\" is not a go; the change is made or read back and the question asked again, and nothing is signed (paired with B-06)",
       "history": [
         {
           "assistant": "The plan for cfg: a reference page for every toyq setting, for operators configuring toyq on a server, from src/toyq/config.py, at reference/config.md. Record this and sign it off?"

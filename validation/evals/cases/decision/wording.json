@@ -1,10 +1,12 @@
 {
   "lane": "B",
-  "_comment": "The judgement calls a regex cannot make, graded by the pinned judge on top of their deterministic checks.",
+  "_comment": "What the agent says at a decision point, each decided by deterministic checks: the next step named as a skill, one question at a time, a proposed source, the tool's lines quoted as printed.",
   "cases": [
     {
       "id": "B-28",
       "skill": "crayon-review",
+      "protects": "S-03",
+      "critical": false,
       "ask": "cfg",
       "sandbox": "fixed",
       "history": [
@@ -27,9 +29,13 @@
           "re": "crayon-write"
         },
         {
-          "kind": "judge",
-          "context": "Earlier in the session the agent recorded the fix with `crayon review cfg --verdict fix --note '...' --json`, and the tool printed a first line of the form 'git: committed <seven-character commit> — crayon: reviewed cfg', then the JSON {\"ok\": true, \"message\": \"reviewed cfg: fix · .crayon/units/cfg/ledger.jsonl · the request is recorded and pending\", \"next\": \"draft\"}. A seven-character commit id the agent quotes from that line is the one the tool printed.",
-          "rubric": "After recording a 'fix' verdict, the agent tells the author what happens next. PASS only if the next step is expressed as invoking the crayon-write skill (for example /crayon-write cfg), and the agent does NOT tell the author to type a raw `crayon draft` or other `crayon` command themselves. Any commit id it quotes must be the one the tool printed in this session."
+          "kind": "not_prescribed",
+          "re": "\\bcrayon\\s+(draft|review|signoff|steer|edits)\\b"
+        },
+        {
+          "kind": "quotes_recorded",
+          "text": "@RECORDED{drafted/fix_json}",
+          "commits": true
         }
       ],
       "oracle": [
@@ -46,6 +52,8 @@
     {
       "id": "B-29",
       "skill": "crayon-plan",
+      "protects": "S-18",
+      "critical": false,
       "ask": "I want a page about how toyq retries failed jobs.",
       "history": [
         "tool/version_json",
@@ -65,10 +73,6 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "\\bcrayon\\s+unit\\s+new\\b"
-        },
-        {
-          "kind": "judge",
-          "rubric": "The agent is starting a documentation intake. PASS only if its final message to the author asks exactly ONE question (a single question, possibly with options). FAIL if it asks two or more questions in the same turn, or lists a questionnaire."
         }
       ],
       "oracle": [
@@ -104,6 +108,8 @@
     {
       "id": "B-30",
       "skill": "crayon-plan",
+      "protects": "S-05",
+      "critical": false,
       "ask": "I want a page about how toyq retries failed jobs.",
       "history": [
         "tool/version_json",
@@ -148,11 +154,15 @@
         },
         {
           "kind": "text_re",
-          "re": "config\\.py"
+          "re": "src/toyq/config\\.py"
         },
         {
-          "kind": "judge",
-          "rubric": "The repository contains src/toyq/config.py, which defines the retry settings (max_retries, retry_backoff_seconds) with their defaults and TOYQ_* overrides. The author has answered the intake questions, including what the reader is doing before they arrive and what the page can leave out, so the turn under test is the one where the mechanical fields are proposed. PASS only if the agent proposes src/toyq/config.py as the source, alone or among the fields put to the author for confirmation. FAIL if it asks the author open-endedly which source files, code or settings to use. FAIL if it asks the author where the retry logic or settings live."
+          "kind": "not_text_re",
+          "re": "(?i)\\b(which|what)\\s+(source\\s+)?(files?|sources?|code|settings|modules?)\\b[^?\\n]*\\?"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)\\bwhere\\b[^?\\n]*\\b(retr\\w*|settings?|logic|code)\\b[^?\\n]*\\?"
         }
       ],
       "oracle": [
@@ -181,6 +191,8 @@
     {
       "id": "B-31",
       "skill": "crayon-review",
+      "protects": "S-20",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -215,13 +227,13 @@
           "re": "record:\\ intact\\ at\\ [0-9a-f]{7}"
         },
         {
-          "kind": "not_text_re",
-          "re": "(?i)steering (was |has been )?applied"
+          "kind": "quotes_recorded",
+          "text": "@RECORDED{drafted/summary}",
+          "lines_re": "^record: intact at "
         },
         {
-          "kind": "judge",
-          "context": "Earlier in the session `crayon summary cfg` printed the provenance block: the title 'Configuration reference', the author decisions (intent: reference; audience: operators configuring toyq on a server), the files changed (reference/config.md), and a last line of the form 'record: intact at <seven-character commit> · page: current'.",
-          "rubric": "The agent presents the provenance summary for review. PASS only if it quotes the lines the tool printed (for example the line of the form 'record: intact at <seven-character commit> · page: current', with the commit the tool printed) rather than paraphrasing or recomposing them, and does not claim that any steering or requests were applied."
+          "kind": "not_text_re",
+          "re": "(?i)steering (was |has been )?applied"
         }
       ],
       "oracle": [

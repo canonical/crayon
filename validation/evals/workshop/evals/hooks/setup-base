@@ -1,0 +1,11 @@
+#!/bin/sh
+# Runs when the workshop's base is prepared: the tools a model's commands use,
+# the unprivileged user they run as, and the `crayon` shim onto the staged tool.
+set -eu
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends git python3 ripgrep procps util-linux \
+    tree file jq bsdextrautils
+id evaluser >/dev/null 2>&1 || sudo useradd --create-home --shell /bin/bash evaluser
+sudo install -d -m 0755 /opt/crayon/bin /srv
+printf '#!/bin/sh\nexec python3 /project/crayon.py "$@"\n' | sudo tee /opt/crayon/bin/crayon >/dev/null
+sudo chmod 0755 /opt/crayon/bin/crayon

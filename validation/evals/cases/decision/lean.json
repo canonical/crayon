@@ -1,13 +1,15 @@
 {
   "lane": "B",
-  "_comment": "The verdict and the judgment questions are the author's (D-10 to D-13): no option carries a marker, the lean is held until the author gives a verdict, and a verdict that departs from it gets the lean once with one Keep question, whose answer is final.",
+  "_comment": "The verdict and the judgment questions are the author's: no option carries a marker, the lean is held until the author gives a verdict, and a verdict that departs from it gets the lean once with one Keep question, whose answer is final.",
   "cases": [
     {
       "id": "B-40",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-13, EVAL-04: the verdict question carries no marked option and offers no publishing step; the provenance summary comes first, in both modes",
+      "why": "The verdict question carries no marked option and offers no publishing step; the provenance summary comes first, in both modes",
       "history": [
         {
           "call": {
@@ -115,9 +117,11 @@
     {
       "id": "B-41",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-10, JUDG-03: in review mode the findings and the tally come before the verdict, and the lean does not",
+      "why": "In review mode the findings and the tally come before the verdict, and the lean does not",
       "history": [
         {
           "call": {
@@ -174,9 +178,11 @@
     {
       "id": "B-42",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-11: an accept that departs from the lean gets the lean with its reason and one Keep question, and nothing is recorded yet",
+      "why": "An accept that departs from the lean gets the lean with its reason and one Keep question, and nothing is recorded yet",
       "history": [
         {
           "call": {
@@ -247,9 +253,11 @@
     {
       "id": "B-43",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg",
       "opening": "drafted",
-      "why": "D-11: asked what the tally suggests before giving a verdict, the reviewer is shown the lean then, and the verdict is still theirs",
+      "why": "Asked what the tally suggests before giving a verdict, the reviewer is shown the lean then, and the verdict is still theirs",
       "history": [
         {
           "call": {
@@ -308,6 +316,8 @@
     {
       "id": "B-51",
       "skill": "crayon-plan",
+      "protects": "S-18",
+      "critical": true,
       "ask": "I want a page about how toyq retries failed jobs.",
       "history": [
         "tool/version_json",
@@ -319,7 +329,7 @@
           "user": "Tune retries: know the settings, their defaults and how to override them."
         }
       ],
-      "why": "D-12, D-13, EVAL-04: the audience is the author's judgment, so it is asked open-ended and no option carries a marker",
+      "why": "The audience is the author's judgment, so it is asked open-ended and no option carries a marker",
       "assert": [
         {
           "kind": "asks_user"
@@ -368,6 +378,8 @@
     {
       "id": "B-52",
       "skill": "crayon-plan",
+      "protects": "S-18",
+      "critical": true,
       "ask": "I want a page about how toyq retries failed jobs.",
       "history": [
         "tool/version_json",
@@ -391,7 +403,7 @@
           "user": "Not sure. What do you think?"
         }
       ],
-      "why": "D-12, D-13, EVAL-04: asked for its view on the direction, the agent gives the evidence it saw and leaves the choice to the author, with no marked option",
+      "why": "Asked for its view on the direction, the agent gives the evidence it saw and leaves the choice to the author, with no marked option",
       "assert": [
         {
           "kind": "asks_user"

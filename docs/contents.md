@@ -25,7 +25,8 @@ repository if you are new. The links on this page are plain paths, so they work 
 - [conventions.md](conventions.md): markup, the ledger, the commit seam and the documents.
 - [development.md](development.md): tooling, tests and verification for contributors.
 - [shellcheck.md](shellcheck.md): the shell lint policy.
-- [evals.md](evals.md): the model evals, what they measure and how to read their results.
+- [evals.md](evals.md): the model evals: the question they answer, the supported models, how
+  a case runs and how to read a result.
 - [skills/README.md](../skills/README.md): the skill family contract and the routing table.
 - [CHANGELOG.md](../CHANGELOG.md): the release record.
 

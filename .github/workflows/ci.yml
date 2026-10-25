@@ -2,7 +2,7 @@
 # (every job body is the literal local command, so a red check is reproducible
 # with one copy-paste).
 #
-# Eight jobs, no `needs:` edge between any two of them. A dependency
+# Nine jobs, no `needs:` edge between any two of them. A dependency
 # graph would hide the second failure behind the first; independent jobs put
 # every verdict on the pull request's checks list at once, which is what makes
 # a red run diagnosable without re-running it.
@@ -22,6 +22,7 @@
 #                  bash tests/test_crayon_lifecycle.sh                   2m44s
 #   unittest       bash tests/run_matrix.sh  (3.9 / 3.12 / 3.13)         0m27s
 #                  then each module of the job on each interpreter       0m32s
+#   evals          uv run --project validation/evals python -m unittest tests.test_evals   1m08s
 #   shellcheck     shellcheck -S warning install.sh tests/*.sh validation/*.sh   0m04s
 #   skill-lint     python3 scripts/skill_lint.py                         0m01s
 #   docs-check     python3 tests/check_docs.py                           0m01s
@@ -33,9 +34,9 @@
 # Two divergences are known and named rather than left to be discovered on the
 # runner. The matrix takes its interpreters from a local fetcher here and from
 # the setup action there, so the COMMAND is identical and the SOURCE of the
-# interpreter is not. And the image ships shellcheck 0.9.0 while a developer
-# machine is likely newer, so attribute a version-only finding to the version
-# before attributing it to the code — in both directions.
+# interpreter is not. And the image ships shellcheck 0.9.0, which the shellcheck
+# job checks before it runs; a developer machine with another version attributes
+# a version-only finding to the version before attributing it to the code.
 #
 name: ci
 
@@ -90,6 +91,11 @@ jobs:
           # branch-authored bash. Never leave the job token in the workspace
           # `.git/config` for any of them to read.
           persist-credentials: false
+      # The Python floor: every python3 command in this job runs on 3.9, the
+      # oldest interpreter the tool supports, not on the image's own Python.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.9"
       # The body is the literal local command. No `${{ }}` expression
       # is interpolated into any `run:` in this file — that is the canonical
       # Actions script-injection vector.
@@ -120,13 +126,6 @@ jobs:
         with:
           # The matrix value travels in `with:`, which is not a shell.
           python-version: ${{ matrix.python-version }}
-      # The eval kit's self-tests run `rg` for real: the agent's looking path
-      # replays recorded searches through the host's ripgrep, and the
-      # expansion cross product fails by name on a missing tool rather than
-      # skip a cell. The image does not ship it. This is the one `run:` body
-      # in the job that is not a gate command; `CI_EXTRA` in
-      # tests/test_crayon_unit.py names it with this reason.
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ripgrep
       # Every module is named explicitly. Never the discovery runner: `tests/`
       # carries no package marker, so discovery finds nothing and reports it
       # as success.
@@ -139,9 +138,30 @@ jobs:
       - run: python3 -m unittest tests.test_skill_text
       - run: python3 -m unittest tests.test_check_docs
       - run: python3 -m unittest tests.test_wiki_lint
-      # The model-eval kit's offline self-tests: a fake transport and stub
-      # models, so no key and no network. Paid eval runs never run in CI.
-      - run: python3 -m unittest tests.test_evals
+
+  # The model evals' offline self-tests, in the kit's own environment: Python
+  # 3.12 with uv, Node for promptfoo, and ripgrep, which the episode's Grep
+  # tool runs. A fake transport and stub replies: no key, no paid call, and no
+  # network beyond fetching the pinned promptfoo package. Paid eval runs never
+  # run in CI. The installs are the job's only `run:` bodies that are not gate
+  # commands; `CI_EXTRA` in tests/test_crayon_unit.py names each with this reason.
+  evals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # See the first checkout in this file.
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ripgrep
+      - run: python3 -m pip install uv==0.12.5
+      - run: uv run --project validation/evals python -m unittest tests.test_evals
 
   # The shell suites at warning level. The binary is preinstalled on the image,
   # so there is no install step and no third-party action. The file scope is
@@ -156,6 +176,9 @@ jobs:
         with:
           # See the first checkout in this file.
           persist-credentials: false
+      # The version the policy in docs/shellcheck.md names. An image update that
+      # changes it fails here, by name, instead of changing the gate silently.
+      - run: shellcheck --version | grep -qx 'version: 0.9.0'
       - run: shellcheck -S warning install.sh tests/*.sh validation/*.sh
 
   # The SKILL.md frontmatter gate.
@@ -167,6 +190,11 @@ jobs:
         with:
           # See the first checkout in this file.
           persist-credentials: false
+      # The Python floor: every python3 command in this job runs on 3.9, the
+      # oldest interpreter the tool supports, not on the image's own Python.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.9"
       - run: python3 scripts/skill_lint.py
 
   # The docs-accuracy checker. It calls the trace-table checker
@@ -179,6 +207,11 @@ jobs:
         with:
           # See the first checkout in this file.
           persist-credentials: false
+      # The Python floor: every python3 command in this job runs on 3.9, the
+      # oldest interpreter the tool supports, not on the image's own Python.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.9"
       - run: python3 tests/check_docs.py
       # The docs/ wiki and AGENTS.md: links resolve, pages reachable, notation reserved.
       - run: python3 scripts/wiki_lint.py
@@ -194,6 +227,11 @@ jobs:
         with:
           # See the first checkout in this file.
           persist-credentials: false
+      # The Python floor: every python3 command in this job runs on 3.9, the
+      # oldest interpreter the tool supports, not on the image's own Python.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.9"
       - run: bash tests/install_smoke.sh
 
   # V-01…V-04: the validation kit's four corruption fixtures.
@@ -208,6 +246,11 @@ jobs:
         with:
           # See the first checkout in this file.
           persist-credentials: false
+      # The Python floor: every python3 command in this job runs on 3.9, the
+      # oldest interpreter the tool supports, not on the image's own Python.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.9"
       - run: bash validation/fixtures.sh
 
   # The line budget. The script loads the
@@ -223,4 +266,9 @@ jobs:
         with:
           # See the first checkout in this file.
           persist-credentials: false
+      # The Python floor: every python3 command in this job runs on 3.9, the
+      # oldest interpreter the tool supports, not on the image's own Python.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.9"
       - run: python3 tests/size_guard.py

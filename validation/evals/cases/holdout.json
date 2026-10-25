@@ -1,0 +1,17 @@
+{
+  "_comment": "Lane B cases held out from skill fixes. A skill change is measured on the dev split, the other cases; it is accepted only if the held-out cases do not regress. About a quarter of each case file is held out, critical and standard alike, and no case a fix targets is here. Never tune skill text against these cases.",
+  "lane": "B",
+  "ids": [
+    "B-04",
+    "B-10", "B-12", "B-16",
+    "B-22", "B-25", "B-27",
+    "B-29",
+    "B-34", "B-50",
+    "B-38", "B-58",
+    "B-43", "B-52",
+    "B-45", "B-60",
+    "B-63", "B-77",
+    "B-53", "B-73",
+    "B-70"
+  ]
+}

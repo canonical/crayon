@@ -32,7 +32,8 @@ five portable Agent Skills. Its behaviour is fixed by [[contract]], frozen at th
   transition ([[conventions]]).
 - A fixture, a routing row, a threshold or a gate command has one definition site and is
   mirrored mechanically; a hand copy is drift ([[development]]).
-- Stdlib only, Python 3.9 syntax, no package, no venv, no third-party runner ([[architecture]]).
+- `crayon.py` is stdlib only, Python 3.9 syntax, no package, no venv, no third-party runner
+  ([[architecture]]). The model evals have their own environment ([[evals]]).
 - Harness-agnostic: no agent harness is named, detected or preferred on any surface; skills are
   invoked as `/crayon-onboard`, `/crayon-fetch`, `/crayon-plan`, `/crayon-write`, `/crayon-review`
   everywhere ([[install]]).
@@ -49,9 +50,9 @@ Every command below must be green before a commit lands. This is the gate in ful
 shorter version, and a claim of completeness that omits one is the failure mode the list exists
 against. It is pinned by the `GATE_COMMANDS` tuple in `tests/test_crayon_unit.py`: every string
 appears here and in [[development]] verbatim, every `tests/test_*.py` module appears in it, and
-every `run:` body in `.github/workflows/ci.yml` is one of them, bar the two the suite's `CI_EXTRA`
-names with their reasons: the `shellcheck` command below, and the `unittest` job's install of
-ripgrep, which the eval kit's self-tests run for real and the runner image does not ship.
+every `run:` body in `.github/workflows/ci.yml` is one of them, bar the four the suite's `CI_EXTRA`
+names with their reasons: the `shellcheck` command below and the check of its version, and the
+`evals` job's installs of ripgrep and uv, which the runner image does not ship.
 
 ```bash
 python3 -m unittest tests.test_crayon_unit       # the unit suite
@@ -68,7 +69,7 @@ python3 tests/check_docs.py                      # the docs-accuracy checker
 python3 tests/size_guard.py                      # the line budget, reported and enforced
 python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
 python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
-python3 -m unittest tests.test_evals             # the model-eval kit's offline self-tests
+uv run --project validation/evals python -m unittest tests.test_evals  # the evals' self-tests
 ```
 
 Set `GIT_CONFIG_GLOBAL=/dev/null` for any fixture that shells out to git. Both invocation forms
@@ -107,7 +108,7 @@ case for it.
   non-negotiables, the constraints . [[conventions]] markup, ledger, commit seam, documents
 - **Developing**: [[development]] gate, suites, checkers, what pins what, driving the verbs by
   hand . [[shellcheck]] the pinned analyzer and the version rule . [[evals]] the model evals:
-  lanes, the jail, reading results
+  the question they answer, the supported models, how a case runs, reading results
 
 ## The tree
 
@@ -182,21 +183,30 @@ validation/                        ← the validation kit: the evidence apparatu
 ├── runmeta.sh                     ← records a leg's RUN metadata alongside its drafts
 ├── dogfood-docpr-3002.md          ← local public-candidate dogfood findings and limits
 ├── rubric.md                      ← the scoring bar a leg's drafts are read against
-└── evals/                         ← the model evals: one neutral loop, many OpenRouter models;
-    │                                 paid runs by hand only, never in the gate
-    ├── README.md                  ← lanes, running, where results go, adding a case
-    ├── run.py                     ← the runner: a lane × a model or the roster, --dry-run offline
-    ├── openrouter.py              ← the one transport: pinned backend, retries, cache, spend cap
+└── evals/                         ← the model evals: can an author rely on crayon, with the model
+    │                                 they use? promptfoo runs them; paid runs by hand only
+    ├── README.md                  ← the purpose, running, results, the held-out split, adding a case
+    ├── run.py                     ← the driver: promptfoo per lane and model, results, decisions,
+    │                                 the supported-models table
+    ├── pf_provider.py             ← promptfoo's provider: runs one case, keeps its record
+    ├── pf_assert.py               ← promptfoo's assertion: grades a case with its own checks
+    ├── openrouter.py              ← the one transport: pinned backend, retries, the spend caps
     ├── skills.py                  ← the catalog and /skill invocation, shared by every model
-    ├── lanes.py                   ← each lane's case loader, live call and oracle
-    ├── agent.py                   ← the seven tools, the replayed history, the decisive action
-    ├── sandbox.py                 ← real snapshots of the recorded states, copied per episode
-    ├── grade.py                   ← the assertion kinds and the pinned judge
+    ├── lanes.py                   ← each lane's case loader, run and oracle; the rule groups
+    ├── agent.py                   ← the seven tools, the replayed history, the episode rule
+    ├── sandbox.py                 ← copies of the recorded states; the workshop and host runners
+    ├── digest.py                  ← what counts as a change: file bytes, modes, links, git index
+    ├── grade.py                   ← the assertion kinds, all deterministic
     ├── record_states.py           ← records the real tool's output for lane B; --check for drift
-    ├── models.json                ← the roster: candidates, gate, judge, author, caps
+    ├── models.json                ← the certified models, the gate model, the caps
+    ├── dispositions.json          ← the decision on every case a certified model did not pass
+    ├── pyproject.toml             ← the kit's environment, built with uv
+    ├── uv.lock                    ← its locked versions
+    ├── workshop/                  ← the Workshop definition lane B's commands run in
     ├── fixtures/                  ← states.sh (the recorder, on tests/lib.sh) and the toyq project
-    ├── cases/                     ← the case files, one set per lane
-    └── results/                   ← committed clean summaries; raw/ is gitignored
+    ├── cases/                     ← the case files, one set per lane, and the held-out split
+    └── results/                   ← committed results; archive/ holds the previous kit's;
+                                      raw/ is gitignored
 
 tests/
 ├── test_crayon_unit.py            ← the unit suite; also the home of the line budget, of the
@@ -204,8 +214,9 @@ tests/
 ├── test_skill_text.py             ← the skill-text contracts and the routing-mirror equality
 ├── test_check_docs.py             ← the docs-accuracy checker's own tests
 ├── test_wiki_lint.py              ← the wiki lint's own tests
-├── test_evals.py                  ← the model-eval kit's offline self-tests: transport, kinds,
-│                                     every case against its own oracle
+├── test_evals.py                  ← the evals' offline self-tests: transport, episode rule, kinds,
+│                                     every case against its known-good and known-bad replies,
+│                                     the promptfoo layer, the decisions
 ├── test_crayon_lifecycle.sh       ← the lifecycle / recovery suite (hermetic temp git repos)
 ├── test_crayon_acceptance.sh      ← the acceptance suite, A-01 … A-38
 ├── lib.sh                         ← the fixtures both bash suites share; ONE definition site

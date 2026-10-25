@@ -15,16 +15,17 @@ venv, no dependency, no third-party test runner. One verb per transition over a 
 JSONL ledger. Five portable Agent Skills under `skills/` are the human-facing surface; two
 stdlib-only lint utilities under `scripts/` and a validation kit under `validation/` are the
 apparatus around it. Nothing in the product tree imports anything outside the standard library,
-and the unit suite asserts it.
+and the unit suite asserts it. The model evals under `validation/evals/` are not the product: they
+run in their own environment, built with uv, and with promptfoo ([[evals]]).
 
 ## The gate
 
 Every command below must be green before a commit lands. The list is pinned three ways: the
 `GATE_COMMANDS` tuple in `tests/test_crayon_unit.py` must equal it string for string, every
 command must appear in `AGENTS.md` and in this page, and every `run:` body in
-`.github/workflows/ci.yml` must be one of them, bar the two the suite's `CI_EXTRA` names with
-their reasons: the `shellcheck` command, and the `unittest` job's install of ripgrep, which
-`tests.test_evals` runs for real and the runner image does not ship.
+`.github/workflows/ci.yml` must be one of them, bar the four the suite's `CI_EXTRA` names with
+their reasons: the `shellcheck` command and the check of its version, and the `evals` job's
+installs of ripgrep and uv, which the runner image does not ship.
 
 ```bash
 python3 -m unittest tests.test_crayon_unit       # the unit suite
@@ -41,7 +42,7 @@ python3 tests/check_docs.py                      # the docs-accuracy checker
 python3 tests/size_guard.py                      # the line budget, reported and enforced
 python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
 python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
-python3 -m unittest tests.test_evals             # the model-eval kit's offline self-tests
+uv run --project validation/evals python -m unittest tests.test_evals  # the evals' self-tests
 ```
 
 Set `GIT_CONFIG_GLOBAL=/dev/null` for anything that shells out to git, so a developer's global
@@ -143,21 +144,27 @@ revisions in the unit or context provenance and disclose what the local-file com
 cannot cover.
 
 **`tests/test_evals.py`** — the offline half of the model evals under `validation/evals/`. The
-evals measure a model driving the skills, not the tool: every model gets the same skill text
-through the same neutral loop, and OpenRouter serves each one. Paid runs are started by hand
-with `OPENROUTER_API_KEY` set, and never run in the gate or in CI. What this module holds the
-kit to is everything that needs no model:
-- the transport's request shape, retries, cache and spend cap, against a fake opener;
+evals answer whether an author can rely on crayon, with the model they use, to keep them in
+control and keep the record true; paid runs are started by hand with `OPENROUTER_API_KEY` set,
+and never run in the gate or in CI. What this module holds the kit to is everything that needs no
+model:
+- the transport's request shape and retries, and the spend caps' reservations, against a fake
+  opener;
+- the episode rule on real copies: a call ends the episode when it changes the copy's files or
+  git index, or names a recording verb; the host and workshop runners; the digest;
 - every assertion kind, against hand-built turns;
-- every case file, against its own known-good reply;
-- the always-on plain-words check on every Lane B case, and the rule that every foil fails one
-  of its own assertions, not only that check;
-- the kit's own guards: every oracle passes every deterministic assertion of every other case
-  in its conversation, so no reply is both an oracle and a foil there (a judged assertion runs
-  against an always-pass stub offline); quoted tool output in a known-good reply sits in a
-  fenced block; a prelude holds recorded refs, user and assistant turns only; and the
-  plain-words rule and the check name the same forms;
+- every case file: its known-good reply passes, its known-bad reply fails, every oracle passes
+  every assertion of every other case in its conversation, and quoted tool output sits in a
+  fenced block;
+- the promptfoo layer: the configuration, the provider and the assertion;
+- the decisions: when a result may decide, support, the ship comparison against its baseline,
+  and the supported-models table in [[evals]];
+- traceability: every case names the rule it protects, every rule a model can break has a case,
+  the held-out split spans every case file, and every failing case has a disposition;
 - the rule that no prompt or kit file names an agent harness.
+
+It runs in the kit's environment: `uv run --project validation/evals python -m unittest
+tests.test_evals`.
 
 [[evals]] explains what the evals measure and how to read their results;
 `validation/evals/README.md` says how to run a lane, where results land and how to add a case.
@@ -219,13 +226,15 @@ never make a pin pass by loosening it.
 
 ## CI
 
-Eight independent jobs in `.github/workflows/ci.yml`, no `needs:` edge between any two, so every
+Nine independent jobs in `.github/workflows/ci.yml`, no `needs:` edge between any two, so every
 verdict lands on the checks list at once. Each job body is the literal local command, so a red
 check reproduces with one paste. First-party actions only, pinned to commit SHAs. The unit
 matrix runs 3.9 / 3.12 / 3.13 from the runner's tool cache; `tests/run_matrix.sh` is the local
-equivalent, fetching interpreters with `uv` as a fetcher only — it never installs a package.
-The one step that is not a local command installs ripgrep on the runner before the unit
-matrix runs: `tests.test_evals` runs `rg` for real and refuses to skip a cell without it.
+equivalent, fetching interpreters with `uv` as a fetcher only. Every other job that runs Python
+runs it on 3.9, the oldest interpreter the tool supports, never on the image's own. The `evals`
+job runs the eval suite on Python 3.12 with Node 22, after installing ripgrep, which the
+episode's Grep tool runs, and uv. The `shellcheck` job first checks that the image still ships
+the version [[shellcheck]] names.
 
 ## Driving the verbs by hand
 
