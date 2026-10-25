@@ -1,0 +1,4 @@
+{
+  "_comment": "One record per case that did not pass every run on a certified model, in the latest committed result for that model. kind is skill-fix (the skill text was fixed; accepted only if the held-out cases do not regress), case-fix (the case was wrong; the note says how) or limitation (the model fails it; on a critical case the model is not supported). note says what was seen and decided, ref names the commit or result that settled it.",
+  "dispositions": []
+}

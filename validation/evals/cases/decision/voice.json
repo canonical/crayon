@@ -1,10 +1,12 @@
 {
   "lane": "B",
-  "_comment": "Grounded first-person voice, pinned in both directions: review names a self-review in one line before the findings only when this conversation ran the draft or the recorded model is the reviewer's, and the writer's report states each gap it recorded in the first person and adds nothing when it recorded none (D-08 to D-11). No case may pass on a blanket disclaimer.",
+  "_comment": "Grounded first-person voice, pinned in both directions: review names a self-review in one line before the findings only when this conversation ran the draft or the recorded model is the reviewer's, and the writer's report states each gap it recorded in the first person and adds nothing when it recorded none. No case may pass on a blanket disclaimer.",
   "cases": [
     {
       "id": "B-67",
       "skill": "crayon-review",
+      "protects": "S-22",
+      "critical": false,
       "ask": "cfg",
       "prelude": [
         {
@@ -18,7 +20,7 @@
         }
       ],
       "opening": "reported",
-      "why": "VOICE-02, D-08, D-09: this conversation ran the draft, so review mode says in one line, before the findings, that this is a self-review",
+      "why": "This conversation ran the draft, so review mode says in one line, before the findings, that this is a self-review",
       "history": [
         {
           "call": {
@@ -84,9 +86,11 @@
     {
       "id": "B-68",
       "skill": "crayon-review",
+      "protects": "S-22",
+      "critical": false,
       "ask": "cfg",
       "opening": "reported",
-      "why": "VOICE-02, D-08 absence: the record names example/drafting-model-1, which is not the reviewer, and nothing ran in this session, so nothing is said",
+      "why": "Absence: the record names example/drafting-model-1, which is not the reviewer, and nothing ran in this session, so nothing is said",
       "history": [
         {
           "call": {
@@ -143,9 +147,11 @@
     {
       "id": "B-69",
       "skill": "crayon-write",
+      "protects": "S-21",
+      "critical": false,
       "ask": "cfg",
       "sandbox": "reported_noted",
-      "why": "VOICE-01, D-10, D-11: the staged report records one gap, so the report states it in the first person and names log_level, with no blanket disclaimer",
+      "why": "The staged report records one gap, so the report states it in the first person and names log_level, with no blanket disclaimer",
       "history": [
         "tool/version_json",
         "reported_noted/signed_show_json",
@@ -204,9 +210,11 @@
     {
       "id": "B-70",
       "skill": "crayon-write",
+      "protects": "S-21",
+      "critical": false,
       "ask": "cfg",
       "sandbox": "reported_clean",
-      "why": "VOICE-01, D-10, D-11 absence: the report's gaps list is empty, so no uncertainty line and no hedge appears; an agent that disclaims by default fails",
+      "why": "Absence: the report's gaps list is empty, so no uncertainty line and no hedge appears; an agent that disclaims by default fails",
       "history": [
         "tool/version_json",
         "reported_clean/signed_show_json",

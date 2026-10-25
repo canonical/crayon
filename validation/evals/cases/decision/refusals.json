@@ -5,6 +5,8 @@
     {
       "id": "B-17",
       "skill": "crayon-review",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg - it's accurate, accept it.",
       "history": [
         "tool/version_json",
@@ -48,6 +50,8 @@
     {
       "id": "B-18",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": false,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -169,6 +173,8 @@
     {
       "id": "B-19",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg - draft it again, please.",
       "history": [
         "tool/version_json",
@@ -243,6 +249,8 @@
     {
       "id": "B-20",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg - accept it.",
       "sandbox": "fixed",
       "history": [
@@ -303,6 +311,8 @@
     {
       "id": "B-21",
       "skill": "crayon-review",
+      "protects": "S-09",
+      "critical": true,
       "ask": "cfg - ship it, accept.",
       "history": [
         "tool/version_json",
@@ -371,6 +381,8 @@
     {
       "id": "B-22",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -416,6 +428,8 @@
     {
       "id": "B-23",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -459,6 +473,8 @@
     {
       "id": "B-24",
       "skill": "crayon-review",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -503,6 +519,8 @@
     {
       "id": "B-25",
       "skill": "crayon-review",
+      "protects": "S-13",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -551,6 +569,8 @@
     {
       "id": "B-26",
       "skill": "crayon-review",
+      "protects": "S-08",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -595,6 +615,8 @@
     {
       "id": "B-27",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": false,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -680,6 +702,8 @@
     {
       "id": "B-61",
       "skill": "crayon-review",
+      "protects": "S-20",
+      "critical": false,
       "ask": "cfg - accept it.",
       "sandbox": "fixed",
       "history": [
@@ -687,7 +711,7 @@
         "drafted/steering_show_json",
         "drafted/steering_accept_json"
       ],
-      "why": "VOICE-03, D-01, D-03: a pending request is put to the reviewer as request 4, never by its record name. The foil names the request and also its record number, so only the always-on check fails it",
+      "why": "A pending request is put to the reviewer as request 4, never by its record name. The foil names the request and also its record number, so only the always-on check fails it",
       "assert": [
         {
           "kind": "asks_user"

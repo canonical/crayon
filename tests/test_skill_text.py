@@ -198,7 +198,9 @@ Coverage:
         the recorded models in ``states.json``), never listed here; an ordinary word
         that is also a fixture id (``install``, ``init``, ``config``) counts only in
         a fixture shape, every other token as a whole token; and a planted token is
-        caught
+        caught. Nor does a skill repeat the fixture's free text (an author answer a
+        case replays, a string of four or more words ``states.sh`` passes the tool)
+        or name an eval case id
 """
 
 from __future__ import annotations
@@ -210,6 +212,7 @@ import itertools
 import json
 import pathlib
 import re
+import shlex
 import subprocess
 import sys
 import unittest
@@ -3568,6 +3571,67 @@ def fixture_hits(text, tokens):
     return sorted(hits)
 
 
+#: The fixture's own free text: every author answer a lane B case replays, and
+#: every quoted string of three or more words ``states.sh`` passes to the tool.
+#: A skill that repeats one is tuned to the case that grades it, whatever the
+#: ids around it say.
+_PHRASE_WORDS_RE = re.compile(r"[a-z0-9']+")
+
+
+def _json_strings(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, list):
+        for item in value:
+            yield from _json_strings(item)
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from _json_strings(item)
+
+
+def fixture_phrases():
+    phrases = set()
+    for path in sorted((EVALS_ROOT / "cases" / "decision").glob("*.json")):
+        if path.name == "states.json":
+            continue
+        for case in json.loads(path.read_text(encoding="utf-8"))["cases"]:
+            for step in case.get("history", []) + case.get("prelude", []):
+                if isinstance(step, dict) and isinstance(step.get("user"), str):
+                    phrases.add(step["user"])
+    recorder = (EVALS_ROOT / "fixtures" / "states.sh").read_text(encoding="utf-8")
+    for line in recorder.splitlines():
+        try:
+            words = shlex.split(line, comments=True)
+        except ValueError:
+            continue  # a line inside a multi-line string: not a whole command
+        for word in words:
+            if word.startswith(("[", "{")):
+                # Structured data: its string values are the text, its keys the format.
+                try:
+                    phrases.update(_json_strings(json.loads(word)))
+                except ValueError:
+                    pass
+            elif "$" not in word:
+                phrases.add(word)
+    # Text, not identifiers or a one-word answer: four words or more, with a space.
+    return set(p for p in phrases
+               if " " in p.strip() and len(_PHRASE_WORDS_RE.findall(p.lower())) >= 4)
+
+
+def phrase_hits(text, phrases, run=5):
+    """``[phrase]`` whose words (all of them, or any ``run`` in a row) ``text`` carries."""
+    words = _PHRASE_WORDS_RE.findall(text.lower())
+    joined = " " + " ".join(words) + " "
+    hits = []
+    for phrase in sorted(phrases):
+        found = _PHRASE_WORDS_RE.findall(phrase.lower())
+        windows = [found] if len(found) <= run else [found[i:i + run]
+                                                     for i in range(len(found) - run + 1)]
+        if any(" %s " % " ".join(window) in joined for window in windows):
+            hits.append(phrase)
+    return hits
+
+
 class TestS26NoEvalFixtureInSkills(unittest.TestCase):
     """S-26 — no shipped skill names the eval fixtures that grade it.
 
@@ -3607,6 +3671,29 @@ class TestS26NoEvalFixtureInSkills(unittest.TestCase):
                              % (path.relative_to(ROOT).as_posix(), line, token, shape))
         self.assertEqual(found, [], "skill text names an eval fixture:\n  "
                          + "\n  ".join(found))
+
+    def test_s26_no_skill_file_repeats_the_fixtures_free_text(self):
+        phrases = fixture_phrases()
+        self.assertGreaterEqual(len(phrases), 20, "the fixture phrase set did not parse")
+        self.assertIn("no network in CI", phrases)
+        found = []
+        for path in sorted(SKILLS_ROOT.rglob("*.md")):
+            for phrase in phrase_hits(path.read_text(encoding="utf-8"), phrases):
+                found.append("%s: %r" % (path.relative_to(ROOT).as_posix(), phrase[:80]))
+        self.assertEqual(found, [], "skill text repeats eval fixture text:\n  "
+                         + "\n  ".join(found))
+
+    def test_s26_no_skill_file_names_an_eval_case(self):
+        found = []
+        for path in sorted(SKILLS_ROOT.rglob("*.md")):
+            for match in re.finditer(r"(?<![\w-])[AB]-\d\d(?![\w-])",
+                                     path.read_text(encoding="utf-8")):
+                found.append("%s: %s" % (path.relative_to(ROOT).as_posix(), match.group(0)))
+        self.assertEqual(found, [], "skill text names an eval case")
+
+    def test_s26_a_planted_phrase_is_caught(self):
+        body = body_of(SKILLS_ROOT / "crayon-review") + "\nSkipped: no network in CI.\n"
+        self.assertIn("no network in CI", phrase_hits(body, fixture_phrases()))
 
     def test_s26_a_planted_token_is_caught(self):
         tokens = fixture_tokens()

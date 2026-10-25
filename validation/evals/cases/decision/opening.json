@@ -5,6 +5,8 @@
     {
       "id": "B-01",
       "skill": "crayon-review",
+      "protects": "S-04",
+      "critical": false,
       "ask": "cfg",
       "max_turns": 3,
       "sandbox": "drafted",
@@ -82,6 +84,8 @@
     {
       "id": "B-02",
       "skill": "crayon-onboard",
+      "protects": "S-04",
+      "critical": false,
       "ask": "",
       "max_turns": 3,
       "sandbox": "context_empty",
@@ -139,6 +143,8 @@
     {
       "id": "B-03",
       "skill": "crayon-review",
+      "protects": "S-01",
+      "critical": true,
       "ask": "cfg",
       "sandbox": "drafted",
       "why": "stop rule: a contract other than 1 stops the session before show",
@@ -182,6 +188,8 @@
     {
       "id": "B-04",
       "skill": "crayon-plan",
+      "protects": "S-01",
+      "critical": true,
       "ask": "cfg",
       "sandbox": "declared",
       "why": "stop rule: a tool older than min_tool 0.3.0 stops the session",

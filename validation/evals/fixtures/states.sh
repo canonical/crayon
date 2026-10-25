@@ -553,7 +553,7 @@ scenario_context() {
 
 # A setup step that fails exits its scenario's subshell 1, the temp repo is still
 # cleaned up, and the recorder stops: a broken fixture never freezes a wrong
-# baseline (21 IN-08). record_states.py runs this with check=True.
+# baseline. record_states.py runs this with check=True.
 for scenario in declared signed drafted accepted closing_linked closing_nested closing closing_walk \
     walk_drafted reported reported_clean reported_noted edited missing target_exists stale retired walk crashed \
     diverged no_material docs_outside context; do

@@ -1,13 +1,15 @@
 {
   "lane": "B",
-  "_comment": "The closure (CLOSE-01, EVAL-03): after an accept the author is asked at most three questions drawn from the unit's record, none when nothing is open, and is never offered a publishing step. Every history is recorded by the real tool. Onboarding's closure (CLOSE-02, D-05) ends on one question about the author's priorities and routes to /crayon-plan with their first pick, in their own words.",
+  "_comment": "The closure: after an accept the author is asked at most three questions drawn from the unit's record, none when nothing is open, and is never offered a publishing step. Every history is recorded by the real tool. Onboarding's closure ends on one question about the author's priorities and routes to /crayon-plan with their first pick, in their own words.",
   "cases": [
     {
       "id": "B-44",
       "skill": "crayon-review",
+      "protects": "S-17",
+      "critical": true,
       "ask": "cfg",
       "opening": "closing_linked",
-      "why": "CLOSE-01, D-01, D-03, boundary at 0 open: the accept left no step, no judged request and no finding open, and docs/index.md lists the page in its toctree, so the closure is the accept line alone, with no question and no publishing step",
+      "why": "Boundary at 0 open: the accept left no step, no judged request and no finding open, and docs/index.md lists the page in its toctree, so the closure is the accept line alone, with no question and no publishing step",
       "history": [
         {
           "call": {
@@ -98,9 +100,11 @@
     {
       "id": "B-60",
       "skill": "crayon-review",
+      "protects": "S-17",
+      "critical": true,
       "ask": "cfg",
       "opening": "closing_nested",
-      "why": "CLOSE-01, D-01, WR-04 relative link: docs/reference/index.md lists the accepted page as plain `config` in its toctree, and docs/index.md lists reference/index, so the page is linked although neither reference/config nor config.md appears in the docs tree; nothing is open and the closure is the accept line alone, with no question about where a reader arrives from",
+      "why": "Relative link: docs/reference/index.md lists the accepted page as plain `config` in its toctree, and docs/index.md lists reference/index, so the page is linked although neither reference/config nor config.md appears in the docs tree; nothing is open and the closure is the accept line alone, with no question about where a reader arrives from",
       "history": [
         {
           "call": {
@@ -187,9 +191,11 @@
     {
       "id": "B-45",
       "skill": "crayon-review",
+      "protects": "S-17",
+      "critical": false,
       "ask": "install - accept it, and resolve the Python-version request.",
       "opening": "closing_walk",
-      "why": "CLOSE-01, D-01, D-02, boundary at 4 open: step init deviated, step first-job was skipped, request 8 was accepted without a page change (the author resolved it but said nothing about what the page says, so D-01 keeps it open), and no page links to how-to/install.md, so three questions take one per source first (step init, the Python-version request, where a reader arrives from) and the fourth item gets one plain line pointing to Author decisions in crayon summary install --md",
+      "why": "Boundary at 4 open: step init deviated, step first-job was skipped, request 8 was accepted without a page change (the author resolved it but said nothing about what the page says, so keeps it open), and no page links to how-to/install.md, so three questions take one per source first (step init, the Python-version request, where a reader arrives from) and the fourth item gets one plain line pointing to Author decisions in crayon summary install --md",
       "history": [
         "closing_walk/accept",
         "closing_walk/handover_json"
@@ -268,9 +274,11 @@
     {
       "id": "B-46",
       "skill": "crayon-review",
+      "protects": "S-17",
+      "critical": false,
       "ask": "cfg",
       "opening": "closing",
-      "why": "CLOSE-01, D-01, boundary at exactly 3 open: review mode ran in this conversation, the author's accept spoke to F-1 and F-4 is a nit, so F-2, F-3 and where a reader arrives from are open; three questions, one per source first, so where a reader arrives from is second and F-3 fills the third, no overflow line, and no question about the nit",
+      "why": "Boundary at exactly 3 open: review mode ran in this conversation, the author's accept spoke to F-1 and F-4 is a nit, so F-2, F-3 and where a reader arrives from are open; three questions, one per source first, so where a reader arrives from is second and F-3 fills the third, no overflow line, and no question about the nit",
       "history": [
         {
           "call": {
@@ -377,9 +385,11 @@
     {
       "id": "B-47",
       "skill": "crayon-review",
+      "protects": "S-17",
+      "critical": true,
       "ask": "cfg",
       "opening": "accepted",
-      "why": "CLOSE-01, P-14: a session that opens on an already-accepted unit says plainly that crayon stops here and asks the record's questions without the findings source, here only where a reader arrives from, since no page lists reference/config.md; B-11's former oracle, which offers the pull request, the build and the publish, is this case's foil",
+      "why": "A session that opens on an already-accepted unit says plainly that crayon stops here and asks the record's questions without the findings source, here only where a reader arrives from, since no page lists reference/config.md; B-11's former oracle, which offers the pull request, the build and the publish, is this case's foil",
       "assert": [
         {
           "kind": "decisive",
@@ -443,9 +453,11 @@
     {
       "id": "B-48",
       "skill": "crayon-review",
+      "protects": "S-17",
+      "critical": true,
       "ask": "install - accept it, and resolve the Python-version request.",
       "opening": "closing_walk",
-      "why": "D-04, JUDG-01, a change request: the author's answer to a closure question asks for a page change, so it is steered with crayon steer in the author's words, verbatim, and routed to crayon-write; a paraphrase fails",
+      "why": "A change request: the author's answer to a closure question asks for a page change, so it is steered with crayon steer in the author's words, verbatim, and routed to crayon-write; a paraphrase fails",
       "history": [
         "closing_walk/accept",
         "closing_walk/handover_json",
@@ -493,8 +505,10 @@
     {
       "id": "B-56",
       "skill": "crayon-onboard",
+      "protects": "S-17",
+      "critical": false,
       "ask": "",
-      "why": "CLOSE-02, D-05: once crayon context record has run, onboarding reports the set and ends on exactly one question about the author's priorities, with no route line yet (the scope was confirmed before the walk); the old ending that routes to /crayon-plan on the agent's own say fails",
+      "why": "Once crayon context record has run, onboarding reports the set and ends on exactly one question about the author's priorities, with no route line yet (the scope was confirmed before the walk); the old ending that routes to /crayon-plan on the agent's own say fails",
       "history": [
         "tool/version_json",
         "context_empty/show_json",
@@ -555,8 +569,10 @@
     {
       "id": "B-57",
       "skill": "crayon-onboard",
+      "protects": "S-17",
+      "critical": true,
       "ask": "",
-      "why": "CLOSE-02, D-05, ordering and adjacency edges: the author answered the priorities question, so the route line names their first pick, the first item in their reply, in their own words; a pick the agent chose fails",
+      "why": "Ordering and adjacency edges: the author answered the priorities question, so the route line names their first pick, the first item in their reply, in their own words; a pick the agent chose fails",
       "history": [
         "tool/version_json",
         "context_empty/show_json",

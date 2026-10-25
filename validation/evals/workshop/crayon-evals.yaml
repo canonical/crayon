@@ -1,0 +1,13 @@
+# The lane B sandbox: one container per parallel worker (validation/evals/sandbox.py).
+#
+# sandbox.stage() copies this directory to .cache/ws/<k>/.workshop/ beside crayon.py,
+# digest.py and the current case's copy, and launches it from there, so /project
+# inside holds nothing else: no eval case, no checkout, no secret. No interface is
+# connected. Each command runs as `evaluser`, which has no sudo, with an environment
+# built from scratch; the copy is reset before every case.
+
+name: crayon-evals
+base: ubuntu@26.04
+
+sdks:
+  - name: project-evals

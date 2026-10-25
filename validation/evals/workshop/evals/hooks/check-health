@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+for tool in git python3 rg setpriv pkill; do
+    command -v "$tool" >/dev/null 2>&1 || { workshopctl set-health error "$tool is missing"; exit 0; }
+done
+id evaluser >/dev/null 2>&1 || { workshopctl set-health error "evaluser is missing"; exit 0; }
+if sudo -n -u evaluser sudo -n true 2>/dev/null; then
+    workshopctl set-health error "evaluser must not hold sudo"; exit 0
+fi
+workshopctl set-health okay

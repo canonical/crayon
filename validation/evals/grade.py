@@ -6,23 +6,21 @@ assertion passes. ``feedback`` is always a sentence a reader — or a later text
 optimiser — can act on: it names what was expected and what was seen, never
 just "failed".
 
-Deterministic kinds come first and carry most of the weight. ``judge`` is for
-the judgement calls that resist a regex (routing voice, one question per turn)
-and goes through a pinned model, never whichever one happens to be configured.
+Every kind is deterministic: no model grades another model's answer.
 
 Grading reads a *trace*: ``{"turns": [normalised assistant turns]}``, plus, for
 an episode, ``decisive`` — the action that ended it (``agent.run_episode``).
 Only live turns are in ``turns``; a replayed history is never graded. The text
 kinds read everything the model *said*: every live turn's content and every
 question it put to the author through ``AskUserQuestion``. ``plain_words`` reads
-the same parts, code removed from each, for the record's own words (D-06).
+the same parts, code removed from each, for the record's own words.
 """
 
 import json
 import re
 
 import agent
-from openrouter import ProviderError, empty_turn
+from openrouter import empty_turn
 
 SKILL_NAMES = (
     "crayon-onboard",
@@ -88,7 +86,7 @@ def call_text(call):
     text = _typed(call)
     if call.get("name") != "Bash":
         return text
-    return agent.strip_looking_tail(_CD_WORKDIR_RE.sub("", text, count=1))
+    return agent.strip_reading_tail(_CD_WORKDIR_RE.sub("", text, count=1))
 
 
 def render_call(call):
@@ -152,8 +150,8 @@ def _matches(call, spec, text=call_text):
 def turn_error(turn):
     """A run-level defect in a turn, or None. Never a case failure.
 
-    An empty answer here is one still empty after its one retry (D-24): the
-    runner records it as an error and files the run ``errored``.
+    An empty answer here is one still empty after its one retry: the runner
+    records it as an error and files the run ``errored``.
     """
     if empty_turn(turn):
         return "empty answer (finish_reason=%r)" % turn.get("finish_reason")
@@ -214,11 +212,11 @@ def check_tool_call(spec, trace, ctx):
 def check_no_tool_call(spec, trace, ctx):
     """No call matches ``tool``/``args_re``; with neither, no call at all.
 
-    A call the episode carried out as looking (``served_ids``) is skipped: it
-    was read-only by construction, so ``crayon signoff --help`` is not a signoff.
+    A call the episode carried out without changing anything (``served_ids``)
+    is skipped, so ``crayon signoff --help`` is not a signoff.
     """
     served = set(trace.get("served_ids") or ())
-    # The whole command as typed: nothing forbidden hides in a looking tail.
+    # The whole command as typed: nothing forbidden hides in a reading tail.
     offending = [call for call in _all_calls(trace)
                  if call.get("id") not in served and _matches(call, spec, _typed)]
     if not offending:
@@ -286,7 +284,7 @@ def describe_decisive(decisive):
         return render_call(decisive["call"])
     if decisive["type"] == "text":
         return "a reply with no tool call"
-    return "nothing: the turn cap was reached while the model was still looking"
+    return "nothing: the turn cap was reached before the model acted"
 
 
 def check_decisive(spec, trace, ctx):
@@ -334,11 +332,11 @@ def check_asks_user(spec, trace, ctx):
 #: code to the grader: it is read as prose.
 _CODE_RE = re.compile(r"```.*?```|~~~.*?~~~|`[^`\n]*`", re.DOTALL)
 
-#: 21 IN-03: :data:`_CODE_RE` for counting questions, where a fence left open
+#: :data:`_CODE_RE` for counting questions, where a fence left open
 #: also runs to the end of the reply: what follows it is quoted output too.
 _QUESTION_CODE_RE = re.compile(r"```.*?(?:```|\Z)|~~~.*?(?:~~~|\Z)|`[^`\n]*`", re.DOTALL)
 
-#: WR-04: the plain-words rule's own forms, exactly these, which the author never
+#: The plain-words rule's own forms, exactly these, which the author never
 #: reads in prose: seal, seals, sealed; basis; seq, seqs; plan_hash or plan hash;
 #: hash, hashes; sha256 or sha-256; digest, digests; event N; ledger line N. Whole
 #: words in any case; in code they are quoted output.
@@ -352,7 +350,7 @@ def check_plain_words(spec, trace, ctx):
 
     Every said part is read on its own, with its fenced blocks and inline code
     spans removed first, so tool output quoted in code passes and a fence left
-    open in one part never hides the next part's prose (D-05, D-06, D-07).
+    open in one part never hides the next part's prose.
     """
     for part in _said_parts(trace):
         match = LEDGER_WORDS_RE.search(_CODE_RE.sub("", part))
@@ -369,7 +367,7 @@ def check_question_count(spec, trace, ctx):
     A question-tool call counts its questions, and only when they are a list:
     a JSON string is not counted by its characters. A reply counts its
     question marks outside code, where a final fence left open runs to the end
-    of the reply (21 IN-03). Any other decisive action fails: it asked
+    of the reply. Any other decisive action fails: it asked
     nothing, it acted. With no ``max`` there is no upper bound; with no
     ``min`` it is 0.
     """
@@ -404,13 +402,13 @@ def _chain_commands(call):
     one turn do, so each part is a command of its own. A leading ``cd`` into the
     working directory is dropped, and so is a print, a no-op or ``pwd`` after a
     command (``|| true``, ``; pwd``): it changes nothing and reads nothing of the
-    repository, as :func:`call_text` drops a looking tail. A part that reads the
+    repository, as :func:`call_text` drops a reading tail. A part that reads the
     repository between the opening's commands, such as ``; ls docs``, stays a
     command of its own and binds.
     """
     commands = []
     for part in agent.chain_parts(_CD_WORKDIR_RE.sub("", _typed(call), count=1)):
-        if commands and _INERT_PART_RE.match(part) and agent.looking(part):
+        if commands and _INERT_PART_RE.match(part) and agent.reads(part):
             continue
         commands.append(part)
     return commands
@@ -458,22 +456,6 @@ def check_any_of(spec, trace, ctx):
                   % " | ".join(outcome["feedback"] for outcome in outcomes))
 
 
-JUDGE_INSTRUCTIONS = """You grade one response from an AI agent that is following a
-documentation-tooling skill. Judge ONLY the criterion below, strictly and literally.
-Do not reward effort, tone or helpfulness outside it.
-
-CRITERION:
-{rubric}
-{context}
-THE AGENT'S RESPONSE (text, then any tool calls it made):
-<<<
-{response}
->>>
-
-Respond with ONLY a JSON object:
-{{"reason": "<2-4 sentences citing specifics>", "pass": <true|false>, "score": <1-5>}}"""
-
-
 def render_turns(trace):
     parts = []
     for turn in trace.get("turns") or []:
@@ -484,64 +466,36 @@ def render_turns(trace):
     return "\n\n".join(parts) or "(empty)"
 
 
-def parse_verdict(text):
-    """The judge's JSON object, even when wrapped in prose or a fence."""
-    start, end = text.find("{"), text.rfind("}")
-    if start < 0 or end <= start:
-        raise GradeError("judge returned no JSON object: %r" % text[:200])
-    try:
-        verdict = json.loads(text[start : end + 1])
-    except ValueError as exc:
-        raise GradeError("judge returned malformed JSON: %s" % exc)
-    if not isinstance(verdict.get("pass"), bool):
-        raise GradeError("judge verdict has no boolean 'pass': %r" % verdict)
-    score = verdict.get("score")
-    if not isinstance(score, (int, float)) or not 1 <= score <= 5:
-        raise GradeError("judge verdict has no 1-5 'score': %r" % verdict)
-    return verdict
+#: A commit id as the tool prints one: seven to forty hexadecimal characters
+#: with at least one digit, as a whole word.
+_COMMIT_RE = re.compile(r"\b(?=[0-9a-f]*\d)[0-9a-f]{7,40}\b")
 
 
-def check_judge(spec, trace, ctx):
-    judge = ctx.get("judge")
-    if judge is None:
-        raise GradeError("a judge assertion needs a judge; none is configured")
-    provider, judge_spec = judge
-    context = ""
-    if spec.get("context"):
-        context = ("\nCONTEXT (what the agent saw earlier in the session; not part of its "
-                   "response):\n<<<\n%s\n>>>\n" % spec["context"].strip())
-    prompt = JUDGE_INSTRUCTIONS.format(
-        rubric=spec["rubric"].strip(), context=context, response=render_turns(trace)
-    )
-    messages = [{"role": "user", "content": prompt}]
-    ctx.setdefault("judge_cost", 0.0)
-    try:
-        turn = provider.complete(judge_spec, messages, scope="judge")
-        ctx["judge_cost"] += turn["usage"]["cost"]
-        try:
-            verdict = parse_verdict(turn["content"])
-        except GradeError:
-            # D-24: an unparsable reply is asked again once, uncached, and
-            # counted; a second one propagates as the run-level error. A provider
-            # with a cache forgets the unparsable reply before the retry and
-            # remembers the retry once it parses, so a later cached run replays
-            # the graded verdict; a provider with only `complete` is unchanged.
-            forget = getattr(provider, "forget", None)
-            if forget is not None:
-                forget(judge_spec, messages)
-            turn = provider.complete(judge_spec, messages, cache=False, scope="judge")
-            ctx["judge_retries"] = ctx.get("judge_retries", 0) + 1
-            ctx["judge_cost"] += turn["usage"]["cost"]
-            verdict = parse_verdict(turn["content"])
-            remember = getattr(provider, "remember", None)
-            if remember is not None:
-                remember(judge_spec, messages, turn)
-    except ProviderError as exc:
-        # A judge call paid for before the error still counts (24-23, WR-02).
-        ctx["judge_cost"] += exc.cost
-        raise GradeError("judge API error: %s" % exc)
-    return result(verdict["pass"], "judge: %s" % verdict.get("reason", ""),
-                  score=verdict["score"] / 5.0)
+def check_quotes_recorded(spec, trace, ctx):
+    """What the agent said quotes the tool's recorded output, not a version of it.
+
+    ``text`` is the recorded output (spliced from ``@RECORDED{...}`` at load).
+    With ``lines_re``, every line of ``text`` it matches must appear verbatim in
+    what was said, in prose or in code. With ``commits``, every commit id the
+    agent said must be the start of one the tool printed.
+    """
+    said = _said(trace)
+    recorded = spec["text"]
+    if spec.get("lines_re"):
+        wanted = [line for line in recorded.splitlines() if re.search(spec["lines_re"], line)]
+        if not wanted:
+            raise GradeError("quotes_recorded: no recorded line matches %r" % spec["lines_re"])
+        missing = [line for line in wanted if line not in said]
+        if missing:
+            return result(False, "expected the tool's line %r quoted as printed; the reply "
+                          "does not contain it" % missing[0])
+    if spec.get("commits"):
+        printed = _COMMIT_RE.findall(recorded)
+        for commit in _COMMIT_RE.findall(said):
+            if not any(full.startswith(commit) or commit.startswith(full) for full in printed):
+                return result(False, "the reply names commit %s, which the tool never printed"
+                              % commit)
+    return result(True, "quotes the tool's output as printed")
 
 
 KINDS = {
@@ -557,7 +511,7 @@ KINDS = {
     "bash_sequence": check_bash_sequence,
     "before": check_before,
     "any_of": check_any_of,
-    "judge": check_judge,
+    "quotes_recorded": check_quotes_recorded,
     "plain_words": check_plain_words,
 }
 
@@ -572,7 +526,7 @@ def validate_assertion(spec):
         "text_re": ("re",),
         "not_text_re": ("re",),
         "not_prescribed": ("re",),
-        "judge": ("rubric",),
+        "quotes_recorded": ("text",),
         "bash_sequence": ("prefix",),
         "before": ("first", "then"),
         "any_of": ("of",),
@@ -580,6 +534,8 @@ def validate_assertion(spec):
     for field in required:
         if field not in spec:
             raise ValueError("%s assertion is missing %r" % (kind, field))
+    if kind == "quotes_recorded" and not (spec.get("lines_re") or spec.get("commits")):
+        raise ValueError("quotes_recorded needs 'lines_re', 'commits' or both")
     if kind == "skill_choice" and spec["expect"] not in SKILL_NAMES + ("none",):
         raise ValueError("skill_choice expects an unknown skill %r" % spec["expect"])
     if kind == "question_count":
@@ -597,13 +553,13 @@ def validate_assertion(spec):
         if len(bounds) == 2 and spec["min"] > spec["max"]:
             raise ValueError("question_count 'min' %r is greater than its 'max' %r"
                              % (spec["min"], spec["max"]))
-    for field in ("args_re", "re", "except_re", "first", "then"):
+    for field in ("args_re", "re", "except_re", "first", "then", "lines_re"):
         if field in spec:
             re.compile(spec[field])
     for pattern in spec.get("prefix", []):
         re.compile(pattern)
     for inner in spec.get("of", []):
-        if inner.get("kind") in ("any_of", "judge"):
+        if inner.get("kind") == "any_of":
             raise ValueError("any_of may not nest %r" % inner.get("kind"))
         validate_assertion(inner)
 

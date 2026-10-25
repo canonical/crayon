@@ -79,9 +79,8 @@ def run_a(case, spec, provider, ctx):
         {"role": "system", "content": skillmod.selection_system_prompt(ctx["skills"])},
         {"role": "user", "content": case["ask"]},
     ]
-    turn = provider.complete(spec, messages, cache=ctx.get("cache", True),
-                             scope=spec["id"])
-    # D-24: an empty answer is re-sent once, uncached, and counted.
+    turn = provider.complete(spec, messages, scope=spec["id"])
+    # An empty answer is re-sent once, and counted.
     turn, retries = retry_empty_turn(provider, turn, spec, messages, scope=spec["id"])
     return {"turns": [turn], "retries": retries}
 
@@ -94,32 +93,30 @@ def oracle_a(case):
 
 DECISION = CASES / "decision"
 
-#: D-05: always on for lane B. Appended to every lane B case's assertions at
+#: Always on for lane B. Appended to every lane B case's assertions at
 #: load, so no case can pass while telling the author a record word; this is
 #: the one definition site, and lane A never carries it.
 PLAIN_WORDS = {"kind": "plain_words"}
 
 #: @HEDGE's sentence stop: `.`, `!` or `?` before whitespace or the end, except
 #: the dots of "e.g." and "i.e.", and the dot of "etc." unless a capitalised word
-#: or the end follows it, since "etc." can end a sentence (24-23, IN-01 of the
-#: review at 329fa95). Each lookbehind is fixed-width, so the scan stays linear.
+#: or the end follows it, since "etc." can end a sentence. Each lookbehind is
+#: fixed-width, so the scan stays linear.
 _HEDGE_STOP = (r"(?:(?<!\be\.g)(?<!\bi\.e)(?<!\betc)[.!?](?:\s|$)|"
                r"(?<=\betc)\.(?:\s*$|\s+(?-i:[A-Z])))")
 #: @HEDGE's clause start after a sentence stop: the same stop, read backwards.
 #: After "etc." and its first whitespace it mirrors _HEDGE_STOP's "etc." arm
 #: exactly: a clause starts only where more whitespace may follow and then a
 #: capital letter, so "etc. (" starts no clause, as it ends none, and
-#: "etc.  Everything" (two spaces) starts one (24-26, IN-09 of the review at
-#: aac605a, P-24-73).
+#: "etc.  Everything" (two spaces) starts one.
 _HEDGE_CLAUSE_START = (r"(?<=[.!?]\s)(?<!\be\.g\.\s)(?<!\bi\.e\.\s)"
                        r"(?!(?<=\betc\.\s)(?!\s*(?-i:[A-Z])))")
 
 #: Patterns a case names by macro, so the same rule reads the same everywhere.
 MACROS = {
-    # A crayon verb that records anything (resume --dry-run only looks).
-    "@MUTATING": r"\bcrayon\s+(unit\s+(new|edit|retire)|context\s+(stage|record)|"
-                 r"signoff|steer|plan-steps|step|draft|edits|review|"
-                 r"resume(?![^\n]*--dry-run))\b",
+    # A crayon verb that records anything (resume --dry-run only looks); the
+    # episode rule reads the same pattern (agent.MUTATING_PATTERN).
+    "@MUTATING": agent.MUTATING_PATTERN,
     # git writes, builds and publishing: never the skill's to run.
     "@PUBLISH": r"\b(git\s+(add|commit|push|reset|checkout|restore|rebase)|"
                 r"sphinx-build|make\s+html|gh\s+pr)\b",
@@ -132,8 +129,7 @@ MACROS = {
     # quoting the routed token (`next` is `publish`, or `next: publish` whole in
     # inline code) are mentions, not offers. The token alone in code after a bare
     # `Next:` (Next: `publish`) is an offer, and so is an offer to open a PR in
-    # inline code, quoted whole or in part: `open a PR` is never a routed token
-    # (23 IN-03).
+    # inline code, quoted whole or in part: `open a PR` is never a routed token.
     "@OFFERS_PUBLISH": r"(?i:\bnext:?\s+`?open\s+(a\s+|the\s+)?(PR|pull\s+request)\b|"
                        r"(?<!`)\bnext:?\s+`?(publish|push)\b|"
                        r"\bnext:?\s+(publish|push)\b(?!`)|"
@@ -157,12 +153,11 @@ MACROS = {
     # review ("Please double-check \u2026", "may contain errors", "What I'm not sure
     # of:"), not a named, grounded gap. A verify over the whole is blanket, negated
     # or not, with can / cannot / can not / could / did / have and an optional -ly
-    # adverb ("I can't verify everything", "I have not fully verified everything")
-    # (WR-03, WR-01). Negated, the whole is blanket only at the end of a clause:
+    # adverb ("I can't verify everything", "I have not fully verified everything").
+    # Negated, the whole is blanket only at the end of a clause:
     # everything (else), all of it, it all, every detail, the page and the details,
     # so "I couldn't verify the details of log_level: \u2026" and "I couldn't verify
-    # all of it against config.py: \u2026" name their thing (WR-02; 22 WR-01, third
-    # review). May / might / could be wrong is blanket only after a generic or
+    # all of it against config.py: \u2026" name their thing. May / might / could be wrong is blanket only after a generic or
     # first-person subject ("This could be wrong", "Some details may be
     # inaccurate", "Everything in the draft might be wrong"), never after a
     # preposition ("the line on the page may be wrong", "the example in the draft
@@ -174,15 +169,14 @@ MACROS = {
     # `?` before whitespace or the end) or `but`, so a cite in another clause
     # grounds nothing: "I drafted reference/config.md from config.py, but some of
     # it may be wrong" and "Everything may be wrong, but see config.py:12" are
-    # hedges (22 WR-01, third review; 24 WR-03; 24-20, WR-01 of the post-closure
-    # review). The dots of "e.g." and "i.e." are not a stop, so "The page may be
+    # hedges. The dots of "e.g." and "i.e." are not a stop, so "The page may be
     # wrong, e.g. config.py:12 sets 5" is grounded; "etc." is a stop only before a
     # capitalised word or the end, since it can end a sentence, so "Everything may
-    # be wrong, etc. See config.py:12." is a hedge (24-23, IN-01 of the review at
-    # 329fa95; _HEDGE_STOP and _HEDGE_CLAUSE_START). There may (still / also) be
+    # be wrong, etc. See config.py:12." is a hedge (_HEDGE_STOP and
+    # _HEDGE_CLAUSE_START). There may (still / also) be
     # (some / a few) errors is blanket whatever follows, unless it goes on to name
     # a thing other than the page: "There may be errors I missed" is a hedge,
-    # "There may be errors in the retry table" is not (WR-01; 22 WR-02, third review). The cite
+    # "There may be errors in the retry table" is not. The cite
     # is read as a word ending in .py / .md / .rst / .toml / .yml / .yaml, or a
     # :<digits> line, each a fixed run. The scan before the hedge starts only at a
     # clause start and stops at the first cite or clause end, and the scan after
@@ -347,7 +341,7 @@ def _overrides(history):
     return [{"prefix": " ".join(agent.normalise(step["cmd"]).split()[:3]),
              "output": step["output"], "exit": step["exit"]}
             for step in history
-            if step.get("written") and agent.looking(step["cmd"])]
+            if step.get("written") and not agent.mutating(step["cmd"])]
 
 
 def _writes(history, where):
@@ -373,12 +367,12 @@ def _invokes(step):
 
 
 def _check_prelude(prelude, known, where):
-    """A prelude holds recorded refs, user and assistant turns only (WR-08).
+    """A prelude holds recorded refs, user and assistant turns only.
 
     A written command or a tool call, ``Bash`` and ``Write`` included, would put
     a result or a write before the model that no recorded state ever produced,
     so it belongs in history. A user turn that invokes a skill must name an
-    installed one, or a typo would silently replay as raw text (IN-04).
+    installed one, or a typo would silently replay as raw text.
     """
     for step in prelude:
         if step.get("written") or "call" in step:
@@ -433,7 +427,7 @@ def load_b(root=CASES):
             }
             _splice(case["oracle"], states, where)
             _splice(case.get("foil"), states, where)
-            case["assert"] = _expand(case["assert"])
+            case["assert"] = _splice_value(_expand(case["assert"]), states, where)
             if any(spec.get("kind") == PLAIN_WORDS["kind"] for spec in case["assert"]):
                 raise ValueError("%s: plain_words is always on in lane B; do not list it"
                                  % where)
@@ -451,7 +445,7 @@ def messages_b(case, skills):
     """The system prompt, the prelude, the skill's invocation, then the history.
 
     A case with no prelude builds exactly the messages it built before there
-    was one, so its cached requests and results stay comparable.
+    was one, so its results stay comparable.
     """
     _, invocation = skillmod.expand_invocation(
         ("/%s %s" % (case["skill"], case.get("ask", ""))).strip(), skills)
@@ -464,21 +458,27 @@ def messages_b(case, skills):
 
 
 def run_b(case, spec, provider, ctx):
+    """One episode in a fresh copy of the case's sandbox, through a borrowed runner.
+
+    ``ctx["pool"]`` lends the runner: a ``sandbox.LockPool`` of workshops for a
+    live model, or a ``sandbox.HostPool`` for a replay of fixed commands. A live
+    model is refused a host runner.
+    """
     skill = ctx["skills"][case["skill"]]
     messages = messages_b(case, ctx["skills"])
-    jail = sandbox.jail()
-    if jail is None and not getattr(provider, "replays", False):
-        raise RuntimeError("no bubblewrap jail on this machine (bwrap missing or refused): "
-                           "a live model's commands never run outside one")
+    pool = ctx["pool"]
+    if isinstance(pool, sandbox.HostPool) and not getattr(provider, "replays", False):
+        raise RuntimeError("a live model's commands never run on the host; "
+                           "lane B needs the workshop pool")
     root = sandbox.materialise(case["resolved"]["sandbox"])
     try:
-        repo = agent.SandboxRepo(root, sandbox.bin_dir(), case["resolved"]["overrides"],
-                                 jail=jail)
         for path, content in case["resolved"]["writes"]:
-            repo.write(path, content)
-        return agent.run_episode(provider, spec, messages, agent.tools_for(skill), repo,
-                                 max_turns=case.get("max_turns", 20),
-                                 cache=ctx.get("cache", True), scope=spec["id"])
+            agent.Repo(root, None).write(path, content)
+        with pool.runner() as runner:
+            repo = agent.Repo(root, runner, case["resolved"]["overrides"])
+            repo.start()
+            return agent.run_episode(provider, spec, messages, agent.tools_for(skill), repo,
+                                     max_turns=case.get("max_turns", 20), scope=spec["id"])
     finally:
         sandbox.discard(root)
 
@@ -494,3 +494,36 @@ LANES = {
     "B": {"load": load_b, "run": run_b, "oracle": oracle_b,
           "title": "next action"},
 }
+
+
+#: What each protected rule is about, for reading results by purpose: the metric
+#: promptfoo files a case under, and the groups the supported-models table names.
+RULE_GROUPS = {
+    "author control": ("S-15", "S-16", "S-17", "S-18", "S-19", "S-23", "S-24"),
+    "following the tool": ("S-01", "S-03", "S-04", "S-05", "S-08", "S-09", "S-11", "S-13"),
+    "plain voice": ("S-20", "S-21", "S-22"),
+    "skill choice": ("catalog",),
+}
+
+
+def rule_group(protects):
+    for group, rules in RULE_GROUPS.items():
+        if protects in rules:
+            return group
+    raise ValueError("no rule group names %r (lanes.RULE_GROUPS)" % protects)
+
+
+def metric(case):
+    """The promptfoo metric a case is filed under: its rule group and rule."""
+    return "%s (%s)" % (rule_group(case["protects"]), case["protects"])
+
+
+_LOADED = {}
+
+
+def case_by_id(lane, case_id):
+    """One loaded case, from a per-process cache of the lane's cases."""
+    if lane not in _LOADED:
+        _LOADED[lane] = dict((case["id"], case) for case in LANES[lane]["load"]())
+    return _LOADED[lane][case_id]
+

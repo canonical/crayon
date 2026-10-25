@@ -42,22 +42,24 @@ across. The contract number stays `1`.
   evidence, release truth and known limitations in one record. It separates
   the current Jira stop condition from shipped product evidence and from the
   non-gating follow-up in canonical/crayon#39.
-- `validation/evals/` — model evals. They measure skill-following: whether a model driving the
-  five skills does what the skill text says, given the same skill text and a neutral loop,
-  through OpenRouter. They do not measure the quality of a page, or speed or effort saved.
+- `validation/evals/` — model evals. They answer one question: can an author rely on crayon,
+  with the model they use, to keep them in control and keep the record true? The answer drives
+  two decisions, written into every result: a skill change ships only if no case that passed
+  three of three runs on the gate model now passes fewer, and `docs/evals.md` lists a model as
+  supported only if it passes every critical case three of three times on the current skills.
+  They measure skill-following, not the quality of a page, or speed or effort saved.
   Lane A checks skill selection (15 cases). Lane B checks the next action after real, recorded
-  `crayon` output (77 cases), acted out in a copy of the state inside a bubblewrap jail. Every
-  case carries a reply that must pass and one that must fail. `--repeat K` reports per-case pass
-  counts, and results are committed under `validation/evals/results/`. Every summary's
-  `meta.measures` reads `skill-following`, and `validation/evals/results/README.md` labels the
-  folder. The gate holds every documented case count to the loader's. A sweep and each model
-  are capped by `caps` in `validation/evals/models.json`. An empty answer and an unparsable
-  judge reply each get one uncached retry, charged against the caps and counted in
-  `meta.retries`, and an answer still empty after its retry is a run-level error. An
-  unparsable judge reply is not kept in the cache, and the retried reply that is graded is,
-  so a later cached run replays the graded verdict with no new call and no retry. Paid runs are
-  started by hand, never in CI. The gate gains `python3 -m unittest tests.test_evals`, the kit's
-  offline self-tests. See `docs/evals.md`.
+  `crayon` output (77 cases): the model acts in a copy of the state inside a Workshop container,
+  as an unprivileged user with an environment built from scratch, and the first call that would
+  change the copy's files or git index, or that names a recording verb, ends the episode and is
+  graded. Every case names the skill rule it protects and whether it is critical, carries a reply
+  that must pass and one that must fail, and is graded by deterministic checks only. promptfoo
+  runs and grades the cases; a held-out set of 21 lane B cases guards skill fixes, and every case
+  a certified model fails gets a recorded disposition. The certified models are Claude Sonnet 5.5
+  and Claude Haiku 5.5, the gate model, each pinned to one Zero Data Retention backend in
+  `validation/evals/models.json`, whose caps are reserved before every paid call. Paid runs are
+  started by hand, never in CI; the gate gains the kit's offline self-tests,
+  `uv run --project validation/evals python -m unittest tests.test_evals`. See `docs/evals.md`.
 - `crayon show` lists the recorded step plan under the step tally — each step's id, mode,
   stateful marker, status and text — and `show --json` / `summary --json` carry the same rows
   as `steps.plan`. A session that did not propose a tutorial or how-to plan can now resume the
@@ -125,6 +127,10 @@ across. The contract number stays `1`.
 
 ### Changed
 
+- CI runs every Python command on 3.9, the oldest interpreter the tool supports, rather than on
+  the runner image's own; the eval self-tests move from the unit matrix to their own `evals` job;
+  and the `shellcheck` job checks that the image still ships the version `docs/shellcheck.md`
+  names before it runs. Nine jobs.
 - The tool and the five skills move to 0.3.0 together: `crayon.py`'s `__version__`, `min_tool`
   in `docs/compatibility.md` and `docs/contract.md` §5.10, and every SKILL.md's
   `metadata.crayon_min_tool`. The `ledger_corrupt` routing row prescribes
@@ -262,64 +268,10 @@ across. The contract number stays `1`.
 
 ### Fixed
 
-- `validation/evals/` grades as looking the read-only commands the first skill-following sweep
-  ended episodes on: `git ls-tree`, `git check-ignore`, `git reflog` (never its `expire` or
-  `delete`) and `git --no-pager` before a reading verb; a reading command behind `xargs`; an
-  `awk` call with only `-F` or `-v`, one single-quoted program and files, whose program may
-  compare with `>=`; a `git branch` that only lists; a bare `env`; a `python3 -c` script that
-  only reads a module's source by name; a backtick or `$(` inside single quotes or escaped,
-  which the shell reads as text; a search whose pattern or pattern file starts with a dash,
-  after a `--`, `-e`, `--regexp`, `-f` or `--file` that no option before it takes as its value,
-  when every option before it is one the kit knows to take a value or none
-  (`grep -n -- '--output-file'`, `rg -n -e '-exec'`, `grep --ignore-case -e '--output-file'`,
-  and the pattern file in `grep -f '--output-file' docs`); an `awk` field separator written in
-  quotes (`awk -F' '`); a pattern written as an ANSI-C `$'…'` word, read as bash 5 reads it, an
-  escape outside bash's table kept as typed (`grep $'\d+'`); a `sed` call that only reads: the
-  options `-n`, `-E`, `-r`, `-s`, `-u`, `-z` or `--debug`, and scripts of the commands `p`,
-  `=`, `l`, `q`, `d`, `n`, `N`, `D`, `P`, `g`, `G`, `h`, `H`, `x`, `z`, `F` and `Q`, the
-  branches `b`, `t` and `T` with or without a label, `:label`, and `s` commands whose flags are
-  `g`, `p`, `i`, `I`, `m`, `M` or a number, a bracket expression read as sed reads it
-  (`sed -n 's/[/]/X/p'`), addresses with a custom delimiter (`\%regexp%`), and a script written as
-  `$'…'` or with an escaped `$` read after its quoting is removed (`sed -n "\$p"`); an expansion in
-  a part whose command has no option that writes or runs and places no option value the kit reads
-  (`cat`, `ls`, `grep`, `echo` and the rest of one list), so `grep -e "$pat" f`, `grep -e $x f`,
-  the setup `mkdir -p $D` and `ls $(pwd)` look; a `$?`, `$#` or `$$` inside double quotes, where
-  bash builds digits that no field splitting divides (`rg -r "$?" -e`); an `fgrep` call, which is
-  `grep -F` (`fgrep -e x f`); and a `<(` inside double quotes, which the shell reads as text. These
-  acting forms are graded as the action and are not run in the jail: an acting command behind
-  `xargs`; an `awk` program or option that writes or runs; a `git branch` that writes or an `env`
-  that runs a command; a nested backtick or an ANSI-C-quoted `$'…'` substitution; a process
-  substitution `<(…)` whose command acts; any other `sed` call, for example a `w`, `W` or `e`
-  anywhere in a script, after an `s` flag, after a custom delimiter or in an `-e` or `--expression`
-  script (`sed -e'w out'`, `sed 's/a/b/gw out'`, `sed 's#a#b#w out'`), a script in which a `[` read
-  as a plain character would hide a write (`sed -n 's/[/]/g;p;/w x/p'`, whose bracket expression
-  leaves sed the flags `w x/p`), and a script the shell may expand (`sed -n -e"$p"`); a `uniq` or
-  `xxd` with a second operand, or behind `xargs`; an acting option written in quotes or escaped,
-  read as the shell passes it on (`sed '-i'`, `find . "-delete"`, `git grep '-Ovim'`), an ANSI-C
-  `$'…'` word among them, which bash cuts at a NUL (`find . $'-delete\0x'`); a dash-led word after
-  an `e`, `f`, `-e`, `-f` or `--` that a value-taking option takes as its value
-  (`rg -ge '--pre=sh'`, `rg -g -e '--pre=sh'`, `rg -g -f '--pre=sh'`,
-  `rg --hidden -r -e '--pre=sh'`); any other parameter expansion or command substitution (`$name`,
-  `$_`, any `${…}`, `$(…)` or a backtick span, quoted or not), or a `$?`, `$#` or `$$` outside
-  double quotes, which a looking part that sets `IFS` can split (`IFS=0; find . -true$?-delete`),
-  in any other part, since the shell builds it from names the jail and bash set and a looking
-  substitution may print anything (`rg -r "$x" -e`, `find . -name h ${PATH:+-delete}`,
-  `: -o; sort f $_ out`, `find . -name h $(echo -dele)te`, `find . -name h ${x:--delete}`,
-  `awk -F "$@"`); every word after a search option the kit does not know to take a value or none,
-  read as the shell passes it on (`rg --no-hidden -r -e '--pre=sh'`); an acting word after a
-  newline inside a quoted word (a multi-line `sed` script followed by `-i`); and a `python3 -c`
-  script that looks a module up at run time. Each form is pinned both ways in
-  `tests/test_evals.py`. Outside the rule: tilde, brace and pathname expansion, a command after
-  a lone `&`, and the operands `xargs` appends from its input; a command built with one of them
-  can still be graded as looking and run in the jail.
-  Cases B-07, B-47, B-56, B-44, B-41, B-17, B-19, B-22, B-60, B-46 and B-63.
 - Lane B's `@OFFERS_PUBLISH` pattern reads `next: publish` quoted whole in inline code as a
   mention of the routed token, as its own comment says, not as publishing offered. The bare
   token is still an offer. Case B-47.
-- Lane B cases that failed replies saying what the skill asks now ask only their rule. B-28's
-  judge is told the commit line the replayed fix printed, since it sees only the model's turns.
-  B-30's judge fails asking the author where the source lives, not an intake that opens with a
-  question. B-56's history confirms the walk scope before the walk. B-64 reads a line saying no
+- Lane B cases that failed replies saying what the skill asks now ask only their rule. B-56's history confirms the walk scope before the walk. B-64 reads a line saying no
   step is open as no step question. B-65 and B-75 take the record named before the fix or
   redraft verdict that puts the words on it. B-43 reads a lean set in bold, and B-46 asks where
   a reader arrives from second, one question per source first. Every oracle still passes and
@@ -396,13 +348,6 @@ across. The contract number stays `1`.
   changes nothing; a read between the opening's commands (`; ls docs`) is a command of its
   own. Its feedback names what really ran, and a chain that reads the state first still
   fails. Cases B-01 and B-02.
-- `validation/evals/` grades `rg` and `git grep` as looking, so a search that corroborates a
-  source before a draft no longer ends the writer's episode. `rg --pre` and `--hostname-bin`,
-  and `git grep -O`, `--open-files-in-pager` or an abbreviation of it (`--op…`, such as
-  `--open=`), run a command, so they act. An acting word behind a control keyword
-  (`then sed -i …`, `do sort -o …`) is graded as the bare command is and is not run in the
-  jail, as the tests pin. `docs/evals.md` names the one committed run the fixed classifier
-  can no longer grade. Each form is pinned both ways in `tests/test_evals.py`. Case B-07.
 - `crayon-write` says the signoff is `crayon-plan`'s act although the `sign_off` and `re_sign`
   routing rows name its verb: the writer runs and offers neither `crayon signoff` nor
   `crayon unit edit`, and routes back to `/crayon-plan`. Case B-23.
@@ -416,6 +361,9 @@ across. The contract number stays `1`.
 
 ### Removed
 
+- `scripts/planning_lint.py` and `tests/test_planning_lint.py`, the anonymization lint over
+  planning documents the repository no longer keeps, and their two gate commands. The gate is
+  fifteen commands.
 - `docs/sessions/` and `validation/legs/` — the recorded session and leg records — and the unit
   tests over them. They carried run-specific paths and identities; the kit's tooling stays.
 - Personal names in comments and prose are replaced by roles.
