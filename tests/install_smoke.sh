@@ -344,6 +344,28 @@ print("MISSING:" + ",".join(missing) if missing else payload["error"])
 assert_eq "a37: the refusal line is the five-key JSON object for unsteered" \
     "unsteered" "$refusal_error"
 
+# --- the author's accept, then the record read back -------------------------
+# The rest of the journey through the installed tool: the verdict the author
+# gives in /crayon-review, the accepted state, and the provenance summary the
+# author reads before opening a pull request.
+accept_exit=0
+(cd "$SMOKE_REPO" && crayon review "$UNIT" --verdict accept) >/dev/null 2>&1 || accept_exit=$?
+assert_eq "a37: crayon review --verdict accept runs through the installed crayon" \
+    "0" "$accept_exit"
+accepted_state=$(cd "$SMOKE_REPO" && crayon show "$UNIT" --json 2>/dev/null | python3 -c '
+import json, sys
+try:
+    print(json.load(sys.stdin).get("state"))
+except Exception:
+    print("UNPARSEABLE")
+')
+assert_eq "a37: crayon show --json reports the unit sealed by the accept" "sealed" "$accepted_state"
+summary_exit=0
+summary_out=$(cd "$SMOKE_REPO" && crayon summary "$UNIT" 2>&1) || summary_exit=$?
+assert_eq "a37: crayon summary exits 0 on the accepted unit" "0" "$summary_exit"
+summary_record=$(printf '%s\n' "$summary_out" | grep -c '^record: intact at ')
+assert_eq "a37: crayon summary reports the record intact" "1" "$summary_record"
+
 # --- the uninstall the installer printed --------------------------------------
 # The installer ends by printing the commands that remove what it placed, with
 # the paths it used. Run exactly those lines — never a list kept here — and

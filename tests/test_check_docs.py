@@ -302,12 +302,14 @@ def build_tree(
     # points at `validation/fixtures.sh`, and a token satisfying it from some
     # other suite is the defect — the row says where, so the check has to read
     # where.
-    unit_body = ["def test_n01_the_fixture_row_is_cleared():\n    pass\n"]
+    # Each named test asserts something: the delegate reads the bodies too.
+    unit_body = ["def test_n01_the_fixture_row_is_cleared():\n    assert True\n"]
     fixtures_body = ["test_a_fixture_carrying_no_row_id() {\n  :\n}\n"]
     if v01_suite == "tests/test_crayon_unit.py":
-        unit_body.append("def test_v01_the_fixture_row_is_cleared():\n    pass\n")
+        unit_body.append("def test_v01_the_fixture_row_is_cleared():\n    assert True\n")
     else:
-        fixtures_body.append("test_v01_the_fixture_row_is_cleared() {\n  :\n}\n")
+        fixtures_body.append(
+            "test_v01_the_fixture_row_is_cleared() {\n  assert_eq x 1 1\n}\n")
     (root / "tests" / "test_crayon_unit.py").write_text(
         "".join(unit_body), encoding="utf-8"
     )
@@ -728,17 +730,11 @@ class TestReleaseRecord(CheckDocsCase):
 class TestTraceDelegation(CheckDocsCase):
     """The delegate's second vacuous-pass guard, seen from here."""
 
-    def test_a_mechanisms_row_that_names_no_suite_file_is_a_two(self):
-        """Dropping the parenthetical unchecks the link and must not read clean.
+    def test_a_mechanisms_row_that_names_no_suite_file_is_a_violation(self):
+        """Dropping the parenthetical unlinks a mechanism from its test: a violation.
 
-        The signal cell's ``(`validation/fixtures.sh`)`` is what scopes the
-        widened Mechanisms scan; without it the row is reported as not scanned,
-        no scanned row names the gated suite, and `tests/check_traces.py`
-        returns 2 — even though the other parenthetical row keeps the scan
-        non-empty, which a bare zero-scanned count would miss. `check_docs`
-        folds that into its nothing-checked arm rather than into a violation, so
-        the report says the traces observable checked nothing — never that the
-        tree is clean.
+        Every Mechanisms row must name the suite file its test lives in; a row
+        that does not is reported by name, and the tree is never clean.
         """
         rows = tuple(
             row[:-1] + (row[-1].split("(")[0].strip(),)
@@ -747,9 +743,18 @@ class TestTraceDelegation(CheckDocsCase):
             for row in DEFAULT_MECHANISM_ROWS
         )
         code, output = self.run_checker(self.tree(mechanism_rows=rows))
-        self.assertEqual(code, 2, output)
-        self.assertIn("traces", output)
-        self.assertIn("validation/fixtures.sh", output)
+        self.assertEqual(code, 1, output)
+        self.assertIn("names no suite file", output)
+        self.assertIn("`verify` (read-only)", output)
+
+    def test_a_named_test_that_asserts_nothing_is_a_violation(self):
+        """A name that exists proves nothing about what is checked."""
+        root = self.tree()
+        (root / "validation" / "fixtures.sh").write_text(
+            "test_v01_the_fixture_row_is_cleared() {\n  :\n}\n", encoding="utf-8")
+        code, output = self.run_checker(root)
+        self.assertEqual(code, 1, output)
+        self.assertIn("asserts nothing", output)
 
     def test_a_row_is_not_satisfied_by_a_test_in_some_other_suite(self):
         """The row says WHERE, so the check has to read where.

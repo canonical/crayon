@@ -1,0 +1,9 @@
+{
+  "_comment": "Every skip a suite may take, keyed as the suite names it, with the condition that triggers it. A suite that skips for any key not listed here fails: a skip nobody listed is a test nobody ran. Python suites skip through listed_skip() in tests/test_crayon_unit.py, the bash suites through skip_test in tests/lib.sh.",
+  "skips": {
+    "match-needs-3.10": "the interpreter is older than 3.10 and cannot parse `match`; the 3.12 and 3.13 legs run the check",
+    "stdlib-names-need-3.10": "sys.stdlib_module_names needs Python 3.10; the 3.12 and 3.13 legs run the import check",
+    "no-python3.12": "no python3.12 on PATH to parse the source with; the CI 3.12 leg has one",
+    "root-reads-anything": "running as root: file modes do not deny root, so the case cannot be built"
+  }
+}

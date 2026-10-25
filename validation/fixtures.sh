@@ -7,6 +7,12 @@
 # checked-in ledger tree proves nothing about a state the tool can actually reach, and a
 # `prev` digest typed by a human is a digest the writer never produced.
 #
+# The rest of the file pins the validation tooling those fixtures run through, one section
+# each: `test_score_*` covers `score.py audit` (the four oracle checks, the DISAGREE matrix and
+# the eight report lines), `test_runmeta_*` covers `validation/runmeta.sh` and the RUN file it
+# writes, `test_sphinx_*` covers the audit's `[sphinx]` report line, and `test_protocol_*`
+# covers `score.py protocol`: its four RUN-file checks and its 0/1/2 exit codes.
+#
 # It sources `tests/lib.sh` rather than re-implementing a harness (one definition
 # site). From there it gets `setup_repo`, `setup_drafted_unit`, `ledger_line`, `assert_eq`,
 # `assert_contains`, `cleanup`, the per-test subshell, the vacuous-test guard, the
@@ -17,14 +23,13 @@
 # would silently be run as a test — every helper below therefore does NOT carry it. And
 # `tests/check_traces.py` keys the four V-0N trace ids off the underscore-
 # bounded `v01`…`v04` tokens in these names, so only the four V-0N fixtures may carry a
-# `vNN` token. The `test_score_*` fixtures pin properties of the scorer itself and carry no
-# `X-NN` id for the trace checker to key on, deliberately.
+# `vNN` token. The other fixtures pin properties of the tooling itself and carry no `X-NN`
+# id for the trace checker to key on, deliberately.
 #
 # Exit codes are `tests/lib.sh`'s, which are the project's 0/1/2 lint contract:
 #   0  every assertion passed
 #   1  at least one assertion failed
-#   2  is unreachable here — the harness reports a suite that discovered nothing as a
-#      FAILED test (`not ok 1 - the suite discovered no test functions`), not as a 2
+#   2  nothing was checked: the suite discovered no test function
 #
 # `shellcheck -S warning validation/fixtures.sh` must stay clean: CI runs shellcheck over
 # `tests/*.sh validation/*.sh`, so this file is linted on every push.
@@ -492,60 +497,6 @@ test_score_oracle_recorded_path_outside_the_targets_flags() {
     cleanup
 }
 
-# --- `draft`: the include resolver, confined on both branches -------------------------------
-
-# A minimal Sphinx-shaped tree: a `conf.py` marking the source root, a page under it, and a
-# file OUTSIDE it holding a token the scorer would report if it ever read it. `$1` is the
-# include target written into the page, verbatim.
-setup_draft_tree_with_include() {
-    local target="$1"
-    mkdir -p "$TEST_DIR/site/docs/guides" "$TEST_DIR/site/docs/_shared" "$TEST_DIR/private"
-    printf 'project = "fixture"\n' >"$TEST_DIR/site/docs/conf.py"
-    printf 'A note that mentions the corpus.\n' >"$TEST_DIR/private/notes.txt"
-    printf 'A shared fragment that mentions the corpus.\n' >"$TEST_DIR/site/docs/_shared/frag.txt"
-    printf 'Page\n====\n\n.. include:: %s\n' "$target" \
-        >"$TEST_DIR/site/docs/guides/page.rst"
-}
-
-# `_resolve` used to apply `resolve()` + `relative_to(root)` to a leading-`/` target and
-# return `draft_path.parent / rel` UNCHECKED for a dir-relative one. A draft is
-# model-produced content, so `.. include:: ../../../private/notes.txt` was read and folded into
-# the text all four scans then run over — and the matched tokens are ECHOED, so content left
-# the file. `draft` is report-only, so this is a scorecard rather than a gate, which is why the
-# assertion is that the token did not travel.
-test_score_draft_a_dir_relative_include_leaving_the_source_root_is_refused() {
-    setup_repo
-    setup_draft_tree_with_include "../../../private/notes.txt"
-
-    local scored
-    scored=$(python3 "$SCORE" draft "$TEST_DIR/site/docs/guides/page.rst" 2>&1)
-    assert_contains "draft: the include is reported as unresolved" \
-        "$scored" "unresolved include: ../../../private/notes.txt"
-    assert_not_contains "draft: and the file outside the source root was never read" \
-        "$scored" "researcher register: ['the corpus']"
-    assert_contains "draft: the register scan ran over the page alone, and is clean" \
-        "$scored" "researcher register: clean"
-    cleanup
-}
-
-# The other direction, and the reason the boundary is the SOURCE ROOT rather than the draft's
-# own directory: `.. include:: ../_shared/frag.txt` is an ordinary rST pattern in a real docs
-# tree — the validation legs' target repository uses exactly this shape for its `_interfaces/`
-# fragments — and confining a dir-relative target to the page's own directory would refuse it.
-# A confinement that breaks the legitimate case is not a fix.
-test_score_draft_a_dir_relative_include_inside_the_source_root_still_resolves() {
-    setup_repo
-    setup_draft_tree_with_include "../_shared/frag.txt"
-
-    local scored
-    scored=$(python3 "$SCORE" draft "$TEST_DIR/site/docs/guides/page.rst" 2>&1)
-    assert_not_contains "draft: a sibling fragment under the source root is not refused" \
-        "$scored" "unresolved include"
-    assert_contains "draft: it was read, and its text was scanned with the page" \
-        "$scored" "researcher register: ['the corpus']"
-    cleanup
-}
-
 # --- independence: the tree under audit never chooses the tool -----------------------------
 
 # `_crayon_executable` used to fall back to `<root>/crayon`, where `root` is the attacker-
@@ -556,7 +507,7 @@ test_score_draft_a_dir_relative_include_inside_the_source_root_still_resolves() 
 #
 # This is the argument the file already makes about `DOCS_ROOT` — the artefact under audit must
 # not choose what it is compared against — applied to the PROGRAM rather than to the directory.
-# The success criterion this phase states is that the oracle is independent, so the word has to
+# The oracle is meant to be independent of the tool it audits, so that property has to
 # survive a target that tries to supply the tool.
 test_score_independence_the_audited_tree_never_supplies_the_verify_arms_tool() {
     setup_repo
@@ -1386,8 +1337,7 @@ test_runmeta_the_claude_code_arm_still_names_the_tree_it_searched() {
 # was a `case` that does not anchor the FIRST character, so `--leg ..`, `--leg -x` and
 # `--leg .hidden` all passed a refusal message naming a regex the check did not implement. No
 # traversal followed — `/` is excluded and the value is only ever a filename component — but
-# this guard is cited on `score.py`'s side as the reason a leg name is trustworthy, and a path
-# traversal is what happens when it is not.
+# a guard whose refusal message names a rule it does not apply misleads the person reading it.
 #
 # Every rejected shape is a value the OLD check let through, so the case is about the anchor
 # and nothing else.
@@ -1418,31 +1368,6 @@ test_runmeta_accepts_the_leg_names_the_real_legs_use() {
             "$TEST_DIR/validation/RUN-${leg}.json"
     done
     cleanup
-}
-
-# The leg alphabet now has TWO homes — `runmeta.sh` validates it before the name becomes a
-# filename it writes, `score.py` before the name becomes a path it reads — and a second
-# home for a rule is drift unless something pins the two together. This reads both and compares
-# them, which is what a comment saying "keep these in sync" does not do.
-#
-# It builds no repo: both readings are static reads of files this suite already knows the paths
-# of.
-test_runmeta_and_score_agree_on_the_leg_alphabet() {
-    local from_bash from_python
-    from_bash=$(grep -E "^LEG_RE=" "$RUNMETA" | sed "s/^LEG_RE='//; s/'$//")
-    from_python=$(python3 -c '
-import ast, sys
-tree = ast.parse(open(sys.argv[1], encoding="utf-8").read())
-for node in tree.body:
-    if (isinstance(node, ast.Assign)
-            and getattr(node.targets[0], "id", "") == "LEG_RE"):
-        print(node.value.args[0].value)
-        break
-' "$SCORE")
-    assert_not_eq "leg alphabet: runmeta.sh declares one" "" "$from_bash"
-    assert_eq "leg alphabet: and score.py restates exactly it, with no second rule" \
-        "$from_bash" "$from_python"
-    return 0
 }
 
 # A bare invocation is not a run. It names its two subcommands rather than defaulting to one,
@@ -1485,11 +1410,11 @@ diag_label() {
     printf "%sdocs/index.rst:74: WARNING: undefined label: 'ref_workshop_definition'" "$1"
 }
 
-# A D-05-shaped RUN file with the given before/after build EXIT CODES and diagnostics blocks
-# and, optionally, `item=account` attribution entries. The blocks are fixture STRINGS on
-# purpose: these fixtures pin `[sphinx]`'s READING of a RUN file rather than `runmeta.sh`'s
-# writing of one, and a hand-built pair is what lets one build differ from the other by
-# exactly one line.
+# A RUN file whose `sphinx_before` and `sphinx_after` halves carry the given build EXIT CODES
+# and diagnostics blocks and, optionally, `item=account` attribution entries. The blocks are
+# fixture STRINGS on purpose: these fixtures pin `[sphinx]`'s READING of a RUN file rather
+# than `runmeta.sh`'s writing of one, and a hand-built pair is what lets one build differ from
+# the other by exactly one line.
 #
 # The two exit codes are parameters rather than the hard-coded zeros this helper once
 # carried. Hard-coding them is exactly why no fixture could see a GATING `[sphinx]` line
@@ -1905,7 +1830,7 @@ test_runmeta_refuses_a_sphinx_build_it_could_not_execute() {
 }
 
 # =========================================================================================
-# `protocol` — the six conformance checks, and the refusal of an incomplete RUN
+# `protocol` — the four RUN-file conformance checks, and the refusal of an incomplete RUN
 # =========================================================================================
 
 # --- helpers (NEVER `test_`-prefixed — `main` would discover them as tests) ---------------
@@ -1932,61 +1857,6 @@ with open(path, "w", encoding="utf-8") as handle:
 ' "$TEST_DIR/validation/RUN-reference.json" "$1"
 }
 
-# A pre-registered leg file with every heading `protocol`'s fifth check requires and one
-# rubric table for its sixth. `$1` is the score written into the rows: `UNSCORED` is the
-# placeholder the sixth check refuses, `n/a` is the legitimate value for a dimension that
-# cannot apply, and a number is a filled score.
-write_leg_file() {
-    local score="${1:-2}"
-    mkdir -p "$TEST_DIR/validation/legs"
-    cat >"$TEST_DIR/validation/legs/reference.md" <<LEG
-# Reference leg — fixture
-
-## Pre-registration
-
-Written before the session could run.
-
-## Prerequisites
-
-The baseline tag, as placed.
-
-## The walk
-
-Two units.
-
-## Rubric instantiation
-
-| dimension | unit | score |
-| --- | --- | --- |
-| 1. Coverage parity | \`demo-unit\` | \`${score}\` |
-| 3b. Cross-page consistency | \`demo-unit\` | \`n/a\` |
-
-## Baseline row
-
-The row a usable draft must reach.
-
-## Sphinx expectation
-
-0 new items and 17 resolved.
-
-## Green audit
-
-\`score.py audit\` exited 0.
-
-## Metrics
-
-Authored once, in the RUN file.
-
-## Friction
-
-no friction recorded
-
-## Findings
-
-None.
-LEG
-}
-
 # The RUN file `protocol` accepts: written by `runmeta.sh`, then COMPLETED the way the author
 # completes it — the transcript sha filled from OUTSIDE the session. That second step is not a
 # fixture convenience, it is the two-step transcript rule performed, and it is the only way a
@@ -2008,34 +1878,32 @@ complete_run_file() {
     bash "$RUNMETA" end --leg reference --repo "$TEST_DIR" --unit demo-unit \
         "${METRIC_FLAGS[@]}" >/dev/null 2>&1
     patch_run_file 'data["transcript"]["sha256"] = "a" * 64'
-    write_leg_file 2
 }
 
-# The count of check lines in the last `protocol` run — six, always, because none of them
-# short-circuits the others.
+# The count of PASS or FLAG check lines in the last `protocol` run — four when the RUN file
+# records origins, because none of the checks short-circuits the others. A SKIP line is not
+# counted.
 protocol_check_lines() {
     printf '%s\n' "$PROTOCOL_OUT" |
-        grep -cE '^(PASS|FLAG) \[(run|transcript|compat|context|results|rubric)\]'
+        grep -cE '^(PASS|FLAG) \[(run|transcript|compat|context)\]'
 }
 
 # --- the clean run, and the shape of the report -------------------------------------------
 
-# Six checks, six lines, exit 0. The positive half of the conformance gate: a gate only ever
+# Four checks, four lines, exit 0. The positive half of the conformance gate: a gate only ever
 # exercised against broken inputs cannot state what a conformant leg looks like.
-test_protocol_a_complete_run_and_a_filled_leg_file_exits_0() {
+test_protocol_a_complete_run_file_exits_0() {
     complete_run_file
 
     protocol_output
-    assert_eq "protocol: a complete RUN file and a filled leg file exit 0" "0" "$PROTOCOL_RC"
-    assert_eq "protocol: six checks, one line each" "6" "$(protocol_check_lines)"
+    assert_eq "protocol: a complete RUN file exits 0" "0" "$PROTOCOL_RC"
+    assert_eq "protocol: four checks, one line each" "4" "$(protocol_check_lines)"
     assert_contains "protocol: the RUN-file completeness check PASSes" \
         "$PROTOCOL_OUT" "PASS [run]"
     assert_contains "protocol: the transcript-sha check PASSes on a 64-hex value" \
         "$PROTOCOL_OUT" "PASS [transcript]"
     assert_contains "protocol: the compatibility numbers PASS" "$PROTOCOL_OUT" "PASS [compat]"
     assert_contains "protocol: context == baseline PASSes" "$PROTOCOL_OUT" "PASS [context]"
-    assert_contains "protocol: the leg file's headings PASS" "$PROTOCOL_OUT" "PASS [results]"
-    assert_contains "protocol: the rubric score rows PASS" "$PROTOCOL_OUT" "PASS [rubric]"
     cleanup
 }
 
@@ -2054,7 +1922,7 @@ data["context"]["origins_sha256"] = "b" * 64
     assert_contains "protocol: the transcript check FLAGged" "$PROTOCOL_OUT" "FLAG [transcript]"
     assert_contains "protocol: and so did the context check, in the same run" \
         "$PROTOCOL_OUT" "FLAG [context]"
-    assert_eq "protocol: all six lines are still printed" "6" "$(protocol_check_lines)"
+    assert_eq "protocol: all four lines are still printed" "4" "$(protocol_check_lines)"
     cleanup
 }
 
@@ -2230,127 +2098,6 @@ data["context"]["origins"] = data["baseline"]["origins"]
     cleanup
 }
 
-# --- checks 5 and 6: the leg file ---------------------------------------------------------------
-
-# The v1 `RESULTS.md` heading check, retargeted: `validation/legs/<leg>.md` is the v2.0 home of
-# what v1 put in `RESULTS.md`. A missing heading is named, so the author is told which section
-# of a PRE-REGISTERED file was never written.
-test_protocol_a_leg_file_missing_a_heading_flags_naming_it() {
-    complete_run_file
-    python3 -c '
-import sys
-path = sys.argv[1]
-text = open(path, encoding="utf-8").read()
-open(path, "w", encoding="utf-8").write(text.replace("## Sphinx expectation", "## Something else"))
-' "$TEST_DIR/validation/legs/reference.md"
-
-    protocol_output
-    assert_eq "protocol: a leg file missing a required heading exits 1" "1" "$PROTOCOL_RC"
-    assert_contains "protocol: the leg-file check FLAGged" "$PROTOCOL_OUT" "FLAG [results]"
-    assert_contains "protocol: and named the heading that is absent" \
-        "$PROTOCOL_OUT" "Sphinx expectation"
-    cleanup
-}
-
-# An absent leg file names the path it looked for — the same courtesy `audit` extends for
-# a missing ledger, and for the same reason: the scorer is pointed at other people's trees.
-test_protocol_a_missing_leg_file_flags_naming_the_path() {
-    complete_run_file
-    rm -f "$TEST_DIR/validation/legs/reference.md"
-
-    protocol_output
-    assert_eq "protocol: a missing leg file exits 1" "1" "$PROTOCOL_RC"
-    assert_contains "protocol: the leg-file check FLAGged" "$PROTOCOL_OUT" "FLAG [results]"
-    assert_contains "protocol: and named the path it looked for" \
-        "$PROTOCOL_OUT" "legs/reference.md"
-    cleanup
-}
-
-# Check 6, both directions. `UNSCORED` is the ONE placeholder token a leg file writes for a row
-# nobody has scored yet, and it FLAGs naming the row. `n/a` is a different thing — a dimension
-# that cannot apply to this leg, recorded up front so it can never be mistaken for an unfilled
-# score — and it passes.
-test_protocol_an_unfilled_rubric_score_row_flags_naming_the_row() {
-    complete_run_file
-    write_leg_file UNSCORED
-
-    protocol_output
-    assert_eq "protocol: an unfilled rubric score row exits 1" "1" "$PROTOCOL_RC"
-    assert_contains "protocol: the rubric check FLAGged" "$PROTOCOL_OUT" "FLAG [rubric]"
-    assert_contains "protocol: and named the row that is unfilled" \
-        "$PROTOCOL_OUT" "1. Coverage parity"
-
-    write_leg_file 2
-    protocol_output
-    assert_contains "protocol: an n/a row is a legitimate score, not a placeholder" \
-        "$PROTOCOL_OUT" "PASS [rubric]"
-    cleanup
-}
-
-# --- the RUN file's `leg` is a record-supplied path, and is guarded like one -----------------
-
-# `leg` is UNTRACKED, unvalidated working-tree input and was interpolated straight into
-# `<directory>/legs/<leg>.md` with no containment. `"leg": "../../secret/loot"` read a file
-# outside the tree AND check 6 echoed its table cells into the report, so this was a read
-# primitive with an output channel rather than a stat. `_resolved_under` already existed for
-# exactly this class of read and was not used here.
-#
-# The secret's rubric row carries a token nothing else in the run can produce, so the assertion
-# is that the CONTENT did not travel — not merely that a check FLAGged.
-test_protocol_a_traversing_leg_name_is_refused_unread() {
-    complete_run_file
-    mkdir -p "$TEST_DIR/secret"
-    cat >"$TEST_DIR/secret/loot.md" <<'LOOT'
-# Not a leg file
-
-## Pre-registration
-
-## Rubric instantiation
-
-| dimension | unit | score |
-| --- | --- | --- |
-| exfiltrated-cell-nobody-should-see | `x` | `UNSCORED` |
-LOOT
-    patch_run_file 'data["leg"] = "../../secret/loot"'
-
-    protocol_output
-    assert_eq "leg: a traversing leg name still exits 1" "1" "$PROTOCOL_RC"
-    assert_contains "leg: the leg-file check FLAGged" "$PROTOCOL_OUT" "FLAG [results]"
-    assert_contains "leg: and said the value is not a leg name" \
-        "$PROTOCOL_OUT" "is not a leg name"
-    assert_not_contains "leg: the file outside the tree was never read" \
-        "$PROTOCOL_OUT" "exfiltrated-cell-nobody-should-see"
-    assert_file_exists "leg: and it is still sitting there, untouched" \
-        "$TEST_DIR/secret/loot.md"
-    cleanup
-}
-
-# The symlink the NAME check cannot see: `legs/<leg>.md` is a well-formed leg name pointing at
-# a file outside the directory. `_resolved_under` follows the link when it resolves, which is
-# why the containment check is the second control and not a duplicate of the first.
-test_protocol_a_symlinked_leg_file_leaving_the_directory_is_refused() {
-    complete_run_file
-    mkdir -p "$TEST_DIR/secret"
-    cat >"$TEST_DIR/secret/elsewhere.md" <<'LOOT'
-# Not a leg file
-
-## Rubric instantiation
-
-| dimension | unit | score |
-| --- | --- | --- |
-| exfiltrated-cell-nobody-should-see | `x` | `UNSCORED` |
-LOOT
-    rm -f "$TEST_DIR/validation/legs/reference.md"
-    ln -s "$TEST_DIR/secret/elsewhere.md" "$TEST_DIR/validation/legs/reference.md"
-
-    protocol_output
-    assert_eq "leg: a leg file symlinked out of the directory exits 1" "1" "$PROTOCOL_RC"
-    assert_contains "leg: the leg-file check FLAGged" "$PROTOCOL_OUT" "FLAG [results]"
-    assert_not_contains "leg: and the link's target was never read" \
-        "$PROTOCOL_OUT" "exfiltrated-cell-nobody-should-see"
-    cleanup
-}
-
 # --- the vacuous-pass guard and the no-crash posture -----------------------------------------
 
 # Exit 2, never 0. A directory with no RUN file has had NOTHING checked, and reporting that as
@@ -2371,8 +2118,8 @@ test_protocol_a_directory_with_no_run_file_exits_2() {
 }
 
 # The same rule, on `protocol`'s side of the same untrusted file: invalid JSON FLAGs and exits 1
-# with no traceback. The other checks that have evidence still run — the leg file is reached
-# through the RUN file's NAME when its contents cannot be read.
+# with no traceback. The other three checks still print their lines, and each one FLAGs
+# because the record it reads could not be parsed.
 test_protocol_a_malformed_run_file_flags_without_a_traceback() {
     complete_run_file
     printf 'not json at all\n' >"$TEST_DIR/validation/RUN-reference.json"
@@ -2380,6 +2127,7 @@ test_protocol_a_malformed_run_file_flags_without_a_traceback() {
     protocol_output
     assert_eq "protocol: an unparseable RUN file exits 1" "1" "$PROTOCOL_RC"
     assert_contains "protocol: the completeness check FLAGged" "$PROTOCOL_OUT" "FLAG [run]"
+    assert_eq "protocol: all four lines are still printed" "4" "$(protocol_check_lines)"
     assert_not_contains "protocol: no Python traceback reaches the caller" \
         "$PROTOCOL_OUT" "Traceback (most recent call last)"
 

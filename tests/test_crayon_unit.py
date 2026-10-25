@@ -17,7 +17,7 @@ Coverage:
   U-09  stage a's report mode and the per-file done/recoverable/unexpected
   U-10  the tool's own guards — line budget, 3.9 hazards, packaging, and this
         suite's own wholeness: the ``__main__`` block is the LAST statement in
-        the file and the loaded count meets ``EXPECTED_MIN_TESTS``, because
+        the file and the loaded count equals the count its source defines, because
         ``unittest.main()`` exits and a block placed higher up silently drops
         every class below it behind a green ``OK``
   U-11  contract 5.9's V1–V19 verification report
@@ -47,6 +47,18 @@ import unittest
 from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+#: Every skip a suite may take, with its reason: tests/skips.json. A skip by any
+#: other key fails, so a test that stops running is never read as passing.
+SKIPS = json.loads((ROOT / "tests" / "skips.json").read_text(encoding="utf-8"))["skips"]
+
+
+def listed_skip(case, key):
+    """Skip ``case`` for the listed reason ``key``, or fail when ``key`` is not listed."""
+    if key not in SKIPS:
+        case.fail("unlisted skip %r: list it in tests/skips.json with its reason" % key)
+    case.skipTest("%s: %s" % (key, SKIPS[key]))
+
 CRAYON_PATH = ROOT / "crayon.py"
 
 
@@ -5947,7 +5959,7 @@ class TestPython39Hazards(unittest.TestCase):
 
     def test_the_pattern_match_scanner_catches_a_match_statement(self):
         if not hasattr(ast, "Match"):
-            self.skipTest("this interpreter cannot parse `match` at all")
+            listed_skip(self, "match-needs-3.10")
         source = "def f(x):\n    match x:\n        case 1:\n            return 2\n"
         self.assertEqual(pattern_match_lines(source), [2])
 
@@ -6911,7 +6923,7 @@ class TestProgressRecordReads(unittest.TestCase):
         self.path.chmod(0o000)
         self.addCleanup(self.path.chmod, 0o600)
         if os.access(str(self.path), os.R_OK):  # pragma: no cover - root
-            self.skipTest("running as root: file modes do not deny reads")
+            listed_skip(self, "root-reads-anything")
         self.assertEqual(crayon.read_progress(self.repo, "u1"), self.EMPTY)
 
     def test_no_read_of_it_ever_raises(self):
@@ -7143,7 +7155,7 @@ class TestToolPackaging(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         stdlib = getattr(sys, "stdlib_module_names", None)
         if stdlib is None:
-            self.skipTest("sys.stdlib_module_names needs Python 3.10 or newer")
+            listed_skip(self, "stdlib-names-need-3.10")
         imported = [name for name in proc.stdout.split() if name]
         self.assertNotEqual(imported, [], "the import proved nothing if nothing loaded")
         third_party = [
@@ -7155,7 +7167,7 @@ class TestToolPackaging(unittest.TestCase):
         """CI covers 3.9 and 3.13; this is the cheap local smoke."""
         newer = shutil.which("python3.12")
         if newer is None:
-            self.skipTest("no python3.12 on this machine")
+            listed_skip(self, "no-python3.12")
         proc = subprocess.run(
             [newer, "-c", "import ast, sys; ast.parse(open(sys.argv[1]).read())",
              str(CRAYON_PATH)],
@@ -7199,14 +7211,14 @@ class TestThisSuiteIsWhollyDefined(unittest.TestCase):
             % (mains[0] + 1, len(tree.body)),
         )
 
-    def test_the_expected_minimum_is_a_floor_the_module_actually_meets(self):
+    def test_every_test_the_module_defines_is_loaded(self):
         loaded = unittest.defaultTestLoader.loadTestsFromModule(
             sys.modules[__name__]
         ).countTestCases()
-        self.assertGreaterEqual(loaded, EXPECTED_MIN_TESTS)
-        # And the floor may not be lowered into uselessness: it is raised
-        # deliberately, never dropped to make a truncated module pass.
-        self.assertGreaterEqual(EXPECTED_MIN_TESTS, 400)
+        defined = defined_test_count()
+        self.assertEqual(loaded, defined)
+        # Vacuous-pass guard: a count that read nothing would equal a load of nothing.
+        self.assertGreater(defined, 400)
 
 
 # --- U-11 — contract 5.9's V1–V19 verification report -----------------------
@@ -9951,20 +9963,112 @@ class TestPlainShow(unittest.TestCase):
 # is asserted too — the same vacuous-pass discipline as ``run_test``'s "recorded
 # no assertions", ``check_traces``'s exit 2 and ``EXPECTED_REFERENCE_COUNT``.
 
-#: Raise this deliberately when tests are added; a DROP means the module stopped
-#: being fully defined (an early ``sys.exit``, a syntax error swallowed by a
-#: conditional import, a truncated file), not that tests were removed — removing
-#: tests is an edit to this constant in the same commit.
-EXPECTED_MIN_TESTS = 509
+def defined_test_count(path=None):
+    """The number of test methods this module defines, read from its source.
 
+    Every ``test*`` method of every class that is, directly or through another
+    class here, a ``unittest.TestCase``, inherited methods included, which is
+    what the loader loads. A loaded count below it means the module stopped being
+    fully defined (an early ``sys.exit``, a truncated file), so the two must be
+    equal, not one above a floor.
+    """
+    tree = ast.parse(pathlib.Path(path or __file__).read_text(encoding="utf-8"))
+    classes = dict((node.name, node) for node in tree.body if isinstance(node, ast.ClassDef))
+
+    def bases(node):
+        return [getattr(base, "attr", None) or getattr(base, "id", None) for base in node.bases]
+
+    def is_case(name, seen=()):
+        return any(base == "TestCase" or (base in classes and base not in seen
+                                          and is_case(base, seen + (name,)))
+                   for base in bases(classes[name]))
+
+    def methods(name):
+        found = set(node.name for node in classes[name].body
+                    if isinstance(node, ast.FunctionDef) and node.name.startswith("test"))
+        for base in bases(classes[name]):
+            if base in classes:
+                found |= methods(base)
+        return found
+
+    return sum(len(methods(name)) for name in classes if is_case(name))
+
+
+
+class TestSuiteHarness(unittest.TestCase):
+    """The suites' own rules: listed skips, one harness, and no empty pass."""
+
+    SUITES_PY = ("test_crayon_unit.py", "test_skill_text.py", "test_check_docs.py",
+                 "test_wiki_lint.py", "test_evals.py")
+    #: The bash suites that load the shared harness. install_smoke.sh walks the
+    #: documented install as a stranger would and pins git's config itself;
+    #: runmeta.sh is not a suite: it measures another repository and must not load
+    #: the harness pinned to this one.
+    SUITES_SH = ("tests/test_crayon_acceptance.sh", "tests/test_crayon_lifecycle.sh",
+                 "validation/fixtures.sh")
+
+    def test_every_listed_skip_is_used_and_nothing_skips_around_the_list(self):
+        texts = dict((name, (ROOT / "tests" / name).read_text(encoding="utf-8"))
+                     for name in self.SUITES_PY)
+        texts.update((name, (ROOT / name).read_text(encoding="utf-8")) for name in self.SUITES_SH)
+        joined = "\n".join(texts.values())
+        for key in SKIPS:
+            with self.subTest(key=key):
+                self.assertRegex(joined, r"listed_skip\(self, \"%s\"\)|skip_test %s\b"
+                                 % (re.escape(key), re.escape(key)))
+        for name, text in texts.items():
+            with self.subTest(suite=name):
+                direct = [line for line in text.splitlines()
+                          if "self.skipTest(" in line and "case.skipTest(" not in line]
+                self.assertEqual(direct, [], "skip through listed_skip, never directly")
+                self.assertNotRegex(text, r"@unittest\.skip")
+                self.assertNotRegex(text, r'assert_eq "skipped[^"]*" "0" "0"',
+                                    "a skip recorded as a pass")
+
+    def test_every_bash_suite_loads_the_one_harness(self):
+        for name in self.SUITES_SH:
+            with self.subTest(suite=name):
+                text = (ROOT / name).read_text(encoding="utf-8")
+                self.assertRegex(text, r"(?m)^(source|\.) .*/lib\.sh\"\s*$")
+        smoke = (ROOT / "tests" / "install_smoke.sh").read_text(encoding="utf-8")
+        self.assertRegex(smoke, r"(?m)^\s*export GIT_CONFIG_GLOBAL=/dev/null")
+        harness = (ROOT / "tests" / "lib.sh").read_text(encoding="utf-8")
+        head = harness[: harness.index("SCRIPT_DIR=")]
+        self.assertIn("export GIT_CONFIG_GLOBAL=/dev/null", head,
+                      "the harness pins git's config when it loads, before any fixture")
+
+    def run_harness(self, body):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = pathlib.Path(tmp) / "suite.sh"
+            script.write_text('source "%s"\n%s\nmain\n' % (ROOT / "tests" / "lib.sh", body),
+                              encoding="utf-8")
+            done = subprocess.run(["bash", str(script)], stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, timeout=60)
+        return done.returncode, done.stdout.decode("utf-8", "replace")
+
+    def test_a_suite_that_discovers_nothing_checked_nothing(self):
+        code, output = self.run_harness("")
+        self.assertEqual(code, 2, output)
+        self.assertIn("discovered no test functions", output)
+
+    def test_a_listed_skip_is_reported_as_a_skip_and_an_unlisted_one_fails(self):
+        code, output = self.run_harness(
+            "test_one() { skip_test root-reads-anything; }\n"
+            "test_two() { assert_eq two 1 1; }")
+        self.assertEqual(code, 0, output)
+        self.assertIn("# SKIP root-reads-anything", output)
+        self.assertIn("# skip 1", output)
+        code, output = self.run_harness("test_one() { skip_test no-such-reason; }")
+        self.assertEqual(code, 1, output)
+        self.assertIn("unlisted skip 'no-such-reason'", output)
 
 
 if __name__ == "__main__":
     _loaded = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
-    if _loaded.countTestCases() < EXPECTED_MIN_TESTS:
+    if _loaded.countTestCases() != defined_test_count():
         raise SystemExit(
-            "test_crayon_unit: loaded %d test(s), expected at least %d — the "
+            "test_crayon_unit: loaded %d test(s) of the %d the source defines — the "
             "module is not fully defined, so an `OK` here would be vacuous"
-            % (_loaded.countTestCases(), EXPECTED_MIN_TESTS)
+            % (_loaded.countTestCases(), defined_test_count())
         )
     unittest.main()

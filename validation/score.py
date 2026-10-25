@@ -3,22 +3,16 @@
 
 Subcommands:
 
-  score.py draft <path>              — prose scorecard: researcher register, implementation
-                                       identifiers, the coverage checklist and format-aware
-                                       structure checks (.md scored as MyST, .rst as rST;
-                                       ``.. include::`` resolved one level first)
   score.py audit <unit-id> [--root <repo>]
                                      — the independent oracle over
                                        ``.crayon/units/<id>/ledger.jsonl`` plus ONE
                                        ``crayon verify --json`` reading, compared
-  score.py protocol [dir]            — conformance gate over one pre-registered leg: the
-                                       six protocol checks over the RUN file in ``dir``
-                                       (default ``<ROOT>/validation``) and the leg file it
-                                       names, reporting EVERY failing one
+  score.py protocol [dir]            — conformance gate over one dogfood leg's RUN file: the
+                                       four checks a RUN file alone can answer, over the
+                                       RUN file in ``dir`` (default ``<ROOT>/validation``),
+                                       reporting EVERY failing one
 
-``draft`` is report-only and always exits 0 — it is a prose score, not a gate. ``audit``
-and ``protocol`` are gates: v1 made every subcommand report-only, and here their exit codes
-are load-bearing.
+Both subcommands are gates, and their exit codes are load-bearing.
 
 The exit contract, in the repo's uniform vocabulary (tests/check_traces.py, and
 tests/install_smoke.sh for the bash side):
@@ -153,50 +147,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# The stance contract's banned researcher register (mirror of
-# dogen.core.authoring.STANCE_CONTRACT — dev-time copy, fine to drift-check by eye).
-BANNED_REGISTER = [
-    "observed",
-    "the fixtures show",
-    "every observed use",
-    "the corpus",
-    "at this level",
-]
-
-# Implementation identifiers that must not appear in user-facing prose.
-IMPL_IDENTIFIERS = [
-    "internal/workshop",
-    "workshop_file.go",
-    "ValidateFile",
-    "SdkRecord",
-    "PlugOrBind",
-    "PlugRef",
-    "SlotRef",
-    "ProjectSdkPath",
-    "Filenames",
-    "Filepath",
-]
-IMPL_PATH_RE = re.compile(r"\binternal/[a-z]")
-
-# Legal lifecycle phase tokens the git-log reconstruction may see. The
-# audit requires only `drafted` and `reviewed`; `model-amended` and the rest are
-# legal-but-not-required, and any token OUTSIDE this set surfaces as a non-failing
-# INFO line (never a FLAG).
-KNOWN_PHASES = {"declared", "signed-off", "steered", "drafted", "reviewed",
-                "model-amended", "step-planned", "step-recorded"}
-
-# rST include directive. Matched on the ORIGINAL draft text exactly once
-# so inserted content is never re-scanned — one level, recursion-guarded.
-INCLUDE_RE = re.compile(r"^\s*\.\. include:: (.+?)\s*$", flags=re.M)
-
-# v1's `SESSION_RE` / `SESSION_ISH_RE` lived here. They are gone rather than
-# kept: v1 discovered legs by globbing `SESSION-*.md`
-# beside a single `RESULTS.md`, and v2.0 pre-registers each leg in `validation/legs/<leg>.md`
-# and names it on the RUN file. `protocol`'s fifth check below is where both v1 checks landed —
-# the discovery is the RUN file's `leg`, and the headings are the leg file's. A regex kept
-# against a layout nothing writes any more is not a check, it is a thing a later reader has to
-# work out is dead.
-
 # The keys a COMPLETE RUN file carries, and the six session metrics inside `metrics`. Both
 # lists exist once, here, and `validation/runmeta.sh` is what writes them; a RUN missing any is
 # refused rather than scored, which is the whole of the "incomplete RUN" refusal.
@@ -204,67 +154,6 @@ REQUIRED_RUN_KEYS = ("leg", "harness", "model", "tool", "skills", "baseline", "c
                      "metrics", "transcript", "sphinx", "sphinx_before", "sphinx_after")
 REQUIRED_METRIC_KEYS = ("install", "time_to_usable_draft", "avoidable_questions",
                         "manual_crayon_commands", "help_requests", "resume_invocations")
-
-# The headings a pre-registered leg file must carry — the v2.0 home of what v1 required of
-# `RESULTS.md`. Both leg files in this tree carry all of them; the actionable leg's extra
-# `## Declared fallback` and `## Ordered steps` are its own and are deliberately not required
-# of every leg.
-REQUIRED_LEG_HEADINGS = ("Pre-registration", "Prerequisites", "The walk",
-                         "Rubric instantiation", "Baseline row", "Sphinx expectation",
-                         "Green audit", "Metrics", "Friction", "Findings")
-
-# The ONE placeholder token a leg file writes for a score nobody has taken yet. `n/a` is a
-# different value with a different meaning — a dimension that cannot apply to this leg, e.g.
-# §3b against a single-target unit — and it is recorded up front precisely so it can never be
-# mistaken for an unfilled score. Only `UNSCORED` FLAGs.
-UNFILLED_SCORE = "UNSCORED"
-
-# A `| dimension | unit | `score` |` row of a leg file's rubric-instantiation table.
-RUBRIC_ROW_RE = re.compile(r"^\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|\s*`([^`]*)`\s*\|\s*$", re.M)
-
-# A markdown heading, at any level — the same shape `tests/check_docs.py` reads.
-LEG_HEADING_RE = re.compile(r"^#{1,6}\s+(.*?)\s*#*\s*$", re.M)
-
-# The alphabet a leg NAME may use — the second home of `validation/runmeta.sh`'s `LEG_RE`, and
-# deliberately the same expression. `runmeta.sh` validates it before the value becomes a
-# filename it WRITES; this one validates it before the value becomes a path the scorer READS,
-# because by then the name has travelled through a RUN file that is untracked, unvalidated
-# working-tree input and is not the name `runmeta.sh` checked. Anchored at both ends and
-# at the first character, so `..`, `-x` and `.hidden` are all refused.
-LEG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
-
-# Coverage checklist: (label, any-of keyword alternatives, case-insensitive).
-COVERAGE = [
-    ("file locations", [".workshop/", ".workshop.yaml"]),
-    ("name pattern", ["lowercase letter"]),
-    ("name length limit", ["40"]),
-    ("base field", ["ubuntu@"]),
-    ("sdks field", ["sdks"]),
-    ("channel", ["channel"]),
-    ("plugs", ["plugs"]),
-    ("slots", ["slots"]),
-    ("bind rule", ["bind"]),
-    ("bind target syntax", [":<name>", ":`<name>`", "sdk>:<", "sdk`:`"]),
-    ("try- prefix", ["try-"]),
-    ("project- prefix", ["project-"]),
-    ("system sdk", ["system"]),
-    ("implicit sdks", ["implicit"]),
-    ("connections", ["connections"]),
-    ("actions", ["actions"]),
-    ("interface: mount", ["mount"]),
-    ("mount attrs", ["workshop-target", "workshop-source", "host-target"]),
-    ("read-only attr", ["read-only"]),
-    ("interface: tunnel", ["tunnel"]),
-    ("tunnel endpoint attr", ["endpoint"]),
-    ("interface: camera", ["camera"]),
-    ("interface: gpu", ["gpu"]),
-    ("interface: desktop", ["desktop"]),
-    ("interface: ssh-agent", ["ssh-agent"]),
-    ("interface: custom-device", ["custom-device"]),
-    ("custom-device subsystem", ["subsystem"]),
-    ("validation summary", ["validation"]),
-    ("worked example", ["```yaml", "code-block:: yaml", "literalinclude"]),
-]
 
 
 # The docs root, fixed by contract §5.1 and carried on the ledger header as
@@ -403,170 +292,6 @@ def _resolved_under(directory: Path, relative: str) -> Path | None:
     except ValueError:
         return None
     return candidate
-
-
-def _sha256(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def _find_source_root(start: Path) -> Path | None:
-    """Nearest ancestor (inclusive) holding a conf.py — the Sphinx source root."""
-    for parent in [start, *start.parents]:
-        if (parent / "conf.py").is_file():
-            return parent
-    return None
-
-
-def expand_includes(text: str, draft_path: Path) -> tuple[str, list[str]]:
-    """One-level, recursion-guarded rST include expansion.
-
-    Dir-relative targets resolve under the draft's own directory; a leading-``/``
-    target resolves under the located Sphinx source root (nearest conf.py) and is
-    treated as unresolvable when no source root is found — never read from the
-    filesystem root, as a security control. BOTH are then confined, which the
-    dir-relative branch once was not: it returned ``draft_path.parent / rel``
-    unchecked, so ``.. include:: ../../../private/notes.txt`` in a draft — which is
-    MODEL-PRODUCED content — was read and folded into the text all four scans run
-    over, and the matched tokens were echoed. ``draft`` is report-only, so the blast
-    radius was a scorecard rather than a gate, but content did leave the file.
-
-    The boundary is the SOURCE ROOT, not the draft's own directory: ``.. include::
-    ../_interfaces/mount.rst`` is an ordinary rST pattern in a real docs tree and
-    confining a dir-relative target to the draft's directory would refuse it. When
-    no source root exists there is no tree to confine to, so the draft's own
-    directory is the boundary instead — narrower than before, never wider.
-    Substitution runs over the ORIGINAL
-    text exactly once via a single ``INCLUDE_RE.sub`` call, so a directive sitting
-    inside an included file is left verbatim and NOT further expanded.
-    Unresolvable targets are collected in ``flags`` and their directive line is
-    left in place; the caller emits the FLAG line.
-    """
-    flags: list[str] = []
-    root = _find_source_root(draft_path.parent)
-
-    def _resolve(rel: str) -> Path | None:
-        if rel.startswith("/"):
-            if root is None:
-                return None
-            base = root
-        else:
-            base = draft_path.parent
-        # Confine BOTH branches. `.resolve()` collapses any embedded `..` and follows
-        # symlinks, and a target that escapes the boundary is treated as unresolvable
-        # (-> FLAG), never read. The boundary is the source root where there is
-        # one; with no conf.py anywhere there is no tree to confine to, so the draft's
-        # own directory is used instead.
-        boundary = root if root is not None else draft_path.parent
-        candidate = (base / rel.lstrip("/")).resolve()
-        try:
-            candidate.relative_to(boundary.resolve())
-        except ValueError:
-            return None  # escapes the confinement — treat as unresolvable
-        return candidate
-
-    def _sub(match: "re.Match[str]") -> str:
-        rel = match.group(1).strip()
-        target = _resolve(rel)
-        if target is not None and target.is_file():
-            return target.read_text(encoding="utf-8")  # inserted, never re-scanned
-        flags.append(rel)
-        return match.group(0)  # leave directive; FLAG emitted by caller
-
-    expanded = INCLUDE_RE.sub(_sub, text)  # ORIGINAL text, one pass = one level
-    return expanded, flags
-
-
-def score_draft(path: Path) -> None:
-    # Report-only contract: draft always exits 0. A missing/unreadable path FLAGs
-    # and returns cleanly instead of crashing with a traceback.
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (FileNotFoundError, OSError) as exc:
-        _flag(False, "io", f"cannot read draft {path}: {exc}")
-        return
-    # Resolve rST includes once, before any scan, so all four scans run on the
-    # expanded page. Gate to rST-bearing content — MyST-native {include}/
-    # literalinclude stay out of scope.
-    if path.suffix == ".rst" or "{eval-rst}" in text:
-        text, unresolved = expand_includes(text, path)
-        for missing_include in unresolved:
-            _flag(False, "cov", f"unresolved include: {missing_include}")
-    lower = text.lower()
-    print(f"== draft scorecard: {path}")
-
-    hits = [p for p in BANNED_REGISTER if p in lower]
-    _flag(not hits, "reg", f"researcher register: {hits or 'clean'}")
-
-    impl = [i for i in IMPL_IDENTIFIERS if i in text]
-    if IMPL_PATH_RE.search(text):
-        impl.append("internal/<pkg> path")
-    _flag(not impl, "impl", f"implementation identifiers: {impl or 'clean'}")
-
-    missing = [
-        label
-        for label, alts in COVERAGE
-        if not any(a.lower() in lower for a in alts)
-    ]
-    covered = len(COVERAGE) - len(missing)
-    pct = 100 * covered // len(COVERAGE)
-    _flag(pct >= 90, "cov", f"coverage {covered}/{len(COVERAGE)} ({pct}%)"
-          + (f"; missing: {', '.join(missing)}" if missing else ""))
-
-    if path.suffix == ".rst":
-        # Strict: structure scans the expanded page too. Title-less include
-        # fragments (a lone subheading, no page title) are a known tolerated edge;
-        # if a spurious [struct] FLAG surfaces on a real re-score, narrow this call
-        # to the pre-expansion text and record the deviation here.
-        _score_rst_structure(text)
-    else:
-        _score_myst_structure(text)
-
-
-def _score_myst_structure(text: str) -> None:
-    h1 = len(re.findall(r"^# ", text, flags=re.M))
-    _flag(h1 == 1, "struct", f"exactly one H1 (found {h1})")
-    levels = [len(m.group(1)) for m in re.finditer(r"^(#{1,6}) ", text, flags=re.M)]
-    skips = any(b - a > 1 for a, b in zip(levels, levels[1:]))
-    _flag(not skips, "struct", "heading ladder has no skipped levels")
-    tables = len(re.findall(r"^\|[-: |]+\|$", text, flags=re.M))
-    ltables = text.count("{list-table}")
-    _flag(tables >= 2 or ltables >= 2,
-          "struct", f"field tables present ({tables} pipe / {ltables} list-table)")
-    bare_rst = len(re.findall(r"^\.\. [a-z-]+::", text, flags=re.M))
-    fenced = text.count("{eval-rst}")
-    _flag(bare_rst == 0 or fenced > 0, "struct",
-          f"no bare rST directives outside eval-rst ({bare_rst} found, "
-          f"{fenced} eval-rst fences)")
-
-
-def _score_rst_structure(text: str) -> None:
-    lines = text.splitlines()
-    # Underlined titles: a text line followed by a punctuation underline at
-    # least as long. The FIRST one is the page title; count its underline char
-    # reuse to approximate the ladder.
-    heads: list[tuple[str, str]] = []
-    for a, b in zip(lines, lines[1:]):
-        if (a.strip() and b and len(set(b.strip())) == 1
-                and b.strip()[0] in "=-~^\"'#*+." and len(b.strip()) >= len(a.strip())
-                and not a.startswith((" ", ".."))):
-            heads.append((a, b.strip()[0]))
-    _flag(bool(heads), "struct", f"underlined headings found ({len(heads)})")
-    title_char = heads[0][1] if heads else ""
-    h1 = sum(1 for _, c in heads if c == title_char)
-    _flag(h1 == 1, "struct", f"exactly one page title (found {h1} '{title_char}')")
-    short = [
-        a for a, b in zip(lines, lines[1:])
-        if (a.strip() and b.strip() and len(set(b.strip())) == 1
-            and b.strip()[0] in "=-~^" and len(b.strip()) < len(a.strip())
-            and not a.startswith((" ", "..")))
-    ]
-    _flag(not short, "struct",
-          f"no short heading underlines ({len(short)} found)")
-    ltables = len(re.findall(r"^\.\. list-table::", text, flags=re.M))
-    _flag(ltables >= 2, "struct", f"list-tables present ({ltables} found)")
-    fences = len(re.findall(r"^(```|:::)", text, flags=re.M))
-    _flag(fences == 0, "struct",
-          f"no MyST fences in an rst page ({fences} found)")
 
 
 def read_ledger(path: Path) -> tuple[list[dict], list[str]]:
@@ -1583,47 +1308,8 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
     return 0
 
 
-def _leg_file(directory: Path, leg: str) -> tuple:
-    """``(path_or_None, searched)`` — the leg file for ``leg``, and where it was looked for.
-
-    Two candidates, in order: beside the RUN file (``<directory>/legs/<leg>.md``, which is the
-    layout of a TARGET repo the kit was copied into) and then this kit's own
-    ``<ROOT>/validation/legs/<leg>.md``. Both are named on a miss, because "the leg file is
-    absent" is only actionable once a reader knows which two paths were tried.
-
-    ``leg`` is RUN-file input — UNTRACKED, unvalidated working-tree input — and the
-    module docstring's rule is stated absolutely: the scorer never opens a record-supplied path
-    directly. It used to here. ``"leg": "../../secret/loot"`` was interpolated
-    straight into both paths, the file outside the tree was read, and check 6 echoed its table
-    cells into the report — a read primitive with an output channel, not merely a stat. A
-    symlinked ``legs/<leg>.md`` was followed for the same reason.
-
-    Two controls, because they answer two different questions. ``LEG_RE`` refuses a value that
-    is not a leg NAME at all, which is the check ``runmeta.sh`` performs on the authoring side
-    and the reason a leg name was ever thought trustworthy; ``_resolved_under`` then refuses a
-    resolved path that leaves the ``legs/`` directory it was joined under, which is the control
-    oracle check 3 already uses and covers the symlink the name check cannot see.
-
-    The FILENAME fallback in ``protocol`` (``run_path.name[len("RUN-"):-len(".json")]``) is safe
-    on its own — a filename component carries no separator — and is held to the same rule anyway,
-    because a reader should not have to work out which of the two branches got the guard.
-    """
-    if not LEG_RE.match(leg):
-        return None, ["refused unread: %r is not a leg name (%s)" % (leg, LEG_RE.pattern)]
-    searched: list = []
-    found = None
-    for base in (directory, ROOT / "validation"):
-        candidate = _resolved_under(base / "legs", "%s.md" % leg)
-        searched.append(candidate if candidate is not None
-                        else "%s (refused: leaves %s)" % (base / "legs" / ("%s.md" % leg),
-                                                          base / "legs"))
-        if found is None and candidate is not None and candidate.is_file():
-            found = candidate
-    return found, searched
-
-
 def protocol(directory: Path = ROOT / "validation") -> int:
-    """The SIX conformance checks over one pre-registered leg.
+    """The FOUR conformance checks over one dogfood leg's RUN file.
 
     Returns the process exit code and never calls ``sys.exit`` itself, so ``main`` stays the
     single place this program decides how to leave:
@@ -1635,9 +1321,11 @@ def protocol(directory: Path = ROOT / "validation") -> int:
             retargeted directory, a leg that never wrote a RUN file, or a reshaped tree would
             otherwise report exactly what a conformant leg reports.
 
-    The six, in this fixed order, each on its own line and NONE of them short-circuiting the
-    others — a gate that stops at the first violation makes an author fix one thing, re-run,
-    and find the next, and the point of a conformance report is to hand back the whole list:
+    Every check reads the RUN file and nothing else, apart from the one ``crayon version
+    --json`` reading the third check takes. The four, in this fixed order, each on its own
+    line and NONE of them short-circuiting the others — a gate that stops at the first
+    violation makes an author fix one thing, re-run, and find the next, and the point of a
+    conformance report is to hand back the whole list:
 
         1 ``[run]``        the RUN file is complete — every key in ``REQUIRED_RUN_KEYS`` and
                            every one of the six ``REQUIRED_METRIC_KEYS`` — and there is exactly
@@ -1658,17 +1346,12 @@ def protocol(directory: Path = ROOT / "validation") -> int:
                            NUMBER of paths digested named on either outcome. With no origins
                            recorded at all the check SKIPs rather than passing: both sides are
                            then sha256 of the empty list and the comparison asserts nothing,
-                           so this is one of the six that may print five lines
-        5 ``[results]``    ``validation/legs/<leg>.md`` exists and carries every heading in
-                           ``REQUIRED_LEG_HEADINGS``. This is where v1's two checks landed:
-                           the leg file is the v2.0 home of ``RESULTS.md``, and the leg is
-                           discovered from the RUN file rather than from a filename glob
-        6 ``[rubric]``     no rubric score row still reads ``UNSCORED``
+                           so a run may print three PASS or FLAG lines and one SKIP line
 
     The RUN file is untracked, unvalidated working-tree input. Invalid JSON, a non-object,
     and a wrong-typed nested value each FLAG naming what was found; a traceback at the reader
-    is the outcome these guards exist to prevent. When the contents cannot be read at all the
-    leg is taken from the FILENAME instead, so checks 5 and 6 still have something to say.
+    is the outcome these guards exist to prevent. When the contents cannot be read at all,
+    every check still prints its line, and each one FLAGs because its evidence is absent.
     """
     directory = Path(directory).resolve()
     print(f"== protocol conformance: {directory}")
@@ -1691,16 +1374,9 @@ def protocol(directory: Path = ROOT / "validation") -> int:
     except (OSError, ValueError) as problem:
         read_problem = "is not readable JSON (%s)" % problem
 
-    # The leg names the pre-registered file checks 5 and 6 read. Preferred from the record;
-    # taken from the filename when the record cannot be read, so a damaged RUN file does not
-    # silently take two unrelated checks down with it.
-    leg = data.get("leg") if isinstance(data, dict) else None
-    if not isinstance(leg, str) or not leg:
-        leg = run_path.name[len("RUN-"):-len(".json")]
-
     violation = False
 
-    # --- check 1 of 6: the RUN file is complete -------------------------------------------
+    # --- check 1 of 4: the RUN file is complete -------------------------------------------
     problems = []
     if len(run_files) > 1:
         problems.append("%d RUN files are present (%s); crayon's sphinx_result takes %s, the "
@@ -1728,7 +1404,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
         else "validation/%s carries all %d required keys and all six session metrics"
              % (run_path.name, len(REQUIRED_RUN_KEYS)))
 
-    # --- check 2 of 6: the transcript sha -------------------------------------------------
+    # --- check 2 of 4: the transcript sha -------------------------------------------------
     transcript = data.get("transcript") if isinstance(data, dict) else None
     if not isinstance(transcript, dict):
         violation |= not _flag(False, "transcript",
@@ -1751,7 +1427,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
                                    "transcript.sha256 is %r for %r"
                                    % (recorded, transcript.get("path")))
 
-    # --- check 3 of 6: the compatibility numbers ------------------------------------------
+    # --- check 3 of 4: the compatibility numbers ------------------------------------------
     tool_record = data.get("tool") if isinstance(data, dict) else None
     reported = None
     executable = _crayon_executable()
@@ -1787,7 +1463,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
             else "contract %r and min_tool %r match the tool's own reading"
                  % (expected["contract"], expected["min_tool"]))
 
-    # --- check 4 of 6: context == baseline ------------------------------------------------
+    # --- check 4 of 4: context == baseline ------------------------------------------------
     baseline = data.get("baseline") if isinstance(data, dict) else None
     context = data.get("context") if isinstance(data, dict) else None
     baseline_digest = baseline.get("origins_sha256") if isinstance(baseline, dict) else None
@@ -1833,66 +1509,21 @@ def protocol(directory: Path = ROOT / "validation") -> int:
                 else "the origins digest over %d path(s) is %r on both sides"
                      % (len(origins), baseline_digest))
 
-    # --- check 5 of 6: the leg file and its headings --------------------------------------
-    leg_path, searched = _leg_file(directory, leg)
-    leg_text = ""
-    if leg_path is None:
-        violation |= not _flag(False, "results",
-                               "no leg file for %r: looked for %s"
-                               % (leg, " and ".join(str(path) for path in searched)))
-    else:
-        try:
-            with open(leg_path, "r", encoding="utf-8") as handle:
-                leg_text = handle.read()
-        except OSError as problem:
-            leg_text = ""
-            violation |= not _flag(False, "results",
-                                   "%s cannot be read (%s)" % (leg_path, problem))
-        else:
-            headings = {match.group(1) for match in LEG_HEADING_RE.finditer(leg_text)}
-            absent = [heading for heading in REQUIRED_LEG_HEADINGS if heading not in headings]
-            violation |= not _flag(
-                not absent, "results",
-                "%s is missing heading(s): %s" % (leg_path, ", ".join(absent)) if absent
-                else "%s carries all %d required headings"
-                     % (leg_path, len(REQUIRED_LEG_HEADINGS)))
-
-    # --- check 6 of 6: the rubric score rows ----------------------------------------------
-    if not leg_text:
-        violation |= not _flag(False, "rubric",
-                               "no leg file text to read rubric score rows from for %r" % leg)
-    else:
-        rows = [(match.group(1), match.group(3))
-                for match in RUBRIC_ROW_RE.finditer(leg_text)]
-        unfilled = [dimension for dimension, score in rows if score == UNFILLED_SCORE]
-        violation |= not _flag(
-            bool(rows) and not unfilled, "rubric",
-            "no rubric score row found in %s: the table `protocol` reads is the "
-            "`| dimension | unit | `score` |` one under ## Rubric instantiation" % leg_path
-            if not rows
-            else "%d score row(s) still read %s: %s"
-                 % (len(unfilled), UNFILLED_SCORE, "; ".join(unfilled)) if unfilled
-            else "all %d rubric score row(s) are filled (`%s` is a score, not a placeholder)"
-                 % (len(rows), "n/a"))
-
     return 1 if violation else 0
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Route the three subcommands and report the 0/1/2 exit contract.
+    """Route the two subcommands and report the 0/1/2 exit contract.
 
     Returns
     -------
     int
-        ``0`` clean, ``1`` violation, ``2`` when NOTHING was checked. ``draft`` is
-        report-only and always returns 0; ``audit`` and ``protocol`` are gates.
+        ``0`` clean, ``1`` violation, ``2`` when NOTHING was checked. ``audit`` and
+        ``protocol`` are both gates.
     """
     parser = argparse.ArgumentParser(
         prog="score.py", description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
-
-    draft = sub.add_parser("draft", help="prose scorecard for one drafted page (exits 0)")
-    draft.add_argument("path", type=Path, help="the page to score")
 
     unit = sub.add_parser("audit", help="the independent oracle over one unit (gates)")
     unit.add_argument("unit_id", help="the unit id, as in .crayon/units/<id>/")
@@ -1900,15 +1531,12 @@ def main(argv: list[str] | None = None) -> int:
                       help="repository root to audit (default: %(default)s)")
 
     conformance = sub.add_parser(
-        "protocol", help="conformance gate over the pre-registered legs (gates)")
+        "protocol", help="conformance gate over one dogfood leg's RUN file (gates)")
     conformance.add_argument("dir", nargs="?", type=Path,
                              default=Path(__file__).resolve().parent,
                              help="the directory holding the RUN file (default: %(default)s)")
 
     args = parser.parse_args(argv)
-    if args.command == "draft":
-        score_draft(args.path)
-        return 0
     if args.command == "audit":
         return audit(args.unit_id, args.root)
     return protocol(args.dir)

@@ -28,6 +28,12 @@
 
 set -u
 
+# No git config of the machine running the suite reaches a test: pinned here,
+# when the library loads, so a fixture that shells out to git before
+# `setup_repo` (or without it) is covered too.
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_SYSTEM=/dev/null
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CRAYON="$REPO_ROOT/crayon.py"
@@ -41,6 +47,22 @@ trap 'rm -f "$RESULTS"' EXIT
 
 _record_pass() {
     printf 'PASS\n' >>"$RESULTS"
+}
+
+# skip_test KEY: skip the running test for the reason tests/skips.json lists
+# under KEY. A key that is not listed is a failure: a skip nobody listed is a
+# test nobody ran. A skip is reported as a skip, never counted as a pass.
+skip_test() {
+    local reason
+    reason=$(python3 -c '
+import json, sys
+print(json.load(open(sys.argv[1], encoding="utf-8"))["skips"].get(sys.argv[2], ""))
+' "$REPO_ROOT/tests/skips.json" "$1")
+    if [ -z "$reason" ]; then
+        _record_fail "unlisted skip '$1': list it in tests/skips.json with its reason"
+        return 0
+    fi
+    printf 'SKIP\t%s: %s\n' "$1" "$reason" >>"$RESULTS"
 }
 
 _record_fail() {
@@ -672,6 +694,8 @@ print(json.dumps(module.verify_chain([line for line in text.split("\n") if line]
 TAP_INDEX=0
 TAP_PASS=0
 TAP_FAIL=0
+TAP_SKIP=0
+SKIPPED_TESTS=()
 
 run_test() {
     local name="$1"
@@ -700,7 +724,13 @@ run_test() {
         failed_here=$((failed_here + 1))
     fi
     TAP_INDEX=$((TAP_INDEX + 1))
-    if [ "$failed_here" -eq 0 ]; then
+    local skipped_here
+    skipped_here=$(awk -F'\t' -v start="$before" 'NR > start && /^SKIP/ {print $2; exit}' "$RESULTS")
+    if [ "$failed_here" -eq 0 ] && [ -n "$skipped_here" ]; then
+        TAP_SKIP=$((TAP_SKIP + 1))
+        SKIPPED_TESTS+=("$name - $skipped_here")
+        echo "ok ${TAP_INDEX} - ${name} # SKIP ${skipped_here}"
+    elif [ "$failed_here" -eq 0 ]; then
         TAP_PASS=$((TAP_PASS + 1))
         echo "ok ${TAP_INDEX} - ${name}"
     else
@@ -728,10 +758,10 @@ main() {
     # is recorded through the same results file so the `Failed assertions:`
     # block below names it.
     if [ "$TAP_INDEX" -eq 0 ]; then
-        TAP_INDEX=1
-        TAP_FAIL=1
         echo "not ok 1 - the suite discovered no test functions"
-        _record_fail "$0 discovered no test functions (nothing matched '^test_')"
+        echo "1..1"
+        echo "$0: discovered no test functions (nothing matched '^test_'); nothing was checked" >&2
+        exit 2
     fi
 
     PASS=$(awk '/^PASS/ {n++} END {print n + 0}' "$RESULTS")
@@ -744,8 +774,16 @@ main() {
     echo "# tests ${TAP_INDEX}"
     echo "# pass ${TAP_PASS}"
     echo "# fail ${TAP_FAIL}"
+    echo "# skip ${TAP_SKIP}"
     echo ""
     echo "Results: ${PASS} passed, ${FAIL} failed"
+    if [ "$TAP_SKIP" -gt 0 ]; then
+        echo "Skipped tests (tests/skips.json):"
+        local s
+        for s in "${SKIPPED_TESTS[@]}"; do
+            echo "  - $s"
+        done
+    fi
 
     if [ "$FAIL" -gt 0 ]; then
         echo ""

@@ -46,7 +46,8 @@ uv run --project validation/evals python -m unittest tests.test_evals  # the eva
 ```
 
 Set `GIT_CONFIG_GLOBAL=/dev/null` for anything that shells out to git, so a developer's global
-identity or hooks can never mask a missing step in a fixture. Alongside the gate, and pinned to
+identity or hooks can never mask a missing step in a fixture; `tests/lib.sh` sets it, and
+`GIT_CONFIG_SYSTEM`, itself when it loads, so no bash suite depends on the caller. Alongside the gate, and pinned to
 CI the same way, the shell files are kept clean with:
 
 ```bash
@@ -79,6 +80,8 @@ truncated under the other reports `OK` either way. Beyond the tool's own units i
 of the repository's self-pins: the gate tuple, the tree block in `AGENTS.md` (pinned against
 the real `docs/`, `scripts/`, `tests/` and `validation/` in both directions), the CI mirror,
 the line budget's two thresholds, the Python 3.9 hazard scan and the no-dependency assertion.
+It counts the tests it defines, with the `ast` module, and fails unless it loads exactly that
+many, under either runner.
 
 **`tests/test_skill_text.py`** — the skill-text contracts: the routing table authored once in
 `skills/README.md` between its sentinels is byte-identical in every skill's
@@ -100,13 +103,20 @@ verbs driven end to end through the executable.
 Both bash suites source `tests/lib.sh`, the one definition site for the temp-repo fixture, the
 assertion set, the hook fixtures, the step-evidence helpers (`last_plan_seq`, `record_step` and
 `skip_step`), the vacuous-test guard and the TAP runner; `validation/evals/fixtures/states.sh`
-sources the same file. Never add a second copy of any of those.
+sources the same file. Never add a second copy of any of those. A bash suite that discovers no
+tests exits `2`, like every other checker.
+
+Every skip, in any suite, is reported by name, and every skip must be listed with its reason in
+`tests/skips.json`: a test skips through `skip_test <key>` in bash or `listed_skip` in the unit
+suite, and an unlisted key fails. A skip a runner cannot avoid, such as a test that needs a
+newer Python than the one running or a check that root can read any file, is listed; a skip
+that would hide a missing tool is not.
 
 **`tests/install_smoke.sh`** — the only test that reaches `crayon` through `PATH` rather than the
 in-tree file. It extracts the fenced shell between the `INSTALL:BEGIN` / `INSTALL:END` markers in
 [[install]] byte for byte, runs it from a temporary `HOME` in a temporary
-repository, then drives one unit to a written page and one refusal from that vantage point. It
-is what keeps the documented install from rotting.
+repository, then drives one unit through a written page, a review accept, `show` and `summary`,
+and one refusal, from that vantage point. It is what keeps the documented install from rotting.
 
 **`validation/fixtures.sh`** — V-01 … V-04: a bypassed signoff gate, a tampered ledger line, an
 unsteered redraft and an unresolved pending request, each reached from a valid unit built by the
@@ -181,8 +191,9 @@ documents outside a `## Under the hood` section; the changelog's topmost release
 must be dated and carry no placeholder. It calls `check_traces.py` itself.
 
 **`tests/check_traces.py`** — every row of the contract's trace table and every Mechanisms row
-that names a suite file must have a test whose function name carries the row's id. It says a
-test exists, and nothing about what the test asserts.
+must have a test whose function name carries the row's id, in the suite file a Mechanisms row
+names, and each such test must assert something. It reads that a test checks, not what it
+checks: whether an assertion is the right one stays a reviewer's call.
 
 **`scripts/skill_lint.py`** — agentskills.io frontmatter invariants for each `SKILL.md`: the
 name matches the directory, the description parses, the compatibility numbers are the contract's

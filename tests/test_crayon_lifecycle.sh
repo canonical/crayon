@@ -4239,9 +4239,7 @@ test_an_unopenable_lock_reports_the_real_fault_not_an_invented_one() {
     setup_repo
     crayon_unit_new perm-unit "reference/perm.rst" >/dev/null 2>&1
     if [ "$(id -u)" = "0" ]; then
-        # Running as root, EACCES is not reachable; record the skip as a pass so
-        # the "no assertions" guard does not read it as a vacuous test.
-        assert_eq "skipped as root: EACCES is unreachable" "0" "0"
+        skip_test root-reads-anything
         cleanup
         return 0
     fi
@@ -4599,7 +4597,7 @@ test_an_unreadable_file_is_one_json_line_never_a_traceback() {
     setup_repo
     if [ "$(id -u)" = "0" ]; then
         # chmod 000 does not deny root, so the fixture cannot express the case.
-        assert_eq "skipped as root" "0" "0"
+        skip_test root-reads-anything
         cleanup
         return 0
     fi
@@ -4778,7 +4776,7 @@ test_a_ledger_refusal_spells_the_ledger_from_the_repo_root() {
     cleanup
 }
 
-test_stage_a_busy_refuses_with_nothing_written() {
+test_n16_a_held_repository_lock_refuses_with_nothing_written() {
     setup_repo
     crayon_unit_new demo-unit "reference/demo.rst" >/dev/null 2>&1
     local head_before ledger_before
@@ -4980,7 +4978,7 @@ test_a_destination_the_filesystem_rejects_is_refused_before_the_append() {
     # B. the docs subdirectory exists but is not writable. os.access is an
     # effective-permission check, and 0500 does not deny root.
     if [ "$(id -u)" = "0" ]; then
-        assert_eq "skipped as root" "0" "0"
+        skip_test root-reads-anything
         cleanup
         return 0
     fi
@@ -5039,7 +5037,7 @@ test_a_backstop_refusal_names_its_unit() {
     stage_draft attr-unit "reference/a.rst" "body\n"
     if [ "$(id -u)" = "0" ]; then
         # chmod 000 does not deny root, so the fixture cannot express the case.
-        assert_eq "skipped as root" "0" "0"
+        skip_test root-reads-anything
     else
         chmod 000 docs/reference
         "$CRAYON" draft attr-unit "$(draft_path attr-unit reference/a.rst)" \

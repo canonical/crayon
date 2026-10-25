@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# test_crayon_acceptance.sh — the ported acceptance suite, A-01 … A-35.
+# test_crayon_acceptance.sh — the acceptance suite, A-01 … A-38. A-36 lives in the
+# lifecycle suite and A-37 is the install smoke (tests/install_smoke.sh).
 #
 # Usage: bash tests/test_crayon_acceptance.sh
 #
