@@ -59,7 +59,7 @@ what the case grades:
 
 - `Write`, `Edit`, a question to the author, or a turn with no tool call;
 - a command that names a `crayon` verb that records (`agent.MUTATING_PATTERN`, the same pattern as
-  the `@MUTATING` macro); it is not run;
+  the `@MUTATING` macro); it is not run. A verb asked for its `--help` records nothing;
 - any other command after which `digest.tree` (every file's path, mode and bytes, every link, and
   the git index as `git ls-files --stage` lists it) differs; its output is not shown to the model.
 
@@ -206,7 +206,8 @@ that matches it is not read, so a mechanical choice's marked default (`Resume at
 A lane B pattern can name a macro from `lanes.MACROS`, so the same rule reads the same in every
 case. `TestMacros` in `tests/test_evals.py` proves the last four in both directions, on text
 that must match and text that must not:
-- `@MUTATING`: a `crayon` verb that records anything (`resume --dry-run` only looks);
+- `@MUTATING`: a `crayon` verb that records anything (`resume --dry-run` and a verb's `--help`
+  only look);
 - `@PUBLISH`: a git write, a build or a pull request, never the skill's to run;
 - `@MARKER`: a recommended or default marker on a judgment option, such as `(Recommended)`,
   `(default)` or a star; the order of the options alone is not a marker;
