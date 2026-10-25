@@ -70,7 +70,7 @@ DECISION_RUNS = 3
 #: Every file whose change alters what a case sees or how it is graded.
 KIT_FILES = ("agent.py", "digest.py", "grade.py", "lanes.py", "pf_assert.py", "pf_provider.py",
              "sandbox.py", "skills.py", "fixtures/states.sh")
-KIT_TREES = ("cases", "workshop", "fixtures/toyq")
+KIT_TREES = ("cases", "workshop", "fixtures/toyq", "fixtures/tidewatch")
 TABLE_BEGIN = "<!-- supported-models:begin -->"
 TABLE_END = "<!-- supported-models:end -->"
 

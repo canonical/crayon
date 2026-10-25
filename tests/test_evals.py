@@ -1947,6 +1947,19 @@ class TestLaneBCases(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "B-98: .*crayon-nope"):
                 lanes.load_b(root)
 
+    def test_a_case_works_in_its_own_projects_directory(self):
+        case = lanes.case_by_id("B", "B-80")
+        self.assertEqual(case["resolved"]["workdir"], "/srv/tidewatch")
+        prompt = lanes.messages_b(case, skillmod.load_skills())[0]["content"]
+        self.assertIn("/srv/tidewatch", prompt)
+        self.assertNotIn("/srv/toyq", prompt)
+        holder = tempfile.mkdtemp(prefix="crayon-eval-workdir-")
+        self.addCleanup(shutil.rmtree, holder, True)
+        os.mkdir(os.path.join(holder, "repo"))
+        runner = sandbox.HostRunner()
+        runner.reset(holder, case["resolved"]["workdir"])
+        self.assertEqual(runner.run("pwd && cd /srv/tidewatch && pwd"), ("/srv/tidewatch\n/srv/tidewatch", 0))
+
     def test_a_case_without_a_prelude_builds_the_messages_it_built_before(self):
         skills = skillmod.load_skills()
         plain = [case for case in lanes.load_b() if "prelude" not in case]
@@ -1956,9 +1969,10 @@ class TestLaneBCases(unittest.TestCase):
                 self.assertEqual(case["resolved"]["prelude"], [])
                 _, invocation = skillmod.expand_invocation(
                     ("/%s %s" % (case["skill"], case.get("ask", ""))).strip(), skills)
+                workdir = agent.workdir_for(case.get("project", "toyq"))
                 self.assertEqual(lanes.messages_b(case, skills), [
                     {"role": "system",
-                     "content": skillmod.agent_system_prompt(skills, agent.WORKDIR)},
+                     "content": skillmod.agent_system_prompt(skills, workdir)},
                     {"role": "user", "content": invocation},
                 ] + agent.history_messages(case["resolved"]["history"]))
 
@@ -2375,8 +2389,8 @@ class TestLaneBCases(unittest.TestCase):
         self.assertEqual(set(c["skill"] for c in cases), set(grade.SKILL_NAMES))
         self.assertEqual(set(c["group"] for c in cases),
                          {"opening", "next", "refusals", "wording", "go", "notes", "lean",
-                          "closure", "intake", "depth", "voice"})
-        self.assertGreaterEqual(len(cases), 77)
+                          "closure", "intake", "depth", "voice", "tidewatch"})
+        self.assertGreaterEqual(len(cases), 94)
 
     def test_every_sandbox_agrees_with_its_history(self):
         """What a model sees when it looks is what the replayed history said.

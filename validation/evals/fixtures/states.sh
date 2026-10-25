@@ -85,10 +85,12 @@ stage_context() {
         { echo "setup failed: context stage $1" >&2; exit 1; }
 }
 
-# base_bare : the toyq project with the skills installed, and no context yet.
+# base_bare [PROJECT] : a fixture project (toyq unless named) with the skills
+# installed, and no context yet.
 base_bare() {
+    local project="${1:-toyq}"
     setup_repo
-    python3 - "$ROOT" <<'PY' || { echo "setup failed: copy toyq and the skills" >&2; exit 1; }
+    python3 - "$ROOT" "$project" <<'PY' || { echo "setup failed: copy $project and the skills" >&2; exit 1; }
 import os
 from pathlib import Path
 import shutil
@@ -98,7 +100,7 @@ import sys
 source = Path(sys.argv[1])
 tracked = subprocess.check_output([
     "git", "-C", str(source), "ls-files", "-z", "--",
-    "validation/evals/fixtures/toyq", "skills/crayon-*",
+    "validation/evals/fixtures/" + sys.argv[2], "skills/crayon-*",
 ])
 for name in tracked.split(b"\0"):
     if not name:
@@ -110,9 +112,9 @@ for name in tracked.split(b"\0"):
     shutil.copy2(source / path, target)
 PY
     printf '.crayon/staging/\n' >.gitignore
-    git add -A || { echo "setup failed: git add the toyq project" >&2; exit 1; }
-    git commit -q -m "toyq project, crayon skills installed" ||
-        { echo "setup failed: commit the toyq project" >&2; exit 1; }
+    git add -A || { echo "setup failed: git add the $project project" >&2; exit 1; }
+    git commit -q -m "$project project, crayon skills installed" ||
+        { echo "setup failed: commit the $project project" >&2; exit 1; }
 }
 
 # base : base_bare plus a recorded context, so a unit session grounds without
@@ -579,12 +581,223 @@ PY
         --note 'max_queue_size is a new setting and no page documents the settings'
 }
 
+# --- the second project: tidewatch ------------------------------------------
+#
+# A larger, Sphinx-shaped project (validation/evals/fixtures/tidewatch), so the
+# critical rules are also checked away from toyq. Its states carry the `tw_`
+# prefix and serve one critical case per rule (cases/decision/tidewatch.json).
+
+TW_UNIT=settings
+TW_TARGET=reference/configuration.md
+TW_PAGE="docs/$TW_TARGET"
+TW_DOC_STYLE='# Doc style\n\nSecond person, present tense. Commands go in console blocks.\n'
+TW_GLOSSARY='# Glossary\n\n- **watch**: a directory tidewatch polls, with its command.\n- **hook**: the command a watch runs when something in it changes.\n'
+TW_STRUCTURE='# Structure\n\n- docs/tutorial/: learning by doing.\n- docs/how-to/: task guides.\n- docs/reference/: commands, hooks, events, variables.\n- docs/explanation/: background.\n'
+TW_PAGE_V1='# Configuration reference\n\ntidewatch reads its settings from defaults, then `tidewatch.toml`, then `TIDEWATCH_*` environment variables; the last one wins.\n\n| Setting | Variable | Type | Default |\n|---|---|---|---|\n| `poll_interval_seconds` | `TIDEWATCH_POLL_INTERVAL` | float | `2.0` |\n| `debounce_ms` | `TIDEWATCH_DEBOUNCE_MS` | integer | `250` |\n| `max_hooks_in_flight` | `TIDEWATCH_MAX_HOOKS` | integer | `4` |\n| `hook_timeout_seconds` | `TIDEWATCH_HOOK_TIMEOUT` | integer | `300` |\n| `follow_symlinks` | `TIDEWATCH_FOLLOW_SYMLINKS` | boolean | `false` |\n| `log_format` | `TIDEWATCH_LOG_FORMAT` | string | `text` |\n| `state_dir` | `TIDEWATCH_STATE_DIR` | path | `~/.local/state/tidewatch` |\n\n`tidewatch check` reports every setting that breaks a rule: `poll_interval_seconds` must be more than 0, `debounce_ms` 0 or more, `max_hooks_in_flight` 1 or more, and `log_format` one of `text` or `json`.\n'
+TW_HOWTO_PAGE='# Rebuild the docs when they change\n\nInstall tidewatch from the checkout:\n\n```console\n$ python3 -m pip install /srv/tidewatch\n```\n\nWatch the docs, ignoring the build output:\n\n```console\n$ tidewatch add docs --on-change "python3 -m sphinx docs docs/_build/html" --ignore "*/_build/*"\n```\n\nRun one poll to check it:\n\n```console\n$ tidewatch run --once\n```\n'
+
+# tw_base : tidewatch with the skills installed and its context recorded.
+tw_base() {
+    base_bare tidewatch
+    stage_context doc-style.md "$TW_DOC_STYLE"
+    stage_context glossary.md "$TW_GLOSSARY"
+    stage_context structure.md "$TW_STRUCTURE"
+    "$CRAYON" context record --note "tidewatch context" >/dev/null 2>&1 ||
+        { echo "setup failed: context record (tidewatch)" >&2; exit 1; }
+}
+
+# tw_declare : the reference unit `settings`, declared.
+tw_declare() {
+    printf '%s\n' \
+        '# Plan' '' \
+        'A reference page for every tidewatch setting: its key in tidewatch.toml, its' \
+        'TIDEWATCH_* variable, its type, its default and the rule tidewatch check' \
+        'enforces, and the precedence (defaults, then tidewatch.toml, then the' \
+        'environment).' '' \
+        '- One table of settings.' \
+        '- Precedence, stated once.' \
+        '- The rules, as tidewatch check reports them.' |
+        "$CRAYON" unit new "$TW_UNIT" --intent reference \
+            --audience "people running tidewatch on a workstation or a server" \
+            --title "Configuration reference" --target "$TW_TARGET" \
+            --source src/tidewatch/config.py --body-file - >/dev/null 2>&1 ||
+        { echo "setup failed: unit new $TW_UNIT" >&2; exit 1; }
+}
+
+tw_drafted() {
+    tw_base
+    tw_declare
+    "$CRAYON" signoff "$TW_UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $TW_UNIT" >&2; exit 1; }
+    stage_draft "$TW_UNIT" "$TW_TARGET" "$TW_PAGE_V1"
+    "$CRAYON" draft "$TW_UNIT" "$(draft_path "$TW_UNIT" "$TW_TARGET")" >/dev/null 2>&1 ||
+        { echo "setup failed: draft $TW_UNIT" >&2; exit 1; }
+}
+
+# tw_declare_howto : the how-to unit `rebuild-docs`, declared and signed off.
+tw_declare_howto() {
+    printf '%s\n' '# Plan' '' 'Set up tidewatch to rebuild the docs whenever a page changes.' |
+        "$CRAYON" unit new rebuild-docs --intent how-to \
+            --audience "contributors editing the tidewatch docs" \
+            --title "Rebuild the docs when they change" --target how-to/rebuild-docs.md \
+            --source README.md --body-file - >/dev/null 2>&1 ||
+        { echo "setup failed: unit new rebuild-docs" >&2; exit 1; }
+    "$CRAYON" signoff rebuild-docs >/dev/null 2>&1 ||
+        { echo "setup failed: signoff rebuild-docs" >&2; exit 1; }
+}
+
+# tw_steps STATEFUL : the step plan of `rebuild-docs`, every step stateful or none.
+tw_steps() {
+    printf '[{"id":"install","text":"Install tidewatch from the checkout: python3 -m pip install /srv/tidewatch","mode":"agent","stateful":%s},{"id":"watch","text":"Watch the docs: tidewatch add docs --on-change \\"python3 -m sphinx docs docs/_build/html\\"","mode":"agent","stateful":%s},{"id":"poll","text":"Run one poll: tidewatch run --once","mode":"ta","stateful":%s}]' \
+        "$1" "$1" "$1" |
+        "$CRAYON" plan-steps rebuild-docs --steps-file - >/dev/null 2>&1 ||
+        { echo "setup failed: plan-steps rebuild-docs" >&2; exit 1; }
+}
+
+scenario_tw_context() {
+    tw_base
+    rec tw_context_recorded show_json context show --json
+    snap tw_context_recorded
+}
+
+scenario_tw_declared() {
+    tw_base
+    tw_declare
+    rec tw_declared show_json show "$TW_UNIT" --json
+    rec tw_declared show show "$TW_UNIT"
+    rec_unit tw_declared "$TW_UNIT"
+    snap tw_declared
+}
+
+scenario_tw_signed() {
+    tw_base
+    tw_declare
+    "$CRAYON" signoff "$TW_UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $TW_UNIT" >&2; exit 1; }
+    rec tw_signed show_json show "$TW_UNIT" --json
+    rec_unit tw_signed "$TW_UNIT"
+    rec_file tw_signed src/tidewatch/config.py
+    snap tw_signed
+}
+
+scenario_tw_drafted() {
+    tw_drafted
+    rec tw_drafted show_json show "$TW_UNIT" --json
+    rec tw_drafted summary summary "$TW_UNIT"
+    rec_unit tw_drafted "$TW_UNIT"
+    rec_file tw_drafted "$TW_PAGE"
+    snap tw_drafted
+}
+
+scenario_tw_accepted() {
+    tw_drafted
+    "$CRAYON" review "$TW_UNIT" --verdict accept --note "Matches what tidewatch check enforces." \
+        >/dev/null 2>&1 || { echo "setup failed: accept $TW_UNIT" >&2; exit 1; }
+    rec tw_accepted show_json show "$TW_UNIT" --json
+    rec_unit tw_accepted "$TW_UNIT"
+    snap tw_accepted
+    rec tw_accepted accept_again_json review "$TW_UNIT" --verdict accept \
+        --note "Matches what tidewatch check enforces." --json
+}
+
+scenario_tw_missing() {
+    tw_drafted
+    rm "$TW_PAGE"
+    rec tw_missing show_json show "$TW_UNIT" --json
+    snap tw_missing
+    rec tw_missing accept_json review "$TW_UNIT" --verdict accept --note "Ship it." --json
+}
+
+scenario_tw_crashed() {
+    tw_base
+    tw_declare
+    # The crash IS the state: this signoff fails on purpose, so its exit is not checked.
+    CRAYON_CRASH_AT=append "$CRAYON" signoff "$TW_UNIT" >/dev/null 2>&1
+    rec tw_crashed show_json show "$TW_UNIT" --json
+    snap tw_crashed
+}
+
+scenario_tw_diverged() {
+    tw_drafted
+    local ledger=".crayon/units/$TW_UNIT/ledger.jsonl" saved
+    saved=$(mktemp)
+    cp "$ledger" "$saved"
+    python3 -c '
+import sys
+path = sys.argv[1]
+lines = open(path, encoding="utf-8").read().splitlines(True)
+lines[1] = lines[1].replace("reference", "referenc3", 1)
+open(path, "w", encoding="utf-8").write("".join(lines))
+' "$ledger"
+    git commit -q -a --amend -m "crayon: drafted $TW_UNIT" ||
+        { echo "setup failed: amend the drafted commit (tidewatch)" >&2; exit 1; }
+    cp "$saved" "$ledger"
+    rm -f "$saved"
+    rec tw_diverged show_json show "$TW_UNIT" --json
+    snap tw_diverged
+}
+
+scenario_tw_walk() {
+    tw_base
+    tw_declare_howto
+    tw_steps true
+    rec tw_walk show_json show rebuild-docs --json
+    rec tw_walk show show rebuild-docs
+    snap tw_walk
+}
+
+scenario_tw_walk_drafted() {
+    local seq
+    tw_base
+    tw_declare_howto
+    tw_steps false
+    seq=$(last_plan_seq rebuild-docs)
+    [ -n "$seq" ] || { echo "setup failed: read the step plan's seq (tidewatch)" >&2; exit 1; }
+    record_step rebuild-docs install "$seq" pass "Successfully installed tidewatch-1.4.2\n" \
+        >/dev/null 2>&1 || { echo "setup failed: step install (tidewatch)" >&2; exit 1; }
+    record_step rebuild-docs watch "$seq" deviated "3f9c2a1b\n" agent \
+        "the build output re-triggered the watch until --ignore '*/_build/*' was added" \
+        >/dev/null 2>&1 || { echo "setup failed: step watch (tidewatch)" >&2; exit 1; }
+    skip_step rebuild-docs poll "$seq" "Sphinx is not installed on this machine" >/dev/null 2>&1 ||
+        { echo "setup failed: step poll (tidewatch)" >&2; exit 1; }
+    stage_draft rebuild-docs how-to/rebuild-docs.md "$TW_HOWTO_PAGE"
+    "$CRAYON" draft rebuild-docs "$(draft_path rebuild-docs how-to/rebuild-docs.md)" >/dev/null 2>&1 ||
+        { echo "setup failed: draft rebuild-docs" >&2; exit 1; }
+    rec tw_walk_drafted show_json show rebuild-docs --json
+    rec tw_walk_drafted summary summary rebuild-docs
+    snap tw_walk_drafted
+}
+
+# A setting lands in tidewatch after the context was recorded, and the author asks
+# whether it needs documentation.
+scenario_tw_triage() {
+    tw_base
+    python3 - <<'PY' || { echo "setup failed: add max_event_age_seconds" >&2; exit 1; }
+from pathlib import Path
+path = Path("src/tidewatch/config.py")
+text = path.read_text(encoding="utf-8")
+for old, new in (
+    ('    "state_dir": "~/.local/state/tidewatch",\n}',
+     '    "state_dir": "~/.local/state/tidewatch",\n    "max_event_age_seconds": 60,\n}'),
+    ('    "state_dir": "TIDEWATCH_STATE_DIR",\n}',
+     '    "state_dir": "TIDEWATCH_STATE_DIR",\n    "max_event_age_seconds": "TIDEWATCH_MAX_EVENT_AGE",\n}'),
+    ("    state_dir: str\n", "    state_dir: str\n    max_event_age_seconds: int\n"),
+):
+    assert text.count(old) == 1, old
+    text = text.replace(old, new)
+path.write_text(text, encoding="utf-8")
+PY
+    git commit -q -am "Add max_event_age_seconds: drop events older than this when a poll is late" ||
+        { echo "setup failed: commit max_event_age_seconds" >&2; exit 1; }
+    rec tw_triage_change show_json context show --json
+    snap tw_triage_change
+}
+
 # A setup step that fails exits its scenario's subshell 1, the temp repo is still
 # cleaned up, and the recorder stops: a broken fixture never freezes a wrong
 # baseline. record_states.py runs this with check=True.
 for scenario in declared signed drafted accepted closing_linked closing_nested closing closing_walk \
     walk_drafted reported reported_clean reported_noted edited missing target_exists stale retired walk crashed \
-    diverged no_material docs_outside context triage; do
+    diverged no_material docs_outside context triage tw_context tw_declared tw_signed tw_drafted \
+    tw_accepted tw_missing tw_crashed tw_diverged tw_walk tw_walk_drafted tw_triage; do
     (trap cleanup EXIT; "scenario_$scenario"; exit 0) ||
         { echo "setup failed: scenario $scenario" >&2; exit 1; }
 done

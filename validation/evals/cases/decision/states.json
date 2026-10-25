@@ -539,6 +539,163 @@
    "output": "{\"ok\": true, \"message\": \"context: 3 of 5 artefact(s) present (doc-style.md, glossary.md, structure.md) · missing: code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"plan\", \"artifacts\": {\"doc-style.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"76aee5746f4f4cc34b22e1b21f8f55909153772e4dde30f709b06c19b98c87a7\", \"drifted\": false}, \"glossary.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"b88b260f8e822be1973b199bc145aa2051023f9c5c123456ac30db3116f3e86d\", \"drifted\": false}, \"structure.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"0e7a132931da7055af3bf442ff334d8c6fbeeadf437a7200d720b120d6a41760\", \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": {\"recorded_at\": \"2026-01-01T00:00:00+00:00\", \"commit\": \"91c48c917a59b422c9474e43bdf4a176d598a7b6\", \"model\": \"\", \"model_origin\": \"unknown\"}}"
   }
  },
+ "tw_accepted": {
+  "accept_again_json": {
+   "cmd": "crayon review settings --verdict accept --note 'Matches what tidewatch check enforces.' --json",
+   "exit": 3,
+   "output": "{\"error\": \"already_accepted\", \"unit\": \"settings\", \"detail\": \"the basis at seq 3 was already accepted at seq 4\", \"hint\": \"nothing has been recorded since; the unit is sealed\", \"next\": \"publish\", \"seq\": 4, \"commit\": \"5ee76a7dd4abdeb92730584f4a6728e174612901\"}"
+  },
+  "file:.crayon/units/settings/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"77151527b72c93cc162c846e70537ecaa134b1f2\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.3.0\",\"unit\":\"settings\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"77151527b72c93cc162c846e70537ecaa134b1f2\",\"contract\":1,\"frontmatter\":{\"audience\":\"people running tidewatch on a workstation or a server\",\"intent\":\"reference\",\"sources\":[\"src/tidewatch/config.py\"],\"targets\":[\"reference/configuration.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"dabbe211204b71f083703226d5c25ba05ba57c79d407f505e20bf335c6e5055c\",\"seq\":1,\"tool_version\":\"0.3.0\",\"unit_hash\":\"1df990692f1863d462555f152ca92531eeefa720014a74d8b5e9c8b380504ae6\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"people running tidewatch on a workstation or a server\",\"commit\":\"4b2a8ea33a2dd04600c70b86fc5e2635de154061\",\"context\":{\"src/tidewatch/config.py\":\"67fac334d86970bb3f4c4643207c91cfb478d91223dc9e16675f1150dfff2c15\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"1df990692f1863d462555f152ca92531eeefa720014a74d8b5e9c8b380504ae6\",\"prev\":\"645eafdc3e2055afdf37cd3c3a3bfac5e3964a6bf617e5532f68ab227bc467c2\",\"seq\":2,\"sources\":[{\"commit\":\"c3cedd4ebf7dccee78fc65dfd4d19229edc3d675\",\"path\":\"src/tidewatch/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/configuration.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.3.0\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"basis_seq\":null,\"commit\":\"da813d60bb5a27a614a541fed3a6a5464413a065\",\"contract\":1,\"files\":[{\"bytes\":900,\"path\":\"reference/configuration.md\",\"sha256\":\"c32e25e9b2974cb8a2f8207b56e0ca5d6823e4cc652177fd92bc807e89969f02\"}],\"kind\":\"generation\",\"model\":\"\",\"model_origin\":\"unknown\",\"plan_hash\":\"1df990692f1863d462555f152ca92531eeefa720014a74d8b5e9c8b380504ae6\",\"prev\":\"8771bfceb4ed6e8ff4a387ddfa119713aba98fb799ce8e38dc209ec566c6190e\",\"seq\":3,\"signoff_seq\":2,\"tool_version\":\"0.3.0\",\"unsteered\":false}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"basis_seq\":3,\"commit\":\"5ee76a7dd4abdeb92730584f4a6728e174612901\",\"contract\":1,\"files\":[{\"bytes\":900,\"path\":\"reference/configuration.md\",\"sha256\":\"c32e25e9b2974cb8a2f8207b56e0ca5d6823e4cc652177fd92bc807e89969f02\"}],\"generation_seq\":3,\"kind\":\"review\",\"note\":\"Matches what tidewatch check enforces.\",\"prev\":\"fbcd6e2a955b8acade296d208cac2146190f9cacc02d1e7ba397ca0aab9ebb7a\",\"resolves\":[],\"seq\":4,\"tool_version\":\"0.3.0\",\"verdict\":\"accept\",\"withdraws\":[]}\n"
+  },
+  "file:.crayon/units/settings/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"people running tidewatch on a workstation or a server\"\ntargets:\n  - \"reference/configuration.md\"\nsources:\n  - \"src/tidewatch/config.py\"\n---\n# Plan\n\nA reference page for every tidewatch setting: its key in tidewatch.toml, its\nTIDEWATCH_* variable, its type, its default and the rule tidewatch check\nenforces, and the precedence (defaults, then tidewatch.toml, then the\nenvironment).\n\n- One table of settings.\n- Precedence, stated once.\n- The rules, as tidewatch check reports them.\n"
+  },
+  "show_json": {
+   "cmd": "crayon show settings --json",
+   "exit": 0,
+   "output": "{\"unit\": \"settings\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"sealed\", \"qualifier\": \"\", \"paths\": [{\"path\": \"reference/configuration.md\", \"status\": \"current\", \"recorded_sha\": \"c32e25e9b2974cb8a2f8207b56e0ca5d6823e4cc652177fd92bc807e89969f02\", \"current_sha\": \"c32e25e9b2974cb8a2f8207b56e0ca5d6823e4cc652177fd92bc807e89969f02\"}], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": 3, \"reviewer_edit\": null, \"review\": 4, \"basis\": 3, \"tip\": 4}, \"next\": \"publish\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  }
+ },
+ "tw_context_recorded": {
+  "show_json": {
+   "cmd": "crayon context show --json",
+   "exit": 0,
+   "output": "{\"ok\": true, \"message\": \"context: 3 of 5 artefact(s) present (doc-style.md, glossary.md, structure.md) · missing: code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"plan\", \"artifacts\": {\"doc-style.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"037777b90980081380e976e61c8879cbd0252e27f93d6ce9d48cb7148ea145fb\", \"drifted\": false}, \"glossary.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"5f73f9d518db14ca7aca4f28d5dc6ee67a8ebefc6bb39b9b64e6b81e464d6ef4\", \"drifted\": false}, \"structure.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"7c76778856b116f56a4573f76794388666a8a7a1d6d8adf5fe55f99d308f88ff\", \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": {\"recorded_at\": \"2026-01-01T00:00:00+00:00\", \"commit\": \"c3cedd4ebf7dccee78fc65dfd4d19229edc3d675\", \"model\": \"\", \"model_origin\": \"unknown\"}}"
+  }
+ },
+ "tw_crashed": {
+  "show_json": {
+   "cmd": "crayon show settings --json",
+   "exit": 6,
+   "output": "{\"error\": \"uncommitted_tail\", \"unit\": \"settings\", \"detail\": \"uncommitted event(s) at seq 2–2\", \"hint\": \"crayon resume settings\", \"next\": \"resume\"}"
+  }
+ },
+ "tw_declared": {
+  "file:.crayon/units/settings/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"77151527b72c93cc162c846e70537ecaa134b1f2\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.3.0\",\"unit\":\"settings\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"77151527b72c93cc162c846e70537ecaa134b1f2\",\"contract\":1,\"frontmatter\":{\"audience\":\"people running tidewatch on a workstation or a server\",\"intent\":\"reference\",\"sources\":[\"src/tidewatch/config.py\"],\"targets\":[\"reference/configuration.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"dabbe211204b71f083703226d5c25ba05ba57c79d407f505e20bf335c6e5055c\",\"seq\":1,\"tool_version\":\"0.3.0\",\"unit_hash\":\"1df990692f1863d462555f152ca92531eeefa720014a74d8b5e9c8b380504ae6\"}\n"
+  },
+  "file:.crayon/units/settings/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"people running tidewatch on a workstation or a server\"\ntargets:\n  - \"reference/configuration.md\"\nsources:\n  - \"src/tidewatch/config.py\"\n---\n# Plan\n\nA reference page for every tidewatch setting: its key in tidewatch.toml, its\nTIDEWATCH_* variable, its type, its default and the rule tidewatch check\nenforces, and the precedence (defaults, then tidewatch.toml, then the\nenvironment).\n\n- One table of settings.\n- Precedence, stated once.\n- The rules, as tidewatch check reports them.\n"
+  },
+  "show": {
+   "cmd": "crayon show settings",
+   "exit": 0,
+   "output": "Configuration reference\nintent: reference\nstate: declared\nNext: sign_off"
+  },
+  "show_json": {
+   "cmd": "crayon show settings --json",
+   "exit": 0,
+   "output": "{\"unit\": \"settings\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"declared\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": null, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"sign_off\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  }
+ },
+ "tw_diverged": {
+  "show_json": {
+   "cmd": "crayon show settings --json",
+   "exit": 6,
+   "output": "{\"error\": \"ledger_diverged\", \"unit\": \"settings\", \"detail\": \"the committed prefix of .crayon/units/settings/ledger.jsonl no longer matches HEAD\", \"hint\": \"git log -- .crayon/units/settings/ledger.jsonl; the committed record was rewritten\", \"next\": \"resume\"}"
+  }
+ },
+ "tw_drafted": {
+  "file:.crayon/units/settings/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"77151527b72c93cc162c846e70537ecaa134b1f2\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.3.0\",\"unit\":\"settings\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"77151527b72c93cc162c846e70537ecaa134b1f2\",\"contract\":1,\"frontmatter\":{\"audience\":\"people running tidewatch on a workstation or a server\",\"intent\":\"reference\",\"sources\":[\"src/tidewatch/config.py\"],\"targets\":[\"reference/configuration.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"dabbe211204b71f083703226d5c25ba05ba57c79d407f505e20bf335c6e5055c\",\"seq\":1,\"tool_version\":\"0.3.0\",\"unit_hash\":\"1df990692f1863d462555f152ca92531eeefa720014a74d8b5e9c8b380504ae6\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"people running tidewatch on a workstation or a server\",\"commit\":\"4b2a8ea33a2dd04600c70b86fc5e2635de154061\",\"context\":{\"src/tidewatch/config.py\":\"67fac334d86970bb3f4c4643207c91cfb478d91223dc9e16675f1150dfff2c15\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"1df990692f1863d462555f152ca92531eeefa720014a74d8b5e9c8b380504ae6\",\"prev\":\"645eafdc3e2055afdf37cd3c3a3bfac5e3964a6bf617e5532f68ab227bc467c2\",\"seq\":2,\"sources\":[{\"commit\":\"c3cedd4ebf7dccee78fc65dfd4d19229edc3d675\",\"path\":\"src/tidewatch/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/configuration.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.3.0\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"basis_seq\":null,\"commit\":\"da813d60bb5a27a614a541fed3a6a5464413a065\",\"contract\":1,\"files\":[{\"bytes\":900,\"path\":\"reference/configuration.md\",\"sha256\":\"c32e25e9b2974cb8a2f8207b56e0ca5d6823e4cc652177fd92bc807e89969f02\"}],\"kind\":\"generation\",\"model\":\"\",\"model_origin\":\"unknown\",\"plan_hash\":\"1df990692f1863d462555f152ca92531eeefa720014a74d8b5e9c8b380504ae6\",\"prev\":\"8771bfceb4ed6e8ff4a387ddfa119713aba98fb799ce8e38dc209ec566c6190e\",\"seq\":3,\"signoff_seq\":2,\"tool_version\":\"0.3.0\",\"unsteered\":false}\n"
+  },
+  "file:.crayon/units/settings/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"people running tidewatch on a workstation or a server\"\ntargets:\n  - \"reference/configuration.md\"\nsources:\n  - \"src/tidewatch/config.py\"\n---\n# Plan\n\nA reference page for every tidewatch setting: its key in tidewatch.toml, its\nTIDEWATCH_* variable, its type, its default and the rule tidewatch check\nenforces, and the precedence (defaults, then tidewatch.toml, then the\nenvironment).\n\n- One table of settings.\n- Precedence, stated once.\n- The rules, as tidewatch check reports them.\n"
+  },
+  "file:docs/reference/configuration.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Configuration reference\n\ntidewatch reads its settings from defaults, then `tidewatch.toml`, then `TIDEWATCH_*` environment variables; the last one wins.\n\n| Setting | Variable | Type | Default |\n|---|---|---|---|\n| `poll_interval_seconds` | `TIDEWATCH_POLL_INTERVAL` | float | `2.0` |\n| `debounce_ms` | `TIDEWATCH_DEBOUNCE_MS` | integer | `250` |\n| `max_hooks_in_flight` | `TIDEWATCH_MAX_HOOKS` | integer | `4` |\n| `hook_timeout_seconds` | `TIDEWATCH_HOOK_TIMEOUT` | integer | `300` |\n| `follow_symlinks` | `TIDEWATCH_FOLLOW_SYMLINKS` | boolean | `false` |\n| `log_format` | `TIDEWATCH_LOG_FORMAT` | string | `text` |\n| `state_dir` | `TIDEWATCH_STATE_DIR` | path | `~/.local/state/tidewatch` |\n\n`tidewatch check` reports every setting that breaks a rule: `poll_interval_seconds` must be more than 0, `debounce_ms` 0 or more, `max_hooks_in_flight` 1 or more, and `log_format` one of `text` or `json`.\n"
+  },
+  "show_json": {
+   "cmd": "crayon show settings --json",
+   "exit": 0,
+   "output": "{\"unit\": \"settings\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"drafted\", \"qualifier\": \"\", \"paths\": [{\"path\": \"reference/configuration.md\", \"status\": \"current\", \"recorded_sha\": \"c32e25e9b2974cb8a2f8207b56e0ca5d6823e4cc652177fd92bc807e89969f02\", \"current_sha\": \"c32e25e9b2974cb8a2f8207b56e0ca5d6823e4cc652177fd92bc807e89969f02\"}], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": 3, \"reviewer_edit\": null, \"review\": null, \"basis\": 3, \"tip\": 3}, \"next\": \"review\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  },
+  "summary": {
+   "cmd": "crayon summary settings",
+   "exit": 0,
+   "output": "Configuration reference\nauthor decisions:\n  intent: reference\n  audience: people running tidewatch on a workstation or a server\nfiles changed:\n  reference/configuration.md\nrecord: intact at 5ee76a7 · page: current"
+  }
+ },
+ "tw_missing": {
+  "accept_json": {
+   "cmd": "crayon review settings --verdict accept --note 'Ship it.' --json",
+   "exit": 1,
+   "output": "{\"error\": \"target_missing\", \"unit\": \"settings\", \"detail\": \"signed target(s) not in the basis or missing from disk: reference/configuration.md\", \"hint\": \"crayon steer settings --note \\\"restore …\\\" records the request; the next draft writes it\", \"next\": \"review\"}"
+  },
+  "show_json": {
+   "cmd": "crayon show settings --json",
+   "exit": 0,
+   "output": "{\"unit\": \"settings\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"drafted\", \"qualifier\": \"\", \"paths\": [{\"path\": \"reference/configuration.md\", \"status\": \"missing\", \"recorded_sha\": \"c32e25e9b2974cb8a2f8207b56e0ca5d6823e4cc652177fd92bc807e89969f02\", \"current_sha\": null}], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": 3, \"reviewer_edit\": null, \"review\": null, \"basis\": 3, \"tip\": 3}, \"next\": \"review\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  }
+ },
+ "tw_signed": {
+  "file:.crayon/units/settings/ledger.jsonl": {
+   "cmd": null,
+   "exit": 0,
+   "output": "{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"77151527b72c93cc162c846e70537ecaa134b1f2\",\"contract\":1,\"docs_root\":\"docs\",\"kind\":\"ledger\",\"prev\":null,\"seq\":0,\"tool_version\":\"0.3.0\",\"unit\":\"settings\",\"v\":1}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"commit\":\"77151527b72c93cc162c846e70537ecaa134b1f2\",\"contract\":1,\"frontmatter\":{\"audience\":\"people running tidewatch on a workstation or a server\",\"intent\":\"reference\",\"sources\":[\"src/tidewatch/config.py\"],\"targets\":[\"reference/configuration.md\"],\"title\":\"Configuration reference\"},\"kind\":\"unit-declared\",\"prev\":\"dabbe211204b71f083703226d5c25ba05ba57c79d407f505e20bf335c6e5055c\",\"seq\":1,\"tool_version\":\"0.3.0\",\"unit_hash\":\"1df990692f1863d462555f152ca92531eeefa720014a74d8b5e9c8b380504ae6\"}\n{\"actor\":{\"email\":\"test@example.com\",\"name\":\"Test Author\"},\"at\":\"2026-01-01T00:00:00+00:00\",\"audience\":\"people running tidewatch on a workstation or a server\",\"commit\":\"4b2a8ea33a2dd04600c70b86fc5e2635de154061\",\"context\":{\"src/tidewatch/config.py\":\"67fac334d86970bb3f4c4643207c91cfb478d91223dc9e16675f1150dfff2c15\"},\"contract\":1,\"intent\":\"reference\",\"kind\":\"signoff\",\"plan_hash\":\"1df990692f1863d462555f152ca92531eeefa720014a74d8b5e9c8b380504ae6\",\"prev\":\"645eafdc3e2055afdf37cd3c3a3bfac5e3964a6bf617e5532f68ab227bc467c2\",\"seq\":2,\"sources\":[{\"commit\":\"c3cedd4ebf7dccee78fc65dfd4d19229edc3d675\",\"path\":\"src/tidewatch/config.py\"}],\"supersedes\":null,\"targets\":[\"reference/configuration.md\"],\"title\":\"Configuration reference\",\"tool_version\":\"0.3.0\"}\n"
+  },
+  "file:.crayon/units/settings/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"people running tidewatch on a workstation or a server\"\ntargets:\n  - \"reference/configuration.md\"\nsources:\n  - \"src/tidewatch/config.py\"\n---\n# Plan\n\nA reference page for every tidewatch setting: its key in tidewatch.toml, its\nTIDEWATCH_* variable, its type, its default and the rule tidewatch check\nenforces, and the precedence (defaults, then tidewatch.toml, then the\nenvironment).\n\n- One table of settings.\n- Precedence, stated once.\n- The rules, as tidewatch check reports them.\n"
+  },
+  "file:src/tidewatch/config.py": {
+   "cmd": null,
+   "exit": 0,
+   "output": "\"\"\"tidewatch's settings: defaults, then tidewatch.toml, then TIDEWATCH_* variables.\"\"\"\n\nimport os\nfrom dataclasses import dataclass\n\n#: Used when neither tidewatch.toml nor the environment sets a value.\nDEFAULTS = {\n    \"poll_interval_seconds\": 2.0,\n    \"debounce_ms\": 250,\n    \"max_hooks_in_flight\": 4,\n    \"hook_timeout_seconds\": 300,\n    \"follow_symlinks\": False,\n    \"log_format\": \"text\",\n    \"state_dir\": \"~/.local/state/tidewatch\",\n}\n\n#: Each setting can be overridden by the environment variable of this name.\nENV_OVERRIDES = {\n    \"poll_interval_seconds\": \"TIDEWATCH_POLL_INTERVAL\",\n    \"debounce_ms\": \"TIDEWATCH_DEBOUNCE_MS\",\n    \"max_hooks_in_flight\": \"TIDEWATCH_MAX_HOOKS\",\n    \"hook_timeout_seconds\": \"TIDEWATCH_HOOK_TIMEOUT\",\n    \"follow_symlinks\": \"TIDEWATCH_FOLLOW_SYMLINKS\",\n    \"log_format\": \"TIDEWATCH_LOG_FORMAT\",\n    \"state_dir\": \"TIDEWATCH_STATE_DIR\",\n}\n\nLOG_FORMATS = (\"text\", \"json\")\n\n\n@dataclass\nclass Config:\n    poll_interval_seconds: float\n    debounce_ms: int\n    max_hooks_in_flight: int\n    hook_timeout_seconds: int\n    follow_symlinks: bool\n    log_format: str\n    state_dir: str\n\n\ndef _parse(key, raw):\n    kind = type(DEFAULTS[key])\n    if kind is bool:\n        return raw.strip().lower() in (\"1\", \"true\", \"yes\", \"on\")\n    return kind(raw)\n\n\ndef problems(values):\n    \"\"\"Every invalid setting in ``values``, as one message each.\"\"\"\n    found = []\n    if values[\"poll_interval_seconds\"] <= 0:\n        found.append(\"poll_interval_seconds must be more than 0\")\n    if values[\"debounce_ms\"] < 0:\n        found.append(\"debounce_ms must be 0 or more\")\n    if values[\"max_hooks_in_flight\"] < 1:\n        found.append(\"max_hooks_in_flight must be 1 or more\")\n    if values[\"log_format\"] not in LOG_FORMATS:\n        found.append(\"log_format must be one of: %s\" % \", \".join(LOG_FORMATS))\n    return found\n\n\ndef load(toml_values, environ=os.environ):\n    \"\"\"Merge defaults, then tidewatch.toml, then TIDEWATCH_* variables (last wins).\"\"\"\n    merged = dict(DEFAULTS)\n    merged.update(toml_values)\n    for key, variable in ENV_OVERRIDES.items():\n        if variable in environ:\n            merged[key] = _parse(key, environ[variable])\n    found = problems(merged)\n    if found:\n        raise ValueError(\"; \".join(found))\n    merged[\"state_dir\"] = os.path.expanduser(merged[\"state_dir\"])\n    return Config(**merged)\n"
+  },
+  "show_json": {
+   "cmd": "crayon show settings --json",
+   "exit": 0,
+   "output": "{\"unit\": \"settings\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"signed-off\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"draft\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  }
+ },
+ "tw_triage_change": {
+  "show_json": {
+   "cmd": "crayon context show --json",
+   "exit": 0,
+   "output": "{\"ok\": true, \"message\": \"context: 3 of 5 artefact(s) present (doc-style.md, glossary.md, structure.md) · missing: code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"plan\", \"artifacts\": {\"doc-style.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"037777b90980081380e976e61c8879cbd0252e27f93d6ce9d48cb7148ea145fb\", \"drifted\": false}, \"glossary.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"5f73f9d518db14ca7aca4f28d5dc6ee67a8ebefc6bb39b9b64e6b81e464d6ef4\", \"drifted\": false}, \"structure.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"7c76778856b116f56a4573f76794388666a8a7a1d6d8adf5fe55f99d308f88ff\", \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": {\"recorded_at\": \"2026-01-01T00:00:00+00:00\", \"commit\": \"c3cedd4ebf7dccee78fc65dfd4d19229edc3d675\", \"model\": \"\", \"model_origin\": \"unknown\"}}"
+  }
+ },
+ "tw_walk": {
+  "show": {
+   "cmd": "crayon show rebuild-docs",
+   "exit": 0,
+   "output": "Rebuild the docs when they change\nintent: how-to\nstate: signed-off\nsteps: passed 0 · skipped 0 · deviated 0 · unresolved 3: install, watch, poll\n  1. install [agent, stateful] — unresolved: Install tidewatch from the checkout: python3 -m pip install /srv/tidewatch\n  2. watch [agent, stateful] — unresolved: Watch the docs: tidewatch add docs --on-change \"python3 -m sphinx docs docs/_build/html\"\n  3. poll [ta, stateful] — unresolved: Run one poll: tidewatch run --once\nNext: walk"
+  },
+  "show_json": {
+   "cmd": "crayon show rebuild-docs --json",
+   "exit": 0,
+   "output": "{\"unit\": \"rebuild-docs\", \"title\": \"Rebuild the docs when they change\", \"intent\": \"how-to\", \"state\": \"signed-off\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": {\"steps_seq\": 3, \"passed\": 0, \"skipped\": 0, \"skipped_reasons\": [], \"deviated\": 0, \"failed\": 0, \"unresolved\": [\"install\", \"watch\", \"poll\"], \"plan\": [{\"id\": \"install\", \"text\": \"Install tidewatch from the checkout: python3 -m pip install /srv/tidewatch\", \"mode\": \"agent\", \"stateful\": true, \"status\": \"unresolved\", \"resolved\": false}, {\"id\": \"watch\", \"text\": \"Watch the docs: tidewatch add docs --on-change \\\"python3 -m sphinx docs docs/_build/html\\\"\", \"mode\": \"agent\", \"stateful\": true, \"status\": \"unresolved\", \"resolved\": false}, {\"id\": \"poll\", \"text\": \"Run one poll: tidewatch run --once\", \"mode\": \"ta\", \"stateful\": true, \"status\": \"unresolved\", \"resolved\": false}]}, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"walk\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  }
+ },
+ "tw_walk_drafted": {
+  "show_json": {
+   "cmd": "crayon show rebuild-docs --json",
+   "exit": 0,
+   "output": "{\"unit\": \"rebuild-docs\", \"title\": \"Rebuild the docs when they change\", \"intent\": \"how-to\", \"state\": \"drafted\", \"qualifier\": \"\", \"paths\": [{\"path\": \"how-to/rebuild-docs.md\", \"status\": \"current\", \"recorded_sha\": \"56a58ec2707b2456d14633933107a7585aca3d019eb6c025a8d06ab6017e3ab7\", \"current_sha\": \"56a58ec2707b2456d14633933107a7585aca3d019eb6c025a8d06ab6017e3ab7\"}], \"requests\": [], \"reviewer_edits\": [], \"steps\": {\"steps_seq\": 3, \"passed\": 1, \"skipped\": 1, \"skipped_reasons\": [\"Sphinx is not installed on this machine\"], \"deviated\": 1, \"failed\": 0, \"unresolved\": [], \"plan\": [{\"id\": \"install\", \"text\": \"Install tidewatch from the checkout: python3 -m pip install /srv/tidewatch\", \"mode\": \"agent\", \"stateful\": false, \"status\": \"pass\", \"resolved\": true}, {\"id\": \"watch\", \"text\": \"Watch the docs: tidewatch add docs --on-change \\\"python3 -m sphinx docs docs/_build/html\\\"\", \"mode\": \"agent\", \"stateful\": false, \"status\": \"deviated\", \"resolved\": true}, {\"id\": \"poll\", \"text\": \"Run one poll: tidewatch run --once\", \"mode\": \"ta\", \"stateful\": false, \"status\": \"skipped\", \"resolved\": true}]}, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": 7, \"reviewer_edit\": null, \"review\": null, \"basis\": 7, \"tip\": 7}, \"next\": \"review\", \"handover\": {\"steps\": [{\"id\": \"watch\", \"text\": \"Watch the docs: tidewatch add docs --on-change \\\"python3 -m sphinx docs docs/_build/html\\\"\", \"verdict\": \"deviated\", \"reason\": \"the build output re-triggered the watch until --ignore '*/_build/*' was added\"}, {\"id\": \"poll\", \"text\": \"Run one poll: tidewatch run --once\", \"verdict\": \"skipped\", \"reason\": \"Sphinx is not installed on this machine\"}], \"judged\": [], \"withdrawn\": []}}"
+  },
+  "summary": {
+   "cmd": "crayon summary rebuild-docs",
+   "exit": 0,
+   "output": "Rebuild the docs when they change\nauthor decisions:\n  intent: how-to\n  audience: contributors editing the tidewatch docs\n  still open at handover:\n    Step watch deviated: the build output re-triggered the watch until --ignore '*/_build/*' was added\n    Step poll was skipped: Sphinx is not installed on this machine\nfiles changed:\n  how-to/rebuild-docs.md\nvalidation: passed 1 · skipped 1 (Sphinx is not installed on this machine) · deviated 1 · unresolved 0\nrecord: intact at f424576 · page: current"
+  }
+ },
  "walk": {
   "file:.crayon/units/install/ledger.jsonl": {
    "cmd": null,

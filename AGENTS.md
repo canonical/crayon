@@ -207,7 +207,8 @@ validation/                        ← the validation kit: the evidence apparatu
     ├── pyproject.toml             ← the kit's environment, built with uv
     ├── uv.lock                    ← its locked versions
     ├── workshop/                  ← the Workshop definition lane B's commands run in
-    ├── fixtures/                  ← states.sh (the recorder, on tests/lib.sh) and the toyq project
+    ├── fixtures/                  ← states.sh (the recorder, on tests/lib.sh) and the two projects,
+    │                                 toyq and tidewatch
     ├── cases/                     ← the case files, one set per lane, and the held-out split
     └── results/                   ← committed results; archive/ holds the previous kit's;
                                       raw/ is gitignored

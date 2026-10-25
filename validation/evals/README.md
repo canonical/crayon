@@ -18,7 +18,7 @@ does that. `docs/evals.md` explains the design; this file is how to run the eval
 | Lane | What it asks | Live turns | Graded by | Status |
 |---|---|---|---|---|
 | A | which skill handles this ask? | 1, no tools | exact skill name | built, 15 cases |
-| B | given this `crayon` output, what is the next action? | until the first action | that action and the calls on the way | built, 79 cases |
+| B | given this `crayon` output, what is the next action? | until the first action | that action and the calls on the way | built, 94 cases |
 
 Every case names the rule it protects (`protects`: an S-id from `tests/test_skill_text.py`, or
 `catalog` for lane A) and whether it is `critical`. A case is critical when it checks that the
@@ -36,8 +36,15 @@ each state in a temporary repository using `tests/lib.sh` and the real `crayon.p
 output. `record_states.py` folds that output into `cases/decision/states.json`, and the eval suite
 records it again and compares, so a change in the tool's output fails the suite. A handful of
 refusals that cannot be reached without breaking a repository are written inline in their cases,
-using `crayon.py`'s own wording. The fixture copies tracked toyq and skill files from the working
+using `crayon.py`'s own wording. The fixture copies tracked project and skill files from the working
 tree, not ignored or untracked files, so the temporary Git commits are reproducible in CI.
+
+There are two projects. `fixtures/toyq/` is a small job queue, and every case runs on it unless it
+names another. `fixtures/tidewatch/` is a larger, Sphinx-shaped project: a file watcher with 23
+documentation pages and a toctree. `cases/decision/tidewatch.json` ports one critical case per
+critical rule to it (each case's `why` names the toyq case it ports), so a model is supported only
+if it keeps the rules on more than one project's names and pages. A case's `project` field names
+its project; its states carry the `tw_` prefix, and the model works in `/srv/<project>`.
 
 A case may also carry a `prelude`: steps replayed before the skill is invoked, for what happened
 earlier in the same conversation, such as a write session before a review. A prelude holds recorded
@@ -51,7 +58,7 @@ container (`workshop/crayon-evals.yaml`). `sandbox.stage()` writes one staging d
 parallel worker under `.cache/ws/<k>/`, holding only the definition, `crayon.py`, `digest.py` and the
 current case's copy, and launches the workshop from there. Every command runs as `evaluser`, which
 has no sudo, with the environment in `agent.COMMAND_ENV` and nothing else, and the copy at
-`/srv/toyq` is reset before every case. The container holds no secret, no host file and no eval
+`/srv/<project>` is reset before every case. The container holds no secret, no host file and no eval
 case; its network is not closed.
 
 Every tool call is carried out. The first call that would change something ends the episode and is
@@ -65,7 +72,7 @@ what the case grades:
 
 Making a directory changes nothing, and neither does writing in the command's throwaway `HOME`.
 
-Grading sees the action, not its wrapping. A leading `cd /srv/toyq &&` and trailing parts that only
+Grading sees the action, not its wrapping. A leading `cd /srv/<project> &&` and trailing parts that only
 read, such as `; echo "exit:$?"`, are dropped before a pattern matches what a command *is*. A
 "no such call" check still reads the whole command, so nothing forbidden hides in a tail.
 
@@ -117,7 +124,7 @@ the recorded states, the graders, the agent surface, the sandbox and the fixture
 
 ## The held-out split
 
-`cases/holdout.json` names 21 lane B cases, about a quarter of each case file, critical and
+`cases/holdout.json` names 25 lane B cases, about a quarter of each case file, critical and
 standard alike. Never tune skill text against them. A skill change is measured with `--split dev`
 and accepted only if `--split holdout` does not regress.
 

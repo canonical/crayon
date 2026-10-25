@@ -59,17 +59,19 @@ across. The contract number stays `1`.
   supported only if it passes every critical case three of three times on the current skills.
   They measure skill-following, not the quality of a page, or speed or effort saved.
   Lane A checks skill selection (15 cases). Lane B checks the next action after real, recorded
-  `crayon` output (79 cases): the model acts in a copy of the state inside a Workshop container,
+  `crayon` output (94 cases): the model acts in a copy of the state inside a Workshop container,
   as an unprivileged user with an environment built from scratch, and the first call that would
   change the copy's files or git index, or that names a recording verb, ends the episode and is
   graded. Every case names the skill rule it protects and whether it is critical, carries a reply
   that must pass and one that must fail, and is graded by deterministic checks only. promptfoo
-  runs and grades the cases; a held-out set of 21 lane B cases guards skill fixes, and every case
+  runs and grades the cases; a held-out set of 25 lane B cases guards skill fixes, and every case
   a certified model fails gets a recorded disposition. The certified models are Claude Sonnet 5.5
   and Claude Haiku 5.5, the gate model, each pinned to one Zero Data Retention backend in
   `validation/evals/models.json`, whose caps are reserved before every paid call. Paid runs are
   started by hand, never in CI; the gate gains the kit's offline self-tests,
-  `uv run --project validation/evals python -m unittest tests.test_evals`. See `docs/evals.md`.
+  `uv run --project validation/evals python -m unittest tests.test_evals`. Fifteen critical
+  cases, one per critical rule, run on a second, larger project (tidewatch, 23 documentation
+  pages), so support does not rest on one project's names. See `docs/evals.md`.
 - `crayon show` lists the recorded step plan under the step tally — each step's id, mode,
   stateful marker, status and text — and `show --json` / `summary --json` carry the same rows
   as `steps.plan`. A session that did not propose a tutorial or how-to plan can now resume the

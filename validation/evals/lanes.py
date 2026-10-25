@@ -424,6 +424,7 @@ def load_b(root=CASES):
                 "sandbox": _sandbox(case, where),
                 "overrides": _overrides(history),
                 "writes": _writes(history, where),
+                "workdir": agent.workdir_for(case.get("project", "toyq")),
             }
             _splice(case["oracle"], states, where)
             _splice(case.get("foil"), states, where)
@@ -450,7 +451,8 @@ def messages_b(case, skills):
     _, invocation = skillmod.expand_invocation(
         ("/%s %s" % (case["skill"], case.get("ask", ""))).strip(), skills)
     return ([{"role": "system",
-              "content": skillmod.agent_system_prompt(skills, agent.WORKDIR)}]
+              "content": skillmod.agent_system_prompt(
+                  skills, case["resolved"].get("workdir", agent.WORKDIR))}]
             + agent.history_messages(
                 _expanded_prelude(case["resolved"].get("prelude", []), skills), prefix="p")
             + [{"role": "user", "content": invocation}]
@@ -475,7 +477,8 @@ def run_b(case, spec, provider, ctx):
         for path, content in case["resolved"]["writes"]:
             agent.Repo(root, None).write(path, content)
         with pool.runner() as runner:
-            repo = agent.Repo(root, runner, case["resolved"]["overrides"])
+            repo = agent.Repo(root, runner, case["resolved"]["overrides"],
+                              case["resolved"]["workdir"])
             repo.start()
             return agent.run_episode(provider, spec, messages, agent.tools_for(skill), repo,
                                      max_turns=case.get("max_turns", 20), scope=spec["id"])
