@@ -62,7 +62,7 @@ RELATED_RE = re.compile(r"^Related: \[\[[a-z0-9-]+\]\](?:, \[\[[a-z0-9-]+\]\])*\
 
 SCAN_DIRS = ("scripts", "tests", "validation", "skills", ".github", WIKI_DIR)
 SCAN_SUFFIXES = {".py", ".md", ".txt", ".sh", ".yml", ".yaml", ".json", ".toml", ".cfg"}
-SKIP_PARTS = {".venv", "node_modules", "__pycache__", ".git", ".planning"}
+SKIP_PARTS = {".venv", "node_modules", "__pycache__", ".git"}
 ROOT_FILES = ("crayon.py",)
 #: Trees where ``docs/<name>.md`` names a target repository's page, not a wiki
 #: page (see the module docstring). Check 8 skips them.

@@ -1255,7 +1255,7 @@ test_runmeta_end_names_both_halves_of_the_build_pair() {
     cleanup
 }
 
-# `.planning/WINDOWS.md` entry 10, closed end to end: `crayon`'s `sphinx_result` branch has
+# End to end: `crayon`'s `sphinx_result` branch has
 # never been exercised against a real RUN file. It renders the STRING key and never sees the
 # structured siblings — which is why the shape costs `crayon` zero lines (D-05).
 test_runmeta_summary_round_trip_renders_only_the_string_key() {

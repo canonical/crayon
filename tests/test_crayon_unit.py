@@ -5,7 +5,7 @@ Runner (D-12): ``python3 -m unittest tests/test_crayon_unit.py`` — never
 pytest. The suite imports the extension-less repo-root ``crayon`` through a
 ``SourceFileLoader`` shim, so it needs no package, venv or path hack.
 
-Organising principle, mirrored from ``tests/test_planning_lint.py``: a positive
+Organising principle: a positive
 gate (the contract's own shapes round-trip), a negative keystone (a rule
 violation MUST be detected, never silently accepted) and a vacuous-pass guard
 (an empty input cannot masquerade as valid).
@@ -5096,9 +5096,7 @@ class TestFrozenSegmentsAndHumanPaths(TempRepoTestCase):
 # finished file measured 4,748 lines against rev8's 925-line phase-16 slice — a
 # 5.13x miss in the ESTIMATE, not in the file. rev8's own 1,000/1,300 ratios are
 # scaled by that measured factor; the alternative was deleting behaviour to fit,
-# which section 2.1 and the plan both forbid. ``.planning/REQUIREMENTS.md``
-# VERB-09 carries the same two numbers and is checked against them below, so the
-# guard and the requirement phase-18 CI reads cannot drift apart.
+# which section 2.1 and the plan both forbid.
 #
 # Recalibrated again at 17-08 (maintainer checkpoint, 2026-09-15),
 # which supersedes the 2026-09-14 temporary lift of the failing threshold. The
@@ -5792,24 +5790,6 @@ class TestLineBudget(unittest.TestCase):
         """Vacuous-pass guard: an empty read would pass every threshold."""
         self.assertGreater(len(CRAYON_PATH.read_text(encoding="utf-8").splitlines()), 100)
 
-    def test_the_guard_agrees_with_the_recorded_requirement(self):
-        """VERB-09 is the number phase-18 CI's size-guard job will read.
-
-        ``.planning/`` lives on the ``gsd`` branch only, so this degrades to a
-        skip wherever the requirement register is not checked out.
-        """
-        register = ROOT / ".planning" / "REQUIREMENTS.md"
-        if not register.is_file():
-            self.skipTest("no .planning/REQUIREMENTS.md on this branch")
-        stated = [
-            line for line in register.read_text(encoding="utf-8").splitlines()
-            if "**VERB-09**" in line
-        ]
-        self.assertEqual(len(stated), 1, "VERB-09 must be stated exactly once")
-        numbers = [int(n.replace(",", "")) for n in re.findall(r"\d[\d,]*", stated[0])]
-        self.assertIn(BUDGET_ANNOTATE, numbers, stated[0])
-        self.assertIn(BUDGET_FAIL, numbers, stated[0])
-
 
 class TestSizeGuardEntryPoint(unittest.TestCase):
     """U-10 — phase-18 CI's size-guard entry point is this module's own guard.
@@ -6041,7 +6021,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         # The vacuous-pass guard for the assertion above: a mis-rooted ROOT
         # would make every `exists()` false.
         found = sorted(p.name for p in (ROOT / "scripts").glob("*.py"))
-        self.assertEqual(found, ["planning_lint.py", "skill_lint.py", "wiki_lint.py"])
+        self.assertEqual(found, ["skill_lint.py", "wiki_lint.py"])
         self.assertEqual(sorted((ROOT / "scripts").glob("*.sh")), [])
 
     def test_a_document_that_still_names_one_carries_the_tombstone(self):
@@ -6067,13 +6047,9 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                     % (relative, ", ".join(sorted(set(named)))),
                 )
 
-    #: The gate, as the project actually runs it. WR-08 (iteration 3): the pin
-    #: used to name six commands and call them "in full" while omitting
-    #: `scripts/planning_lint.py`, which every fix report's gate table runs —
-    #: and `tests/test_planning_lint.py`, which was a pytest module on a branch
-    #: with no pytest, so it errored under the module runner and no gate ran it.
-    #: A completeness claim that hides a test nobody executes is the "silently
-    #: green" shape the rest of this phase's infrastructure exists against.
+    #: The gate, as the project actually runs it. A completeness claim that
+    #: hides a command nobody executes reads as green while checking nothing,
+    #: so every gate command is listed here and pinned in the documents below.
     #: `bash tests/install_smoke.sh` proves what no other command here does:
     #: that the tool is reachable through `PATH` after the documented install,
     #: and that docs/install.md's marked INSTALL region is runnable as written.
@@ -6081,7 +6057,6 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "python3 -m unittest tests.test_crayon_unit",
         "python3 tests/test_crayon_unit.py",
         "python3 -m unittest tests.test_skill_text",
-        "python3 -m unittest tests.test_planning_lint",
         "python3 -m unittest tests.test_check_docs",
         "bash tests/test_crayon_lifecycle.sh",
         "bash tests/test_crayon_acceptance.sh",
@@ -6090,7 +6065,6 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "python3 scripts/skill_lint.py",
         "python3 tests/check_traces.py",
         "python3 tests/check_docs.py",
-        "python3 scripts/planning_lint.py",
         "python3 tests/size_guard.py",
         "python3 -m unittest tests.test_wiki_lint",
         "python3 scripts/wiki_lint.py",
@@ -6112,7 +6086,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
     #: warning level in prose ("that exact command, with that exact file
     #: scope, is what CI's `shellcheck` job runs") rather than as a tuple
     #: entry, because the binary is preinstalled on the image and the command
-    #: is not one a developer runs as part of the fourteen. The `unittest`
+    #: is not one a developer runs as part of the gate. The `unittest`
     #: job's ripgrep install is the second: `tests.test_evals` runs `rg` for
     #: real through the agent's looking path and its expansion cross product
     #: fails by name on a missing tool rather than skip a cell, and the
@@ -6299,14 +6273,10 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                     self.assertIn(command, text)
 
     def test_every_test_module_in_tests_is_in_the_gate(self):
-        """WR-08 — a test module no command runs is worse than no module.
+        """A test module no command runs is worse than no module.
 
-        `tests/test_planning_lint.py` sat in `tests/` for the whole phase as a
-        pytest module on a branch with no pyproject, no pytest and no uv: it
-        errored under `python3 -m unittest tests.test_planning_lint` and nothing
-        in the tombstone, `AGENTS.md`, `run_matrix.sh` or either bash suite
-        invoked it. It failed when executed and was never executed, so it read
-        as green. This pins the general rule rather than that one file.
+        A module that fails when executed and is never executed reads as green.
+        Every `tests/test_*.py` module must therefore appear in a gate command.
         """
         gate = "\n".join(self.GATE_COMMANDS)
         modules = sorted(
@@ -6335,19 +6305,10 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         the one failure this suite's tombstone machinery exists to make loud.
         """
         self.assertIn("bash tests/install_smoke.sh", self.GATE_COMMANDS)
-        # The nine that were already there are not displaced by the addition,
-        # and no command is listed twice. Phase 18's docs check adds two more
-        # (plan 18-06) — its own suite and the checker itself — and plan 18-07
-        # adds the size guard, which is CI's size-guard job's local dry-run
-        # command (D-02: every job body is a command a developer already runs),
-        # so the tuple was thirteen. Phase 19 adds the validation kit's fixture
-        # suite, which is CI's `validation` job's local dry-run command under
-        # that same D-02 rule — and a kit the local gate does not run is exactly
-        # the WR-08 orphan defect this tuple exists against — so it is fourteen.
-        # The model-eval kit's offline self-tests make it seventeen: a module in
-        # tests/ is a gate command by the rule above, and they need no key.
-        self.assertEqual(len(self.GATE_COMMANDS), 17)
-        self.assertEqual(len(set(self.GATE_COMMANDS)), 17)
+        # No command is listed twice, and the count is stated so that adding or
+        # dropping a command is a deliberate edit here as well as in the docs.
+        self.assertEqual(len(self.GATE_COMMANDS), 15)
+        self.assertEqual(len(set(self.GATE_COMMANDS)), 15)
 
     def test_no_gate_command_names_a_path_the_tree_does_not_have(self):
         """T-18-25 — the declared gate may never outrun the tree.
@@ -6660,22 +6621,19 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                 )
 
     def test_the_shipped_tree_carries_no_real_home_path(self):
-        """WR-03 / T-18-70 — the tree that ships had no anonymization gate.
+        """The tree that ships carries no real home path.
 
-        `scripts/planning_lint.py` is this project's anonymization gate and
-        `AGENTS.md` scopes it to `.planning/` — the one tree that does NOT
-        ship. The tree that does ship carried the author's absolute home
-        directory and username across five tracked files, including private
-        agent-transcript locations inside the validation RUN files. This is
-        the missing sibling over the tree that ships. It rides the unit suite,
-        so it needs no new gate command and no new CI job.
+        A tracked file once carried an author's absolute home directory and
+        username, including private agent-transcript locations inside the
+        validation RUN files. This scan reads every tracked file. It rides the
+        unit suite, so it needs no gate command of its own and no CI job.
 
         Read as BYTES throughout: a non-UTF-8 tracked file is then scanned
         rather than skipped, and no decode error has to be swallowed — a
         swallowed decode is a file nobody looked at.
         """
         listing = subprocess.run(
-            ["git", "ls-files", "-z", "--", ".", ":(exclude).planning/"],
+            ["git", "ls-files", "-z", "--", "."],
             cwd=str(ROOT),
             stdout=subprocess.PIPE,
             check=True,
@@ -6686,7 +6644,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         # never skip.
         self.assertTrue(
             tracked,
-            "`git ls-files -z -- . ':(exclude).planning/'` run in %s "
+            "`git ls-files -z -- .` run in %s "
             "enumerated 0 files; the scan has nothing to read and cannot be "
             "green" % ROOT,
         )

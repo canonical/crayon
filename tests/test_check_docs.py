@@ -12,8 +12,7 @@ the message text. A checker that returns 1 without naming what it compared is
 the failure mode ``tests/check_traces.py``'s "name what was grepped" rule exists
 against, and it would pass a code-only assertion.
 
-Mirrors ``tests/test_planning_lint.py``: stdlib ``unittest``, Python 3.9 syntax,
-no third-party runner on this branch.
+Stdlib ``unittest``, Python 3.9 syntax, no third-party runner.
 """
 
 import contextlib
@@ -790,7 +789,7 @@ class TestScopeDiscipline(CheckDocsCase):
     """The checker has no general constant-versus-doc-row rule."""
 
     def test_the_step_count_backstop_is_never_reported_as_drift(self):
-        """`.planning/WINDOWS.md` entry 17: the tool's step-count backstop constant
+        """The tool's step-count backstop constant
         has no contract row behind it — contract section 5.2 caps the step plan in
         bytes and names no count cap — so a general "every constant needs a row"
         rule would report it forever. The absence is asserted rather than assumed,

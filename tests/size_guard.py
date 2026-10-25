@@ -45,10 +45,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 #: The tool the budget is about.
 CRAYON_PATH = ROOT / "crayon.py"
 
-#: The single authoring site for the thresholds AND for the comparison. U-10
-#: cross-checks the pair against ``.planning/REQUIREMENTS.md`` VERB-09 wherever
-#: the planning tree is checked out, so the human home and the machine home
-#: cannot drift apart either.
+#: The single authoring site for the thresholds AND for the comparison.
 GUARD_MODULE = ROOT / "tests" / "test_crayon_unit.py"
 
 #: Where the platform wants a job's markdown report appended.

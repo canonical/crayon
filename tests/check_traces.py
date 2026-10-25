@@ -16,7 +16,7 @@ remembered. This script is the grep: it reads the table, and for every row
 either finds the named test or says exactly which T#, which expected id and
 which files it looked in. Clearing a mark is then a one-line edit to the table.
 
-It mirrors :mod:`planning_lint` / :mod:`skill_lint`: a single :func:`main` with
+It mirrors :mod:`skill_lint`: a single :func:`main` with
 a ``0`` (clean) / ``1`` (violation) / ``2`` (vacuous pass — nothing was checked)
 contract. Phase 18's docs-check calls it.
 

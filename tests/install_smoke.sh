@@ -22,7 +22,7 @@
 # rather than a rewrite. The repository seed (git init, identity, a source and a
 # docs root) is the smoke's own: the installer never initialises a repository.
 #
-# Exit codes follow the project's 0/1/2 lint contract (scripts/planning_lint.py):
+# Exit codes follow the project's 0/1/2 lint contract:
 #   0  the walk reached a page and every assertion passed
 #   1  at least one assertion failed
 #   2  NOTHING was checked — zero fenced bash blocks were extracted from the
@@ -110,8 +110,8 @@ awk -v begin_marker="$BEGIN_MARKER" -v end_marker="$END_MARKER" '
 FENCES=$(grep -c '^# --- install fence ' "$EXTRACTED" 2>/dev/null) || FENCES=0
 
 # The `2` arm, half one: nothing was extracted, so nothing can be run. Name
-# what was searched — the same courtesy `run_matrix.sh` and `planning_lint.py`
-# extend when their own vacuous-pass guard fires.
+# what was searched — the same courtesy `run_matrix.sh` extends when its own
+# vacuous-pass guard fires.
 if [ "$FENCES" -eq 0 ]; then
     echo "install-smoke: ERROR - extracted 0 fenced bash blocks (vacuous pass guard)" >&2
     echo "install-smoke:   searched: $README" >&2
