@@ -76,6 +76,17 @@ SNAPSHOTS = (
     "stale",
     "target_exists",
     "triage_change",
+    "tw_accepted",
+    "tw_context_recorded",
+    "tw_crashed",
+    "tw_declared",
+    "tw_diverged",
+    "tw_drafted",
+    "tw_missing",
+    "tw_signed",
+    "tw_triage_change",
+    "tw_walk",
+    "tw_walk_drafted",
     "walk",
     "walk_accepted",
     "walk_drafted",
@@ -103,7 +114,7 @@ def _inputs():
     paths = [RECORDER, REPO / "tests" / "lib.sh", REPO / "crayon.py"]
     tracked = subprocess.check_output([
         "git", "-C", str(REPO), "ls-files", "-z", "--",
-        "validation/evals/fixtures/toyq", "skills/crayon-*",
+        "validation/evals/fixtures/toyq", "validation/evals/fixtures/tidewatch", "skills/crayon-*",
     ])
     paths.extend(REPO / os.fsdecode(name) for name in tracked.split(b"\0") if name)
     return paths
@@ -216,13 +227,15 @@ class HostRunner(object):
         self.timeout = timeout
         self.limit = limit
         self.holder = None
+        self.workdir = agent.WORKDIR
 
     @property
     def root(self):
         return os.path.join(self.holder, "repo")
 
-    def reset(self, holder):
+    def reset(self, holder, workdir=agent.WORKDIR):
         self.holder = os.path.realpath(holder)
+        self.workdir = workdir
 
     def _env(self):
         return dict(agent.COMMAND_ENV,
@@ -230,10 +243,10 @@ class HostRunner(object):
                     HOME=os.path.join(self.holder, "home"))
 
     def _to_disk(self, text):
-        return text.replace(agent.WORKDIR, self.root)
+        return text.replace(self.workdir, self.root)
 
     def _from_disk(self, text):
-        return text.replace(self.root, agent.WORKDIR)
+        return text.replace(self.root, self.workdir)
 
     def run(self, command):
         marker = "__crayon_rc_%s" % secrets.token_hex(8)
@@ -276,9 +289,11 @@ class WorkshopRunner(object):
         self.project = Path(project)
         self.timeout = timeout
         self.limit = limit
+        self.workdir = agent.WORKDIR
 
-    def _exec(self, argv, cwd=agent.WORKDIR, timeout=None):
+    def _exec(self, argv, cwd=None, timeout=None):
         timeout = timeout or self.timeout
+        cwd = cwd or self.workdir
         command = ["workshop", "--project", str(self.project), "exec", "-I",
                    "--uid", "0", "--gid", "0", "--cwd", cwd,
                    "--timeout", "%ds" % (timeout + 30), WORKSHOP, "--"] + argv
@@ -295,13 +310,14 @@ class WorkshopRunner(object):
                  "--reset-env", "env", "-i"] + env
                 + ["timeout", "-k", "5", str(self.timeout)] + argv)
 
-    def reset(self, holder):
-        """Put the case's copy at ``/srv``: the repository at ``/srv/toyq``, its siblings beside it."""
+    def reset(self, holder, workdir=agent.WORKDIR):
+        """Put the case's copy at ``/srv``: the repository at ``workdir``, its siblings beside it."""
+        self.workdir = workdir
         case = self.project / "case"
         shutil.rmtree(str(case), ignore_errors=True)
         case.mkdir()
         for name in sorted(os.listdir(holder)):
-            target = case / (os.path.basename(agent.WORKDIR) if name == "repo" else name)
+            target = case / (os.path.basename(workdir) if name == "repo" else name)
             shutil.copytree(os.path.join(holder, name), str(target), symlinks=True)
         script = ("rm -rf /srv && mkdir /srv && cp -a /project/case/. /srv/ "
                   "&& chown -R evaluser:evaluser /srv")

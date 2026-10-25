@@ -60,9 +60,9 @@ def result(passed, feedback, score=None):
 
 
 #: A leading change into the directory the command already runs in (the
-#: sandbox's working directory as the model sees it, ``agent.WORKDIR``). It
+#: sandbox's working directory as the model sees it, ``/srv/<project>``). It
 #: changes nothing, so a pattern anchored at the command's start ignores it.
-_CD_WORKDIR_RE = re.compile(r"^\s*cd\s+(%s|\.)/?\s*(&&|;)\s*" % re.escape(agent.WORKDIR))
+_CD_WORKDIR_RE = re.compile(r"^\s*cd\s+(/srv/[A-Za-z0-9._-]+|\.)/?\s*(&&|;)\s*")
 
 
 def _typed(call):

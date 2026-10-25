@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tidewatch"
+version = "1.4.2"
+description = "Watch directories and run a command when they change"
+requires-python = ">=3.9"
+
+[project.scripts]
+tidewatch = "tidewatch.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

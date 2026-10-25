@@ -34,6 +34,11 @@ from openrouter import carry_cost, retry_empty_turn
 #: Where the model is told the repository is.
 WORKDIR = "/srv/toyq"
 
+
+def workdir_for(project):
+    """Where a case's repository sits, as the model sees it: named after its project."""
+    return "/srv/%s" % project
+
 TOOL_SCHEMAS = {
     "Read": {
         "description": "Read a file from the repository and return its text.",
@@ -182,7 +187,7 @@ _INSPECT_RE = re.compile(
 )
 #: Setup: naming a variable, or creating a directory under the staging tree.
 _SETUP_PART_RE = re.compile(
-    r"^([A-Za-z_][A-Za-z0-9_]*=\S*|mkdir\s+-p\s+((/srv/toyq/)?\.crayon/staging/\S+|"
+    r"^([A-Za-z_][A-Za-z0-9_]*=\S*|mkdir\s+-p\s+((/srv/[A-Za-z0-9._-]+/)?\.crayon/staging/\S+|"
     r"\$\{?[A-Za-z_]\S*))$")
 #: What a part may do and still only read: no redirect into a file, no command or
 #: process substitution, no ``find`` action.
@@ -333,21 +338,22 @@ class Repo(object):
     ``(None, True)`` for it, and the episode ends there.
     """
 
-    def __init__(self, root, runner, overrides=()):
+    def __init__(self, root, runner, overrides=(), workdir=WORKDIR):
         self.root = os.path.realpath(str(root))
         self.runner = runner
         self.overrides = list(overrides)
+        self.workdir = workdir
         self.before = None
 
     def start(self):
         """Hand the copy to the runner and take its digest: the state nothing may change."""
-        self.runner.reset(os.path.dirname(self.root))
+        self.runner.reset(os.path.dirname(self.root), self.workdir)
         self.before = self.runner.digest()
 
     # -- paths ----------------------------------------------------------------
 
     def _to_disk(self, text):
-        return (text or "").replace(WORKDIR, self.root)
+        return (text or "").replace(self.workdir, self.root)
 
     def _inside(self, path):
         """The real path for a model's path, or None outside the repository."""

@@ -34,7 +34,7 @@ model is run again.
 | Lane | What it asks | Status |
 |---|---|---|
 | A | which skill handles this ask? | built, 15 cases |
-| B | given this `crayon` output, what is the next action? | built, 79 cases |
+| B | given this `crayon` output, what is the next action? | built, 94 cases |
 
 Every case names the skill rule it protects, an S-id from the skill-text suite
 (`tests/test_skill_text.py`), and whether it is critical. A case is critical when it checks that
@@ -47,6 +47,11 @@ the agent:
 
 Every other case (question order, voice, routing wording, mode choice) is standard. Every rule a
 model can break at run time has at least one case, and the eval suite checks that it does.
+
+The cases run on two projects. Most use toyq, a small job queue. Fifteen use tidewatch, a larger
+file watcher whose documentation has 23 pages and a toctree: one critical case for each critical
+rule, ported from toyq. A model must pass those too to be supported, so support does not rest on
+one project's names and pages.
 
 Every case carries a known-good reply that must pass and a plausible wrong one that must fail,
 both checked offline, so a check that would pass anything cannot land. Every check is
@@ -88,7 +93,7 @@ per case, what it cost, the skills and kit it ran on, and its `decision` block:
 - `ship`, for the gate model: the cases that passed every run in the baseline and now fail a run.
   The baseline is the latest committed result on the same kit; a comparison across kits is refused.
 
-Lane B has a held-out set of 21 cases (`validation/evals/cases/holdout.json`). A skill change is
+Lane B has a held-out set of 25 cases (`validation/evals/cases/holdout.json`). A skill change is
 measured on the other cases and accepted only if the held-out cases do not regress, so a fix cannot
 be fitted to the cases it targets.
 
