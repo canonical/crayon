@@ -30,7 +30,6 @@ their reasons: the `shellcheck` command, and the `unittest` job's install of rip
 python3 -m unittest tests.test_crayon_unit       # the unit suite
 python3 tests/test_crayon_unit.py                # the SAME suite, script form
 python3 -m unittest tests.test_skill_text        # the skill-text contracts
-python3 -m unittest tests.test_planning_lint     # the anonymization lint's own tests
 python3 -m unittest tests.test_check_docs        # the docs-accuracy checker's own tests
 bash tests/test_crayon_lifecycle.sh              # the lifecycle / recovery suite
 bash tests/test_crayon_acceptance.sh             # the acceptance suite
@@ -39,7 +38,6 @@ bash validation/fixtures.sh                      # the validation kit's four cor
 python3 scripts/skill_lint.py                    # the SKILL.md frontmatter gate
 python3 tests/check_traces.py                    # the trace-table checker
 python3 tests/check_docs.py                      # the docs-accuracy checker
-python3 scripts/planning_lint.py                 # the anonymization gate over .planning/
 python3 tests/size_guard.py                      # VERB-09's line budget, reported and enforced
 python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
 python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
@@ -183,9 +181,6 @@ test exists, and nothing about what the test asserts.
 name matches the directory, the description parses, the compatibility numbers are the contract's
 as literal strings, and only `crayon-write` may hold a write-capable tool. The single-writer rule
 is fail-closed.
-
-**`scripts/planning_lint.py`** — no unscrubbed prior-art identity in `.planning/`. A missing
-planning tree is a clean scan; on a release branch it checks nothing and says so.
 
 **`scripts/wiki_lint.py`** — the shape of the `docs/` wiki and its entry point `AGENTS.md`:
 every bracketed link resolves, every page is reachable from `AGENTS.md`, slugs are unique, pages

@@ -6181,8 +6181,7 @@ test_no_verb_exposes_a_force_flag() {
     cleanup
 }
 
-# T29 / T29b end to end: both routed tokens need a signoff to be reachable, so
-# they could not be covered before this plan (recorded in .planning/WINDOWS.md).
+# T29 / T29b end to end: both routed tokens need a signoff to be reachable.
 
 test_signoff_routes_to_record_edits_when_the_target_already_exists() {
     setup_repo

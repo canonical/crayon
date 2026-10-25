@@ -47,8 +47,7 @@ delivery facts below. There is deliberately no general
 "every module constant must have a doc row" rule and nothing walks the tool's
 namespace: the tool's own step-count backstop constant has no contract row
 behind it by design — section 5.2 caps the step plan in bytes and names no count
-cap — so a general rule would report it forever and be silenced forever
-(``.planning/WINDOWS.md`` entry 17). This file does not know that constant
+cap — so a general rule would report it forever and be silenced forever. This file does not know that constant
 exists.
 
 Nothing outside the repository is opened, fetched or resolved: a link bearing a
@@ -60,7 +59,7 @@ in ``tests/`` is pulled into the unittest namespace and into
 ``test_every_test_module_in_tests_is_in_the_gate``, and this is a checker with
 its own suite (``tests/test_check_docs.py``), not a suite.
 
-Mirrors :mod:`check_traces` / ``scripts/planning_lint.py`` / ``scripts/skill_lint.py``:
+Mirrors :mod:`check_traces` / ``scripts/skill_lint.py``:
 one :func:`main` with a ``0`` clean / ``1`` violation / ``2`` scanned-nothing
 contract. Each observable carries its **own** ``2`` arm: a single shared counter
 would let a reshaped verbs table ride to green on the links that did parse.

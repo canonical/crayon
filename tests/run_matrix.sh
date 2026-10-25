@@ -15,7 +15,7 @@
 # is idempotent and re-downloads nothing — so the 3.12 leg normally runs on the
 # system interpreter with no network at all.
 #
-# Exit codes follow the project's 0/1/2 lint contract (scripts/planning_lint.py):
+# Exit codes follow the project's 0/1/2 lint contract:
 #   0  every interpreter that ran reported OK
 #   1  at least one interpreter ran and failed
 #   2  NO interpreter ran — a matrix that ran nothing is a vacuous pass, and

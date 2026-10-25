@@ -15,7 +15,7 @@ loaded by path through a ``SourceFileLoader`` shim and its ``split_front_matter`
 is reused verbatim, so the lint and this suite can never disagree about what a
 skill declares.
 
-Organising principle, mirrored from ``tests/test_planning_lint.py``: a positive
+Organising principle: a positive
 gate (the committed skills satisfy every declared contract), a negative keystone
 (a drifted copy MUST be detected, never silently accepted) and a vacuous-pass
 guard (an empty or mis-rooted scan cannot masquerade as valid).
@@ -4800,9 +4800,7 @@ def bare_resume_offers(text):
 # converge through review/fix cycles: every round closes a shape and leaves the
 # space the same size. Iteration 9 closed the shapes reported so far (commits
 # b106d16, 6236063, 9d05347). From here, a newly IMAGINED evasion shape is
-# out of scope, and is RECORDED in row D17-6 of
-# `.planning/phases/17-harden-recovery-evidence-skills-suites-sessions/
-# deferred-items.md` rather than fixed. The one condition that reopens this
+# out of scope and is not fixed. The one condition that reopens this
 # gate for an analyzer rewrite is a real emitted hint
 # slipping through in practice: an operator-facing string that actually
 # reached a user while this walk called the site clean.
@@ -5701,19 +5699,10 @@ class TestD176TheAnalyzerStopRuleIsStated(unittest.TestCase):
     The hint-analysis gate is an AST walk over Python string formatting. The
     space of formatting shapes that can evade it is unbounded by construction,
     so it cannot converge through review/fix cycles. The rule has to be where a
-    reviewer meets it — in this file, beside the gate — and in the deferred
-    register, in the same words.
+    reviewer meets it: in this file, beside the gate.
     """
 
     SENTENCE = "unbounded by construction"
-    REGISTER = (
-        ROOT
-        / ".planning"
-        / "phases"
-        / "17-harden-recovery-evidence-skills-suites-sessions"
-        / "deferred-items.md"
-    )
-
     GATE = "def refusal_sites("
 
     def source(self):
@@ -5738,23 +5727,6 @@ class TestD176TheAnalyzerStopRuleIsStated(unittest.TestCase):
         for marker in ("out of scope", "slipping through in practice"):
             with self.subTest(marker=marker):
                 self.assertIn(marker, window)
-
-    def test_the_register_states_the_same_sentence(self):
-        """Skipped where the optional planning register is absent.
-
-        The deferred-items register lives under `.planning/`, which is on the
-        planning branch only: the release branch and every CI checkout carry
-        the product without the process. Reading it unconditionally made this
-        test error — not fail — on exactly the trees the suite is shipped to
-        run on, which is the "a test nobody can execute reads as green"
-        shape the gate machinery exists against, inverted.
-
-        The two assertions above read this file itself and still run, so the
-        class cannot go vacuous behind this skip.
-        """
-        if not self.REGISTER.is_file():
-            self.skipTest("no .planning/ tree in this checkout")
-        self.assertIn(self.SENTENCE, self.REGISTER.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

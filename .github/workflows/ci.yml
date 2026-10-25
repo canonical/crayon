@@ -22,7 +22,6 @@
 #                  bash tests/test_crayon_lifecycle.sh                   2m44s
 #   unittest       bash tests/run_matrix.sh  (3.9 / 3.12 / 3.13)         0m27s
 #                  then each module of the job on each interpreter       0m32s
-#                  python3 scripts/planning_lint.py                      0m01s
 #   shellcheck     shellcheck -S warning install.sh tests/*.sh validation/*.sh   0m04s
 #   skill-lint     python3 scripts/skill_lint.py                         0m01s
 #   docs-check     python3 tests/check_docs.py                           0m01s
@@ -138,10 +137,6 @@ jobs:
       # here.
       - run: python3 tests/test_crayon_unit.py
       - run: python3 -m unittest tests.test_skill_text
-      # The planning tree is optional on release branches; both the tests and
-      # standalone lint treat zero eligible files as a clean scan.
-      - run: python3 -m unittest tests.test_planning_lint
-      - run: python3 scripts/planning_lint.py
       - run: python3 -m unittest tests.test_check_docs
       - run: python3 -m unittest tests.test_wiki_lint
       # The model-eval kit's offline self-tests: a fake transport and stub
