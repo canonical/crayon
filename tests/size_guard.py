@@ -1,22 +1,22 @@
-"""CI's size guard for VERB-09's line budget — the local guard's own code.
+"""CI's size guard for the line budget — the local guard's own code.
 
-The budget is a **review trigger**, not a design goal (rev8 section 2.1):
+The budget is a **review trigger**, not a design goal:
 behaviour is never deleted to fit it. Two thresholds carry that: above the
 review trigger the guard REPORTS and stays green, at or above the failing
 threshold it FAILS. The relation is deliberately asymmetric, and restating it
 is how a CI job and the local guard end up disagreeing about a file sitting
 exactly on a threshold.
 
-So this script restates nothing. D-06 asks for one authoring site for the pair
-of numbers; the strongest reading of it is that the job and the local guard
-become the same *code*, not merely the same constants. Both thresholds and the
+So this script restates nothing. The pair of numbers has one authoring site;
+the strongest reading of that rule is that the job and the local guard become
+the same *code*, not merely the same constants. Both thresholds and the
 comparison itself are loaded out of ``tests/test_crayon_unit.py`` — the module
 whose U-10 block already pins all four boundary counts — through the same
 ``SourceFileLoader`` shim that module uses to import the extension-less
 ``crayon``. No threshold and no comparison operator implementing the budget
 relation is written here.
 
-D-07 puts the verdict in the **exit code** and never in the job summary: a
+The verdict is in the **exit code** and never in the job summary: a
 summary upload failure does not fail a job on the platform, so a guard whose
 verdict lived in the report would be silently green the day the report failed
 to upload. The summary write is therefore best-effort and its failure is logged
@@ -78,7 +78,7 @@ def count_lines(path):
 def report_rows(path, lines, annotate, fail, verdict):
     """The report's facts, as ``(label, value)`` pairs.
 
-    The five the decision asks for — line count, review trigger, fail
+    The five facts every report carries — line count, review trigger, fail
     threshold, headroom, verdict — plus the name of the file they were measured
     from, because the measured path is an argument and a report that does not
     say what it measured cannot be checked by the person reading it.

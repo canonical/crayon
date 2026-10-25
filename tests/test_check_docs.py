@@ -5,7 +5,7 @@ checker's ``--root`` at it, so the suite never reads the real documents except
 in the one test that asserts the real tree is clean. The fixture tree carries a
 fixture ``crayon`` — a real ``argparse`` program with three subcommands and its
 own ``REASONS``, ``CONTRACT`` and ``__version__`` — because the checker's oracle
-is whatever tool sits at its root, not a hard-coded list (T-18-30).
+is whatever tool sits at its root, not a hard-coded list.
 
 Two things are asserted about every violation, not one: the return code **and**
 the message text. A checker that returns 1 without naming what it compared is
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 '''
 
-#: The Mechanisms rows the fixture tree's contract carries (19 D-12). Their
+#: The Mechanisms rows the fixture tree's contract carries. Their
 #: signal cells use the real table's ``id (`suite file`)`` shape, because that
 #: parenthetical is exactly what scopes the delegate's widened scan. There are
 #: two, as in the real table, so a case that drops one parenthetical still
@@ -256,7 +256,7 @@ def build_tree(
                 ("`min_tool`", "`%s`" % contract_compat[1]),
             ),
         ),
-        # 19 D-12: the delegate also scans the Mechanisms table, and a tree
+        # The delegate also scans the Mechanisms table, and a tree
         # where it scans zero rows is a vacuous pass it reports as exit 2. The
         # fixture therefore carries the same five-cell shape the real table has,
         # with one row whose signal cell names a suite file — the shape the
@@ -293,12 +293,12 @@ def build_tree(
         )
 
     # The trace observable is a delegation, so the fixture carries the real
-    # delegate and a table it can clear (17 D-09). A fixture without it would
+    # delegate and a table it can clear. A fixture without it would
     # exercise the "delegate absent" arm in every case instead of the one.
     shutil.copy(str(TRACE_CHECKER), str(root / "tests" / "check_traces.py"))
     # The delegate's Mechanisms pass greps the same suite files, so the fixture
     # carries the one the fixture table's row names. `v01_suite` decides WHICH
-    # file the `verify` row's `test_v01_*` is written into (19 WR-04): the row
+    # file the `verify` row's `test_v01_*` is written into: the row
     # points at `validation/fixtures.sh`, and a token satisfying it from some
     # other suite is the defect — the row says where, so the check has to read
     # where.
@@ -456,7 +456,7 @@ class TestCompatibility(CheckDocsCase):
 
         Contract section 5.10 says the two numbers are compared as literal
         strings; a check that normalised them would pass this tree, and a skill
-        comparing the strings at runtime would still stop (T-18-33).
+        comparing the strings at runtime would still stop.
         """
         code, output = self.run_checker(self.tree(compat=(FIXTURE_CONTRACT, "9.9")))
         self.assertEqual(code, 1, output)
@@ -548,7 +548,7 @@ class TestSkillsFirst(CheckDocsCase):
 
 
 class TestReleaseRecord(CheckDocsCase):
-    """REL-02 / CI-03: the released section is dated and historically bounded.
+    """The released section is dated and historically bounded.
 
     Before this observable existed, ``CHANGELOG.md`` was read by this checker
     for link resolution only, so a released section could ship undated,
@@ -634,7 +634,7 @@ class TestReleaseRecord(CheckDocsCase):
         )
 
     def test_020_facts_hold_below_a_later_dated_release(self):
-        """D-03: a dated [0.3.0] above [0.2.0] does not switch the facts off."""
+        """A dated [0.3.0] above [0.2.0] does not switch the facts off."""
         fact = check_docs.RELEASE_020_REQUIRED_FACTS[0]
         facts = "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
         changelog = self.later_release(facts.replace(fact, ""))
@@ -645,7 +645,7 @@ class TestReleaseRecord(CheckDocsCase):
         self.assertIn(fact, output)
 
     def test_020_claims_stay_out_below_a_later_dated_release(self):
-        """D-03: a dated [0.3.0] above [0.2.0] does not let a claim back in."""
+        """A dated [0.3.0] above [0.2.0] does not let a claim back in."""
         claim = check_docs.RELEASE_020_FORBIDDEN_CLAIMS[0]
         facts = "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
         changelog = self.later_release(facts + "\n" + claim + ".")
@@ -655,7 +655,7 @@ class TestReleaseRecord(CheckDocsCase):
         self.assertIn(claim, output)
 
     def test_a_later_undated_release_is_named_by_the_date_check(self):
-        """D-03: the date check still reads the topmost section, [0.3.0]."""
+        """The date check still reads the topmost section, [0.3.0]."""
         facts = "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
         changelog = self.later_release(facts, heading_030="## [0.3.0]")
         code, output = self.run_checker(self.tree(changelog=changelog))
@@ -681,7 +681,7 @@ class TestReleaseRecord(CheckDocsCase):
         self.assertIn("CHANGELOG.md", output)
 
     def test_a_marker_outside_the_topmost_released_section_is_not_a_violation(self):
-        """REL-02's adjacency and ordering edges, in one tree.
+        """The release record's adjacency and ordering edges, in one tree.
 
         ``## [Unreleased]`` sits directly above the released heading and an
         older release sits directly below it. The observable is about the
@@ -715,7 +715,7 @@ class TestReleaseRecord(CheckDocsCase):
         The other direction, so the cases above cannot pass by refusing every
         tree: this repository's 0.2.0 section is dated, carries no marker,
         retains every delivery fact and carries none of the stale claims.
-        It must carry a ``## [0.2.0]`` heading at all (D-03): the 0.2.0 pins are
+        It must carry a ``## [0.2.0]`` heading at all: the 0.2.0 pins are
         skipped when no such section exists, so deleting it must not pass.
         """
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -726,7 +726,7 @@ class TestReleaseRecord(CheckDocsCase):
 
 
 class TestTraceDelegation(CheckDocsCase):
-    """19 D-12 / T-19-26: the delegate's second vacuous-pass guard, seen from here."""
+    """The delegate's second vacuous-pass guard, seen from here."""
 
     def test_a_mechanisms_row_that_names_no_suite_file_is_a_two(self):
         """Dropping the parenthetical unchecks the link and must not read clean.
@@ -752,13 +752,13 @@ class TestTraceDelegation(CheckDocsCase):
         self.assertIn("validation/fixtures.sh", output)
 
     def test_a_row_is_not_satisfied_by_a_test_in_some_other_suite(self):
-        """19 WR-04: the row says WHERE, so the check has to read where.
+        """The row says WHERE, so the check has to read where.
 
         `check_mechanism_row` unpacked ``suite_name`` and then used it only in
         the error message; the existence test searched every entry of
         ``SUITE_FILES``. The ``verify`` row's claim is specifically that
-        V-01…V-04 live in ``validation/fixtures.sh`` — the link 19 D-12 exists
-        to gate — and a ``test_v01_*`` function in any other suite satisfied it
+        V-01…V-04 live in ``validation/fixtures.sh`` — the link the Mechanisms
+        scan exists to gate — and a ``test_v01_*`` function in any other suite satisfied it
         identically. ``GATED_SUITE``'s guard is a different assertion and does
         not cover this one: it checks only that some scanned row still NAMES
         the file, which this tree does.

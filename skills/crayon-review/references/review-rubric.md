@@ -25,7 +25,7 @@ to a file.
 Run every deterministic check first, so judgment is spent only where a machine
 cannot decide — anything mechanically decidable belongs in this layer, and the
 judgment dimensions never re-derive it. Cheap read-only greps over the drafted
-page(s), within Read/Bash/Glob/Grep only (no build — D-13, no writes):
+page(s), within Read/Bash/Glob/Grep only (no build, no writes):
 
 - **Changelog-framing tells:** `previously`, `now supports`, `starting with`,
   `can now`, `new in` — candidate writing-approach findings.
@@ -52,11 +52,11 @@ An objective-check failure is **must-fix by definition** — the severity floor.
 the draft does not solve the reader problem it was declared for, or leaves an
 outline/acceptance item unmet (and unrecorded as a `gap`), that finding is pinned
 to the existing `[must-fix]` priority and may **never** be downgraded to
-`[should-fix]` or `[nit]`, however small the surface edit looks. (This is the
-round-3 finding-G floor: the exact inconsistency a unit existed to remove, still
+`[should-fix]` or `[nit]`, however small the surface edit looks. (The case the
+floor exists for: the exact inconsistency a unit existed to remove, still
 present in the draft, is a `[must-fix]` objective-check failure — never a `[nit]`.)
 The floor reuses the existing `[must-fix]` tag; it introduces no fourth priority
-and no bracketed run-status token, so the collision guard (D-03) below still holds.
+and no bracketed run-status token, so the collision guard below still holds.
 
 For a **multi-target unit**, the objective check includes the `structure-fit`
 **Cross-page consistency (multi-file units only)** check below — which quotes the

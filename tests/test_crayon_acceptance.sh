@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_crayon_acceptance.sh — the ported acceptance suite, A-01 … A-35 (D-10).
+# test_crayon_acceptance.sh — the ported acceptance suite, A-01 … A-35.
 #
 # Usage: bash tests/test_crayon_acceptance.sh
 #
@@ -11,31 +11,31 @@
 # counters. The harness shape (run_test / assert_* / auto-discovery / the
 # "Results: N passed, N failed" line) is copied from the v1.x bash suite,
 # `git show 357c513:tests/test_dogen_scripts.sh`, and now lives in tests/lib.sh,
-# shared with tests/test_crayon_lifecycle.sh (D-10).
+# shared with tests/test_crayon_lifecycle.sh.
 
 set -u
 
-# D-10: the harness is tests/lib.sh and lives there ONLY. The hermetic temp repo
+# The harness is tests/lib.sh and lives there ONLY. The hermetic temp repo
 # (`setup_repo` / `cleanup`), the assertion set, `crayon_unit_new`, the ledger
-# readers, the five pre-commit hook fixtures, the WR-09 vacuous-test guard in
-# `run_test` and the TAP `main` all moved out of this file in plan 17-01 and are
-# shared with tests/test_crayon_lifecycle.sh. Nothing below redefines any of them:
-# a second copy is exactly how the two suites would drift apart.
+# readers, the five pre-commit hook fixtures, the vacuous-test guard in
+# `run_test` and the TAP `main` all moved out of this file and are shared with
+# tests/test_crayon_lifecycle.sh. Nothing below redefines any of them: a second
+# copy is exactly how the two suites would drift apart.
 #
-# Plan 17-11 finished the split D-10 asked for: the 181 T-labelled bodies that
-# used to sit above the A-series moved, unchanged, into
-# tests/test_crayon_lifecycle.sh under their N-ids, and the fixtures both suites
-# read state through (`derived`, `stage_draft`, `setup_drafted_unit`, …) moved
-# into the shared harness with them. What is left below is the original reviewer's suite
-# and nothing else, which is the whole point: its author opens this file and recognises it.
+# The 181 T-labelled bodies that used to sit above the A-series moved,
+# unchanged, into tests/test_crayon_lifecycle.sh under their N-ids, and the
+# fixtures both suites read state through (`derived`, `stage_draft`,
+# `setup_drafted_unit`, …) moved into the shared harness with them. What is
+# left below is the original reviewer's suite and nothing else, which is the
+# whole point: its author opens this file and recognises it.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/lib.sh"
 
-# --- A-01 … A-35: the reviewer's suite, ported by intent (D-10, TEST-01) ------
+# --- A-01 … A-35: the reviewer's suite, ported by intent ---------------------
 #
 # The port source is `git show 357c513:tests/test_dogen_scripts.sh` — the
 # thirty-two test functions of the v1.x bash layer, frozen in git history so the
-# port does not depend on the working-tree copy this plan deletes. Every
+# port does not depend on a working-tree copy, which no longer exists. Every
 # function below carries a comment naming the source function it came from and
 # that commit, so a reviewer can diff intent against source without leaving the
 # file.
@@ -90,17 +90,17 @@ test_a01_signoff_creates_ledger_lazily() {
         "$(git ls-files .crayon | tr '\n' ' ' | sed 's/ $//')"
     cleanup
 
-    # TEST-05, this suite's copy of the inertness property (T-17-52). The D-15
-    # fixture hooks — `CRAYON_CRASH_AT`, which aborts the write protocol at a
-    # named point, and `CRAYON_NOW`, which pins the recorded timestamp — are
-    # armed ONLY by `CRAYON_TEST_HOOKS`, which `setup_repo` exports and nothing
-    # in a shipped install ever sets. With the switch off, both are dead
-    # variables: the same `unit new` runs to completion and records the real
-    # clock. tests/test_crayon_lifecycle.sh asserts the same property over every
-    # crash point (`test_n37_test05_…`); the copy is deliberate, because a
+    # This suite's copy of the inertness property. The fixture hooks —
+    # `CRAYON_CRASH_AT`, which aborts the write protocol at a named point, and
+    # `CRAYON_NOW`, which pins the recorded timestamp — are armed ONLY by
+    # `CRAYON_TEST_HOOKS`, which `setup_repo` exports and nothing in a shipped
+    # install ever sets. With the switch off, both are dead variables: the same
+    # `unit new` runs to completion and records the real clock.
+    # tests/test_crayon_lifecycle.sh asserts the same property over every crash
+    # point (`test_n37_the_fixture_hooks_…`); the copy is deliberate, because a
     # single copy is one careless move away from this whole class of hook being
     # unasserted anywhere. It rides on A-01 rather than standing as its own
-    # function because D-10 fixes this file's contents at A-01 … A-35 exactly,
+    # function because this file's contents are fixed at A-01 … A-35 exactly,
     # and the evidence is the same lazily created ledger the assertions above
     # have just read.
     setup_repo

@@ -4,7 +4,7 @@
 Asserts per skill: frontmatter ``name`` equals the directory name and matches
 agentskills.io slug rules; ``description`` is present, non-empty (≤1024 chars), and
 contains no bare ``: `` (colon+space) that would break a real YAML parser; the
-single-writer rule (only :data:`WRITERS` may hold a write-capable tool, D-14); and
+single-writer rule (only :data:`WRITERS` may hold a write-capable tool); and
 both compatibility numbers from ``docs/contract.md`` §5.10, compared as literal
 strings and never parsed as versions. ``min_tool`` is read from ``crayon.py``'s
 ``__version__`` line, its one definition site, as text: the tool is never
@@ -24,7 +24,7 @@ _NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _MAX_NAME = 64
 _MAX_DESC = 1024
 
-#: D-14's single-writer rule. Every other skill reaches disk through the tool
+#: The single-writer rule. Every other skill reaches disk through the tool
 #: (``crayon unit new --body-file -``), so a write-capable tool in its
 #: ``allowed-tools`` is a drift to catch, not a capability to use. This is a lint
 #: and a convention: the real write boundary is the tool's own containment check.
@@ -38,7 +38,7 @@ _VERSION_RE = re.compile(r'^__version__ = "([^"]+)"$', re.MULTILINE)
 def tool_version(root):
     """The tool's ``__version__``, read from ``<root>/crayon.py`` as text.
 
-    D-07: ``crayon.py`` is the one definition site of the version, so every copy
+    ``crayon.py`` is the one definition site of the version, so every copy
     that names it is read from here or asserted against it, never typed. The
     tool is not imported. No match is an error, never an empty-string pass, and
     the value is a literal string, never parsed as a version (contract §5.10).
@@ -52,7 +52,7 @@ def tool_version(root):
 
 #: contract.md §5.10. Compared as literal strings — never parsed, ordered or
 #: rounded as versions. ``min_tool`` is the tool's own ``__version__``, read from
-#: ``crayon.py``, its one definition site (D-07); the lint types no version.
+#: ``crayon.py``, its one definition site; the lint types no version.
 _EXPECTED_METADATA = {
     "metadata.crayon_contract": "1",
     "metadata.crayon_min_tool": tool_version(REPO_ROOT),

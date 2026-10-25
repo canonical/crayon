@@ -11,7 +11,7 @@ a genuine fork, but stays focused on the goal — it does not teach concepts fro
 scratch and it does not try to be complete. Success is the reader getting their
 task done.
 
-## The curated-excerpt rule (D-04)
+## The curated-excerpt rule
 
 Captured step output enters the drafted page **only as curated excerpts** —
 deliberately selected and scrubbed of environment-specific noise during authoring,

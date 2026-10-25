@@ -165,7 +165,7 @@ is a statement about the record rather than about a recollection.
 
 ## 5. Cross-leg comparison (reference vs actionable)
 
-**Scope.** rev8 §10 scopes the v2.0 legs to a single harness, so the cross-harness comparison
+**Scope.** The v2.0 legs are scoped to a single harness, so the cross-harness comparison
 this section described in v1 cannot be made and is not reproduced here. The harness set it named
 is out of scope for v2.0 and is deliberately not restated, so that nothing in this file points a
 later reader at a comparison the v2.0 legs must not chase.

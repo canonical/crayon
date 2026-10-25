@@ -78,7 +78,7 @@ steps are identical in text, mode and statefulness at every hop. Ask the author 
 it asserts that something which has not been re-run still holds. The note is the
 author's answer, verbatim, to why the plan changed; never compose a reason for them.
 
-## Capture mechanics (D-15)
+## Capture mechanics
 
 One redirection, one status, no digest.
 

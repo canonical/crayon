@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# validation/fixtures.sh — V-01…V-04: each corruption REACHED from a valid unit (D-09).
+# validation/fixtures.sh — V-01…V-04: each corruption REACHED from a valid unit.
 #
 # Every fixture here builds a real unit with the real verbs — `unit new`, `signoff`,
 # `draft`, `steer` — in a hermetic temp git repo, and only then breaks it in exactly one
 # named way. That is the whole point of the file: a corruption assembled by hand from a
 # checked-in ledger tree proves nothing about a state the tool can actually reach, and a
-# `prev` digest typed by a human is a digest the writer never produced (LEDG-06, D-09).
+# `prev` digest typed by a human is a digest the writer never produced.
 #
-# It sources `tests/lib.sh` rather than re-implementing a harness (17 D-10: one definition
+# It sources `tests/lib.sh` rather than re-implementing a harness (one definition
 # site). From there it gets `setup_repo`, `setup_drafted_unit`, `ledger_line`, `assert_eq`,
-# `assert_contains`, `cleanup`, the per-test subshell, the WR-09 vacuous-test guard, the
+# `assert_contains`, `cleanup`, the per-test subshell, the vacuous-test guard, the
 # assertion counting and the TAP emit. None of that is redefined below.
 #
 # The `test_` prefix is load-bearing and constrained in BOTH directions. `main`'s discovery
 # is `declare -F | awk '{print $3}' | grep '^test_'`, so any helper carrying the prefix
 # would silently be run as a test — every helper below therefore does NOT carry it. And
-# D-12's widened `tests/check_traces.py` keys the four V-0N trace ids off the underscore-
+# `tests/check_traces.py` keys the four V-0N trace ids off the underscore-
 # bounded `v01`…`v04` tokens in these names, so only the four V-0N fixtures may carry a
 # `vNN` token. The `test_score_*` fixtures pin properties of the scorer itself and carry no
 # `X-NN` id for the trace checker to key on, deliberately.
@@ -26,10 +26,8 @@
 #   2  is unreachable here — the harness reports a suite that discovered nothing as a
 #      FAILED test (`not ok 1 - the suite discovered no test functions`), not as a 2
 #
-# `shellcheck -S warning validation/fixtures.sh` must be clean from this file's first
-# commit: plan 19-04 widens CI's glob to `tests/*.sh validation/*.sh`, and a glob with no
-# match expands literally, so the file and the widening have to be able to land together
-# (Pitfall 12).
+# `shellcheck -S warning validation/fixtures.sh` must stay clean: CI runs shellcheck over
+# `tests/*.sh validation/*.sh`, so this file is linted on every push.
 
 # shellcheck source=../tests/lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../tests/lib.sh"
@@ -45,7 +43,7 @@ export CRAYON
 
 # Run the scorer's `audit` over the hermetic repo and capture BOTH streams plus the exit
 # code. stdout+stderr are merged on purpose: a fixture that asserts the exit code alone
-# passes on the wrong finding (T-19-07), and a traceback is stderr text a fixture must be
+# passes on the wrong finding, and a traceback is stderr text a fixture must be
 # able to see.
 audit_output() {
     local unit="$1"
@@ -56,7 +54,7 @@ audit_output() {
 
 # The same `audit`, with `CRAYON` REMOVED from the environment. `fixtures.sh` exports `CRAYON`
 # at the top and it always wins, which is exactly why no fixture could reach
-# `_crayon_executable`'s fallback chain — the one CR-01 was filed against.
+# `_crayon_executable`'s fallback chain — the one that once ran the audited tree's `crayon`.
 audit_output_without_crayon_env() {
     local unit="$1"
     AUDIT_OUT=$(env -u CRAYON python3 "$SCORE" audit "$unit" --root "$TEST_DIR" 2>&1)
@@ -77,8 +75,8 @@ HOSTILE
     chmod +x "$TEST_DIR/crayon"
 }
 
-# Rewrite ONE ledger line in place through python3, so no digest is ever typed by hand
-# (LEDG-06). `$1` is the unit, `$2` the 1-based line number, `$3` a python expression body
+# Rewrite ONE ledger line in place through python3, so no digest is ever typed by hand.
+# `$1` is the unit, `$2` the 1-based line number, `$3` a python expression body
 # operating on the name `event`; the line is re-serialised with the writer's own separators.
 rewrite_ledger_event() {
     local unit="$1" number="$2" mutation="$3"
@@ -115,8 +113,8 @@ truncate_ledger_to() {
 # Hand-append an ACCEPTING `review` event that disposes of nothing, following
 # `tests/lib.sh::forge_escaping_target`'s pattern exactly: the event is built and chained
 # through the writer's own primitives INSIDE THE FIXTURE, so the appended line's `prev` is
-# computed from the previous line's bytes and no digest is typed by hand (LEDG-06). Loading
-# `crayon` here is not a breach of D-02 — the independence rule binds the ORACLE, which must
+# computed from the previous line's bytes and no digest is typed by hand. Loading
+# `crayon` here is not a breach of the independence rule — it binds the ORACLE, which must
 # never import the tool; a fixture that forges contributor input is entitled to use the same
 # writer a contributor's branch would have used.
 #
@@ -124,7 +122,7 @@ truncate_ledger_to() {
 # state can only be reached by writing the line — and why the oracle has to be able to see
 # it once someone has.
 # `$2` is the `resolves[]` the forged accept carries, as a JSON list, defaulting to none. A
-# caller that names a seq NOT YET ON RECORD is spelling the WR-09 tamper: contract §5.4
+# caller that names a seq NOT YET ON RECORD is spelling the LATER-accept tamper: contract §5.4
 # subtracts only what a LATER accept disposed of, and a hand-written accept is the only way an
 # earlier one can claim to have judged a request recorded after it.
 forge_accepting_review() {
@@ -175,7 +173,7 @@ ledger_tree_digest() {
 # The tool's own refusal on the un-forged path is asserted first, so the fixture records both
 # halves of the claim: `draft` will not step over the gate, and the oracle sees the unit that
 # did. `verify` reports this at level `warn` (V19's `plan_stale` clause) and exits 0 — which
-# is the severity split D-03's matrix is about, and why the oracle's own reading is needed.
+# is the severity split the DISAGREE matrix is about, and why the oracle's own reading is needed.
 test_v01_gate_bypass_flags() {
     setup_repo
     setup_drafted_unit demo-unit reference/demo.rst
@@ -332,8 +330,8 @@ test_v04_pending_unresolved_flags() {
     cleanup
 }
 
-# WR-09: contract §5.4 subtracts "seqs in any LATER accept.resolves ∪ withdraws". The
-# implementation collected dispositions from EVERY accept in any position, so an accept could
+# Contract §5.4 subtracts "seqs in any LATER accept.resolves ∪ withdraws". The
+# implementation used to collect dispositions from EVERY accept in any position, so an accept could
 # name a seq that did not exist when it was written and silence a request recorded after it.
 #
 # The forgery is the only way to reach the state, and it is built in ledger order: an accept at
@@ -383,7 +381,7 @@ test_score_requests_a_later_accept_still_disposes_of_an_earlier_request() {
 # --- the four oracle checks, and the cap ---------------------------------------------------
 
 # The whole oracle over a unit with nothing wrong with it. Four checks, four PASSes, no fifth
-# tag and exit 0 — the negative half of VAL-05's cap, which a fixture that only ever looks at
+# tag and exit 0 — the negative half of the four-check cap, which a fixture that only ever looks at
 # corrupted trees cannot state.
 test_score_oracle_all_four_checks_pass_on_a_sealed_unit() {
     setup_repo
@@ -395,7 +393,7 @@ test_score_oracle_all_four_checks_pass_on_a_sealed_unit() {
     assert_contains "oracle: check 2 of 4 PASSes" "$AUDIT_OUT" "PASS [oracle-2]"
     assert_contains "oracle: check 3 of 4 PASSes" "$AUDIT_OUT" "PASS [oracle-3]"
     assert_contains "oracle: check 4 of 4 PASSes" "$AUDIT_OUT" "PASS [oracle-4]"
-    assert_not_contains "oracle: there is no fifth check — VAL-05 caps it at four" \
+    assert_not_contains "oracle: there is no fifth check — the oracle is capped at four" \
         "$AUDIT_OUT" "oracle-5"
     cleanup
 }
@@ -421,7 +419,7 @@ test_score_oracle_signoff_freshness_names_both_digests() {
 }
 
 # Oracle check 3 reaches the FILESYSTEM, and the `docs/` join is its own job: the basis event
-# records `reference/demo.rst` without the prefix (RESEARCH Pitfall 4). Removing exactly that
+# records `reference/demo.rst` without the prefix. Removing exactly that
 # one file is what proves the join happened — a check that stat'd the recorded path directly
 # would find nothing either way and report the same FLAG for the wrong reason.
 test_score_oracle_missing_page_flags_the_joined_path() {
@@ -509,8 +507,8 @@ setup_draft_tree_with_include() {
         >"$TEST_DIR/site/docs/guides/page.rst"
 }
 
-# WR-06: `_resolve` applied `resolve()` + `relative_to(root)` to a leading-`/` target and
-# returned `draft_path.parent / rel` UNCHECKED for a dir-relative one. A draft is
+# `_resolve` used to apply `resolve()` + `relative_to(root)` to a leading-`/` target and
+# return `draft_path.parent / rel` UNCHECKED for a dir-relative one. A draft is
 # model-produced content, so `.. include:: ../../../private/notes.txt` was read and folded into
 # the text all four scans then run over — and the matched tokens are ECHOED, so content left
 # the file. `draft` is report-only, so this is a scorecard rather than a gate, which is why the
@@ -532,7 +530,7 @@ test_score_draft_a_dir_relative_include_leaving_the_source_root_is_refused() {
 
 # The other direction, and the reason the boundary is the SOURCE ROOT rather than the draft's
 # own directory: `.. include:: ../_shared/frag.txt` is an ordinary rST pattern in a real docs
-# tree — the phase-19 target repository uses exactly this shape for its `_interfaces/`
+# tree — the validation legs' target repository uses exactly this shape for its `_interfaces/`
 # fragments — and confining a dir-relative target to the page's own directory would refuse it.
 # A confinement that breaks the legitimate case is not a fix.
 test_score_draft_a_dir_relative_include_inside_the_source_root_still_resolves() {
@@ -548,9 +546,9 @@ test_score_draft_a_dir_relative_include_inside_the_source_root_still_resolves() 
     cleanup
 }
 
-# --- independence (D-02): the tree under audit never chooses the tool ----------------------
+# --- independence: the tree under audit never chooses the tool -----------------------------
 
-# CR-01. `_crayon_executable` fell back to `<root>/crayon`, where `root` is the attacker-
+# `_crayon_executable` used to fall back to `<root>/crayon`, where `root` is the attacker-
 # influenced `--root`, and `audit` then ran it with `cwd=str(root)`. The `[verify]` arm is the
 # oracle's single point of contact with the tool and its whole value is that the reading is
 # INDEPENDENT; a repository under audit that ships its own `crayon` got to write that reading,
@@ -579,9 +577,9 @@ test_score_independence_the_audited_tree_never_supplies_the_verify_arms_tool() {
     cleanup
 }
 
-# --- the D-03 DISAGREE matrix, over CLAUSES and not over substrings ------------------------
+# --- the DISAGREE matrix, over CLAUSES and not over substrings -----------------------------
 
-# CR-02, the noisy direction. `V14`'s detail is `"<path>: <status>"` joined over every row, so
+# The noisy direction. `V14`'s detail is `"<path>: <status>"` joined over every row, so
 # a bare `"missing" in detail` test reads the PAGE PATHS as findings. A healthy sealed unit
 # whose signed target is named `reference/missing-fields.rst` — an ordinary reference page —
 # made `audit` print `PASS [oracle-3]` and a DISAGREE about it in the same run, and exit 1.
@@ -603,7 +601,7 @@ test_score_disagree_a_page_path_containing_missing_is_not_a_v14_finding() {
     cleanup
 }
 
-# CR-02, the SUPPRESSED direction — the one a noisy false positive hides. The oracle FLAGs
+# The SUPPRESSED direction — the one a noisy false positive hides. The oracle FLAGs
 # (contract V6: the accepting tip's `files[]` differs from the basis's) while `V14` reads the
 # basis and correctly reports `current`. That is a real split. With the old substring test the
 # path's own `missing` made the verify side read as a finding too, the two sides "agreed", and
@@ -647,7 +645,7 @@ sys.stdout.write(json.dumps(
 ' "$ghost" >".crayon/units/${ghost}/ledger.jsonl"
 }
 
-# WR-01: `checks_run` was incremented for every one of the eight report lines INCLUDING the
+# `checks_run` used to be incremented for every one of the eight report lines INCLUDING the
 # ones that printed SKIP, so its minimum was 10 and `if checks_run == 0` could never fire.
 # Exit 2 was reachable only from the `root.is_dir()` arm. The code did the one thing the
 # comment twelve lines above it says it must not:
@@ -697,7 +695,7 @@ test_score_a_sealed_unit_is_scored_and_never_reported_as_unchecked() {
 
 # All eight lines render over a unit with nothing wrong with it, and the run still exits 0.
 # The `[sphinx]` assertion is deliberately a pair: SKIP present AND PASS absent. Absence of a
-# RUN file is not a pass of the §10 Sphinx rule, and a reader who cannot tell those apart is
+# RUN file is not a pass of the Sphinx rule, and a reader who cannot tell those apart is
 # being told a leg was scored when nothing looked at it.
 test_score_report_all_eight_lines_render_on_a_sealed_unit() {
     setup_repo
@@ -722,10 +720,10 @@ test_score_report_all_eight_lines_render_on_a_sealed_unit() {
     cleanup
 }
 
-# The D-04 property that the exit contract exists to state: an INFORMATIONAL line can report a
+# The property that the exit contract exists to state: an INFORMATIONAL line can report a
 # finding without moving the exit code. The finding here is real and reachable — the drafting
-# skill's own `--report` declared a gap — and the reviewer-edit beside it pins the other hazard
-# the eight-row table names: a `reviewer-edit`'s `files[]` carries `path` and `sha256` and no
+# skill's own `--report` declared a gap — and the reviewer-edit beside it pins a second known
+# hazard: a `reviewer-edit`'s `files[]` carries `path` and `sha256` and no
 # `bytes`, so a reader that requires `bytes` breaks on every hand-edit adoption.
 test_score_report_informational_findings_never_change_the_exit_code() {
     setup_repo
@@ -785,9 +783,10 @@ print(" ".join(sorted(set(gating))))
 
 # --- the §5.2 restatement, pinned ---------------------------------------------------------
 #
-# D-02 puts contract §5.2's serialization rule in a SECOND home, deliberately: an oracle that
-# shares the tool's chain primitives goes green on the very bug it exists to catch. A second
-# home for a rule is drift unless something pins the two together, and these are that pin.
+# The independence rule puts contract §5.2's serialization rule in a SECOND home,
+# deliberately: an oracle that shares the tool's chain primitives goes green on the very bug it
+# exists to catch. A second home for a rule is drift unless something pins the two together,
+# and these are that pin.
 # They are not V-0N fixtures and carry no `vNN` token, so `check_traces.py` has no trace id to
 # key on — but they do carry the `test_` prefix, because they are real tests and must run.
 
@@ -808,7 +807,7 @@ test_score_reader_single_event_ledger_recomputes_clean() {
     cleanup
 }
 
-# WR-02: the truncation that lands exactly ON a line boundary. Contract §5.2 fixes the writer
+# The truncation that lands exactly ON a line boundary. Contract §5.2 fixes the writer
 # as `json.dumps(...) + "\n"`, so a final line with NO trailing LF is the signature of an
 # interrupted `write()` — the case §5.8's manifest recovery boundary exists for. Every event
 # still parses and every `prev` still checks out, so the reader used to report the file clean
@@ -902,7 +901,7 @@ test_score_reader_renumbered_seq_names_both_sides() {
 
 # --- the no-crash and read-only posture, pinned -------------------------------------------
 
-# WR-03: a unit that is not there is a FLAG naming the path it looked for, never a
+# A unit that is not there is a FLAG naming the path it looked for, never a
 # FileNotFoundError traceback — the scorer is pointed at other people's repositories.
 test_score_posture_missing_ledger_flags_without_a_traceback() {
     setup_repo
@@ -934,7 +933,7 @@ test_score_posture_empty_ledger_flags_without_a_traceback() {
     cleanup
 }
 
-# WR-05: a `path` of `null` inside a generation's `files[]` is a finding, not a
+# A `path` of `null` inside a generation's `files[]` is a finding, not a
 # `root / None` TypeError. The corruption is applied to the FINAL line, so the chain still
 # recomputes and the two readings are genuinely independent here: `oracle-1` PASSes and the
 # tool refuses. `audit` must report what the tool actually said — an arm that reports only
@@ -980,7 +979,7 @@ test_score_posture_audit_writes_nothing() {
 }
 
 # =========================================================================================
-# Plan 19-03 — `validation/runmeta.sh` and the RUN file (VAL-06, D-05, D-06, D-08)
+# `validation/runmeta.sh` and the RUN file
 # =========================================================================================
 
 # --- helpers (NEVER `test_`-prefixed — `main` would discover them as tests) ---------------
@@ -989,7 +988,7 @@ RUNMETA="$REPO_ROOT/validation/runmeta.sh"
 
 # Run `runmeta.sh` and capture BOTH streams plus the exit code — the same merge
 # `audit_output` makes, for the same reason: a fixture that asserts the exit code alone
-# passes on the wrong refusal (T-19-07), and a refusal has to be readable to be asserted on.
+# passes on the wrong refusal, and a refusal has to be readable to be asserted on.
 runmeta_output() {
     RUNMETA_OUT=$(bash "$RUNMETA" "$@" 2>&1)
     RUNMETA_RC=$?
@@ -1014,7 +1013,7 @@ STUB
     export SPHINX_BUILD="$TEST_DIR/stub-sphinx-build"
 }
 
-# Two of the 17 REAL baseline diagnostics quoted verbatim in 19-RESEARCH, with the absolute
+# Two of the 17 REAL diagnostics a baseline build emitted, quoted verbatim, with the absolute
 # repo prefix left ON — that prefix is normalisation rule 1's whole subject, and a fixture
 # that pre-stripped it would exercise the rule against a shape the build never emits.
 sphinx_before_diagnostics() {
@@ -1029,7 +1028,7 @@ setup_target_repo() {
     mkdir -p notes
     printf 'A source.\n' >notes/source-a.md
     git add -A
-    git commit -q -m "fixture: a source for the D-08 origins digest"
+    git commit -q -m "fixture: a source for the origins digest"
     git tag -a validation-base-v6 -m "fixture baseline"
     stub_sphinx 0 "$(sphinx_before_diagnostics)"
 }
@@ -1047,7 +1046,7 @@ print("null" if value is None else value)
 ' "$TEST_DIR/validation/RUN-${leg}.json" "$expression" 2>/dev/null
 }
 
-# The six rev8 3.2 metric flags `end` requires, as an array. A fixture that needs ONE of them
+# The six session metric flags `end` requires, as an array. A fixture that needs ONE of them
 # missing names it here rather than retyping the other five — which is what keeps "the six" a
 # single list in the fixtures as well as in the script.
 METRIC_FLAGS=()
@@ -1063,9 +1062,9 @@ set_metric_flags() {
     done
 }
 
-# A unit whose generation records an `origins[]` — the list D-08 digests. `setup_drafted_unit`
-# drafts without a `--report`, so its generation carries no origins at all and the digest would
-# be taken over an empty list, which is not the case worth pinning.
+# A unit whose generation records an `origins[]` — the list the origins digests cover.
+# `setup_drafted_unit` drafts without a `--report`, so its generation carries no origins at all
+# and the digest would be taken over an empty list, which is not the case worth pinning.
 setup_unit_with_origins() {
     local unit="$1" target="$2"
     crayon_unit_new "$unit" "$target" >/dev/null 2>&1
@@ -1076,13 +1075,14 @@ setup_unit_with_origins() {
         >/dev/null 2>&1
 }
 
-# --- `begin`: the D-05 shape, written into the TARGET repo --------------------------------
+# --- `begin`: the RUN file's shape, written into the TARGET repo --------------------------
 
 # The shape, asserted key by key rather than by eye. `sphinx` must be a non-empty `str`
 # because `dogen:7209-7243` accepts nothing else; `sphinx_before` must carry an integer `exit`
 # and a string `diagnostics` because that is the pair `[sphinx]` diffs. The diagnostics
-# assertion is on the build's OWN text, unfiltered — filtering it is what VAL-06 exists against.
-test_runmeta_begin_writes_the_d05_shape() {
+# assertion is on the build's OWN text, unfiltered — filtering it is what the Sphinx rule
+# exists against.
+test_runmeta_begin_writes_the_run_file_shape() {
     setup_target_repo
 
     runmeta_output begin --leg reference --repo "$TEST_DIR"
@@ -1112,7 +1112,7 @@ test_runmeta_begin_writes_the_d05_shape() {
     cleanup
 }
 
-# The skills digest (a CONTEXT discretion this plan settles): sha256 over the sorted
+# The skills digest: sha256 over the sorted
 # `(path, sha256)` list under `.agents/skills/`, with the ROOT recorded beside it so a later
 # reader knows what was covered. An absent root is `null` and NOT a digest of nothing —
 # `protocol` refuses that RUN as incomplete, because the leg's premise is installed skills.
@@ -1164,9 +1164,9 @@ test_runmeta_begin_refuses_a_run_file_for_a_different_leg() {
     cleanup
 }
 
-# --- `end`: the six metrics, the two-step transcript and the D-08 digests ------------------
+# --- `end`: the six metrics, the two-step transcript and the origins digests ---------------
 
-# The six rev8 3.2 metrics have ONE authoring site and the author supplies all six at `end` —
+# The six session metrics have ONE authoring site and the author supplies all six at `end` —
 # three of them are judgements about the session, not counters a script can read. A missing
 # key is refused by NAME, so the author is told which measurement is absent.
 test_runmeta_end_refuses_a_missing_metric_naming_it() {
@@ -1184,9 +1184,9 @@ test_runmeta_end_refuses_a_missing_metric_naming_it() {
     cleanup
 }
 
-# RESEARCH Pitfall 6, pinned: `end` writes the transcript's resolved PATH and a null sha, and
-# the author fills the sha from outside the session. A sha taken by a tool call inside the
-# session is stale the moment that tool call is itself appended to the transcript, so a
+# The two-step transcript rule, pinned: `end` writes the transcript's resolved PATH and a null
+# sha, and the author fills the sha from outside the session. A sha taken by a tool call inside
+# the session is stale the moment that tool call is itself appended to the transcript, so a
 # computed value here would be a fabricated measurement.
 test_runmeta_end_writes_the_two_step_transcript_record() {
     setup_target_repo
@@ -1202,12 +1202,12 @@ test_runmeta_end_writes_the_two_step_transcript_record() {
     assert_eq "runmeta: transcript.path is a string or null, and nothing else" \
         "True" \
         "$(run_field reference 'type(data["transcript"]["path"]).__name__ in ("str", "NoneType")')"
-    assert_eq "runmeta: all six 3.2 metrics are recorded at their one authoring site" \
+    assert_eq "runmeta: all six session metrics are recorded at their one authoring site" \
         "6" "$(run_field reference 'len(data["metrics"])')"
     cleanup
 }
 
-# D-08: `baseline` is the digest of the generation's `origins[]` at the baseline tag and
+# `baseline` is the digest of the generation's `origins[]` at the baseline tag and
 # `context` is the same list recomputed from the working tree. Nothing touched the source
 # between the tag and the draft, so the two are EQUAL here — which is the state `protocol`'s
 # fourth check asserts. A HEAD comparison could never state this: every verb commits, so the
@@ -1257,7 +1257,7 @@ test_runmeta_end_names_both_halves_of_the_build_pair() {
 
 # End to end: `crayon`'s `sphinx_result` branch has
 # never been exercised against a real RUN file. It renders the STRING key and never sees the
-# structured siblings — which is why the shape costs `crayon` zero lines (D-05).
+# structured siblings — which is why the shape costs `crayon` zero lines.
 test_runmeta_summary_round_trip_renders_only_the_string_key() {
     setup_target_repo
     setup_sealed_unit demo-unit reference/demo.rst
@@ -1291,7 +1291,7 @@ STUB
     export CRAYON="$TEST_DIR/stub-crayon"
 }
 
-# CR-05: the script runs under `set -u` alone and neither JSON writer was followed by
+# The script runs under `set -u` alone and neither JSON writer used to be followed by
 # `|| refuse`, so both subcommands printed their success line and exited 0 whatever the
 # writer did. The header's own exit contract says `0  the RUN file was written`.
 #
@@ -1313,7 +1313,7 @@ test_runmeta_begin_refuses_when_its_writer_could_not_run() {
 
 # `end`'s half, and the one the review reproduced: with a key dropped from the RUN file
 # between `begin` and `end` — an editor, a partial merge, a hand fix — the writer raised, the
-# metrics, `sphinx_after`, the transcript record and both D-08 digests were silently lost, and
+# metrics, `sphinx_after`, the transcript record and both origins digests were silently lost, and
 # the operator was told the leg completed. The measurement is a once-per-session artefact, so
 # a silent loss is not recoverable by re-running.
 test_runmeta_end_refuses_rather_than_reporting_a_completion_it_did_not_make() {
@@ -1338,7 +1338,7 @@ test_runmeta_end_refuses_rather_than_reporting_a_completion_it_did_not_make() {
     cleanup
 }
 
-# WR-08: the `case "$harness"` had exactly one named arm and a catch-all `*)` that searched
+# The `case "$harness"` had exactly one named arm and a catch-all `*)` that searched
 # Claude Code's tree. A RUN file recording `copilot-cli`, `cursor`, a typo or the empty string
 # was searched in the wrong tree, found nothing, and recorded
 # `{"path": null, "searched": "~/.claude/projects/<slug>"}` — "searched, found nothing", which
@@ -1382,12 +1382,12 @@ test_runmeta_the_claude_code_arm_still_names_the_tree_it_searched() {
 
 # --- the script's own posture -------------------------------------------------------------
 
-# WR-10: `LEG_RE='^[A-Za-z0-9][A-Za-z0-9._-]*$'` was declared and never used. The enforcement
+# `LEG_RE='^[A-Za-z0-9][A-Za-z0-9._-]*$'` was once declared and never used. The enforcement
 # was a `case` that does not anchor the FIRST character, so `--leg ..`, `--leg -x` and
 # `--leg .hidden` all passed a refusal message naming a regex the check did not implement. No
 # traversal followed — `/` is excluded and the value is only ever a filename component — but
-# this guard is cited on `score.py`'s side as the reason a leg name is trustworthy, and CR-04
-# is what happens when it is not.
+# this guard is cited on `score.py`'s side as the reason a leg name is trustworthy, and a path
+# traversal is what happens when it is not.
 #
 # Every rejected shape is a value the OLD check let through, so the case is about the anchor
 # and nothing else.
@@ -1421,7 +1421,7 @@ test_runmeta_accepts_the_leg_names_the_real_legs_use() {
 }
 
 # The leg alphabet now has TWO homes — `runmeta.sh` validates it before the name becomes a
-# filename it writes, `score.py` before the name becomes a path it reads (CR-04) — and a second
+# filename it writes, `score.py` before the name becomes a path it reads — and a second
 # home for a rule is drift unless something pins the two together. This reads both and compares
 # them, which is what a comment saying "keep these in sync" does not do.
 #
@@ -1455,7 +1455,7 @@ test_runmeta_bare_invocation_names_its_two_subcommands() {
     return 0
 }
 
-# RESEARCH Assumption A1: every JSON read and write goes through `python3`, never `jq`. `jq`
+# Every JSON read and write goes through `python3`, never `jq`. `jq`
 # is not a documented prerequisite of this repository and is not guaranteed on the runner, so
 # a single `jq` call would make the RUN file unwritable exactly where it matters most.
 test_runmeta_reaches_json_through_python3_and_never_jq() {
@@ -1468,12 +1468,12 @@ test_runmeta_reaches_json_through_python3_and_never_jq() {
 }
 
 # =========================================================================================
-# `[sphinx]` — normalise, multiset-diff, and gate on unaccounted items (VAL-06, D-07)
+# `[sphinx]` — normalise, multiset-diff, and gate on unaccounted items
 # =========================================================================================
 
 # --- helpers (NEVER `test_`-prefixed — `main` would discover them as tests) ---------------
 
-# Two of the 17 REAL baseline diagnostics, quoted verbatim from 19-RESEARCH's measured output.
+# Two of the 17 REAL diagnostics a baseline build emitted, quoted verbatim.
 # `$1` is the path prefix, separator included, so one call spells the absolute form the build
 # emits and another spells the bare relative form — which is the only difference normalisation
 # rule 1 is allowed to erase.
@@ -1491,8 +1491,8 @@ diag_label() {
 # writing of one, and a hand-built pair is what lets one build differ from the other by
 # exactly one line.
 #
-# The two exit codes are parameters rather than the hard-coded zeros this helper carried
-# until CR-03. Hard-coding them is exactly why no fixture could see a GATING `[sphinx]` line
+# The two exit codes are parameters rather than the hard-coded zeros this helper once
+# carried. Hard-coding them is exactly why no fixture could see a GATING `[sphinx]` line
 # PASSing over two builds that never ran: every RUN file the suite could write said both
 # builds had completed.
 write_run_file_with_exits() {
@@ -1569,9 +1569,9 @@ test_sphinx_a_resolved_subset_reports_the_resolved_count() {
     cleanup
 }
 
-# D-07's machine half: a new diagnostic nobody accounted for FLAGs, and `[sphinx]` is one of
-# the three GATING lines, so the audit exits non-zero. The FLAG names the exact NORMALISED
-# line, because that is the string the author has to copy into the attribution list.
+# The Sphinx rule's machine half: a new diagnostic nobody accounted for FLAGs, and `[sphinx]`
+# is one of the three GATING lines, so the audit exits non-zero. The FLAG names the exact
+# NORMALISED line, because that is the string the author has to copy into the attribution list.
 test_sphinx_an_unaccounted_new_item_flags_and_gates() {
     setup_repo
     setup_sealed_unit demo-unit reference/demo.rst
@@ -1604,10 +1604,11 @@ test_sphinx_an_accounted_new_item_passes_and_prints_the_account() {
     cleanup
 }
 
-# WR-07: MEMBERSHIP was the whole test, so `--attribute "<item>="` silenced a new Sphinx
+# MEMBERSHIP used to be the whole test, so `--attribute "<item>="` silenced a new Sphinx
 # warning with no account at all while the INFO line printed `accounted: ` followed by nothing.
-# The bookkeeping half of D-07 IS this list, and an empty entry is a bookkeeping no-op that
-# reads as done — the author is not being asked for a judgement, only for one that was recorded.
+# The bookkeeping half of the Sphinx rule IS this list, and an empty entry is a bookkeeping
+# no-op that reads as done — the author is not being asked for a judgement, only for one that
+# was recorded.
 test_sphinx_an_empty_account_does_not_account_for_anything() {
     setup_repo
     setup_sealed_unit demo-unit reference/demo.rst
@@ -1675,8 +1676,8 @@ test_sphinx_a_moved_line_number_is_a_different_item() {
 # Rule 4: one DIAGNOSTIC is one item, not one line. Sphinx prints the offending source line and
 # its underline beneath a warning, so a line-per-item normaliser turned a single `Title underline
 # too short.` into three new items — the warning, a section title and a run of dashes — and asked
-# the author to account for the dashes as though they were a finding. Found walking the phase-19
-# reference leg, where 3 real new warnings were reported as 9.
+# the author to account for the dashes as though they were a finding. Found walking the
+# reference validation leg, where 3 real new warnings were reported as 9.
 test_sphinx_a_multi_line_diagnostic_is_one_item_not_three() {
     setup_repo
     setup_sealed_unit demo-unit reference/demo.rst
@@ -1715,9 +1716,9 @@ test_sphinx_a_repeated_diagnostic_counts_once_per_occurrence() {
     cleanup
 }
 
-# Rule 4, and the prohibition this plan carries: nothing is excluded by filename. A diagnostic
+# Rule 4, and the prohibition beside it: nothing is excluded by filename. A diagnostic
 # naming a file nobody in the leg touched is still compared, because filtering the evidence to
-# make a claim come out clean is the exact failure VAL-06 and D-07 exist against.
+# make a claim come out clean is the exact failure the Sphinx rule exists against.
 test_sphinx_a_diagnostic_naming_an_untouched_file_is_still_compared() {
     setup_repo
     setup_sealed_unit demo-unit reference/demo.rst
@@ -1754,9 +1755,9 @@ test_sphinx_two_runs_over_one_run_file_print_byte_identical_output() {
     cleanup
 }
 
-# WR-11: the RUN file is UNTRACKED, unvalidated working-tree input that both the kit and the
+# The RUN file is UNTRACKED, unvalidated working-tree input that both the kit and the
 # tool read. A malformed one FLAGs naming what was wrong with it and never raises — a
-# traceback at the reader is the outcome T-19-16 is filed against.
+# traceback at the reader is the outcome these guards exist to prevent.
 test_sphinx_a_malformed_run_file_flags_without_a_traceback() {
     setup_repo
     setup_sealed_unit demo-unit reference/demo.rst
@@ -1781,7 +1782,7 @@ test_sphinx_a_malformed_run_file_flags_without_a_traceback() {
     cleanup
 }
 
-# The 19-02 SKIP, preserved. Absence of the RUN file is not a pass of the section 10 rule and
+# The no-RUN-file SKIP, preserved. Absence of the RUN file is not a pass of the Sphinx rule and
 # not a FLAG either — `protocol` is the gate over a leg that never wrote one.
 test_sphinx_no_run_file_still_skips_and_never_passes() {
     setup_repo
@@ -1797,7 +1798,7 @@ test_sphinx_no_run_file_still_skips_and_never_passes() {
 
 # The bookkeeping is printed on a PASS as well as on a FLAG. A gate that shows its working
 # only when it fails leaves a green run unreadable, and the exit codes of the two builds are
-# half of what section 10 asks for — a build that CRASHED with no diagnostics at all is not
+# half of what the Sphinx rule asks for — a build that CRASHED with no diagnostics at all is not
 # the same fact as a build that emitted none.
 test_sphinx_prints_both_exit_codes_and_the_counts_on_a_pass() {
     setup_repo
@@ -1817,7 +1818,7 @@ test_sphinx_prints_both_exit_codes_and_the_counts_on_a_pass() {
     cleanup
 }
 
-# CR-03, the direct repro: `[sphinx]` is GATING and its verdict used to be the diagnostics
+# The direct repro: `[sphinx]` is GATING and its verdict used to be the diagnostics
 # diff alone, so two builds that CRASHED identically produced an empty diff and a PASS. The
 # exit codes were printed and compared to nothing. A build that did not complete is not a
 # build that emitted no diagnostics, and an empty diff over two builds that never ran is the
@@ -1883,7 +1884,7 @@ with open(sys.argv[1], "w", encoding="utf-8") as handle:
     cleanup
 }
 
-# The `runmeta.sh` half of CR-03: a `sphinx-build` that could not be EXECUTED is refused
+# The `runmeta.sh` half of the same defect: a `sphinx-build` that could not be EXECUTED is refused
 # outright rather than recorded as a build that emitted nothing. 127 with an empty
 # diagnostics file is exactly what a missing `docs/.venv` or a typo'd `SPHINX_BUILD`
 # produces, and it used to be written into the RUN file as `exit 127, 0 warn`.
@@ -1904,7 +1905,7 @@ test_runmeta_refuses_a_sphinx_build_it_could_not_execute() {
 }
 
 # =========================================================================================
-# `protocol` — rev8 §10's six checks, and the refusal of an incomplete RUN (VAL-07)
+# `protocol` — the six conformance checks, and the refusal of an incomplete RUN
 # =========================================================================================
 
 # --- helpers (NEVER `test_`-prefixed — `main` would discover them as tests) ---------------
@@ -1988,11 +1989,11 @@ LEG
 
 # The RUN file `protocol` accepts: written by `runmeta.sh`, then COMPLETED the way the author
 # completes it — the transcript sha filled from OUTSIDE the session. That second step is not a
-# fixture convenience, it is Pitfall 6's two-step performed, and it is the only way a RUN file
-# can ever satisfy the second check.
+# fixture convenience, it is the two-step transcript rule performed, and it is the only way a
+# RUN file can ever satisfy the second check.
 # `$1` selects whether the unit records an `origins[]` at all. `with-origins` (the default) is
-# the shape every check below wants; `no-origins` is the one WR-03 is about — a unit drafted
-# without `--report`, whose D-08 digests are both taken over an empty list.
+# the shape every check below wants; `no-origins` is the empty-origins case — a unit drafted
+# without `--report`, whose origins digests are both taken over an empty list.
 complete_run_file() {
     setup_target_repo
     if [ "${1:-with-origins}" = "no-origins" ]; then
@@ -2019,8 +2020,8 @@ protocol_check_lines() {
 
 # --- the clean run, and the shape of the report -------------------------------------------
 
-# Six checks, six lines, exit 0. The positive half of VAL-07: a gate only ever exercised
-# against broken inputs cannot state what a conformant leg looks like.
+# Six checks, six lines, exit 0. The positive half of the conformance gate: a gate only ever
+# exercised against broken inputs cannot state what a conformant leg looks like.
 test_protocol_a_complete_run_and_a_filled_leg_file_exits_0() {
     complete_run_file
 
@@ -2090,7 +2091,7 @@ test_protocol_a_missing_run_key_flags_naming_it() {
     cleanup
 }
 
-# The six rev8 §3.2 metrics are part of completeness, and a missing one is named as a METRIC
+# The six session metrics are part of completeness, and a missing one is named as a METRIC
 # rather than folded into the key list — the author is being told which measurement was never
 # taken, which is a different instruction from "add a key".
 test_protocol_a_missing_metric_key_flags_naming_it() {
@@ -2100,7 +2101,7 @@ test_protocol_a_missing_metric_key_flags_naming_it() {
     protocol_output
     assert_eq "protocol: a metrics object missing one of the six exits 1" "1" "$PROTOCOL_RC"
     assert_contains "protocol: the completeness check FLAGged" "$PROTOCOL_OUT" "FLAG [run]"
-    assert_contains "protocol: and named the missing §3.2 metric" \
+    assert_contains "protocol: and named the missing session metric" \
         "$PROTOCOL_OUT" "avoidable_questions"
     cleanup
 }
@@ -2159,10 +2160,10 @@ test_protocol_context_differing_from_baseline_names_both_digests() {
     cleanup
 }
 
-# WR-03: `origins[]` reaches a generation only when `draft --report` was used. With none
+# `origins[]` reaches a generation only when `draft --report` was used. With none
 # recorded, `runmeta.sh` digests an empty list on BOTH sides and this check compared
 # `e3b0c442…` to `e3b0c442…` and PASSed — text indistinguishable from a real pass, asserting
-# the whole of D-08's claim over no sources at all. `setup_unit_with_origins` covers only the
+# the whole of the check's claim over no sources at all. `setup_unit_with_origins` covers only the
 # non-empty case, which is why nothing saw this.
 test_protocol_an_empty_origins_list_skips_rather_than_passing_on_two_digests_of_nothing() {
     complete_run_file no-origins
@@ -2251,7 +2252,7 @@ open(path, "w", encoding="utf-8").write(text.replace("## Sphinx expectation", "#
     cleanup
 }
 
-# An absent leg file names the path it looked for — the same WR-03 courtesy `audit` extends for
+# An absent leg file names the path it looked for — the same courtesy `audit` extends for
 # a missing ledger, and for the same reason: the scorer is pointed at other people's trees.
 test_protocol_a_missing_leg_file_flags_naming_the_path() {
     complete_run_file
@@ -2286,9 +2287,9 @@ test_protocol_an_unfilled_rubric_score_row_flags_naming_the_row() {
     cleanup
 }
 
-# --- CR-04: the RUN file's `leg` is a record-supplied path, and is guarded like one ----------
+# --- the RUN file's `leg` is a record-supplied path, and is guarded like one -----------------
 
-# `leg` is UNTRACKED, unvalidated working-tree input (WR-11) and was interpolated straight into
+# `leg` is UNTRACKED, unvalidated working-tree input and was interpolated straight into
 # `<directory>/legs/<leg>.md` with no containment. `"leg": "../../secret/loot"` read a file
 # outside the tree AND check 6 echoed its table cells into the report, so this was a read
 # primitive with an output channel rather than a stat. `_resolved_under` already existed for
@@ -2369,7 +2370,7 @@ test_protocol_a_directory_with_no_run_file_exits_2() {
     cleanup
 }
 
-# WR-11 again, on `protocol`'s side of the same untrusted file: invalid JSON FLAGs and exits 1
+# The same rule, on `protocol`'s side of the same untrusted file: invalid JSON FLAGs and exits 1
 # with no traceback. The other checks that have evidence still run — the leg file is reached
 # through the RUN file's NAME when its contents cannot be read.
 test_protocol_a_malformed_run_file_flags_without_a_traceback() {

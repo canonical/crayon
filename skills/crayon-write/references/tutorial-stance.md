@@ -11,7 +11,7 @@ each step so the learner knows they are on track. No branching, no options menu,
 "it depends" — defer alternatives and the *why* to explanation/reference and link
 out. Success is the learner reaching the end and feeling it worked.
 
-## The curated-excerpt rule (D-04)
+## The curated-excerpt rule
 
 Captured step output enters the drafted page **only as curated excerpts** —
 deliberately selected and scrubbed of environment-specific noise during authoring,

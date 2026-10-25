@@ -3,39 +3,38 @@
 #
 # Usage: bash tests/test_crayon_lifecycle.sh   (run from the repository root)
 #
-# D-10 splits the bash coverage in two. `tests/test_crayon_acceptance.sh` is
+# The bash coverage is split in two. `tests/test_crayon_acceptance.sh` is
 # the reviewer's A-01…A-35 — the suite they wrote, ported by intent, and must be able to
 # open and recognise. THIS file is the N-series: the lifecycle walks, the
 # negative paths, the recovery situations and the contract's trace table T1–T34b.
 #
 # Both suites source `tests/lib.sh` and neither carries a harness of its own:
-# the hermetic temp repo, the assertion set, the WR-09 vacuous-test guard, the
+# the hermetic temp repo, the assertion set, the vacuous-test guard, the
 # TAP runner and the auto-discovery all live there, once.
 #
-# D-09: every function's name carries its own test id and the trace(s) it
+# Every function's name carries its own test id and the trace(s) it
 # discharges — `test_n40_t31_t32_…` — so `tests/check_traces.py` can find the
 # test a trace-table row names by grepping for the id.
 #
-# Two ids that are NOT N-series live here anyway, decided in plan 17-01:
+# Two ids that are NOT N-series live here anyway:
 #
-#   A-36 — an A-id in the N file. D-10 makes tests/test_crayon_acceptance.sh
+#   A-36 — an A-id in the N file. tests/test_crayon_acceptance.sh holds
 #          the reviewer's A-01…A-35, the suite they wrote, so that they can open it and
 #          recognise it. A-36 is new and has no counterpart there; putting it in
-#          their file would break that recognition for no gain. Plan 17-10 closed
-#          this the way RESEARCH Pitfall 11 proposed: with A-01…A-35 ported and
-#          the whole A range enumerated, the contract's Mechanisms cell for
-#          `retire` now names N-40 below rather than reserving A-36, so no A-36
-#          function is ever written. The id is retired, not relocated.
+#          their file would break that recognition for no gain. With A-01…A-35
+#          ported and the whole A range enumerated, the contract's Mechanisms
+#          cell for `retire` now names N-40 below rather than reserving A-36, so
+#          no A-36 function is ever written. The id is retired, not relocated.
 #   V-05 — the T25 unknown-kinds trace. It is a `verify` BEHAVIOUR test, not a
-#          phase-19 fixture, so it belongs to the lifecycle suite and carries
-#          `v05` in its name. It lands with `verify` in plan 17-09.
+#          fixture in validation/fixtures.sh, so it belongs to the lifecycle
+#          suite and carries `v05` in its name.
 
 set -u
 
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/lib.sh"
 
-# --- N-40: `unit retire` (VERB-07) — T31 claim policy, T32 the retire no-op ---
+# --- N-40: `unit retire` — T31 claim policy, T32 the retire no-op -------------
 
 test_n40_t31_t32_retire_releases_the_target_claim() {
     setup_repo
@@ -98,7 +97,7 @@ print(",".join(sorted(k for k in json.load(sys.stdin) if k not in envelope)))
     assert_contains "the Crayon-Seq trailer" "$body" "Crayon-Seq: $((lines_after - 1))"
     assert_eq "the Crayon-Head trailer is 16 hex" "1" \
         "$(printf '%s\n' "$body" | grep -cE '^Crayon-Head: [0-9a-f]{16}$')"
-    # T-17-01: the pathspec is the ledger and nothing else — never a directory,
+    # The pathspec is the ledger and nothing else — never a directory,
     # never `-A`. `git show --stat` is the instrument because it reports what
     # actually reached the commit, hooks included.
     assert_eq "the commit names the ledger alone" ".crayon/units/alpha/ledger.jsonl" \
@@ -150,7 +149,7 @@ print(",".join(sorted(k for k in json.load(sys.stdin) if k not in envelope)))
 # pure; this test proves the wiring end to end through the real executable.
 
 # Local to this suite: the three draft helpers the acceptance suite keeps for
-# itself. lib.sh is the shared harness (D-10) and is not widened for two
+# itself. lib.sh is the shared harness and is not widened for two
 # callers in one file.
 
 
@@ -183,7 +182,7 @@ print(value if isinstance(value, str) else json.dumps(value))
 }
 
 # The human `Next:` segment for a routed token, read from the tool's own
-# `next_line` (CLOSE-04), so the expected wording has one definition site.
+# `next_line`, so the expected wording has one definition site.
 human_next_line() {
     python3 -c '
 import importlib.machinery, importlib.util, sys
@@ -228,14 +227,14 @@ THREE_STEPS='[{"id":"one","text":"install the tool","mode":"agent","stateful":fa
 {"id":"two","text":"run the check","mode":"agent","stateful":false},
 {"id":"three","text":"publish the result","mode":"ta","stateful":true}]'
 
-# WR-12: the harness's own substring assertions, driven against a PRIVATE
+# The harness's own substring assertions, driven against a PRIVATE
 # results file so their deliberate failures are this test's evidence rather than
 # the suite's. `grep -F ''` matches every line, so an assertion whose needle
 # expanded to the empty string recorded a PASS — and `set -u` catches an unset
 # variable, never an empty one, while call sites pass variables. `grep -F` also
 # reads a multi-line needle as a set of alternatives, so a multi-line
 # expectation passed when any ONE of its lines matched.
-test_wr12_the_substring_assertions_are_not_vacuous_on_an_empty_needle() {
+test_the_substring_assertions_are_not_vacuous_on_an_empty_needle() {
     setup_repo
     printf 'one\ntwo\n' >probe.txt
 
@@ -286,69 +285,69 @@ test_wr12_the_substring_assertions_are_not_vacuous_on_an_empty_needle() {
     cleanup
 }
 
-# WR-04: with the `evidence_incomplete` raise moved into stage e, a capture-less
+# With the `evidence_incomplete` raise moved into stage e, a capture-less
 # non-`skipped` verdict now REACHES stage d carrying the digest of zero bytes.
 # A step genuinely recorded from an empty capture would match that tuple, and d
 # would answer `already_recorded` (exit 3, "nothing to do") for evidence the
 # caller never supplied. An incomplete submission is not a no-op.
-test_wr04_a_captureless_verdict_is_never_recognised_as_a_no_op() {
+test_a_captureless_verdict_is_never_recognised_as_a_no_op() {
     setup_repo
     mkdir -p docs/how-to
-    walk_unit_new wr04-unit
+    walk_unit_new captureless-unit
 
     printf '%s' "$THREE_STEPS" |
-        "$CRAYON" plan-steps wr04-unit --steps-file - >/dev/null 2>&1
+        "$CRAYON" plan-steps captureless-unit --steps-file - >/dev/null 2>&1
     assert_eq "the plan records" "0" "$?"
     local seq
-    seq=$(last_plan_seq wr04-unit)
+    seq=$(last_plan_seq captureless-unit)
 
     # A real step whose command produced NO output. Legitimate, and it makes
     # `output_sha256` the digest of zero bytes on the record.
-    local ws=".crayon/staging/wr04-unit/scratch/evidence"
+    local ws=".crayon/staging/captureless-unit/scratch/evidence"
     mkdir -p "$ws"
     : >"$ws/one.out"
     printf '{"verdict": "pass", "exit_code": 0, "mode": "agent", "command": "x"}\n' \
         >"$ws/one.json"
-    "$CRAYON" step wr04-unit one --steps-seq "$seq" \
+    "$CRAYON" step captureless-unit one --steps-seq "$seq" \
         --evidence-file "$ws/one.json" --output-file "$ws/one.out" >/dev/null 2>&1
     assert_eq "a pass with an empty capture records" "0" "$?"
 
     local lines_before
-    lines_before=$(wc -l <".crayon/units/wr04-unit/ledger.jsonl")
+    lines_before=$(wc -l <".crayon/units/captureless-unit/ledger.jsonl")
 
     # The same evidence with the capture WITHHELD. Every field of 5.7's no-op
     # tuple matches the event above, digest included.
-    "$CRAYON" step wr04-unit one --steps-seq "$seq" \
+    "$CRAYON" step captureless-unit one --steps-seq "$seq" \
         --evidence-file "$ws/one.json" >/dev/null 2>noop.txt
     local rc=$?
     assert_eq "withholding the capture exits 4, not 3" "4" "$rc"
     assert_json_error "and is refused as incomplete, never as a no-op" \
         "noop.txt" "evidence_incomplete"
     assert_eq "nothing is appended either way" "$lines_before" \
-        "$(wc -l <".crayon/units/wr04-unit/ledger.jsonl")"
+        "$(wc -l <".crayon/units/captureless-unit/ledger.jsonl")"
     cleanup
 }
 
-# WR-02 (iteration 3): the THIRD e-gate stage d was shadowing, and the same
+# The THIRD e-gate stage d was shadowing, and the same
 # defect as the two above one field along. 5.7's no-op tuple is `(steps_seq,
 # step_id, verdict, exit_code, output_sha256, reason)` — `mode` is not in it and
 # is not compared — so resubmitting an identical capture under the WRONG mode
 # matched field for field and was refused `already_recorded`, whose own detail
 # says "already on the record, field for field". It is not: `mode` differs, and
-# `evidence_mismatch` — the refusal CR-02 documented a remedy for on six
+# `evidence_mismatch` — the refusal whose remedy is documented on six
 # surfaces — never fired.
-test_wr02_an_identical_capture_in_a_divergent_mode_is_never_a_no_op() {
+test_an_identical_capture_in_a_divergent_mode_is_never_a_no_op() {
     setup_repo
     mkdir -p docs/how-to
-    walk_unit_new wr02-unit
+    walk_unit_new divergent-unit
 
     printf '%s' "$THREE_STEPS" |
-        "$CRAYON" plan-steps wr02-unit --steps-file - >/dev/null 2>&1
+        "$CRAYON" plan-steps divergent-unit --steps-file - >/dev/null 2>&1
     assert_eq "the plan records" "0" "$?"
     local seq
-    seq=$(last_plan_seq wr02-unit)
+    seq=$(last_plan_seq divergent-unit)
 
-    local ws=".crayon/staging/wr02-unit/scratch/evidence"
+    local ws=".crayon/staging/divergent-unit/scratch/evidence"
     mkdir -p "$ws"
     printf 'installed ok\n' >"$ws/one.out"
     printf '{"verdict": "pass", "exit_code": 0, "mode": "agent", "command": "x"}\n' \
@@ -358,17 +357,17 @@ test_wr02_an_identical_capture_in_a_divergent_mode_is_never_a_no_op() {
 
     # Step `one` is declared `agent`. Record it in the declared mode first, so
     # there IS a record for stage d to match against.
-    "$CRAYON" step wr02-unit one --steps-seq "$seq" \
+    "$CRAYON" step divergent-unit one --steps-seq "$seq" \
         --evidence-file "$ws/agent.json" --output-file "$ws/one.out" \
         >/dev/null 2>&1
     assert_eq "the declared mode records" "0" "$?"
 
     local lines_before
-    lines_before=$(wc -l <".crayon/units/wr02-unit/ledger.jsonl")
+    lines_before=$(wc -l <".crayon/units/divergent-unit/ledger.jsonl")
 
     # The SAME capture, verdict, exit code and reason — every field of the
     # no-op tuple — under a mode the plan does not declare.
-    "$CRAYON" step wr02-unit one --steps-seq "$seq" \
+    "$CRAYON" step divergent-unit one --steps-seq "$seq" \
         --evidence-file "$ws/ta.json" --output-file "$ws/one.out" \
         >/dev/null 2>mode.txt
     local rc=$?
@@ -377,12 +376,12 @@ test_wr02_an_identical_capture_in_a_divergent_mode_is_never_a_no_op() {
     assert_file_contains "the detail names the declared mode" "mode.txt" "'agent'"
     assert_file_contains "and the claimed one" "mode.txt" "'ta'"
     assert_eq "nothing is appended" "$lines_before" \
-        "$(wc -l <".crayon/units/wr02-unit/ledger.jsonl")"
+        "$(wc -l <".crayon/units/divergent-unit/ledger.jsonl")"
 
     # Vacuous-pass guard: with the mode RESTORED the identical resubmission is
     # still the no-op stage d exists for, so the exclusion is scoped to the
     # divergence rather than having disabled d.
-    "$CRAYON" step wr02-unit one --steps-seq "$seq" \
+    "$CRAYON" step divergent-unit one --steps-seq "$seq" \
         --evidence-file "$ws/agent.json" --output-file "$ws/one.out" \
         >/dev/null 2>noop.txt
     assert_eq "the identical submission is still a no-op" "3" "$?"
@@ -398,13 +397,13 @@ test_n27_t12_t13_t14_step_status_and_reuse_prefix() {
 
     local rc out
 
-    # --- stage b: the D-01 shape, refused as `bad_target` per 16-03's rule ---
-    # 16-03 routes every argparse, id and shape fault to ONE reason; a new key
+    # --- stage b: the step-plan shape, refused as `bad_target` ---------------
+    # Every argparse, id and shape fault routes to ONE reason; a new key
     # here would be a REASONS entry the contract does not have.
     local ledger_before
     ledger_before=$(ledger_digest walk-unit)
 
-    # STATE-03 probe 3: an empty plan is a plan that can never resolve.
+    # An empty plan is a plan that can never resolve.
     printf '[]' | "$CRAYON" plan-steps walk-unit --steps-file - >/dev/null 2>empty.txt
     rc=$?
     assert_eq "an empty steps array exits 2" "2" "$rc"
@@ -436,7 +435,7 @@ test_n27_t12_t13_t14_step_status_and_reuse_prefix() {
     assert_eq "a step id failing the 5.6 regex exits 2" "2" "$rc"
     assert_json_error "the refusal is bad_target" "badid.txt" "bad_target"
 
-    # Pitfall 18: an unvalidated mode silently breaks the (text_hash, mode,
+    # An unvalidated mode silently breaks the (text_hash, mode,
     # stateful) prefix comparison and reads as a reuse bug three plans later.
     printf '[{"id":"one","text":"a","mode":"run","stateful":false}]' |
         "$CRAYON" plan-steps walk-unit --steps-file - >/dev/null 2>badmode.txt
@@ -465,7 +464,7 @@ test_n27_t12_t13_t14_step_status_and_reuse_prefix() {
     assert_eq "whitespace-only step text exits 2" "2" "$rc"
     assert_json_error "the refusal is note_required" "blank.txt" "note_required"
 
-    # Pitfall 19: the contract makes reuse_note required whenever reuse is set,
+    # The contract makes reuse_note required whenever reuse is set,
     # and argparse registers the two flags independently.
     printf '%s' "$THREE_STEPS" | "$CRAYON" plan-steps walk-unit --steps-file - \
         --keep-evidence >/dev/null 2>noreason.txt
@@ -503,7 +502,7 @@ import json, sys
 envelope = {"kind", "seq", "prev", "at", "actor", "tool_version", "contract", "commit"}
 print(",".join(sorted(k for k in json.load(sys.stdin) if k not in envelope)))
 ')"
-    # D-01: the TOOL computes text_hash, and it is sha256 over the UTF-8 bytes.
+    # The TOOL computes text_hash, and it is sha256 over the UTF-8 bytes.
     assert_eq "every entry carries a tool-computed text_hash" \
         "$(sha256_of_text 'install the tool') $(sha256_of_text 'run the check') $(sha256_of_text 'publish the result')" \
         "$(printf '%s' "$plan1" | python3 -c '
@@ -516,8 +515,8 @@ print(" ".join(s["text_hash"] for s in json.load(sys.stdin)["steps"]))
 import json, sys
 print(",".join(sorted(json.load(sys.stdin)["steps"][0])))
 ')"
-    # D-01 forbids mirroring the plan into unit.md by name: that re-opens the
-    # 13-08 plan_stale friction the tool spent a milestone closing.
+    # The plan is never mirrored into unit.md by name: that would re-open the
+    # `plan_stale` friction the tool was changed to remove.
     assert_eq "the plan is NOT mirrored into unit.md" "0" \
         "$(grep -c 'install the tool' ".crayon/units/walk-unit/unit.md" || true)"
     assert_eq "the unit is not plan_stale after planning steps" "false" \
@@ -602,7 +601,7 @@ print(",".join(sorted(k for k in json.load(sys.stdin) if k not in envelope)))
         "steps: passed 2 · skipped 1"
     assert_contains "the tally names the skip reason" "$out" "needs a credential"
     assert_contains "the tally reports nothing unresolved" "$out" "unresolved 0"
-    # Pitfall 20 / contract 5.4: `resolved` is a derivation result, and the
+    # Contract 5.4: `resolved` is a derivation result, and the
     # response line is the record speaking in its own voice.
     assert_not_contains "the draft line never claims execution" "$out" "executed"
     assert_not_contains "the draft line never claims verification" "$out" "verified"
@@ -634,7 +633,7 @@ print(",".join(sorted(k for k in json.load(sys.stdin) if k not in envelope)))
     assert_eq "evidence against a superseded plan seq exits 4" "4" "$rc"
     assert_json_error "the refusal is evidence_stale" "stale.txt" "evidence_stale"
 
-    # WR-04: contract 5.7 fixes stage e's order as `evidence_stale`,
+    # Contract 5.7 fixes stage e's order as `evidence_stale`,
     # `evidence_incomplete`, `evidence_mismatch`. The capture-less refusal used
     # to be raised in the copy/digest block ABOVE stage d, so a superseded
     # `--steps-seq` with a non-`skipped` verdict and no `--output-file` reported
@@ -681,7 +680,7 @@ print(",".join(sorted(k for k in json.load(sys.stdin) if k not in envelope)))
     assert_eq "the no-op appends nothing" "$lines_before" \
         "$(wc -l <".crayon/units/walk-unit/ledger.jsonl")"
 
-    # WR-01: T14's no-op is defined on the tuple, with no recency qualifier.
+    # T14's no-op is defined on the tuple, with no recency qualifier.
     # The adjacent case above is the easy one; the case that matters in a real
     # multi-step walk is a re-run of an EARLIER step, where the most recent
     # `step-recorded` names a DIFFERENT step. Scanning only that one event
@@ -733,7 +732,7 @@ PY
 
 # --- N-18: `step` evidence is computed by the tool, from bytes it copied -----
 #
-# LEDG-06's whole claim: the digest is over bytes the tool owns, a typed digest
+# The whole claim: the digest is over bytes the tool owns, a typed digest
 # is refused by name, and an output path outside the repository is never read.
 
 test_n18_step_evidence_is_tool_computed() {
@@ -773,7 +772,7 @@ test_n18_step_evidence_is_tool_computed() {
     assert_eq "the copy is byte-identical to the source" \
         "$(sha256_of_text "$(cat "$ws/one.out")")" \
         "$(sha256_of_text "$(cat "$copy")")"
-    # D-04: the copy lives under the gitignored staging path, so the full bytes
+    # The copy lives under the gitignored staging path, so the full bytes
     # are recoverable locally and never committed.
     git check-ignore -q "$copy"
     assert_eq "the copy is gitignored" "0" "$?"
@@ -809,7 +808,7 @@ print(",".join(sorted(k for k in json.load(sys.stdin) if k not in envelope)))
         ".crayon/units/evidence-unit/ledger.jsonl" \
         "$(git show --stat --format= --name-only HEAD | sed '/^$/d')"
 
-    # T-17-21: the caller's source can change afterwards; the record cannot.
+    # The caller's source can change afterwards; the record cannot.
     printf 'TAMPERED\n' >"$ws/one.out"
     assert_eq "the recorded digest still matches the tool's copy" \
         "$(python3 -c '
@@ -835,7 +834,7 @@ print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())
         "$(wc -l <".crayon/units/evidence-unit/ledger.jsonl")"
     assert_eq "the no-op commits nothing" "$head_before" "$(git rev-parse HEAD)"
 
-    # --- D-03: a verdict that needs proof, with none --------------------------
+    # --- a verdict that needs proof, with none --------------------------------
     lines_before=$(wc -l <".crayon/units/evidence-unit/ledger.jsonl")
     local verdict
     for verdict in pass fail deviated; do
@@ -857,7 +856,7 @@ json.dump(payload, open(sys.argv[1], "w", encoding="utf-8"))
     assert_eq "no refusal appended anything" "$lines_before" \
         "$(wc -l <".crayon/units/evidence-unit/ledger.jsonl")"
 
-    # --- D-03: a skipped step needs no output file ---------------------------
+    # --- a skipped step needs no output file ---------------------------------
     python3 -c '
 import json, sys
 json.dump({"verdict": "skipped", "exit_code": 0, "mode": "ta",
@@ -878,7 +877,7 @@ json.dump({"verdict": "skipped", "exit_code": 0, "mode": "ta",
         "the publish step needs a credential this environment lacks" \
         "$(printf '%s' "$recorded" | json_field reason)"
 
-    # --- Pitfall 5: an ALLOW-list, so every typed digest is refused by name ---
+    # --- an ALLOW-list, so every typed digest is refused by name --------------
     # The legacy v1.2 evidence file carried these two literally, so a TA
     # copying an old recipe lands here rather than on a silent acceptance.
     local key
@@ -900,7 +899,7 @@ json.dump({"verdict": "pass", "exit_code": 0, "mode": "agent",
             "typed-$key.txt" "$key"
     done
 
-    # --- T-17-18: the source path is contained BEFORE it is opened -----------
+    # --- the source path is contained BEFORE it is opened --------------------
     printf '{"verdict": "pass", "exit_code": 0, "mode": "agent", "command": "cat"}\n' \
         >"$ws/two.json"
     "$CRAYON" step evidence-unit two --steps-seq "$seq" \
@@ -922,7 +921,7 @@ json.dump({"verdict": "pass", "exit_code": 0, "mode": "agent",
     assert_file_not_exists "nothing was copied" \
         ".crayon/staging/evidence-unit/scratch/evidence/${seq}-two.out"
 
-    # --- CR-03: contained to the UNIT'S SCRATCH TREE, not to the repository --
+    # --- contained to the UNIT'S SCRATCH TREE, not to the repository ---------
     #
     # The excerpt is committed verbatim (`scrub_excerpt` strips control
     # characters, never credentials), so "inside the repository" is not a
@@ -958,13 +957,13 @@ json.dump({"verdict": "pass", "exit_code": 0, "mode": "agent",
     assert_json_error "the refusal is bad_write_path" "crossunit.txt" \
         "bad_write_path"
 
-    # --- WR-01: the containment test cannot police its own anchor -----------
+    # --- the containment test cannot police its own anchor ------------------
     #
     # `contained` resolves BOTH operands with `realpath`, and `guard_crayon_root`
     # only `islink`-checks `.crayon`, `.crayon/staging` and `.crayon/units` — one
     # level short of `<staging>/<id>` and `<staging>/<id>/scratch`. With either
     # of those a symlink, `realpath(scratch)` and `realpath(scratch/x)` both
-    # resolve through it and CR-03's check passes for any target, putting 4 KiB
+    # resolve through it and the scratch-tree check passes for any target, putting 4 KiB
     # of an arbitrary file back into a committed ledger. The link's own path has
     # to be named, and before the containment test.
     local secret="$PWD/outside-secret.txt"
@@ -1066,7 +1065,7 @@ print("yes" if clean else "no")
 }
 
 
-# WR-04: `not_actionable`, which was a dead row in `REASONS`.
+# `not_actionable`, which was a dead row in `REASONS`.
 #
 # The reason sat in the tool's table and in contract 5.7's at exit 2 with no
 # raiser anywhere, while all three skills' routing tables already told the
@@ -1075,7 +1074,7 @@ print("yes" if clean else "no")
 # `reference` unit quite happily. Contract 5.4 makes `tutorial` and `how-to`
 # the actionable intents; the other two are drafted from their sources.
 
-test_n27_wr04_a_step_walk_is_refused_on_a_unit_that_is_not_actionable() {
+test_n27_a_step_walk_is_refused_on_a_unit_that_is_not_actionable() {
     setup_repo
     crayon_unit_new still-unit "reference/still.rst" >/dev/null 2>&1
     "$CRAYON" signoff still-unit >/dev/null 2>&1
@@ -1132,7 +1131,7 @@ test_n27_wr04_a_step_walk_is_refused_on_a_unit_that_is_not_actionable() {
 }
 
 
-# WR-02: a step's evidence `mode` against the mode its plan declares.
+# A step's evidence `mode` against the mode its plan declares.
 #
 # `read_evidence_file` checked that `mode` was one of the two the contract
 # names and stopped, while `text_hash` was taken from the PLAN — so a record
@@ -1142,7 +1141,7 @@ test_n27_wr04_a_step_walk_is_refused_on_a_unit_that_is_not_actionable() {
 # the carry-forward walk reasoned over a mode the evidence contradicted.
 # `evidence_mismatch` was in the reason table with no raiser anywhere.
 
-test_n18_wr02_evidence_mode_must_be_the_mode_the_plan_declares() {
+test_n18_evidence_mode_must_be_the_mode_the_plan_declares() {
     setup_repo
     mkdir -p docs/how-to
     walk_unit_new mode-unit
@@ -1221,15 +1220,15 @@ PY
     assert_file_contains "V8 is the check that failed" "v8err.txt" "V8"
     assert_contains "and the report names the claimed mode" "$(cat v8.txt)" "'ta'"
     assert_contains "and the mode the plan declares" "$(cat v8.txt)" "'agent'"
-    # VOICE-04 / D-04: the default report opens on the damage, never reads as
-    # healthy, and names what failed in plain words (D-16).
+    # The default report opens on the damage, never reads as
+    # healthy, and names what failed in plain words.
     assert_eq "the default report opens on the damage" "The record is damaged:" \
         "$(sed -n 1p v8.txt)"
     assert_plain "the damaged report speaks plainly" "$(cat v8.txt)"
     assert_eq "the refusal is the one stderr line" "1" \
         "$(wc -l <v8err.txt | tr -d ' ')"
 
-    # WR-01: the default report names the check by its plain label, so the
+    # The default report names the check by its plain label, so the
     # refusal after it gives each failing V id beside that same label, read
     # from the one CHECK_LABELS; the rest of the refusal is as it was.
     local ledger_damaged="is damaged and nothing may be appended"
@@ -1244,7 +1243,7 @@ PY
         "$(json_field unit <v8err.txt)"
     assert_eq "the report prints that label" "1" \
         "$(grep -c '^  the step evidence: ' v8.txt || true)"
-    assert_eq "and names no V id (D-04)" "0" "$(grep -cE '\bV8\b' v8.txt || true)"
+    assert_eq "and names no V id" "0" "$(grep -cE '\bV8\b' v8.txt || true)"
 
     "$CRAYON" verify mode-unit --verbose >v8v.txt 2>v8verr.txt
     assert_eq "verify --verbose on the damage exits 6" "6" "$?"
@@ -1266,7 +1265,7 @@ PY
     assert_eq "the --json refusal is ledger_corrupt" "ledger_corrupt" \
         "$(tail -n 1 v8j.txt | json_field error)"
 
-    # VOICE-04 concurrency edge: verify takes no lock and writes nothing, so a
+    # The concurrency edge: verify takes no lock and writes nothing, so a
     # second default run prints the same bytes on both streams.
     "$CRAYON" verify mode-unit >v8b.txt 2>v8berr.txt
     assert_eq "a second default run exits 6 too" "6" "$?"
@@ -1280,12 +1279,12 @@ PY
 
 # --- N-14/N-17/N-28/N-29/N-30/N-35/N-41: `resume` pass 1 and the dry-run -----
 #
-# T15 (pass 1; pass 2 lands in plan 17-07), T17 (the `resume_ambiguous`
+# T15 (pass 1; pass 2 is covered further down), T17 (the `resume_ambiguous`
 # decision), T17b (nothing written before pass 2), T18 / T19 / T20 (three rows
 # of contract 5.8's situation table seen from `resume`) and T33 (the write
 # boundary: a dry-run leaves the repository byte-identical).
 #
-# Every interrupted state below is produced by the D-15 crash hook driving the
+# Every interrupted state below is produced by the fixture crash hook driving the
 # REAL write protocol — never by hand-building a pending directory, because the
 # thing under test is whether the tool can read back what the tool wrote.
 
@@ -1456,7 +1455,7 @@ test_n17_t17_resume_ambiguous_writes_nothing() {
     assert_contains "the diff shows the author's bytes" "$out" \
         "+the author wrote this after the crash"
 
-    # D-07: the refusal carries the same facts structurally.
+    # The refusal carries the same facts structurally.
     local files
     files=$(python3 -c '
 import json, sys
@@ -1573,8 +1572,8 @@ test_n41_nothing_to_resume() {
 
 # --- N-13/N-14/N-42: T15's pass-2 half, T21 the pathspecs, T22 the index lock -
 #
-# Pass 1 made the interruption legible (plan 17-06); these are the write half.
-# Every interrupted state is still produced by the D-15 crash hook driving the
+# Pass 1 made the interruption legible; these are the write half.
+# Every interrupted state is still produced by the fixture crash hook driving the
 # REAL write protocol, because the property under test is whether the tool can
 # finish what the tool started.
 
@@ -1634,7 +1633,7 @@ test_n14_t15_resume_completes_pass_two() {
     rc=$?
     assert_eq "pass 2 completes the interrupted transition" "0" "$rc"
     # stderr carries the git diagnostic every committed transition prints, and
-    # no refusal — GATE-04's one JSON line is reserved for a non-zero exit.
+    # no refusal — the one JSON refusal line is reserved for a non-zero exit.
     assert_not_contains "stderr carries no refusal" "$(cat err.txt)" '"error"'
     assert_file_exists "the unplaced file is placed" "$second"
     assert_eq "and holds the intended bytes" "$intended" "$(file_sha "$second")"
@@ -1861,7 +1860,7 @@ print(rows.get(sys.argv[1], "MISSING"))
 }
 
 # The pending manifest as the TOOL's own reader sees it — the single place an
-# absolute path or a parent-directory segment is rejected (Pitfall 8).
+# absolute path or a parent-directory segment is rejected.
 manifest_through_read_manifest() {
     python3 -c '
 import importlib.machinery, importlib.util, json, os, sys
@@ -1882,7 +1881,7 @@ test_n15_t16_hook_rewrites_and_rejects() {
     # The basis vocabulary, which is NOT the manifest's. A manifest entry names
     # a repo-relative path; every basis event — signoff `targets[]`, generation
     # `files[]`, reviewer-edit `files[]` — names a docs-root-relative target,
-    # and V13 compares the two sets directly (CR-01).
+    # and V13 compares the two sets directly.
     local page_basis=reference/hr-a.rst other_basis=reference/hr-b.rst
     assert_file_contains "the hook's bytes are on disk" "$page" "HOOKFORMATTED"
 
@@ -1921,7 +1920,7 @@ test_n15_t16_hook_rewrites_and_rejects() {
         "$(event_file_sha "$last" "$page_basis")"
     assert_eq "the unchanged path carries its RECORDED digest" "$other_sha" \
         "$(event_file_sha "$last" "$other_basis")"
-    # CR-01: the two path forms are not interchangeable — pin that the
+    # The two path forms are not interchangeable — pin that the
     # repo-relative form is ABSENT, or a regression that reintroduces it would
     # only have to also keep the docs-relative one to pass the two above.
     assert_eq "the repo-relative form is not what is recorded" "MISSING" \
@@ -1939,7 +1938,7 @@ test_n15_t16_hook_rewrites_and_rejects() {
     rc=$?
     assert_eq "the recovered record reads back" "0" "$rc"
 
-    # CR-01: the escape must leave a record the tool still accepts. `verify`
+    # The escape must leave a record the tool still accepts. `verify`
     # runs V13 over the appended reviewer edit, and `review --verdict accept`
     # proves the derived state still sees the signed targets in the basis.
     # Without them an `--adopt` that writes the wrong path vocabulary exits 0,
@@ -1957,14 +1956,14 @@ test_n15_t16_hook_rewrites_and_rejects() {
     cleanup
 }
 
-# WR-03: `--adopt` twice on ONE batch. The second call satisfies every
+# `--adopt` twice on ONE batch. The second call satisfies every
 # condition the three routing rows and both SKILL.md steps published — the last
 # event is a reviewer edit, something rewrote the placed bytes, the bytes are on
 # disk — and the tool still degrades to a plain resume, because `resume_adopt`
 # applies a FOURTH condition: the last event must not itself be an adoption. It
 # used to do that above `read_note`, so the author's second note was never even
 # read, let alone recorded, and the only signal was silence.
-test_wr03_a_second_adopt_on_one_batch_records_nothing_and_says_so() {
+test_a_second_adopt_on_one_batch_records_nothing_and_says_so() {
     setup_repo
     crayon_unit_new dd reference/dd.rst >/dev/null 2>&1
     "$CRAYON" signoff dd >/dev/null 2>&1
@@ -2032,7 +2031,7 @@ setup_twice_rejected_adoption() {
     assert_eq "the first adoption is rejected" "6" "$?"
 }
 
-test_wr01_repeated_adoption_refusal_is_one_json_line() {
+test_repeated_adoption_refusal_is_one_json_line() {
     setup_twice_rejected_adoption
     local mode rc output
     local -a flags
@@ -2056,11 +2055,11 @@ test_wr01_repeated_adoption_refusal_is_one_json_line() {
                 "$(json_field notices <"$output")" "--note was not recorded"
         fi
     done
-    # WR-04 (iteration 9): the SUCCESS document too. `--json` is consumed by
-    # the three skills, and until now the dropped note reached them only as
-    # stderr prose while the refusal arm above carried it as data — which is
-    # "the only signal was silence" (iteration-7 WR-03) re-opened for the
-    # machine surface. Same batch, same flags, with the blocker removed.
+    # The SUCCESS document too. `--json` is consumed by the three skills, and
+    # the dropped note once reached them only as stderr prose while the
+    # refusal arm above carried it as data — which is "the only signal was
+    # silence" (the second-adopt defect above) re-opened for the machine
+    # surface. Same batch, same flags, with the blocker removed.
     local notices
     rm -f .git/hooks/pre-commit
     "$CRAYON" resume dd --adopt --note "second" --json >out.txt 2>err.txt
@@ -2078,7 +2077,7 @@ test_wr01_repeated_adoption_refusal_is_one_json_line() {
     cleanup
 }
 
-test_wr01_restoring_hook_clears_drift_before_the_notice() {
+test_restoring_hook_clears_drift_before_the_notice() {
     setup_twice_rejected_adoption
     local lines_before
     lines_before=$(ledger_lines dd)
@@ -2087,7 +2086,7 @@ test_wr01_restoring_hook_clears_drift_before_the_notice() {
 cp .crayon/staging/dd/pending/adopt/docs/reference/dd.rst docs/reference/dd.rst
 git add -- docs/reference/dd.rst
 HOOK
-    # Phase-17 IN-02: this write passed only while `setup_twice_rejected_adoption`
+    # This write passed only while `setup_twice_rejected_adoption`
     # happened to have left the file executable. A hook git cannot run is a hook
     # that is not installed, and every assert_not_contains below would then pass
     # for the wrong reason.
@@ -2106,7 +2105,7 @@ HOOK
     cleanup
 }
 
-test_wr02_already_adopted_batch_requires_an_explicit_choice() {
+test_an_already_adopted_batch_requires_an_explicit_choice() {
     local choice lines_before page_before ledger_before saved_sha bare_hint
     for choice in --adopt --overwrite; do
         setup_twice_rejected_adoption
@@ -2120,11 +2119,11 @@ test_wr02_already_adopted_batch_requires_an_explicit_choice() {
         assert_json_error "$choice: the refusal is resume_ambiguous" bare-err.txt resume_ambiguous
         assert_eq "$choice: bare resume leaves the page intact" "$page_before" "$(sha256_of_file docs/reference/dd.rst)"
         assert_eq "$choice: bare resume leaves the ledger intact" "$ledger_before" "$(sha256_of_file .crayon/units/dd/ledger.jsonl)"
-        # WR-01 (iteration 9): the hint the routing row tells the skill to
-        # relay verbatim has to describe THIS batch. Offering `--note` here
-        # names a reviewer edit that is never written and a note that is
-        # dropped on arrival — the iteration-7 WR-03 defect, re-stated by the
-        # tool after the docs had been corrected.
+        # The hint the routing row tells the skill to relay verbatim has to
+        # describe THIS batch. Offering `--note` here names a reviewer edit
+        # that is never written and a note that is dropped on arrival — the
+        # second-adopt defect above, re-stated by the tool after the docs had
+        # been corrected.
         bare_hint=$(json_field hint <bare-err.txt)
         assert_not_contains "$choice: the already-adopted refusal offers no note" \
             "$bare_hint" "--note"
@@ -2158,7 +2157,7 @@ test_wr02_already_adopted_batch_requires_an_explicit_choice() {
     done
 }
 
-test_wr05_new_hook_rewrite_on_carried_drift_is_reported() {
+test_new_hook_rewrite_on_carried_drift_is_reported() {
     local mode ledger_before before_sha fresh_sha
     for mode in both disk-only head-only; do
         setup_twice_rejected_adoption
@@ -2214,7 +2213,7 @@ HOOK
     done
 }
 
-# CR-01 (iteration 9): a transition that COMMITTED must report itself, even
+# A transition that COMMITTED must report itself, even
 # when re-deriving state afterwards is impossible. The post-commit hook below
 # replaces `docs` with a symlink pointing outside the repository — an ordinary
 # committed blob of mode 120000, and precisely the threat `contained_page`
@@ -2222,7 +2221,7 @@ HOOK
 # refusal becomes possible, so contract 5.7 step 5 requires exit 0, the one
 # success line, and a routed `Next:` — degraded to `show`, with the reason said
 # on stderr, not a non-zero refusal that hides the landed commit from the caller.
-test_cr01_a_committed_resume_reports_itself_when_derivation_fails() {
+test_a_committed_resume_reports_itself_when_derivation_fails() {
     local mode outside rc committed
     for mode in plain json; do
         setup_repo
@@ -2277,10 +2276,10 @@ HOOK
     done
 }
 
-# WR-03: and the surfaces that route the author here say the same thing the
+# And the surfaces that route the author here say the same thing the
 # code does. Read off the tool rather than restated, so a reworded constant
 # cannot drift from the rows that mirror it.
-test_wr03_every_adopt_offer_names_the_fourth_condition() {
+test_every_adopt_offer_names_the_fourth_condition() {
     setup_repo
     crayon_unit_new dq reference/dq.rst >/dev/null 2>&1
     "$CRAYON" signoff dq >/dev/null 2>&1
@@ -2299,14 +2298,14 @@ test_wr03_every_adopt_offer_names_the_fourth_condition() {
     cleanup
 }
 
-# WR-10: `stage_rejected` end to end. Until now the only executable coverage
+# `stage_rejected` end to end. Until now the only executable coverage
 # called `refuse_transition` directly, so nothing proved the arm was reachable
 # through `write_tail` and nothing would have noticed if `git add`'s failure
 # stopped reaching it. A read-only object database is the real shape: `git add`
 # cannot write the blob, while `git add --dry-run` — which `guard_ignored_paths`
 # runs first — still succeeds, so the run gets past the write guard and fails
 # where the transition actually happens.
-test_wr10_a_read_only_object_database_is_stage_rejected() {
+test_a_read_only_object_database_is_stage_rejected() {
     setup_repo
     crayon_unit_new sr reference/sr.rst >/dev/null 2>&1
     "$CRAYON" signoff sr >/dev/null 2>&1
@@ -2332,7 +2331,7 @@ test_wr10_a_read_only_object_database_is_stage_rejected() {
     assert_eq "and the step that failed is named" "git add" \
         "$(json_field step <second.txt)"
 
-    # WR-06's witness: this is the arm whose hint used to say a hook rewrote
+    # The witness: this is the arm whose hint used to say a hook rewrote
     # the placed bytes in the same breath as saying no hook ran.
     local hint
     hint=$(json_field hint <second.txt)
@@ -2479,7 +2478,7 @@ test_n15_adopt_with_no_unexpected_files_is_a_plain_resume() {
     cleanup
 }
 
-# WR-09: the two halves of `resume`'s note pairing.
+# The two halves of `resume`'s note pairing.
 #
 # `read_note` ran BEFORE both of `resume_adopt`'s "this is really a plain
 # resume" early returns, so `--adopt` over zero `unexpected` files — which
@@ -2501,7 +2500,7 @@ plain_resumable_draft() {
     return 0
 }
 
-test_n15_wr09_adopt_over_zero_unexpected_files_needs_no_note() {
+test_n15_adopt_over_zero_unexpected_files_needs_no_note() {
     setup_repo
     plain_resumable_draft na
 
@@ -2518,7 +2517,7 @@ test_n15_wr09_adopt_over_zero_unexpected_files_needs_no_note() {
     cleanup
 }
 
-test_n15_wr09_a_note_with_no_decision_flag_is_refused_not_discarded() {
+test_n15_a_note_with_no_decision_flag_is_refused_not_discarded() {
     setup_repo
     plain_resumable_draft nd
 
@@ -2542,7 +2541,7 @@ test_n15_wr09_a_note_with_no_decision_flag_is_refused_not_discarded() {
 
 # --- N-46: T16b — the hook shape where the rewrite RESTORES the old bytes ----
 #
-# CR-01. N-15 above drafts two brand-new pages, so `before_sha` is null for
+# N-15 above drafts two brand-new pages, so `before_sha` is null for
 # both and `HOOKFORMATTED` can only ever be `unexpected`; and it removes the
 # hook before the resume. Neither is the shape a real canonicalising hook
 # produces once it has been adopted once: the page on disk ALREADY holds the
@@ -2641,7 +2640,7 @@ import json
 print(json.load(open("err.txt", encoding="utf-8"))["hint"])
 ')
     assert_contains "the hint names the escape" "$hint" "--adopt"
-    # CR-01 (re-review): the hint must not read as "nothing happened". Step 2
+    # The hint must not read as "nothing happened". Step 2
     # appended the batch and step 3 placed the files; only step 4 was refused.
     # An operator told "nothing was committed" hears "nothing was written" and
     # walks away from a ledger tail and a placed page that are both on disk.
@@ -2664,11 +2663,11 @@ print(json.load(open("err.txt", encoding="utf-8"))["hint"])
     cleanup
 }
 
-# --- N-46: CR-01 (iteration 3) — the routed escape has a PRECONDITION --------
+# --- N-46: the routed escape has a PRECONDITION ------------------------------
 #
-# The two shapes the first two CR-01 fixes never ran. Both were reproduced
-# against the shipped executable in review; the gates that shipped with the
-# iteration-2 fix all asserted that the string `--adopt` was PRESENT in some
+# Two shapes the earlier fixes for the routed escape never ran. Both were
+# reproduced against the shipped executable in review; the gates that shipped
+# with an earlier fix all asserted that the string `--adopt` was PRESENT in some
 # piece of prose, and none of them ran `--adopt` after a `commit_rejected` on
 # any batch except `hook_restored_draft` — the one shape where it works. A gate
 # that checks a command is mentioned is not a gate that the command works.
@@ -2694,13 +2693,13 @@ test_n46_adopt_after_commit_rejected_on_a_non_generation_batch_does_not_loop() {
 
     local hint
     hint=$(json_field hint <err2.txt)
-    # The defect in one line: iteration 2 put `--adopt` in this hint with no
+    # The defect in one line: an earlier fix put `--adopt` in this hint with no
     # precondition, and on THIS batch `--adopt` refuses.
     assert_contains "the hint states the precondition on --adopt" "$hint" \
         "something REWROTE the placed bytes, and every unexpected file's current bytes are still on disk"
     assert_contains "and names the refusal --adopt would raise here" "$hint" \
         "adopt_unsupported"
-    # On the stem: WR-03 widened "the commit" to "the transition", because the
+    # On the stem: "the transition" rather than "the commit", because the
     # `stage_rejected` arm never reaches a commit at all.
     assert_contains "the escape that always works is named first" "$hint" \
         "remove what is refusing the"
@@ -2777,8 +2776,7 @@ test_n46_adopt_after_commit_rejected_without_a_rewrite_is_not_an_escape() {
 }
 
 
-# --- N-46: CR-01 / CR-02 (iteration 4) — the sites the first three fixes -----
-#     never walked.
+# --- N-46: the sites the earlier fixes never walked --------------------------
 #
 # These walks cover both adopt refusal arms and blocker removal. Static S-13
 # checks wording structure; only executing the printed remedy proves progress.
@@ -2811,7 +2809,7 @@ test_n46_adopt_on_a_deleted_target_does_not_route_back_into_overwrite() {
         assert_eq "lap $lap: the routed --adopt refuses" "6" "$?"
         assert_json_error "lap $lap: as adopt_unsupported" "err3.txt" \
             "adopt_unsupported"
-        assert_file_contains "lap $lap: on the arm iteration 3 never reached" \
+        assert_file_contains "lap $lap: on the arm the earlier fix never reached" \
             "err3.txt" "has no current bytes to adopt"
         hint=$(json_field hint <err3.txt)
         assert_contains "lap $lap: the warning is conditional" \
@@ -2884,8 +2882,9 @@ test_n46_resume_ambiguous_routes_adopt_with_its_precondition() {
     assert_json_error "resume_ambiguous" "err2.txt" "resume_ambiguous"
     local hint
     hint=$(json_field hint <err2.txt)
-    # The CR-02 defect in one line: this hint used to offer `--adopt` with no
-    # precondition at all, which is the iteration-2 defect one reason over.
+    # The defect in one line: this hint used to offer `--adopt` with no
+    # precondition at all: the defect of the non-generation-batch test above,
+    # one reason over.
     assert_contains "the routed --adopt carries its precondition" "$hint" \
         "ONLY when the batch's last event is a generation or a reviewer edit"
     assert_contains "and names the refusal it would raise here" "$hint" \
@@ -2964,12 +2963,12 @@ command_re = re.compile(r"crayon resume ([a-z0-9-]+)(?: (--overwrite|--adopt))?"
 def adoptable(directory, unit):
     """Contract 5.8's own four conditions, read off THIS repo.
 
-    WR-02(c): the filters here used to be `shape in ("signoff", "unchanged")`
+    The filters here used to be `shape in ("signoff", "unchanged")`
     and `shape == "deleted" and "still on disk" in hint` — the answer encoded
     in the fixture's name and in the wording of the hint under test. A future
     `--adopt` offer that loops on the signoff or unchanged shape was skipped by
-    construction, and the deleted filter was keyed on the very sentence CR-02
-    was filed about: reword the hint and it silently stops firing.
+    construction, and the deleted filter was keyed on the very hint sentence
+    under test: reword the hint and it silently stops firing.
 
     Derived instead from the recorded facts — the pending manifest's last event
     and files[], and the bytes on disk — so a fixture becomes adoptable or
@@ -3000,7 +2999,7 @@ def adoptable(directory, unit):
 def choices(directory, refusal):
     """Every printed command, split into the applicable and the predicted.
 
-    WR-02(c): nothing is dropped any more. A printed `--adopt` the recorded
+    Nothing is dropped any more. A printed `--adopt` the recorded
     facts say is not adoptable is still RUN — once, in its own copy — and held
     to the prediction: the tool must say `adopt_unsupported`, or complete the
     batch as the plain resume contract 5.8 documents. Skipping it was how a
@@ -3036,7 +3035,7 @@ def run(directory, command):
     try:
         branch = pathlib.Path(scratch) / "repo"
         shutil.copytree(directory, branch)
-        # WR-04: an explicit codec, not the locale's. Every refusal this
+        # An explicit codec, not the locale's. Every refusal this
         # decodes is full of em-dashes, and under LC_ALL=C the walk died
         # on the first one instead of testing anything.
         result = subprocess.run(
@@ -3099,7 +3098,7 @@ pathlib.Path("route-classes.txt").write_text(
 )
 PY
         assert_eq "$shape: every applicable printed escape reaches a completed commit" "0" "$?"
-        # WR-02(c): the classes this shape actually exercised, accumulated
+        # The classes this shape actually exercised, accumulated
         # across the four shapes so the vacuous case — a filter that quietly
         # stopped admitting `--adopt` anywhere — cannot pass.
         cat route-classes.txt >>"$classes"
@@ -3119,13 +3118,13 @@ PY
 }
 
 
-# --- N-37: T27 / T27b / T27c — the persistence invariant, and TEST-05 --------
+# --- N-37: T27 / T27b / T27c — the persistence invariant, and inert hooks ----
 #
 # Contract 5.8 states the invariant as one sentence: every published manifest
 # references durable copies matching all of its recovery digests. What that
 # sentence BUYS is a property no amount of reading the code establishes — that
 # a crash on either side of the publication leaves a state the next `resume`
-# completes correctly. These cases are that proof, driven through the D-15
+# completes correctly. These cases are that proof, driven through the fixture
 # crash hook rather than a signal or an external kill, because `os._exit` skips
 # cleanup handlers and buffer flushing, which is what an interruption does.
 
@@ -3143,7 +3142,7 @@ print(rows.get(sys.argv[2]) or "MISSING")
 }
 
 # How many events of one kind a unit's ledger holds. A duplicate reviewer edit
-# would record one human decision twice (T-17-32), so the count is the assertion.
+# would record one human decision twice, so the count is the assertion.
 count_kind() {
     python3 -c '
 import json, sys
@@ -3253,7 +3252,7 @@ test_n37_t27_t27b_t27c_adopt_persistence_and_idempotence() {
 
 test_n37_every_crash_point_leaves_a_classifiable_state() {
     setup_repo
-    # D-15's five write-protocol injection points, each driving the REAL
+    # The five write-protocol injection points, each driving the REAL
     # protocol. For each: what is on disk after the crash, what the next
     # `resume --dry-run` reports about it, and that the next write-mode
     # `resume` either completes the transition or refuses with a named
@@ -3306,11 +3305,11 @@ test_n37_every_crash_point_leaves_a_classifiable_state() {
     cleanup
 }
 
-# TEST-05: the fixture hooks are inert in the shipped executable. The acceptance
+# The fixture hooks are inert in the shipped executable. The acceptance
 # suite carries one assertion of this; it is repeated here so the property
-# survives the suite split in plans 17-10 and 17-11 no matter which file a given
+# survives the split between the two bash suites no matter which file a given
 # test ends up in.
-test_n37_test05_the_fixture_hooks_are_inert_without_the_switch() {
+test_n37_the_fixture_hooks_are_inert_without_the_switch() {
     setup_repo
     unset CRAYON_TEST_HOOKS
 
@@ -3350,12 +3349,12 @@ test_n37_test05_the_fixture_hooks_are_inert_without_the_switch() {
 # when the tool cannot complete a transition, what it prints is all the author
 # has. The assertions below are therefore as much about what is NOT printed as
 # about what is — a restore recipe the evidence does not support is how an
-# author loses uncommitted work on the tool's advice (T-17-27).
+# author loses uncommitted work on the tool's advice.
 
 # The manifest, rewritten through python3 so a fixture can express "not
 # canonical" and "not a prefix of the batch" exactly. `patch_manifest` in
-# tests/test_crayon_acceptance.sh is the same idea; it stays there because D-10
-# keeps the reviewer's file recognisable, and only the two modes this suite needs are
+# tests/test_crayon_acceptance.sh is the same idea; it stays there to keep the
+# reviewer's file recognisable, and only the two modes this suite needs are
 # repeated here.
 mangle_manifest() {
     python3 -c '
@@ -3402,7 +3401,7 @@ test_n38_t28_t28b_honest_limit_findings() {
     mkdir -p docs/reference
 
     # One fixture per detail code the contract's table carries, each produced by
-    # the D-15 crash hook driving the REAL write protocol.
+    # the fixture crash hook driving the REAL write protocol.
     crashed_unit_new nm append          # no_material  (and T28b: no ledger in HEAD)
     rm -rf .crayon/staging/nm/pending
 
@@ -3459,7 +3458,7 @@ test_n38_t28_t28b_honest_limit_findings() {
                 "$(cat "err-$unit.txt")" "$forbidden"
         done
 
-        # D-08: the same facts structurally, so a skill need not parse prose.
+        # The same facts structurally, so a skill need not parse prose.
         local paths_json
         paths_json=$(python3 -c '
 import json, sys
@@ -3550,7 +3549,7 @@ open(os.path.join(pending, "manifest.json"), "w", encoding="utf-8").write(json.d
     cleanup
 }
 
-# --- VERB-06 / V-05: `verify` over real history ------------------------------
+# --- V-05: `verify` over real history ----------------------------------------
 #
 # The report itself is pinned check by check in tests/test_crayon_unit.py, where
 # V1–V13 are pure functions of the ledger's bytes and of the event list. What
@@ -3559,8 +3558,7 @@ open(os.path.join(pending, "manifest.json"), "w", encoding="utf-8").write(json.d
 # target claimed on two branches, and an uncommitted tail.
 #
 # V-05 (T25) is the one non-N id in this block and its function name carries
-# `v05` so `tests/check_traces.py` finds it (plan 17-01's decision, restated in
-# this file's header).
+# `v05` so `tests/check_traces.py` finds it (see this file's header).
 
 # A signed-off, drafted unit at `reference/<unit>.rst`.
 verify_unit() {
@@ -3752,7 +3750,7 @@ test_verify_v18_target_overlap() {
     cleanup
 }
 
-# CR-03: a unit id is contributor content, so default `verify` names it as
+# A unit id is contributor content, so default `verify` names it as
 # written. A timestamp id holds a 12-digit run that the plain-words table's
 # digest rule used to cut to seven characters, naming a unit that does not exist.
 test_verify_keeps_a_timestamp_unit_id_as_written() {
@@ -3898,12 +3896,12 @@ test_verify_runs_on_a_unit_with_an_uncommitted_tail() {
 }
 
 
-# --- migrated from tests/test_crayon_acceptance.sh in plan 17-11 (D-10) ------
+# --- migrated from tests/test_crayon_acceptance.sh ---------------------------
 #
 # The 181 bodies below were written in the acceptance file and moved here
-# unchanged: D-10 makes that file the reviewer's A-01 … A-35 and nothing else. Every
+# unchanged: that file holds the reviewer's A-01 … A-35 and nothing else. Every
 # function that a trace-table row names now carries its N-id and its trace ids
-# (D-09), so tests/check_traces.py finds it by grep; the rest keep the
+# in its name, so tests/check_traces.py finds it by grep; the rest keep the
 # descriptive names they were written with, because no trace row names them.
 # Not one assertion changed in the move.
 
@@ -3914,7 +3912,7 @@ test_j1_unit_new_end_to_end() {
     local before
     before=$(git rev-list --count HEAD)
 
-    # An unrelated uncommitted edit INSIDE docs/ — audit defect 4 (RESEARCH P-12).
+    # An unrelated uncommitted edit INSIDE docs/, which no commit may sweep in.
     printf 'untouched by crayon\n' >docs/unrelated-page.md
 
     local out rc
@@ -4024,7 +4022,7 @@ test_symlinked_docs_root_refuses_bad_write_path() {
     cleanup
 }
 
-# CR-01: containment is checked at the ONE choke point every write passes
+# Containment is checked at the ONE choke point every write passes
 # through, not only at declaration time. A docs *subdirectory* re-pointed
 # between signoff and draft used to escape: the existing symlinked-docs-root
 # test only covers the root, and `draft` never re-checked its destinations.
@@ -4057,7 +4055,7 @@ test_symlinked_docs_subdir_refuses_draft_before_any_write() {
     cleanup
 }
 
-# CR-01: the `.crayon/` symlink guard used to live in `cmd_unit_new` alone, so
+# The `.crayon/` symlink guard used to live in `cmd_unit_new` alone, so
 # every other mutating verb appended the record through the link.
 test_symlinked_crayon_dir_refuses_every_mutating_verb() {
     setup_repo
@@ -4092,7 +4090,7 @@ test_symlinked_crayon_dir_refuses_every_mutating_verb() {
     cleanup
 }
 
-# CR-02: contract 5.6's write-destination row has five clauses, and the fifth
+# Contract 5.6's write-destination row has five clauses, and the fifth
 # is "pending/evidence inside `.crayon/staging/`". `guard_crayon_root` stated only
 # the first, and the sole implementation of the fifth
 # (`contained(root/.crayon/staging, pending)`) resolved BOTH operands through the
@@ -4101,7 +4099,7 @@ test_symlinked_crayon_dir_refuses_every_mutating_verb() {
 # pending/before/after material and the page bytes outside the repository. One
 # case per link position; the child links are the regression.
 
-# Every regular file under $1 as "relative-path sha256", sorted. WR-07: the
+# Every regular file under $1 as "relative-path sha256", sorted. The
 # fixture deliberately moves a POPULATED `.crayon` child out of the repository,
 # so "the tree out here is empty" is not the property under test and never was
 # -- "crayon added or changed nothing out here" is. A snapshot comparison says
@@ -4157,7 +4155,7 @@ test_a_symlinked_crayon_child_refuses_and_writes_nothing_outside() {
         assert_json_detail "symlinked $relative names the link" "err.txt" \
             "$relative/ is a symlink or resolves outside the repository"
 
-        # WR-07: asserted HERE, with the link STILL in place. Run after the
+        # Asserted HERE, with the link STILL in place. Run after the
         # restore below -- as they were -- everything crayon wrote through the
         # link has just been moved back into the repository with its target, so
         # `find "$outside"` was empty by construction and both containment
@@ -4194,12 +4192,11 @@ test_a_symlinked_crayon_child_refuses_and_writes_nothing_outside() {
     cleanup
 }
 
-# CR-03: CRAYON_ROOTS guards three DIRECTORIES, and `os.open` follows symlinks,
+# CRAYON_ROOTS guards three DIRECTORIES, and `os.open` follows symlinks,
 # so a link at the lock file's own path cleared every directory check and still
 # created the repository's write mutex at an arbitrary absolute path — on the
 # exit-0 SUCCESS path, with no diagnostic of any kind. The assertions below run
-# while the link is still in place, so `find` cannot be empty by construction
-# (WR-07).
+# while the link is still in place, so `find` cannot be empty by construction.
 test_a_symlinked_lock_file_refuses_and_creates_nothing_outside() {
     setup_repo
     local outside
@@ -4232,13 +4229,13 @@ test_a_symlinked_lock_file_refuses_and_creates_nothing_outside() {
     cleanup
 }
 
-# WR-15: the CR-03 fix wrapped `os.open` in a blanket `except OSError` that
-# reported `.crayon/staging/lock cannot be opened as a real file` — wording only
-# true for ELOOP/EISDIR/ENOTDIR. Every other failure (permissions, a read-only
-# filesystem, ENOSPC, EMFILE) got a cause that is FALSE, and strictly worse than
-# what `main`'s OSError backstop said before the commit. That is the same
-# "invented cause" defect WR-01 and WR-12 were filed for.
-test_wr15_an_unopenable_lock_reports_the_real_fault_not_an_invented_one() {
+# The symlinked-lock fix above wrapped `os.open` in a blanket `except OSError`
+# that reported `.crayon/staging/lock cannot be opened as a real file` — wording
+# only true for ELOOP/EISDIR/ENOTDIR. Every other failure (permissions, a
+# read-only filesystem, ENOSPC, EMFILE) got a cause that is FALSE, and strictly
+# worse than what `main`'s OSError backstop said before the commit. A refusal
+# must never name a cause it did not observe.
+test_an_unopenable_lock_reports_the_real_fault_not_an_invented_one() {
     setup_repo
     crayon_unit_new perm-unit "reference/perm.rst" >/dev/null 2>&1
     if [ "$(id -u)" = "0" ]; then
@@ -4263,10 +4260,10 @@ test_wr15_an_unopenable_lock_reports_the_real_fault_not_an_invented_one() {
         "$(cat err.txt)" "check the path's permissions and the filesystem"
     assert_not_contains "the refusal does not claim the lock is not a real file" \
         "$(cat err.txt)" "must be a real file inside the repository"
-    # WR-22: this test used to assert the errno and the hint and NOT the absence
+    # This test used to assert the errno and the hint and NOT the absence
     # of the absolute path, so it pinned in the leak `ledger_label` exists to
-    # close (WR-10). `OSError.__str__` embeds the absolute filename, and the
-    # WR-15 re-raise routes the common permission case through this arm.
+    # close. `OSError.__str__` embeds the absolute filename, and the narrowed
+    # re-raise routes the common permission case through this arm.
     assert_not_contains "the refusal does not leak the absolute path" \
         "$(cat err.txt)" "$PWD"
     assert_contains "it still names the lock, repo-relatively" \
@@ -4277,7 +4274,7 @@ test_wr15_an_unopenable_lock_reports_the_real_fault_not_an_invented_one() {
 # The other half of the same branch: the three errnos the wording IS true for
 # must still be reported as what they are, or the fix would have traded one
 # false diagnostic for a missing one.
-test_wr15_a_lock_path_that_is_a_directory_is_still_bad_write_path() {
+test_a_lock_path_that_is_a_directory_is_still_bad_write_path() {
     setup_repo
     crayon_unit_new dir-unit "reference/dir.rst" >/dev/null 2>&1
 
@@ -4304,7 +4301,7 @@ test_leading_docs_target_refuses_bad_write_path() {
     cleanup
 }
 
-# WR-01: a source was only passed through control-character hygiene, so an
+# A source was only passed through control-character hygiene, so an
 # absolute or traversing path was digested by `sign_sources` and both the raw
 # path and its sha256 were COMMITTED into the signoff's `context` map — an
 # existence-and-content oracle for files outside the repository, and a V19
@@ -4339,9 +4336,9 @@ test_an_absolute_or_traversing_source_is_refused() {
     cleanup
 }
 
-# WR-01: `unit.md` is a plain file an author may hand-edit and `signoff` reads
+# `unit.md` is a plain file an author may hand-edit and `signoff` reads
 # it fresh, so declaration-time validation cannot be the only guard.
-# WR-05: the first fix recorded the outside source as {path, commit: null} with
+# The first fix recorded the outside source as {path, commit: null} with
 # no digest and carried on, so signoff SUCCEEDED with no indication that a
 # declared source had never been read — and `commit: null` was already this
 # record's encoding for "an in-repo source nothing pins", so one value carried
@@ -4381,7 +4378,7 @@ test_signoff_refuses_a_source_outside_the_repository() {
     cleanup
 }
 
-# WR-05: `commit: null` now means exactly one thing — an in-repo source that
+# `commit: null` now means exactly one thing — an in-repo source that
 # nothing pins — because the value an out-of-repo source used to share with it
 # can no longer be recorded at all.
 test_an_uncommitted_in_repo_source_still_signs_with_a_null_commit() {
@@ -4403,7 +4400,7 @@ print(json.dumps(sorted(json.loads(sys.stdin.read()).get("context") or {})))
 ')
     assert_eq "but it IS digested — it was read" '["docs/fresh.md"]' "$digested"
 
-    # WR-13's invariant, on the path that is SUPPOSED to succeed: `sources` and
+    # The invariant, on the path that is SUPPOSED to succeed: `sources` and
     # `context` are the same key set by construction. Without it the two
     # assertions above pass for a record that pinned a commit and read nothing.
     local keys
@@ -4420,14 +4417,14 @@ print(json.dumps([
     cleanup
 }
 
-# WR-13: WR-05's fix closed the out-of-repo STRING and stopped there. Two
+# The `commit: null` fix closed the out-of-repo STRING and stopped there. Two
 # in-repo cases still reached `sources.append(...)` with `digest_file() is
 # None` and both succeeded at exit 0 with no diagnostic -- `context: {}`,
-# verbatim the state the first review called "silently downgrading a
-# provenance record".
+# verbatim the "silently downgrading a provenance record" state described
+# above.
 test_signoff_refuses_a_source_it_never_read() {
     setup_repo
-    # WR-17 (phase 18): the declaring verbs now apply the same two filesystem
+    # The declaring verbs now apply the same two filesystem
     # rules, so neither source below can be DECLARED any more. Both are reached
     # the way the out-of-repo case above is -- by hand-editing the plan file
     # past the declaration-time rule -- because `unit.md` is a plain file an
@@ -4468,7 +4465,7 @@ test_signoff_refuses_a_source_it_never_read() {
     assert_not_contains "no commit hash is asserted for it" \
         "$(cat .crayon/units/dir-unit/ledger.jsonl)" '"context"'
 
-    # WR-17 (phase 18): and the declaring verb refuses both of them, so the
+    # And the declaring verb refuses both of them, so the
     # unsignable plan the two arms above reach by hand can no longer be
     # committed by a command. `--source` REPLACES the list, so `unit edit` is
     # the named way back for a plan that already carries one.
@@ -4490,7 +4487,7 @@ test_signoff_refuses_a_source_it_never_read() {
     cleanup
 }
 
-# WR-04 / WR-10: `find_claim` wrapped the sibling's `unit_state` in
+# `find_claim` wrapped the sibling's `unit_state` in
 # `except ValueError: continue`, and the only ValueError that reached it was
 # `json.loads` failing inside `read_events` — exactly the corrupt sibling the
 # contract's first mechanism promises will refuse loudly. Its targets vanished
@@ -4517,7 +4514,7 @@ test_a_corrupt_sibling_ledger_never_silently_waives_the_claim_policy() {
     cleanup
 }
 
-# WR-10: the unit's OWN corrupt ledger is exit 6 with a line number, not
+# The unit's OWN corrupt ledger is exit 6 with a line number, not
 # exit 2 "bad input" with a JSON-decoder message.
 test_a_corrupt_ledger_is_ledger_corrupt_not_bad_target() {
     setup_repo
@@ -4549,7 +4546,7 @@ test_bad_unit_id_and_bad_target_are_refused() {
 # --- stage a: contract 5.8's situation table, the two busy reasons -----------
 
 # Hold the repo-wide lock from another process until the marker appears, so the
-# verb under test cannot race the holder (RESEARCH Pattern 5).
+# verb under test cannot race the holder.
 hold_lock() {
     mkdir -p .crayon/staging
     flock -x .crayon/staging/lock -c 'touch .crayon/staging/held; sleep 5' &
@@ -4593,7 +4590,7 @@ open(path, "w", encoding="utf-8").write(json.dumps(manifest))
 ' ".crayon/staging/${unit}/pending/manifest.json" "$mode"
 }
 
-# CR-04: every file-reading helper caught only the (FileNotFoundError,
+# Every file-reading helper caught only the (FileNotFoundError,
 # IsADirectoryError, NotADirectoryError) tuple and `main` converted only
 # Refusal/UnitInvalid/ValueError, so a PermissionError — or an ENOSPC, or any
 # other OSError — escaped as a stack trace with exit 1, which is the contract's
@@ -4642,7 +4639,7 @@ test_an_unreadable_file_is_one_json_line_never_a_traceback() {
     cleanup
 }
 
-# WR-04: CR-04's fix widened the read helpers from the three-member tuple to
+# The fix above widened the read helpers from the three-member tuple to
 # OSError so "the common cases stay specific". UnicodeDecodeError is NOT an
 # OSError — it is a ValueError — so the single most common "this file cannot be
 # read as text" sailed past the specific refusal into main's generic ValueError
@@ -4697,7 +4694,7 @@ test_a_non_utf8_input_file_is_refused_with_its_own_flag() {
     cleanup
 }
 
-# WR-09: the same fault on the same codec, one layer in. WR-04 widened the
+# The same fault on the same codec, one layer in. The fix above widened the
 # three helpers that read AUTHOR input; the readers of the RECORD still let a
 # bare UnicodeDecodeError escape to `main`'s generic ValueError arm, which
 # answered `bad_target` (2, "bad input" -- what a skill reads as "I mistyped an
@@ -4736,8 +4733,8 @@ test_a_non_utf8_ledger_is_ledger_corrupt_on_every_verb() {
     cleanup
 }
 
-# WR-10: CR-01 threaded the unit into the three GENERIC backstops and left the
-# `except Refusal` arm -- the one every STRUCTURED refusal comes through --
+# An earlier fix threaded the unit into the three GENERIC backstops and left
+# the `except Refusal` arm -- the one every STRUCTURED refusal comes through --
 # reading `refusal.unit` verbatim, while raisers that had the unit right there
 # in scope omitted it. So the commonest refusal a second concurrent skill sees
 # reported `"unit": ""` while the rarer generic backstops had just learned to
@@ -4759,7 +4756,7 @@ test_a_busy_refusal_names_the_unit_it_refused() {
     cleanup
 }
 
-# WR-10, second half: every other refusal in the tool spells the ledger from
+# The second half: every other refusal in the tool spells the ledger from
 # the repository root (`os.path.relpath(path, root)` in `classify_stage_a`);
 # the ones raised below the verb embedded the ABSOLUTE path, leaking the
 # caller's filesystem layout into a diagnostic a skill is invited to paste
@@ -4808,7 +4805,7 @@ test_stage_a_precedes_input_validation() {
     local rc=$?
     release_holder
     # Both a stage-a refusal (busy) and a stage-b one (bad target) apply; the
-    # earlier stage wins, and that is the whole of GATE-01's ordering claim.
+    # earlier stage wins, and that is the whole of the stage-ordering claim.
     assert_eq "stage a beats stage b: exit 5" "5" "$rc"
     assert_json_error "stage order" "err.txt" "busy"
     cleanup
@@ -4913,11 +4910,11 @@ test_stage_a_refuses_an_uncommitted_tail() {
     cleanup
 }
 
-# WR-02: `route()` reads `uncommitted_tail` (row 1) and `steps_resolved`
+# `route()` reads `uncommitted_tail` (row 1) and `steps_resolved`
 # (the rows 6/7/9 qualifier), and `derive()` produced NEITHER — both read None
 # in production, so row 1 was unreachable and the tool told a skill to
 # `review` a unit whose contract 5.5 `next` is `resume`.
-# WR-03: a target under a gitignored directory made `git add` fail at step 4,
+# A target under a gitignored directory made `git add` fail at step 4,
 # after the append and the place, so the unit was wedged for EVERY verb —
 # including the read-only `show` — and `resume` is a stub in this build. No
 # crash fixture is needed to reach it: `docs/reference/` in .gitignore is an
@@ -4948,7 +4945,7 @@ test_an_ignored_destination_is_refused_before_anything_is_written() {
     cleanup
 }
 
-# CR-01: the ignore probe asks GIT's opinion of the destinations; it never
+# The ignore probe asks GIT's opinion of the destinations; it never
 # asked the FILESYSTEM's. `place_files` runs at step 3, after the append at
 # step 2, so an OSError from `publish_atomic`'s makedirs/open wedged the unit
 # with an uncommitted tail no verb in this build can clear — and reported it as
@@ -5009,19 +5006,19 @@ test_a_destination_the_filesystem_rejects_is_refused_before_the_append() {
     cleanup
 }
 
-# CR-01: `main`'s generic backstops reported `"unit": ""`, so the one line a
+# `main`'s generic backstops reported `"unit": ""`, so the one line a
 # skill gets could not name what it had refused. The parsed namespace carries
 # the id for every unit-scoped verb.
 #
-# WR-08: this test used to drive `draft` with `docs/reference` as a regular
-# file -- which CR-01's OWN placeability guard refuses as a structured
+# This test used to drive `draft` with `docs/reference` as a regular
+# file -- which the placeability guard above refuses as a structured
 # `Refusal`, handled by `main`'s `except Refusal` arm, which reads
 # `refusal.unit` and never calls `_argv_unit` at all. It asserted a property
 # that already held before the fix, and `_argv_unit` could be replaced with
 # `return ""` with all 1,341 assertions still green. Both arms below reach it:
-# the first because `not_a_repo` is raised with no unit and `main` falls back
-# (WR-10), the second because a PermissionError lands in the generic `OSError`
-# backstop, which is the arm CR-01 was filed about.
+# the first because `not_a_repo` is raised with no unit and `main` falls back,
+# the second because a PermissionError lands in the generic `OSError`
+# backstop, which is the arm the missing unit was reported from.
 test_a_backstop_refusal_names_its_unit() {
     setup_repo
 
@@ -5057,7 +5054,7 @@ test_a_backstop_refusal_names_its_unit() {
     cleanup
 }
 
-# WR-01: a non-zero `git add --dry-run` is not synonymous with "ignored". The
+# A non-zero `git add --dry-run` is not synonymous with "ignored". The
 # probe scraped stderr for "offenders" and presented whatever it found as a
 # path, so the hint came back as `git check-ignore -v fatal: pathspec ... is
 # beyond a symbolic link` — not a command anyone can run. The hint must
@@ -5083,13 +5080,13 @@ test_an_ignore_refusal_hints_a_runnable_command() {
     command=$(printf '%s' "$hint" | sed -n 's/^`\(.*\)` reproduces this.*/\1/p')
     assert_not_contains "the quoted command reproduces the failure" \
         "$(eval "$command" 2>&1 >/dev/null; echo "rc=$?")" "rc=0"
-    # WR-12: this used to pin exactly the uninformative header as the whole
+    # This used to pin exactly the uninformative header as the whole
     # detail, which made the regression load-bearing. For the ignore case git's
     # FIRST line is a constant and the offenders are on the lines after it, so
     # the detail was the same string for every ignore refusal in the tool.
     local detail
     detail=$(json_field detail <err.txt)
-    # Phase-16 IN-03: git's own first line, read from git rather than spelled
+    # Git's own first line, read from git rather than spelled
     # out in English here. The property is "the detail is git's own words";
     # pinning one release's translation of them was a locale dependency.
     assert_contains "git's own first line is still verbatim" "$detail" \
@@ -5099,7 +5096,7 @@ test_an_ignore_refusal_hints_a_runnable_command() {
     cleanup
 }
 
-# WR-12: the discriminating case. With one destination the header alone is
+# The discriminating case. With one destination the header alone is
 # survivable -- the hint lists the only candidate. With more than one, a detail
 # that is a constant string tells the author nothing about WHICH write git
 # refused, and `_first_line` discarded exactly the lines git uses to say so.
@@ -5126,7 +5123,7 @@ test_an_ignore_refusal_names_which_destination_is_ignored() {
         "docs/reference/keep.rst"
     assert_contains "git's own first line is still verbatim" "$detail" \
         "$(git_add_first_line docs/reference/keep.rst docs/reference/drop.rst)"
-    # Phase-16 IN-03: git's diagnostic PREFIXES are its own UI, never offenders.
+    # Git's diagnostic PREFIXES are its own UI, never offenders.
     # Asserted at the prefix (which `_GIT_UI_PREFIXES` pins and the unit suite
     # checks) rather than at one English advice sentence.
     for prefix in "hint:" "warning:" "error:" "fatal:"; do
@@ -5136,7 +5133,7 @@ test_an_ignore_refusal_names_which_destination_is_ignored() {
     cleanup
 }
 
-# WR-12: single-line stderr has nothing after the first line to add, so the
+# Single-line stderr has nothing after the first line to add, so the
 # verbatim-first-line discipline must be exactly what it was.
 test_a_non_ignore_git_add_failure_reports_gits_one_line_unchanged() {
     setup_repo
@@ -5155,7 +5152,7 @@ test_a_non_ignore_git_add_failure_reports_gits_one_line_unchanged() {
     cleanup
 }
 
-# WR-03: the probe is `git add --dry-run`, not `git check-ignore`, because
+# The probe is `git add --dry-run`, not `git check-ignore`, because
 # only the former is git's own decision. A TRACKED page matching a file-level
 # ignore pattern is reported ignored by `check-ignore --no-index` and staged
 # happily by `git add` — refusing it would be a false refusal that no `git add`
@@ -5181,7 +5178,7 @@ test_a_tracked_page_matching_a_file_level_ignore_pattern_is_still_writable() {
     cleanup
 }
 
-# WR-03: an ignored DIRECTORY is refused even when the page inside it is
+# An ignored DIRECTORY is refused even when the page inside it is
 # already tracked — `git add` refuses that too, so recording it is impossible.
 test_an_ignored_directory_is_refused_even_for_a_tracked_page() {
     setup_repo
@@ -5221,7 +5218,7 @@ test_a_unit_with_an_uncommitted_tail_routes_to_resume() {
         "$(derived tail-unit uncommitted_tail)"
     assert_eq "contract 5.5 row 1 routes to resume" "resume" "$(derived tail-unit next)"
 
-    # And the verb the routing names finishes the transition (plan 17-07): the
+    # And the verb the routing names finishes the transition: the
     # circle contract 5.5 row 1 used to close on a stub now ends in a commit.
     "$CRAYON" resume tail-unit >/dev/null 2>err.txt
     assert_eq "the routed verb completes the interrupted transition" "0" "$?"
@@ -5249,7 +5246,7 @@ test_stage_a_refuses_recovery_unsupported_no_material() {
     cleanup
 }
 
-# WR-05: `pending_stray` — some but not all of the manifest's events in the
+# `pending_stray` — some but not all of the manifest's events in the
 # ledger, none of them uncommitted — is NOT a row of contract 5.8's situation
 # table, and it is the one case where the material is the only evidence of what
 # a half-applied batch intended. Stage a used to delete it, silently, in write
@@ -5293,8 +5290,8 @@ open(os.path.join(pending, "evidence.txt"), "w", encoding="utf-8").write("the on
     cleanup
 }
 
-# WR-03: preserving the material was right; leaving no way out was the cost the
-# fix did not account for. Every verb refused, `resume` is a D-16 stub, and the
+# Preserving the material was right; leaving no way out was the cost the
+# fix did not account for. Every verb refused, `resume` was then a stub, and the
 # routed `next` fell to row 10 and said `review` — a verb that refuses
 # identically, so the author was routed in a circle. The refusal must name an
 # escape and the routing must name the only verb that could ever clear it.
@@ -5322,8 +5319,8 @@ open(os.path.join(pending, "evidence.txt"), "w", encoding="utf-8").write("the on
     assert_contains "the hint names the escape" "$hint" "remove it once its contents"
 
     # And `resume`, which derives its `next` independently, agrees — it used to
-    # answer `review`, a verb that refuses with the same refusal. Since plan
-    # 17-06 the verb has a real body, so it answers with the same honest limit
+    # answer `review`, a verb that refuses with the same refusal. Now that the
+    # verb has a real body, it answers with the same honest limit
     # rather than the transitional stub refusal: this row of the table is not
     # one `resume` can complete, and saying so is the point.
     "$CRAYON" resume circle-unit >/dev/null 2>err2.txt
@@ -5373,7 +5370,7 @@ test_stage_a_refuses_recovery_unsupported_material_invalid() {
     cleanup
 }
 
-# CR-03: `read_manifest` validated `files` only as "a list", so a mangled
+# `read_manifest` validated `files` only as "a list", so a mangled
 # entry reached `entry.get("path")` and `os.path.join(...)` in
 # `classify_stage_a` — which runs FIRST on every verb — and crashed the
 # process with a traceback and exit 1, the contract's code for a GATE refusal.
@@ -5406,7 +5403,7 @@ test_stage_a_refuses_a_structurally_invalid_manifest() {
     cleanup
 }
 
-# CR-03: the same shapes with NO tail are the "pending without a complete
+# The same shapes with NO tail are the "pending without a complete
 # manifest" row instead — deleted, and the verb proceeds.
 test_stage_a_deletes_a_structurally_invalid_manifest_with_no_tail() {
     setup_repo
@@ -5548,7 +5545,7 @@ test_n36_t29c_hook_stages_an_unrelated_path_is_named_and_never_undone() {
     assert_eq "the unrelated path is never undone" "hook wrote this" \
         "$(cat docs/other-page.md)"
     # The tool's own pathspecs leaving the index is normal after a partial
-    # commit (RESEARCH P-3) and must never be reported as a hook's doing.
+    # commit and must never be reported as a hook's doing.
     assert_not_contains "the verb's own pathspecs are not warned" \
         "$(cat err.txt)" ".crayon/units/t29c-unit/ledger.jsonl"
     cleanup
@@ -5590,8 +5587,8 @@ test_rejecting_hook_leaves_head_unchanged_and_a_classifiable_tail() {
     assert_json_error "rejected commit" "err.txt" "uncommitted_tail"
     assert_file_exists "the ledger tail is present" ".crayon/units/reject-unit/ledger.jsonl"
 
-    # The next verb classifies it from the record alone — resume --adopt is
-    # phase-17 work, the classification is not.
+    # The next verb classifies it from the record alone. That is what this
+    # test covers; completing the tail with `resume` is tested elsewhere.
     rm -f .git/hooks/pre-commit
     crayon_unit_new reject-unit "reference/reject.rst" >/dev/null 2>err2.txt
     assert_eq "the next verb classifies the tail" "6" "$?"
@@ -5602,9 +5599,9 @@ test_rejecting_hook_leaves_head_unchanged_and_a_classifiable_tail() {
 # --- shared fixtures for the plan-stage verbs --------------------------------
 
 
-# Append a chained event of a kind no phase-16 verb emits yet (`generation`,
-# `review accept`, `retired`) through the tool's OWN writer, then commit it, so
-# a test can reach a state whose verb lands in plan 16-05 or phase 17. Nothing
+# Append a chained event (`generation`, `review accept`, `retired`) through the
+# tool's OWN writer, then commit it, so a test can reach a state without driving
+# the verb that would normally write that event. Nothing
 # is hand-serialised: the envelope, the chain and the canonical bytes all come
 # from `crayon` itself.
 append_event() {
@@ -5683,7 +5680,7 @@ module.append_batch(path, module.chain_lines(events))
     git commit -q -m "fixture: ${kind} ${unit}" >/dev/null 2>&1
 }
 
-# CR-04: append ONE event with a caller-supplied payload, chained through the
+# Append ONE event with a caller-supplied payload, chained through the
 # tool's own writer. `verify_chain` checks `seq` contiguity and `prev` digests
 # and nothing beneath them, so this is exactly the shape a hand-repaired,
 # forged or future-tool-written ledger has: chain-valid, structurally
@@ -5710,7 +5707,7 @@ module.append_batch(path, module.chain_lines([event]))
     git commit -q -m "fixture: forged ${kind} ${unit}" >/dev/null 2>&1
 }
 
-# CR-04: a `TypeError` raised while deriving state from a damaged-but-chain-valid
+# A `TypeError` raised while deriving state from a damaged-but-chain-valid
 # ledger escaped all four of `main`'s arms, printed a Python traceback on stderr
 # and exited 1 — which contract 5.7 and REASONS both define as a GATE refusal
 # ("no signoff / plan stale / drift"). `derive()` runs on EVERY verb including
@@ -5718,7 +5715,7 @@ module.append_batch(path, module.chain_lines([event]))
 # damaged, so the invariant this file states three times ("one JSON line —
 # never zero, never two, never a stack trace") was reachable from any committed
 # `.crayon/`.
-test_cr04_a_withdraws_entry_without_a_seq_does_not_crash_show() {
+test_a_withdraws_entry_without_a_seq_does_not_crash_show() {
     setup_repo
     crayon_unit_new wd-unit "reference/wd.rst" >/dev/null 2>&1
     "$CRAYON" signoff wd-unit >/dev/null 2>&1
@@ -5737,7 +5734,7 @@ test_cr04_a_withdraws_entry_without_a_seq_does_not_crash_show() {
     cleanup
 }
 
-test_cr04_a_recorded_path_that_is_not_a_string_refuses_on_every_reader() {
+test_a_recorded_path_that_is_not_a_string_refuses_on_every_reader() {
     setup_repo
     crayon_unit_new np-unit "reference/np.rst" >/dev/null 2>&1
     "$CRAYON" signoff np-unit >/dev/null 2>&1
@@ -5758,7 +5755,7 @@ test_cr04_a_recorded_path_that_is_not_a_string_refuses_on_every_reader() {
 }
 
 
-# CR-05: every WRITE path runs `validate_target` (which refuses `..` segments,
+# Every WRITE path runs `validate_target` (which refuses `..` segments,
 # absolute paths and backslashes) and `contained()`. Every READ path ran
 # neither: `read_fs`, `read_page_bytes` and `render_diff` took the path straight
 # out of the ledger's `signoff.targets` / `basis.files[].path` and joined it
@@ -5769,7 +5766,7 @@ test_cr04_a_recorded_path_that_is_not_a_string_refuses_on_every_reader() {
 # content oracle for files outside the repository. This is
 # `validate_source`'s own argument applied to the DERIVED path as well as the
 # declared one.
-test_cr05_a_recorded_path_outside_the_docs_root_is_never_read() {
+test_a_recorded_path_outside_the_docs_root_is_never_read() {
     setup_repo
     local outside relative digest
     outside=$(mktemp -d)
@@ -5829,7 +5826,7 @@ test_cr05_a_recorded_path_outside_the_docs_root_is_never_read() {
 # so that it refuses everything, the assertions there would all pass while
 # `show --diff` had stopped working. An ordinary in-root target must still be
 # digested, still be reported as drifted, and still have its bytes diffed.
-test_cr05_an_ordinary_recorded_path_is_still_read_and_diffed() {
+test_an_ordinary_recorded_path_is_still_read_and_diffed() {
     setup_repo
     crayon_unit_new ok-unit "reference/ok.rst" >/dev/null 2>&1
     "$CRAYON" signoff ok-unit >/dev/null 2>&1
@@ -5846,14 +5843,14 @@ test_cr05_an_ordinary_recorded_path_is_still_read_and_diffed() {
     cleanup
 }
 
-# CR-05 (re-opened in round 5): the round-4 fix contained a recorded page
+# The fix above contained a recorded page
 # *within whatever `docs` resolves to* and never restated `guard_targets`'
 # companion check that `docs` itself resolves inside the repository. A git tree
 # can carry `docs` as mode 120000, so the same untrusted branch that carries a
 # forged ledger carries the link that makes an ordinary-looking in-root target
 # resolve to the reviewer's home directory. Both are ordinary committed blobs;
 # the reviewer types nothing beyond `crayon show`.
-test_cr05_a_committed_docs_symlink_never_reads_through_to_the_host() {
+test_a_committed_docs_symlink_never_reads_through_to_the_host() {
     setup_repo
     local outside digest rc
     outside=$(mktemp -d)
@@ -5918,16 +5915,16 @@ test_cr05_a_committed_docs_symlink_never_reads_through_to_the_host() {
     cleanup
 }
 
-# CR-06 (a regression from the round-4 CR-05 fix): `contained()` resolves the
+# A regression from the read-path containment fix: `contained()` resolves the
 # LEAF with `realpath`, so it answers a question about the file on disk. The
-# CR-05 fix reported that answer as if it were about the ledger — "recorded path
+# containment fix reported that answer as if it were about the ledger — "recorded path
 # 'reference/a.rst' resolves outside docs/ … inspect the ledger … next: resume"
 # — for an ordinary symlinked page, a normal docs-repo pattern (a shared
 # CHANGELOG.rst, a `docs/api -> ../src/api-docs` Sphinx tree). `find_claim` then
 # escalated that single unit's refusal into a repo-wide one, so ONE linked page
 # refused `unit new` and `signoff` for EVERY unit, and the recovery the hint
 # named (`crayon show <that unit>`) refused identically.
-test_cr06_a_symlinked_page_names_the_link_and_wedges_nothing_else() {
+test_a_symlinked_page_names_the_link_and_wedges_nothing_else() {
     setup_repo
     local outside rc
     outside=$(mktemp -d)
@@ -6398,7 +6395,7 @@ test_unit_edit_replaces_the_body_from_stdin() {
     cleanup
 }
 
-# --- STATE-02: steer, the steering stream every later gate reads -------------
+# --- steer: the steering stream every later gate reads -----------------------
 
 test_steer_records_the_steering_stream() {
     setup_repo
@@ -6440,7 +6437,7 @@ test_steer_note_carries_pipes_newlines_and_tabs_verbatim() {
     setup_repo
     crayon_unit_new demo-unit "reference/demo.rst" >/dev/null 2>&1
     "$CRAYON" signoff demo-unit >/dev/null 2>&1
-    # LEDG-04: the stated behaviour change from slim@357c513, whose
+    # The stated behaviour change from slim@357c513, whose
     # pipe-delimited ledger had to refuse exactly these characters.
     local note
     note=$(printf 'has | pipe\nand a newline\tand a tab')
@@ -6598,7 +6595,7 @@ print(len(json.loads(sys.stdin.read())))
     cleanup
 }
 
-# --- VERB-04 / STATE-05: draft, the first verb that moves bytes --------------
+# --- draft: the first verb that moves bytes ----------------------------------
 
 
 event_paths() {
@@ -6903,7 +6900,7 @@ test_n34_t26d_a_deleted_target_never_blocks_drafting_and_is_restored() {
     cleanup
 }
 
-test_d18_an_actionable_unit_with_no_step_plan_is_steps_missing() {
+test_an_actionable_unit_with_no_step_plan_is_steps_missing() {
     setup_repo
     crayon_unit_new howto-unit "how-to/guide.rst" --intent how-to >/dev/null 2>&1
     "$CRAYON" signoff howto-unit >/dev/null 2>&1
@@ -6958,7 +6955,7 @@ test_n31_t23_a_draft_source_outside_the_staging_dir_is_bad_draft_path() {
     cleanup
 }
 
-# CR-02: a DIRECTORY source is walked and each member opened by name, so a
+# A DIRECTORY source is walked and each member opened by name, so a
 # symlinked member used to draw bytes from anywhere on the filesystem into a
 # signed target and commit them, exit 0. This is also the T23/N-31 bypass: the
 # link is spelled `draft/<target>` -> `docs/<target>`, which the direct-path
@@ -6996,7 +6993,7 @@ test_n31_t23_a_symlinked_member_of_a_directory_source_is_bad_draft_path() {
     cleanup
 }
 
-# CR-02: a linked SUBDIRECTORY would smuggle a whole tree in once nested
+# A linked SUBDIRECTORY would smuggle a whole tree in once nested
 # targets are used; os.walk never descends into it, so it is refused by name.
 test_a_symlinked_draft_subdirectory_is_bad_draft_path() {
     setup_repo
@@ -7110,7 +7107,7 @@ print(",".join(sorted(k for k in ("unsteered_reason", "steps_seq", "origins", "g
     cleanup
 }
 
-# --- STATE-05 / STATE-06: the no-op, the steering gate, and their order ------
+# --- the no-op, the steering gate, and their order ---------------------------
 
 test_n09_a_second_draft_with_no_steering_is_unsteered() {
     setup_repo
@@ -7314,7 +7311,7 @@ test_n11_t6_the_no_op_is_recognised_before_the_steering_gate() {
     cleanup
 }
 
-# --- VERB-05: edits — the complete basis set and brownfield adoption ---------
+# --- edits: the complete basis set and brownfield adoption -------------------
 
 
 test_n26_t24_edits_adopts_a_brownfield_page() {
@@ -7604,7 +7601,7 @@ test_edits_refuses_an_empty_note_and_reads_one_from_stdin() {
     cleanup
 }
 
-# --- GATE-07 / VERB-04: review — verdicts and recorded dispositions ----------
+# --- review: verdicts and recorded dispositions ------------------------------
 
 
 test_j5_review_accept_seals_the_unit_end_to_end() {
@@ -7620,7 +7617,7 @@ test_j5_review_accept_seals_the_unit_end_to_end() {
     assert_eq "accept exits 0" "0" "$rc"
     assert_eq "accept prints exactly one stdout line" "1" \
         "$(printf '%s\n' "$out" | wc -l | tr -d ' ')"
-    # D-03 / CLOSE-04: the accepted pages, then the plain handover; no count,
+    # The accepted pages, then the plain handover; no count,
     # no "sealed" and no resolved/withdrawn counts segment.
     assert_eq "the accept response hands over plainly" \
         "reviewed demo-unit: accept · accepted reference/demo.rst · Next: yours — crayon stops here" \
@@ -7654,7 +7651,7 @@ test_j5_review_accept_seals_the_unit_end_to_end() {
     assert_eq "the unit is sealed" "sealed" "$(derived demo-unit state)"
     assert_eq "a sealed unit routes to publish" "publish" "$(derived demo-unit next)"
 
-    # D-16: the author reads `accepted`; the JSON state stays `sealed`.
+    # The author reads `accepted`; the JSON state stays `sealed`.
     local shown
     shown=$("$CRAYON" show demo-unit 2>show-err.txt)
     assert_contains "human show says the unit is accepted" "$shown" "state: accepted"
@@ -7963,7 +7960,7 @@ test_review_on_a_retired_unit_is_refused() {
     cleanup
 }
 
-# --- VERB-02: show — the state the author and every skill act on -------------
+# --- show: the state the author and every skill act on -----------------------
 
 # Everything a read-only verb must leave untouched, in one digest: the ledger,
 # every page under docs/, every byte under the unit's pending/ tree, and the
@@ -8034,7 +8031,7 @@ test_show_qualifies_a_state_that_would_mislead() {
     local out
     out=$("$CRAYON" show demo-unit 2>err.txt)
     assert_eq "show exits 0 on an amended seal" "0" "$?"
-    # P-19: the accept is named by the commit its Crayon-Seq trailer is on, never
+    # The accept is named by the commit its Crayon-Seq trailer is on, never
     # by its seq and never by the event's parent commit.
     local accept_sha shown_sha state_line
     accept_sha=$(git log --format='%H %(trailers:key=Crayon-Verdict,valueonly)' \
@@ -8049,7 +8046,7 @@ test_show_qualifies_a_state_that_would_mislead() {
     assert_not_contains "the state line names no seq" "$state_line" "seq"
     assert_plain "show on an amended unit speaks plainly" "$out"
     assert_eq "an amended seal routes to draft" "Next: draft" "$(last_line "$out")"
-    # SC3: the JSON qualifier keeps its seqs.
+    # The JSON qualifier keeps its seqs.
     assert_contains "show --json's qualifier is unchanged" \
         "$("$CRAYON" show demo-unit --json 2>/dev/null | json_field qualifier)" \
         "accepted at seq 4"
@@ -8172,7 +8169,7 @@ test_show_lists_requests_with_their_dispositions() {
     cleanup
 }
 
-# D-16: a reviewer edit is listed by its note alone; the seq it sits at stays
+# A reviewer edit is listed by its note alone; the seq it sits at stays
 # in show --json's `reviewer_edits`.
 test_show_lists_reviewer_edits_by_their_note() {
     setup_repo
@@ -8193,7 +8190,7 @@ print(json.load(sys.stdin)["reviewer_edits"][0]["seq"])')"
     cleanup
 }
 
-# SURF-02 (D-10, D-11): `show --json` and `summary --json` carry the same
+# `show --json` and `summary --json` carry the same
 # `handover`. The fix at seq 4 was accepted with no page change since, so it is
 # judged; the steer at seq 5 was withdrawn with its reason.
 test_show_and_summary_json_carry_the_handover() {
@@ -8229,7 +8226,7 @@ print("%s|%s|%s|%s" % (
     cleanup
 }
 
-# SURF-02 (D-10): a skipped step is handed over from the moment it is recorded,
+# A skipped step is handed over from the moment it is recorded,
 # before any draft or accept.
 test_show_json_hands_over_a_skipped_step_before_any_accept() {
     setup_repo
@@ -8260,7 +8257,7 @@ print(json.dumps(handover["judged"]), json.dumps(handover["withdrawn"]))
     cleanup
 }
 
-# D-03 / SC2: the plainer accept line costs the record nothing — accept's
+# The plainer accept line costs the record nothing — accept's
 # `--json` still routes `publish` and carries the accepted files, the requests
 # judged satisfied and the withdrawals with their reasons, copied from the event.
 test_accept_json_carries_files_resolves_and_withdraws() {
@@ -8276,7 +8273,7 @@ test_accept_json_carries_files_resolves_and_withdraws() {
         "$(wc -l <accept.json | tr -d ' ')"
     assert_eq "accept --json still routes publish" "publish" \
         "$(json_field next <accept.json)"
-    # CR-01 (contract 1): the plainer human line leaves the message as it was.
+    # Under contract 1, the plainer human line leaves the message as it was.
     assert_eq "accept --json keeps its contract-1 message" \
         "reviewed demo-unit: accept · 1 file(s) sealed · 1 request(s) judged satisfied, 1 withdrawn (a recorded judgment, never proof that the bytes changed)" \
         "$(json_field message <accept.json)"
@@ -8297,7 +8294,7 @@ print(json.dumps(json.load(open(sys.argv[1], encoding="utf-8")).get("withdraws")
     cleanup
 }
 
-# D-03: every page of the accepted set, uncapped, comma-separated, in the
+# Every page of the accepted set, uncapped, comma-separated, in the
 # order the accept recorded them (the signoff's target order, not the alphabet).
 test_accept_names_every_accepted_page_in_recorded_order() {
     setup_repo
@@ -8317,11 +8314,11 @@ test_accept_names_every_accepted_page_in_recorded_order() {
     cleanup
 }
 
-# D-16: the harness's ledger-vocabulary check, driven against a PRIVATE
+# The harness's ledger-vocabulary check, driven against a PRIVATE
 # results file so its deliberate failures are this test's evidence rather than
-# the suite's (the WR-12 shape). It must bite on each forbidden sample and pass
-# the plain accept line.
-test_d16_assert_plain_bites_on_ledger_vocabulary() {
+# the suite's, like the substring-assertion test above. It must bite on each
+# forbidden sample and pass the plain accept line.
+test_assert_plain_bites_on_ledger_vocabulary() {
     setup_repo
     local outer="$RESULTS" probe
     probe=$(mktemp)
@@ -8355,9 +8352,9 @@ test_d16_assert_plain_bites_on_ledger_vocabulary() {
     cleanup
 }
 
-# D-16 (P-03): signoff and --re-sign say what changed, where, what remains and
+# `signoff` and `--re-sign` say what changed, where, what remains and
 # Next — the ledger path in place of a plan-hash prefix.
-test_d16_signoff_and_re_sign_lines_are_plain() {
+test_signoff_and_re_sign_lines_are_plain() {
     setup_repo
     crayon_unit_new demo-unit "reference/demo.rst" >/dev/null 2>&1
     "$CRAYON" signoff demo-unit >so-out.txt 2>so-err.txt
@@ -8389,7 +8386,7 @@ print(json.loads(lines[-1])["plan_hash"][:12])
 ' ".crayon/units/$1/ledger.jsonl"
 }
 
-# CR-01 (contract 1): the plain human line costs `--json` nothing. signoff's
+# Under contract 1, the plain human line costs `--json` nothing. signoff's
 # `message` keeps the wording it had before the human line was reworded,
 # plan-hash prefix included; the human line is pinned by the test above.
 test_signoff_json_message_keeps_its_contract_1_wording() {
@@ -8406,7 +8403,7 @@ test_signoff_json_message_keeps_its_contract_1_wording() {
     cleanup
 }
 
-# CR-01 (contract 1): `unit edit --re-sign --json` keeps the plan-hash prefix
+# Under contract 1, `unit edit --re-sign --json` keeps the plan-hash prefix
 # of the re-sign, read from the ledger's last event.
 test_re_sign_json_message_keeps_its_contract_1_wording() {
     setup_repo
@@ -8424,8 +8421,8 @@ test_re_sign_json_message_keeps_its_contract_1_wording() {
     cleanup
 }
 
-# CR-01 (contract 1): `edits --json` still counts the files in the basis; the
-# human line's plainer count is pinned by test_d16_edits_line_is_plain.
+# Under contract 1, `edits --json` still counts the files in the basis; the
+# human line's plainer count is pinned by test_edits_line_is_plain.
 test_edits_json_message_keeps_its_contract_1_wording() {
     setup_repo
     setup_drafted_unit demo-unit "reference/demo.rst"
@@ -8441,9 +8438,9 @@ test_edits_json_message_keeps_its_contract_1_wording() {
     cleanup
 }
 
-# D-16 (P-02): edits records the pages as they are now; nothing has accepted
+# `edits` records the pages as they are now; nothing has accepted
 # them yet, so the line claims no acceptance and names no basis.
-test_d16_edits_line_is_plain() {
+test_edits_line_is_plain() {
     setup_repo
     setup_drafted_unit demo-unit "reference/demo.rst"
     printf 'Demo\n====\n\nEdited by hand.\n' >docs/reference/demo.rst
@@ -8456,9 +8453,9 @@ test_d16_edits_line_is_plain() {
     cleanup
 }
 
-# D-16 (P-04): resume and its dry run say what happened in words; the seq range
+# `resume` and its dry run say what happened in words; the seq range
 # stays in the refusal that shares the classification, which is exempt.
-test_d16_resume_lines_are_plain() {
+test_resume_lines_are_plain() {
     setup_repo
     crashed_unit_new dry append
     "$CRAYON" resume dry --dry-run >dry-out.txt 2>dry-err.txt
@@ -8481,7 +8478,7 @@ test_d16_resume_lines_are_plain() {
     cleanup
 }
 
-# CR-01 (contract 1): the dry run and the resume keep their seq ranges in
+# Under contract 1, the dry run and the resume keep their seq ranges in
 # `--json` — the dry run's with an en dash, from the classification's detail,
 # and the resume's with an ASCII hyphen — and the resume names the new HEAD.
 # The two files are the unit's `unit.md` and `.crayon/.gitattributes`, as the
@@ -8517,7 +8514,7 @@ test_show_diff_prints_the_recorded_basis_bytes() {
     assert_eq "show --diff exits 0" "0" "$?"
     assert_contains "the diff drops the recorded line" "$out" "-The drafted body."
     assert_contains "the diff adds the current line" "$out" "+Edited by hand."
-    # P-20: the human label says what the side is; --json keeps `basis:` (SC3).
+    # The human label says what the side is; --json keeps `basis:`.
     assert_contains "the recorded side is labelled plainly" "$out" \
         "--- recorded:reference/demo.rst"
     assert_plain "show --diff speaks plainly" "$out"
@@ -8610,7 +8607,7 @@ test_show_on_an_unknown_unit_is_refused() {
     cleanup
 }
 
-# --- VERB-03: summary — the paste-ready PR text ------------------------------
+# --- summary: the paste-ready PR text ----------------------------------------
 
 # The set of column counts across every Markdown table row. One element means
 # every row has the same column count; a note that broke a table would add a
@@ -8645,19 +8642,19 @@ test_summary_reports_the_record_and_the_page_on_a_sealed_unit() {
     assert_contains "summary prints the intent" "$out" "  intent: reference"
     assert_contains "summary prints the audience" "$out" \
         "  audience: TAs onboarding to the docs repo"
-    # SURF-01 (D-12): the author's decisions are read before the file list.
+    # The author's decisions are read before the file list.
     assert_eq "the author's decisions open the report, after the title" \
         "author decisions:" "$(printf '%s\n' "$out" | sed -n '2p')"
     assert_eq "the intent sits in that block, before the files" "yes" \
         "$(printf '%s\n' "$out" | awk '/^  intent: / {i=NR} /^files changed:/ {f=NR}
             END {print (i && f && i < f) ? "yes" : "no"}')"
     assert_plain "summary's text carries no ledger vocabulary" "$out"
-    # D-06: the human line says the record is intact, in plain words; the
+    # The human line says the record is intact, in plain words; the
     # counts stay in `summary --json` and `verify --json`.
     assert_contains "the record half says the record is intact" "$out" \
         "record: intact at "
     assert_not_contains "and quotes no check counts" "$out" "19 checks"
-    assert_not_contains "the phase-16 placeholder is gone" "$out" \
+    assert_not_contains "the old placeholder is gone" "$out" \
         "verify has not run"
     assert_contains "the page half is reported" "$out" "page: current"
     cleanup
@@ -8711,7 +8708,7 @@ test_summary_md_carries_pipes_and_newlines_without_breaking_a_table() {
         'mention the \| flag<br>and a second line'
     assert_contains "the reviewer-edit note keeps its pipe verbatim in prose" "$out" \
         "hand edit | with a pipe"
-    # WR-11: the characters stay visible; the LINE BREAK does not. A note free
+    # The characters stay visible; the LINE BREAK does not. A note free
     # to open a block of its own is a note free to forge this report.
     assert_contains "and its second line, folded onto one line" "$out" \
         "hand edit | with a pipe and a second line"
@@ -8720,7 +8717,7 @@ test_summary_md_carries_pipes_and_newlines_without_breaking_a_table() {
     cleanup
 }
 
-# WR-11: `.crayon/` is committed, so every note, title and gap in it is ordinary
+# `.crayon/` is committed, so every note, title and gap in it is ordinary
 # contributor input — the threat model `contained_page`'s own docstring states
 # — and `summary --md` is documented as text a reviewer PASTES INTO A PR. Only
 # the table cells were escaped; the heading, the audience, the reviewer-edit
@@ -8750,7 +8747,7 @@ test_summary_md_never_lets_a_recorded_note_forge_the_report() {
     cleanup
 }
 
-# CR-03 (re-review): WR-11 escaped the PROSE positions and deliberately left
+# The escaping above covered the PROSE positions and deliberately left
 # `md_cell` alone — but `md_cell` is the escaper on the `## Recorded requests`
 # table, which is where STEERING NOTES and WITHDRAWAL REASONS land. Those are
 # the most common contributor-controlled strings in the whole report, and they
@@ -8784,7 +8781,7 @@ test_summary_md_never_lets_a_steering_note_be_a_live_element() {
     cleanup
 }
 
-# CR-03: a newline in a steering note must still be a `<br>` after the HTML
+# A newline in a steering note must still be a `<br>` after the HTML
 # escaping, not the literal text `&lt;br&gt;` — the order inside `md_cell` is
 # the whole of that property.
 test_summary_md_keeps_the_cell_break_a_break_after_escaping() {
@@ -8804,7 +8801,7 @@ test_summary_md_keeps_the_cell_break_a_break_after_escaping() {
     cleanup
 }
 
-# WR-11: `validation/RUN-*.json` is UNTRACKED, unvalidated working-tree input
+# `validation/RUN-*.json` is UNTRACKED, unvalidated working-tree input
 # whose `sphinx` value was `%s`-formatted into the document whatever it was.
 test_summary_md_reports_only_a_bounded_string_from_an_unvalidated_run_file() {
     setup_repo
@@ -8869,7 +8866,7 @@ print("%s|%s|%s" % (data["title"], data["files"][0], data["provenance"][:14]))
     cleanup
 }
 
-# SURF-01's data (D-13, D-15): `summary --json` carries every note the author
+# `summary --json` carries every note the author
 # wrote, oldest first; an accept's own note precedes its withdrawals.
 test_summary_json_carries_the_authors_notes() {
     setup_repo
@@ -8904,7 +8901,7 @@ print("author_notes" in json.load(sys.stdin))
     cleanup
 }
 
-# SURF-01 (D-12, D-13, D-14): `summary --md` opens with the author's decisions:
+# `summary --md` opens with the author's decisions:
 # intent, audience, every note the author wrote, and what is still open.
 test_summary_md_opens_with_the_authors_decisions() {
     setup_repo
@@ -8942,7 +8939,7 @@ test_summary_md_opens_with_the_authors_decisions() {
     cleanup
 }
 
-# SURF-01 (D-14): a skipped step is open from the moment it is recorded, and the
+# A skipped step is open from the moment it is recorded, and the
 # report says so plainly, before any draft or accept.
 test_summary_lists_a_skipped_step_as_open_before_any_accept() {
     setup_repo
@@ -9145,13 +9142,13 @@ test_n47_t36_a_hand_edit_after_the_record_is_reported_never_refused() {
     cleanup
 }
 
-# --- VERB-01 / VERB-08 / D-16: the whole verb surface, version, legacy units --
+# --- the whole verb surface, version, legacy units ----------------------------
 
-# Every phase-17 stub refuses identically: one JSON line, the transitional
-# reason, a hint naming the phase, a routing token — and nothing written.
-# D-16's stub census is gone with the last stub. `unit retire` (17-01),
-# `plan-steps` / `step` (17-05), `resume` (17-06, 17-07) and now `verify`
-# (17-09) are all implemented and covered end to end by
+# Every unimplemented verb once refused identically through a shared stub: one
+# JSON line, the transitional reason, a hint naming when it would land, a
+# routing token — and nothing written. The stub census is gone with the last
+# stub. `unit retire`, `plan-steps` / `step`, `resume` and now `verify`
+# are all implemented and covered end to end by
 # `test_n40_t31_t32_…`, `test_n27_t12_t13_t14_…`, `test_n18_…`, the
 # N-14/N-17/N-28/N-29/N-30/N-35/N-41 family and the `verify` block in
 # tests/test_crayon_lifecycle.sh. `stub_verb`, `refuse_unimplemented` and
@@ -9162,7 +9159,7 @@ test_n47_t36_a_hand_edit_after_the_record_is_reported_never_refused() {
 # is read-only. So the two tests below inherit those assertions rather than
 # deleting them.
 
-test_verb06_verify_is_read_only_and_repeatable() {
+test_verify_is_read_only_and_repeatable() {
     setup_repo
     setup_drafted_unit demo-unit "reference/demo.rst"
 
@@ -9190,10 +9187,10 @@ test_verb06_verify_is_read_only_and_repeatable() {
     cleanup
 }
 
-# VOICE-04 / D-04: the default answers "is my record all right?" in one line
+# The default answers "is my record all right?" in one line
 # when it is. The repository's own hygiene is fixed first, as
 # TestSummaryGolden.build_fixture does, so V17 has nothing to say.
-test_verb06_plain_verify_is_one_line_on_an_intact_record() {
+test_plain_verify_is_one_line_on_an_intact_record() {
     setup_repo
     printf '.crayon/staging/\n' >.gitignore
     git add .gitignore
@@ -9219,7 +9216,7 @@ test_verb06_plain_verify_is_one_line_on_an_intact_record() {
     cleanup
 }
 
-# CR-03: a page path is contributor content, so default `verify` names it as
+# A page path is contributor content, so default `verify` names it as
 # written. A UUID tail holds a 12-hex run that the plain-words table's digest
 # rule used to cut to seven characters, naming a page that does not exist.
 test_verify_keeps_a_uuid_page_path_as_written() {
@@ -9258,7 +9255,7 @@ print([row for row in data["checks"] if row["id"] == "V14"][0]["detail"])
     cleanup
 }
 
-test_verb06_the_json_report_goes_to_stdout_with_nothing_on_stderr() {
+test_the_verify_json_report_goes_to_stdout_with_nothing_on_stderr() {
     setup_repo
     setup_drafted_unit demo-unit "reference/demo.rst"
     "$CRAYON" verify demo-unit --json >out.txt 2>err.txt
@@ -9280,17 +9277,17 @@ print("%s\t%d\t%s\t%s" % (
         "$(printf '%s' "$shape" | cut -f2)"
     assert_eq "each entry carries id, level, status and detail" \
         "detail,id,level,status" "$(printf '%s' "$shape" | cut -f3)"
-    # P-07: with both flags --json wins, byte for byte.
+    # With both flags --json wins, byte for byte.
     "$CRAYON" verify demo-unit --json --verbose >both.txt 2>/dev/null
     assert_eq "--json --verbose prints exactly what --json prints" \
         "$(cat out.txt)" "$(cat both.txt)"
     cleanup
 }
 
-test_verb08_version_reports_the_tool_and_contract_numbers() {
+test_version_reports_the_tool_and_contract_numbers() {
     setup_repo
     local out rc expected
-    # D-07: the expected version is read from crayon.py's own __version__ line,
+    # The expected version is read from crayon.py's own __version__ line,
     # its one definition site, as text; this suite types no version.
     expected=$(python3 -c '
 import re, sys
@@ -9321,7 +9318,7 @@ print(",".join(sorted(json.load(sys.stdin))))
     cleanup
 }
 
-test_verb08_a_legacy_pipe_delimited_unit_is_refused_with_an_archive_hint() {
+test_a_legacy_pipe_delimited_unit_is_refused_with_an_archive_hint() {
     setup_repo
     mkdir -p .crayon/units/legacy-unit
     printf '0|ledger|2026-01-01|v1\n1|declared|2026-01-01|legacy-unit\n' \
@@ -9346,7 +9343,7 @@ test_verb08_a_legacy_pipe_delimited_unit_is_refused_with_an_archive_hint() {
     cleanup
 }
 
-# WR-03: contract 5.10's OTHER half — a FUTURE contract's ledger.
+# Contract 5.10's OTHER half — a FUTURE contract's ledger.
 #
 # `classify_stage_a` checked the header's `kind` and `unit` and never its `v`,
 # so a `v: 2` record was parsed, derived from, and appended to by a contract-1
@@ -9381,7 +9378,7 @@ with open(path, "w", encoding="utf-8") as handle:
     git commit -q -m "fixture: ledger restamped to v${version}" >/dev/null 2>&1
 }
 
-test_verb08_wr03_a_future_contract_ledger_is_refused_never_half_read() {
+test_a_future_contract_ledger_is_refused_never_half_read() {
     setup_repo
     crayon_unit_new future-unit "reference/future.rst" >/dev/null 2>&1
     "$CRAYON" signoff future-unit >/dev/null 2>&1
@@ -9413,7 +9410,7 @@ test_verb08_wr03_a_future_contract_ledger_is_refused_never_half_read() {
     cleanup
 }
 
-test_verb08_wr03_the_header_this_tool_writes_carries_its_own_contract_number() {
+test_the_header_this_tool_writes_carries_its_own_contract_number() {
     setup_repo
     crayon_unit_new stamped-unit "reference/stamped.rst" >/dev/null 2>&1
     # The two header writers used to spell the literal `1` while V1 compared
@@ -9428,11 +9425,11 @@ test_verb08_wr03_the_header_this_tool_writes_carries_its_own_contract_number() {
     cleanup
 }
 
-test_verb08_a_legacy_ledger_beside_a_jsonl_one_is_silently_ignored() {
+test_a_legacy_ledger_beside_a_jsonl_one_is_silently_ignored() {
     setup_repo
     crayon_unit_new demo-unit "reference/demo.rst" >/dev/null 2>&1
-    # D-13: the five bash scripts still write ledger.md in the same directory
-    # through phase 16, so coexistence must be silent, not an error.
+    # The legacy bash scripts wrote ledger.md in the same directory, so a unit
+    # can carry both files; coexistence must be silent, not an error.
     printf '0|ledger|2026-01-01|v1\n' >.crayon/units/demo-unit/ledger.md
     local legacy_before
     legacy_before=$(sha256_of_text "$(cat .crayon/units/demo-unit/ledger.md)")
@@ -9503,7 +9500,7 @@ test_stage_a_a_ledger_whose_unit_field_disagrees_is_refused() {
     cleanup
 }
 
-test_verb01_the_help_is_the_contract_verb_table_and_has_no_force() {
+test_the_help_is_the_contract_verb_table_and_has_no_force() {
     setup_repo
     local help_out verb
     help_out=$("$CRAYON" --help 2>&1)
@@ -9531,20 +9528,20 @@ test_verb01_the_help_is_the_contract_verb_table_and_has_no_force() {
     cleanup
 }
 
-# --- VERB-04 / D-11: the author journeys, end to end, and the response shape --
+# --- the author journeys, end to end, and the response shape ------------------
 
-# Test-id policy (D-03, RESEARCH Open Question 3): these are whole-flow
-# acceptance functions carrying JOURNEY-DESCRIPTIVE names, not A-series ids.
-# The concrete A-series ids were assigned in plan 17-10, when the 32 functions
-# of the v1.x bash suite (`git show 357c513:tests/test_dogen_scripts.sh`) were
-# ported and the whole A range could be enumerated at once; assigning a few
-# earlier would either have collided with that port or reserved a range nothing
-# had measured. Those functions are A-01…A-35, at the foot of this file; the
-# journey-named functions here move to their own ids in plan 17-11. The N-series
-# ids already used by the refusal tests below are fully enumerated and do not
-# move.
+# Test-id policy: these are whole-flow acceptance functions carrying
+# JOURNEY-DESCRIPTIVE names, not A-series ids. The concrete A-series ids were
+# assigned when the 32 functions of the v1.x bash suite (`git show
+# 357c513:tests/test_dogen_scripts.sh`) were ported and the whole A range could
+# be enumerated at once; assigning a few earlier would either have collided
+# with that port or reserved a range nothing had measured. Those functions are
+# A-01…A-35, in tests/test_crayon_acceptance.sh; the journey-named functions
+# here keep their descriptive names, because no trace row names them. The
+# N-series ids already used by the refusal tests below are fully enumerated and
+# do not move.
 
-# VERB-04: an exit-0 mutating verb answers in ONE stdout line whose segments
+# An exit-0 mutating verb answers in ONE stdout line whose segments
 # are joined by ` · ` in a fixed order — what changed · where · what remains ·
 # `Next: <token>`. The separator is checked as well as the token, because a
 # line that runs two segments together is a line no reader can split.
@@ -9564,22 +9561,22 @@ print("%d\t%s\t%s" % (
 ' "$outfile")
     assert_eq "$desc ends with the routed token" "$(human_next_line "$expected_next")" \
         "$(printf '%s' "$shape" | cut -f2)"
-    # D-03 (P-01): on `publish` the plain handover is itself the "what remains"
+    # On `publish` the plain handover is itself the "what remains"
     # segment, so an accept's `reviewed · accepted · Next` is complete at three.
     # An accept routed anywhere else prints its own remainder (`not handed over
-    # yet`, 20 IN-04) and is held to four, like every other verb.
+    # yet`) and is held to four, like every other verb.
     local min_segments=4
     [ "$expected_next" = "publish" ] && min_segments=3
     assert_eq "$desc carries what changed, where, what remains and Next" "yes" \
         "$([ "$(printf '%s' "$shape" | cut -f1)" -ge "$min_segments" ] && echo yes || echo no)"
     assert_eq "$desc never runs two segments together" "full" \
         "$(printf '%s' "$shape" | cut -f3)"
-    # D-16: no success line carries ledger vocabulary.
+    # No success line carries ledger vocabulary.
     assert_plain "$desc speaks plainly" "$(cat "$outfile")"
     return 0
 }
 
-# GATE-04: a non-zero exit is ONE stderr line, a JSON object carrying the five
+# A non-zero exit is ONE stderr line, a JSON object carrying the five
 # refusal keys. The only additional keys the contract allows are the no-op
 # payload's `seq` and `commit`, which point the caller at the transition that
 # already happened. `--json` moves that same line to stdout and changes
@@ -9624,8 +9621,8 @@ print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())
 
 
 # J5: the token `crayon show <id>` ALONE yields — no other state consulted. Read
-# from `--json`, where the token is the routing token (CLOSE-04 maps only the
-# human line).
+# from `--json`, where the token is the routing token (`next_line` maps only
+# the human line).
 show_next() {
     "$CRAYON" show "$1" --json 2>/dev/null | json_field next
 }
@@ -9854,7 +9851,7 @@ test_n36_t29_the_response_reports_the_token_the_hook_left_behind() {
     assert_response_line "a hook-rewritten page" h-out.txt "record_edits"
     rm -f .git/hooks/pre-commit
 
-    # WR-05: the follow-up `edits`. T29 used to say it records the hook change
+    # The follow-up `edits`. T29 used to say it records the hook change
     # "with `hook:true`", which contradicted §5.3's own catalogue — that field
     # is scoped to `resume --adopt`, where the author was shown the bytes and
     # answered. A succeeding hook's rewrite is committed before anyone is
@@ -9875,7 +9872,7 @@ test_n36_t29_the_response_reports_the_token_the_hook_left_behind() {
     cleanup
 }
 
-test_verb04_every_refusal_is_one_json_line_inverted_by_json() {
+test_every_refusal_is_one_json_line_inverted_by_json() {
     setup_repo
     crayon_unit_new shape-unit "reference/shape.rst" >/dev/null 2>&1
 
@@ -9884,7 +9881,7 @@ test_verb04_every_refusal_is_one_json_line_inverted_by_json() {
         draft shape-unit ".crayon/staging/shape-unit/draft"
     assert_refusal_shape "a bad-input refusal" signoff "Bad_Unit"
     assert_refusal_shape "a transitional stub" resume shape-unit
-    # WR-06: `as_json` was assigned only AFTER parse_args, so a USAGE refusal —
+    # `as_json` was assigned only AFTER parse_args, so a USAGE refusal —
     # the one class of error a skill hits while wiring up arguments — went to
     # stderr under --json and left stdout empty.
     assert_refusal_shape "a usage refusal" draft
@@ -9898,7 +9895,7 @@ test_verb04_every_refusal_is_one_json_line_inverted_by_json() {
 
 # --- N-44: T9 — neither drift nor a stale generation is a precondition on `edits`
 
-# The only trace-table row plan 17-11 had to WRITE rather than migrate. Every
+# The only trace-table row that had to be WRITTEN rather than migrated. Every
 # other T# already had a body in the acceptance suite; T9 had none, because the
 # suite's `--re-sign` coverage all ran through the ACCEPT gate (N-19/T8, T9b) and
 # T9 is the mirror image of it: the same sealed-then-re-signed unit taken down

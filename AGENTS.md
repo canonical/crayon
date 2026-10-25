@@ -65,7 +65,7 @@ bash validation/fixtures.sh                      # the validation kit's four cor
 python3 scripts/skill_lint.py                    # the SKILL.md frontmatter gate
 python3 tests/check_traces.py                    # the trace-table checker
 python3 tests/check_docs.py                      # the docs-accuracy checker
-python3 tests/size_guard.py                      # VERB-09's line budget, reported and enforced
+python3 tests/size_guard.py                      # the line budget, reported and enforced
 python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
 python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
 python3 -m unittest tests.test_evals             # the model-eval kit's offline self-tests
@@ -209,12 +209,12 @@ tests/
 ├── test_crayon_lifecycle.sh       ← the lifecycle / recovery suite (hermetic temp git repos)
 ├── test_crayon_acceptance.sh      ← the acceptance suite, A-01 … A-38
 ├── lib.sh                         ← the fixtures both bash suites share; ONE definition site
-├── install_smoke.sh               ← CI-02 / A-37: run docs/install.md's INSTALL region, then
+├── install_smoke.sh               ← A-37: run docs/install.md's INSTALL region, then
 │                                     one unit through the installed tool
 ├── check_traces.py                ← the contract trace-table checker
 ├── check_docs.py                  ← the docs-accuracy checker: links, verbs, reasons, compat
 │                                     and the release record, across the documents it names
-├── size_guard.py                  ← VERB-09's line budget over `crayon.py`, reported and enforced
+├── size_guard.py                  ← the line budget over `crayon.py`, reported and enforced
 └── run_matrix.sh                  ← local-only: the unit suite on 3.9 / 3.12 / 3.13
 ```
 

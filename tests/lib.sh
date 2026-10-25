@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-# tests/lib.sh — the single shared bash harness for crayon's two bash suites (D-10).
+# tests/lib.sh — the single shared bash harness for crayon's two bash suites.
 #
 # `tests/test_crayon_acceptance.sh` (the ported A-series) and
 # `tests/test_crayon_lifecycle.sh` (the N-series lifecycle / negative / recovery
 # suite) both source this file, and neither redefines any of it. Everything
 # below moved out of tests/test_crayon_acceptance.sh verbatim, comments included:
-# the WR-07 / WR-08 / WR-09 rationales are load-bearing and travel with the code
+# the rationales in those comments are load-bearing and travel with the code
 # they justify.
 #
 # NO function in this file may be named with the `test_` prefix. Both suites
 # discover their tests with `declare -F | awk '{print $3}' | grep '^test_'`, so a
 # helper carrying that prefix would be auto-discovered as a test in BOTH suites
-# at once (RESEARCH Pitfall 13), and the only thing between that and a silent
-# green is the WR-09 vacuous-test guard in `run_test`. A grep gate in this
-# plan's verification asserts the count stays zero.
+# at once, and the only thing between that and a silent green is the
+# vacuous-test guard in `run_test`.
 #
 # Every test drives the real `crayon` executable in a hermetic temp git repo:
 # argparse, the lock, containment, derivation, routing, the six-step write
@@ -24,8 +23,8 @@
 #
 # The harness shape (run_test / assert_* / auto-discovery / the
 # "Results: N passed, N failed" line) is copied from the v1.x bash suite,
-# `git show 357c513:tests/test_dogen_scripts.sh`, which plan 17-10 deleted from
-# the tree once its 32 tests had been ported to A-01…A-35.
+# `git show 357c513:tests/test_dogen_scripts.sh`, which was deleted from the
+# tree once its 32 tests had been ported to A-01…A-35.
 
 set -u
 
@@ -58,11 +57,11 @@ assert_eq() {
     return 0
 }
 
-# Phase-17 IN-05: two digests are compared for INEQUALITY, never for
+# Two digests are compared for INEQUALITY, never for
 # non-containment. `assert_not_contains "$before" "$fresh"` on two equal-length
 # hex strings happens to be equivalent, and reads as a containment claim that
-# will mislead the next editor -- the same "an assertion that says something
-# other than what it checks" class as WR-18.
+# will mislead the next editor -- an assertion that says something other than
+# what it checks.
 assert_not_eq() {
     local desc="$1" unexpected="$2" actual="$3"
     if [ "$unexpected" != "$actual" ]; then
@@ -73,7 +72,7 @@ assert_not_eq() {
     return 0
 }
 
-# WR-12: the three substring assertions were `grep -qF -- "$needle"`, which has
+# The three substring assertions were `grep -qF -- "$needle"`, which has
 # two failure modes the suite could not see.
 #
 #   1. `grep -F ''` matches EVERY line, so an assertion whose needle expanded to
@@ -117,18 +116,18 @@ assert_not_contains() {
     return 0
 }
 
-# D-16: the ledger vocabulary no human success line may carry, in Python `re`
+# The ledger vocabulary no human success line may carry, in Python `re`
 # syntax. This is its ONE definition site; `assert_plain` reads it, and the
 # lifecycle suite's self-test drives it against the forbidden samples. `seq`
 # followed by a number, `sealed`, `basis` and `plan_hash` as whole words, and
 # any run of 12 or more lowercase hex characters (a digest or a long sha). A
 # seven-character short sha stays allowed: a human line may give the short
-# commit sha where it helps the reader find it (P-06).
+# commit sha where it helps the reader find it.
 LEDGER_WORDS_RE='\bseq\s*[0-9]|\bsealed\b|\bbasis\b|\bplan_hash\b|[0-9a-f]{12,}'
 
-# D-16: TEXT carries none of LEDGER_WORDS_RE. A match is recorded as a failure
+# TEXT carries none of LEDGER_WORDS_RE. A match is recorded as a failure
 # naming the matched words; so is a matcher that could not run, because a
-# check that silently checked nothing is the vacuous pass WR-12 forbids.
+# check that silently checked nothing is a vacuous pass.
 assert_plain() {
     local desc="$1" text="$2" hit rc
     hit=$(python3 -c '
@@ -214,10 +213,10 @@ print(json.loads(open(sys.argv[1], encoding="utf-8").read()).get("detail"))
     return 0
 }
 
-# --- the shared hermetic temp-repo helper (D-11) -----------------------------
+# --- the shared hermetic temp-repo helper ------------------------------------
 
 # GIT_CONFIG_GLOBAL/SYSTEM are pinned to /dev/null so the developer's global
-# config — commit.gpgsign above all (RESEARCH P-9) — cannot leak into a test
+# config — commit.gpgsign above all — cannot leak into a test
 # repo, and CRAYON_NOW is pinned so every ledger byte, and therefore every chain
 # digest, is reproducible.
 setup_repo() {
@@ -226,11 +225,11 @@ setup_repo() {
     export GIT_AUTHOR_DATE="2026-01-01T00:00:00+00:00"
     export GIT_COMMITTER_DATE="2026-01-01T00:00:00+00:00"
     export CRAYON_NOW="2026-01-01T00:00:00+00:00"
-    # WR-07: CRAYON_NOW and CRAYON_CRASH_AT are armed only by this explicit
+    # CRAYON_NOW and CRAYON_CRASH_AT are armed only by this explicit
     # switch, so neither is live in the shipped executable.
     export CRAYON_TEST_HOOKS=1
     unset CRAYON_CRASH_AT || true
-    # WR-08: `cd ""` SUCCEEDS in bash and leaves the shell where it is, so
+    # `cd ""` SUCCEEDS in bash and leaves the shell where it is, so
     # `cd "$TEST_DIR" || exit 1` is not a guard. With an unchecked `mktemp -d`
     # — a full or read-only /tmp, a restrictive TMPDIR — every test below would
     # then `git init`, overwrite `docs/index.md` and commit in the CURRENT
@@ -268,13 +267,13 @@ crayon_unit_new() {
             --body-file - "$@"
 }
 
-# Phase-16 IN-03: git's own first line for a pathspec `crayon` would refuse,
+# Git's own first line for a pathspec `crayon` would refuse,
 # read from git under the SAME locale `crayon` pins for the probe (IPC_LOCALE).
 # The assertions that used to hardcode git's English sentence ask git for it
 # instead, so they state the property -- "the detail is git's own words" --
 # rather than one release's translation of them.
 git_add_first_line() {
-    # DEF-18-01: `LANGUAGE=` and `LANGUAGE=''` assign the same empty string for
+    # `LANGUAGE=` and `LANGUAGE=''` assign the same empty string for
     # the duration of the command, but shellcheck 0.11.0 reads the bare form as
     # a stray assignment and reports SC1007 at warning level. Whether the
     # runner's pinned 0.9.0 reports it could not be established here -- the
@@ -286,7 +285,7 @@ git_add_first_line() {
     LC_ALL=C LANGUAGE='' git add --dry-run --ignore-missing -- "$@" 2>&1 | sed -n '1p'
 }
 
-# WR-17 (phase 18): the declaring verbs now apply the same filesystem rules
+# The declaring verbs apply the same filesystem rules
 # `sign_sources` applies, so a source `signoff` cannot read is no longer
 # REACHABLE by a command. It is still reachable by hand -- `unit.md` is a plain
 # file an author may edit and `signoff` re-reads it fresh -- which is exactly
@@ -330,7 +329,7 @@ print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())
 # A pre-commit hook runs inside the tool's own transaction, against a TEMPORARY
 # index git points GIT_INDEX_FILE at for a partial commit — which is exactly how
 # a hook gets bytes and paths into a commit the tool believed it had scoped
-# (RESEARCH P-1, P-2). Both real shapes are fixtures here.
+# Both real shapes are fixtures here.
 install_hook() {
     printf '#!/bin/sh\n' >.git/hooks/pre-commit
     cat >>.git/hooks/pre-commit
@@ -378,7 +377,7 @@ exit 1
 HOOK
 }
 
-# The realistic "reformat and reject" shape, and the one CR-01 was filed for:
+# The realistic "reformat and reject" shape:
 # the hook CANONICALISES the target and rejects only when it actually had to
 # change a byte. A target that is already canonical commits untouched — which
 # is what makes `--adopt` the escape contract 5.8's hook paragraph promises,
@@ -397,7 +396,7 @@ HOOK
 }
 
 # The ordinary "lint failed" shape, and the majority one: the hook REJECTS and
-# rewrites NOTHING. CR-01 (iteration 3) is why it is a fixture — every other
+# rewrites NOTHING. It is a fixture because every other
 # reject hook here also rewrites its target, which is the one shape where
 # `resume --adopt` has an `unexpected` file to adopt. With the placed bytes
 # untouched `--adopt` has nothing to adopt, degrades to a plain resume by
@@ -411,8 +410,8 @@ exit 1
 HOOK
 }
 
-# The other ordinary reject shape, and the one CR-01 (iteration 4) was filed
-# for: "generated files must not be committed" — the hook DELETES its target
+# The other ordinary reject shape: "generated files must not be committed" —
+# the hook DELETES its target
 # and rejects. `classify_file` returns `unexpected` whenever a placed file's
 # disk bytes are not `after_sha`, and an absent file is one of those, so the
 # batch reaches `resume_adopt`'s SECOND `adopt_unsupported` arm — the "no
@@ -426,8 +425,8 @@ exit 1
 HOOK
 }
 
-# The "append a distinct marker on every run" shape, and the one WR-03 was
-# filed for: each pass leaves DIFFERENT bytes, so a batch that has already been
+# The "append a distinct marker on every run" shape: each pass leaves
+# DIFFERENT bytes, so a batch that has already been
 # adopted once still classifies its target `unexpected` and still satisfies all
 # three published `--adopt` conditions. The fourth condition — that the last
 # event is not itself an adoption — is the one the tool applies and no surface
@@ -452,13 +451,12 @@ HOOK
 }
 
 
-# --- the shared fixtures both suites read state through (17-11) --------------
+# --- the shared fixtures both suites read state through ---------------------
 #
-# These were defined in tests/test_crayon_acceptance.sh until plan 17-11 moved
-# the T-labelled bodies out of it. the ported A-series and the migrated N-series
-# BOTH call them, so neither file can own them: a copy in each is precisely how
-# the two suites drift apart (D-10). They live here, once, like the rest of the
-# harness.
+# These were defined in tests/test_crayon_acceptance.sh until the T-labelled
+# bodies moved out of it. The ported A-series and the migrated N-series BOTH
+# call them, so neither file can own them: a copy in each is precisely how the
+# two suites drift apart. They live here, once, like the rest of the harness.
 
 ledger_digest() {
     sha256_of_text "$(cat ".crayon/units/$1/ledger.jsonl" 2>/dev/null || true)"
@@ -471,10 +469,8 @@ print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())
 ' "$1"
 }
 
-# One derived field, read through the tool's own `unit_state`/`route`. `show`
-# (plan 16-06) will print this for the author; until then the acceptance suite
-# reads it directly rather than asserting state through a surface that does not
-# exist yet.
+# One derived field, read through the tool's own `unit_state`/`route`, so the
+# suites assert derived state directly rather than through a command's output.
 derived() {
     local unit="$1" field="$2"
     python3 -c '
@@ -489,7 +485,7 @@ print(value if isinstance(value, str) else json.dumps(value))
 ' "$CRAYON" "$unit" "$field"
 }
 
-# CR-05: re-sign the unit onto a target that traverses OUT of the docs root and
+# Re-sign the unit onto a target that traverses OUT of the docs root and
 # record a basis for it, all through the tool's own writer so the chain still
 # verifies. This is exactly the artefact an untrusted branch or PR carries:
 # `.crayon/` is committed, so a forged `ledger.jsonl` is ordinary contributor
@@ -568,7 +564,7 @@ print("null" if seq is None else seq)
 ' ".crayon/units/$1/ledger.jsonl"
 }
 
-# The walk-protocol recipe (D-15), as the skill runs it: one redirection, one
+# The walk-protocol recipe, as the skill runs it: one redirection, one
 # status, and NO digest anywhere. The tool computes both.
 #
 # record_step UNIT STEP SEQ VERDICT TEXT [MODE] [REASON]
@@ -578,7 +574,7 @@ record_step() {
     # steps are declared that way, but it is a parameter because contract 5.6's
     # `evidence_mismatch` gate compares it against the mode the PLAN declares —
     # a fixture that hardcoded one mode for every step was recording a `ta`
-    # step as `agent` and nothing said so (WR-02).
+    # step as `agent` and nothing said so.
     local mode="${6:-agent}"
     # The reason contract 5.6 requires for a `deviated` step. Without it the
     # evidence is the same printf bytes as ever; with it, json.dump writes the
@@ -604,7 +600,7 @@ json.dump(
         --evidence-file "$ws/${step}.json" --output-file "$ws/${step}.out"
 }
 
-# A skipped step: a reason and no output file at all (D-03).
+# A skipped step: a reason and no output file at all.
 skip_step() {
     local unit="$1" step="$2" seq="$3" reason="$4"
     local ws=".crayon/staging/${unit}/scratch/evidence"
@@ -695,7 +691,7 @@ run_test() {
         _record_fail "$name (subshell exited $rc)"
         failed_here=$((failed_here + 1))
     fi
-    # WR-09: the verdict used to be "no FAIL lines", so a test that returned
+    # The verdict used to be "no FAIL lines", so a test that returned
     # early — a renamed helper, an `if` that never fires, a `cleanup` reached
     # before the assertions — recorded zero assertions and printed `ok`. With
     # one aggregate count over 150+ tests, a silently vacuous test is invisible.
@@ -722,9 +718,9 @@ main() {
         run_test "$test_fn"
     done
 
-    # WR-09's FILE-level counterpart (T-17-49). `run_test` above catches a test
-    # that recorded nothing; until plan 17-11 nothing caught a SUITE that
-    # defined nothing. A file whose function definitions are lost to a bad edit
+    # The FILE-level counterpart of the guard in `run_test`. `run_test` above
+    # catches a test that recorded nothing; this catches a SUITE that defined
+    # nothing. A file whose function definitions are lost to a bad edit
     # — a stray `}`, a botched merge, a migration that moves 181 bodies between
     # two files — printed `1..0`, `# fail 0` and `Results: 0 passed, 0 failed`
     # and exited 0, which is byte-for-byte what a healthy run over a working

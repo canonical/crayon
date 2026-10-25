@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install_smoke.sh — CI-02 / A-37: a stranger installs crayon and reaches a page.
+# install_smoke.sh — A-37: a stranger installs crayon and reaches a page.
 #
 # Usage: bash tests/install_smoke.sh   (run from anywhere; paths resolve from $0)
 #
@@ -7,11 +7,11 @@
 # through PATH rather than through the in-tree `./crayon` file. It therefore does
 # NOT source `tests/lib.sh` — that file pins `CRAYON="$REPO_ROOT/crayon.py"` and its
 # `setup_repo` exports `CRAYON_TEST_HOOKS=1`, and either one would let a broken
-# install pass as green (RESEARCH Pitfall 4). The guards worth copying from
-# `tests/lib.sh:176-198` — the three-check `mktemp -d` and the pinned git config
-# — are copied below; nothing else is.
+# install pass as green. The guards worth copying from `setup_repo` in
+# `tests/lib.sh` — the three-check `mktemp -d` and the pinned git config — are
+# copied below; nothing else is.
 #
-# What it proves (D-09, D-10): the shell inside docs/install.md's
+# What it proves: the shell inside docs/install.md's
 # `<!-- INSTALL:BEGIN -->` / `<!-- INSTALL:END -->` region — the documented
 # scripted install, `install.sh --yes` — is extracted BYTE-IDENTICALLY — never
 # sed'd, never templated — and executed from a temp HOME with a temp PATH in a
@@ -40,7 +40,7 @@ BEGIN_MARKER='<!-- INSTALL:BEGIN -->'
 END_MARKER='<!-- INSTALL:END -->'
 UNIT="widget-api"
 
-# Pitfall 6 / assumption A2: pinned OUTSIDE the extracted region, so a
+# Pinned OUTSIDE the extracted region, so a
 # runner-side or developer-side global identity can never mask a missing
 # `git config` step INSIDE the region. The region must carry its own identity.
 export GIT_CONFIG_GLOBAL=/dev/null
@@ -84,7 +84,7 @@ assert_eq() {
 }
 
 # --- hermetic temp tree ------------------------------------------------------
-# WR-08: `cd ""` SUCCEEDS in bash and leaves the shell where it is, so
+# `cd ""` SUCCEEDS in bash and leaves the shell where it is, so
 # `cd "$X" || exit 1` is not a guard on its own. With an unchecked `mktemp -d`
 # — a full or read-only /tmp, a restrictive TMPDIR — the walk below would
 # `git init`, write `docs/index.md` and commit in the CURRENT directory, which
@@ -95,7 +95,7 @@ SMOKE_REPO=$(mktemp -d) || exit 1
 [ -n "$SMOKE_REPO" ] && [ -d "$SMOKE_REPO" ] || exit 1
 
 # --- extract the marked region ----------------------------------------------
-# Byte-identical (D-10): awk prints the fence bodies unchanged and inserts only
+# Byte-identical: awk prints the fence bodies unchanged and inserts only
 # comment lines BETWEEN them, so the concatenation is the README's own bytes.
 EXTRACTED="$SMOKE_HOME/quickstart.sh"
 awk -v begin_marker="$BEGIN_MARKER" -v end_marker="$END_MARKER" '
@@ -120,7 +120,7 @@ if [ "$FENCES" -eq 0 ]; then
     exit 2
 fi
 
-# --- the PATH premise (T-18-07) ----------------------------------------------
+# --- the PATH premise -------------------------------------------------------
 # A developer with crayon already installed globally would sail through this
 # whole script without the region's install step doing anything at all. Strip
 # any ambient entry from this script's OWN PATH — loudly, naming the path it
@@ -315,7 +315,7 @@ print("%s/%d" % (payload.get("state"), len(paths)))
 assert_eq "a37: crayon show --json reports a drafted state and one path" \
     "drafted/1" "$show_shape"
 
-# --- the refusal surface survives a PATH install (GATE-04) -------------------
+# --- the refusal surface survives a PATH install ----------------------------
 # A second generation with nothing recorded since the last one refuses
 # `unsteered`: exit 1, exactly one line on stderr, and that line the contract's
 # five-key JSON object. Proving that from the stranger's vantage point is what
@@ -326,10 +326,10 @@ printf '# Widget API\n\n## create\n\nCreates a widget. Second pass.\n' >"$STAGED
 refusal_exit=0
 (cd "$SMOKE_REPO" && crayon draft "$UNIT" ".crayon/staging/$UNIT/draft/$UNIT.md") \
     >/dev/null 2>"$REFUSAL_ERR" || refusal_exit=$?
-assert_eq "a37: an unsteered second draft refuses with exit 1 (GATE-04)" \
+assert_eq "a37: an unsteered second draft refuses with exit 1" \
     "1" "$refusal_exit"
 refusal_lines=$(wc -l <"$REFUSAL_ERR" | tr -d ' ')
-assert_eq "a37: the refusal writes exactly one line to stderr (GATE-04)" \
+assert_eq "a37: the refusal writes exactly one line to stderr" \
     "1" "$refusal_lines"
 refusal_error=$(python3 -c '
 import json, sys
