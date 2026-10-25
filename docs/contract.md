@@ -32,6 +32,7 @@ simplest adequate mechanism; how we know it helped.*
 | `verify` (read-only) | N1; scorer oracle | one read-only command answers "is this unit's record internally valid" without changing anything | V1–V19 | V-01…V-04 (`validation/fixtures.sh`) |
 | `retire` | abandoned unit blocks a target | an abandoned unit's target can be claimed again, by one recorded act | one event | N-40 (`tests/test_crayon_lifecycle.sh`) — J7 |
 | `context record` (repo-level) | house style, vocabulary and structure reach the skills only as loose files nobody recorded | the context artefacts a skill drafted land in `.crayon/context/` through the tool, digested and committed, so `crayon-plan` grounds itself in a record rather than in whatever is on disk | a fixed set of five names; one manifest; one commit with no unit | N-47 (`tests/test_crayon_lifecycle.sh`) |
+| `triage record` (repo-level, opt-in) | nobody knows how often crayon's triage advice matches what the authors then did | with `crayon.collect` on, each advice is kept, chained and committed, so `triage export` can set it beside the unit it led to and `validation/triage/measure.py` can say how often it was right | off by default; references only, never a diff; one commit with no unit | N-48 (`tests/test_crayon_lifecycle.sh`) |
 | `contract` + `min_tool` | skills drift from tool | a skill paired with an incompatible tool stops with a version message instead of misbehaving | two numbers | S-01 (`tests/test_skill_text.py`); A-37, the install smoke |
 
 **Closure rule:** a rule is specified only when each trace in §5.11 follows from the *same*
@@ -61,6 +62,7 @@ present, never produced, no behaviour.
 | `.crayon/context/<name>`, `<name>` one of the five context artefacts (§5.6) | tool on `context record`; TA by hand | as stated | `context show`: `drifted` (bytes differ from the manifest), `unrecorded` (present, never recorded) — reported, never refused |
 | `.crayon/context/manifest.json` | tool only (`context record`) | nobody | `context show` and `context record` read it; a damaged one refuses 2 `bad_target` |
 | `.crayon/staging/_context/{<name>,<name>.sources.json}` | tool (`context stage`) | — | gitignored, transient; cleared by `context record` |
+| `.crayon/triage/log.jsonl` | tool only (`triage record`, when `git config crayon.collect` is `true`) | nobody | `triage export` reads it; chained as a ledger is (§5.2), and a damaged line refuses 6 `ledger_corrupt` |
 
 **Guarantee (single wording):** the ledger lets `verify` check that each recorded transition was
 valid against the events before it, and lets `show` compare recorded digests with current bytes.
@@ -115,6 +117,16 @@ ledger; its commit is subject `crayon: context recorded`, body = collapsed note 
 trailers `Crayon-Phase: context-recorded`, `Crayon-Head: <16 hex>` and, when a model is claimed,
 `Crayon-Model` — no `Crayon-Unit`, no `Crayon-Seq`, because the context belongs to the repository
 and not to a unit (§5.1). Pathspecs are the promoted artefacts and the manifest, explicitly.
+
+`triage record` is the other repo-level transition, and it writes only when the repository's
+`crayon.collect` git setting is `true`; otherwise it writes nothing and says so. It writes no
+event and touches no unit ledger: it appends one line to `.crayon/triage/log.jsonl`, chained as
+§5.2 chains a ledger (`seq`, `prev`) and carrying `at`, `actor`, `tool_version`, `contract`,
+`commit` (HEAD before), `base` and `head` (full commit ids), `paths` (what `git diff --name-only
+base head` lists), `needs_docs`, `pages`, `type`, `unit` and `note`. Its commit is subject
+`crayon: triage recorded`, body = collapsed note ≤ 400 chars, trailers `Crayon-Phase:
+triage-recorded` and `Crayon-Head`, and its one pathspec is the log. The line holds references
+only: never a diff or a page's text.
 
 ## 5.4 Derivation
 
@@ -222,6 +234,8 @@ crayon, when the author has it, and their absence is not a missing context.
 | `--output-file` (`step`) | `realpath` inside `.crayon/staging/<id>/scratch/`; anything else → 2 `bad_write_path`. Not merely "inside the repository": up to 4096 bytes of it are excerpted **verbatim** into the committed ledger and the excerpt is control-character-stripped, never credential-stripped, so an in-repo `.env.local` or `.git/config` would be published by the next transition. `.crayon/staging/<id>/` and `.crayon/staging/<id>/scratch/` are `islink`-checked by name FIRST: `realpath` resolves both operands, so a containment test anchored on a symlinked directory resolves through the link and passes for every target |
 | `unit.md` | the exact subset below |
 | context artefact name | one of `doc-style.md`, `glossary.md`, `structure.md`, `code-to-docs-map.md`, `doc-gaps.md`; anything else → 2 `bad_target` |
+| `--base` / `--head` (`triage record`) | a revision naming a commit, not starting with `-`; recorded as the full commit id; else 2 `bad_target` |
+| `--page` (`triage record`, repeatable), `--unit-id`, `--note` | the target, unit id and note rules above; `--type` one of the four intents |
 | context body (`context stage --body-file`) | UTF-8, non-empty; recorded byte for byte, never re-encoded |
 | context source (`context stage --source`, repeatable) | one line, non-empty, ≤ 1024 bytes, ≤ 500 per artefact; a locator the skill declares (a path, a URL, a tool-result id), recorded verbatim and never digested — the tool cannot see behind a URL |
 
@@ -271,6 +285,7 @@ only**; the routing table is a rendering of them.
 | `resume` | exempt from `retired`; see §5.8 | `nothing_to_resume` (no tail, no pending — also the result of calling `resume` again after a successful completion) | — |
 | `context stage` | artefact name (2 `bad_target`) · body · sources | — | — |
 | `context record` | at least one artefact staged (2 `bad_target`) | `noop_unchanged`: HEAD already holds every staged artefact's bytes at its published path — disk alone is never consulted, so a record whose commit was refused is retried, not no-op'd; the staged copies are discarded | — |
+| `triage record` | `crayon.collect` is `true`, else exit 0 with `recorded: false` and nothing written, before stage a · `base` to `head` changes at least one path (2 `bad_target`) | — | — |
 
 Reason table:
 
@@ -556,6 +571,12 @@ does not know the verbs, which `crayon --help` and `tests/check_docs.py` make vi
 than silent. The two numbers above are unchanged, and so are every SKILL.md's
 `metadata.crayon_contract` and `metadata.crayon_min_tool`.
 
+**Revision (triage verbs).** §6 gains `triage record` and `triage export`; §5.1 gains the triage
+log's row, §5.3 its transition, §5.6 its inputs and §5.7 its preconditions. The addition is
+additive under `contract: 1` by the same reading as the context verbs: no event kind, enum
+member, reason or unit-ledger field changes, and a repository that never sets `crayon.collect`
+gets no file and no commit from it.
+
 **Revision (step plan in `show`).** `show` and `summary --json` gain the recorded step plan
 beside the step tally: `steps.plan` lists each step of the current `steps-planned` event with
 its `id`, `text`, `mode`, `stateful`, `status` (the answering verdict, or `unresolved`) and
@@ -638,6 +659,8 @@ event kind, enum member, reason or ledger field changes.
 | `context stage <name> --body-file -\|F [--source]…` | repo-level; tool-owned staging | — |
 | `context record [--model --model-origin] [--note]` | repo-level; one commit, no unit | — (manifest) |
 | `context show [--json]` | read-only | — |
+| `triage record --base --head --needs-docs yes\|no [--page]… [--type] [--unit-id] --note` | repo-level; writes only when `crayon.collect` is `true`; one commit, no unit | — (triage log) |
+| `triage export [--json]` | read-only: each record beside the unit it led to and a label | — |
 | `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json] [--verbose]`, `version [--json]` | read-only | — |
 
 ## 5.11 Traces
@@ -702,6 +725,10 @@ Normative; each is a test; outcomes follow from §5.4–5.8.
 | T35b | `context stage profile.md`; a stray file in `_context/` at record time | 2 `bad_target` naming the five artefacts; 2 `bad_target` naming the stray file; nothing promoted |
 | T35c | record → stage the same bytes → record; then stage one changed artefact → record | 3 `noop_unchanged` with the last commit, staged copies discarded; then one commit promoting the changed artefact while the manifest keeps every other published row |
 | T36 | recorded artefact hand-edited on disk → `context show`; `context record` with nothing staged | `drifted` named, exit 0, nothing refused; 2 `bad_target` (nothing staged), `next` per context routing |
+| T37 | `triage record` with `crayon.collect` unset | exit 0, "collection is off", `recorded: false`; no file, no commit |
+| T37b | `crayon.collect true`; two `triage record` calls | one commit each, subject `crayon: triage recorded`, the one pathspec `.crayon/triage/log.jsonl`, trailers `Crayon-Phase`/`Crayon-Head` and no `Crayon-Unit`; seq 0 then 1, the second's `prev` the first line's sha256; `paths` as git lists them |
+| T37c | `triage record` over an unchanged range, an unknown revision, an absolute page | 2 `bad_target` each; no file, no commit |
+| T38 | a `yes` record naming a unit id that is then accepted; a `no` record with no unit | `triage export`: the first labelled needed (`accepted unit`, matched by the unit id); the second unlabelled within 30 days and labelled not needed after |
 | T34b | drafted unit, author deletes a current target, asks to accept without explaining | accept 1 `target_missing`; the skill explains that the signed plan still lists the target and asks restore-or-amend; no `steering` event is recorded until the author answers; "amend" → `--re-sign` without the target (old page reported as orphan, kept) → `generation_stale`, the old generation cannot be accepted → draft → review |
 
 ## Trace table
@@ -780,5 +807,9 @@ the test is written or moved. No cell is ever blank.
 | T35b | §5.6 (context artefact name) | N-47 |
 | T35c | §5.7 d (`noop_unchanged` against HEAD) · §5.1 (partial re-stage keeps the set) | N-47 |
 | T36 | §5.1 (`drifted`, reported never refused) · §5.5 C1–C3 | N-47 |
+| T37 | §5.7 c (`crayon.collect` off: nothing written) | N-48 |
+| T37b | §5.3 (repo-level commit) · §5.1 (the triage log, chained) | N-48 |
+| T37c | §5.6 (`--base`/`--head`, `--page`) · §5.7 c (a range that changes a path) | N-48 |
+| T38 | §6 (`triage export`, read-only) | N-48 |
 
 Related: [[architecture]], [[hooks]], [[compatibility]].

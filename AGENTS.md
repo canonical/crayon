@@ -183,6 +183,10 @@ validation/                        ← the validation kit: the evidence apparatu
 ├── closeout-docpr-3008.md         ← slim-cycle dispositions, release truth and known limits
 ├── runmeta.sh                     ← records a leg's RUN metadata alongside its drafts
 ├── dogfood-docpr-3002.md          ← local public-candidate dogfood findings and limits
+├── triage/                        ← what the opt-in triage records are for: measure first,
+│   │                                 train only with enough labelled records
+│   ├── measure.py                 ← how often the triage advice matched what authors did
+│   └── build_dataset.py           ← a fine-tuning dataset, refused below 300 records
 └── evals/                         ← the model evals: can an author rely on crayon, with the model
     │                                 they use? promptfoo runs them; paid runs by hand only
     ├── README.md                  ← the purpose, running, results, the held-out split, adding a case

@@ -203,8 +203,13 @@ Do not start the dialogue until you have looked at what they want to document.
 docs?" — do the same grounding, then deliver a **Triage Recommendation** and STOP:
 what the change touches; which existing pages are affected; the unit you *would*
 declare (id, target, sources, Diataxis type, route) if the TA says go; or "no
-documentation change needed" and why. No intake, no ceremony, no signoff — only an
-explicit "declare it" starts the Socratic intake.
+documentation change needed" and why. With the recommendation, hand the advice to
+the tool: `crayon triage record --base <the commit before the change> --head <its
+last commit> --needs-docs yes|no`, plus `--page`, `--type` and `--unit-id` for the
+unit you would declare, and `--note '<the advice's reason, one sentence>'`. The tool
+keeps it only when the repository turned collection on, and says which; never ask
+the TA to turn it on. No intake, no ceremony, no signoff — only an explicit "declare
+it" starts the Socratic intake.
 </step_1>
 
 <step_2 name="Draw out the Why and audience">
@@ -439,7 +444,7 @@ and one new target adopts the existing page only, and the first draft writes bot
 signs off. crayon-write drafts, after signoff.
 
 **Triage ask ("does this need docs?"):** the step 1 triage fork — ground, deliver
-the Triage Recommendation, STOP.
+the Triage Recommendation, hand it to `crayon triage record`, STOP.
 
 **Vague answer:** narrow the probe — one concrete case, or an either/or in the TA's own
 words — at most twice. A vague answer gets a narrower probe, not a proposal. After two

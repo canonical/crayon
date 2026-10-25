@@ -352,6 +352,112 @@
           ]
         }
       ]
+    },
+    {
+      "id": "B-78",
+      "skill": "crayon-plan",
+      "protects": "S-05",
+      "critical": true,
+      "ask": "The last commit adds a setting to toyq. Does it need docs?",
+      "history": [
+        "tool/version_json",
+        "triage_change/show_json"
+      ],
+      "why": "A triage ask gets advice and the advice is handed to the tool with crayon triage record; nothing is declared or signed off until the author says to declare it",
+      "assert": [
+        {
+          "kind": "decisive",
+          "tool": "Bash",
+          "args_re": "\\bcrayon(\\.py)?\\s+triage\\s+record\\b(?=[^\\n]*--needs-docs\\s+yes\\b)(?=[^\\n]*--base\\s)(?=[^\\n]*--head\\s)"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "\\bcrayon(\\.py)?\\s+(unit\\s+new|signoff)\\b"
+        },
+        {
+          "kind": "text_re",
+          "re": "max_queue_size"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "git show --stat HEAD"
+              }
+            }
+          ]
+        },
+        {
+          "content": "Triage Recommendation: yes. The commit adds max_queue_size to src/toyq/config.py, with its TOYQ_MAX_QUEUE_SIZE override, and no page documents toyq's settings. The unit I would declare: cfg, a reference page at reference/config.md from src/toyq/config.py, routed to /crayon-write. Say \"declare it\" to start.",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "crayon triage record --base HEAD~1 --head HEAD --needs-docs yes --page reference/config.md --type reference --unit-id cfg --note 'max_queue_size is a new setting and no page documents the settings'"
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "Yes: max_queue_size is new and undocumented. I'll declare the reference unit now.",
+          "tool_calls": [
+            {
+              "name": "Bash",
+              "arguments": {
+                "command": "printf '# Plan\\n\\nEvery toyq setting.\\n' | crayon unit new cfg --intent reference --audience operators --title 'Configuration' --target reference/config.md --source src/toyq/config.py --body-file -"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-79",
+      "skill": "crayon-plan",
+      "protects": "S-05",
+      "critical": false,
+      "ask": "The last commit adds a setting to toyq. Does it need docs?",
+      "history": [
+        "tool/version_json",
+        "triage_change/show_json",
+        {
+          "assistant": "Triage Recommendation: yes. The commit adds max_queue_size to src/toyq/config.py, with its TOYQ_MAX_QUEUE_SIZE override, and no page documents toyq's settings. The unit I would declare: cfg, a reference page at reference/config.md from src/toyq/config.py, routed to /crayon-write. Say \"declare it\" to start."
+        },
+        "triage_change/record_off"
+      ],
+      "why": "After the triage record, whatever it printed, the fork stops: no intake question, nothing recorded, and no push to turn collection on, which is the repository's choice",
+      "assert": [
+        {
+          "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "@MUTATING"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "(?i)what\\s+problem\\s+does|who\\s+(is|are)\\s+the\\s+(reader|audience)|\\b(run|set|enable|turn\\s+on)\\b[^.\\n]{0,40}crayon\\.collect|\\b(turn\\s+on|enable|switch\\s+on)\\s+(triage\\s+)?collection"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "That is the advice. Say \"declare it\" when you want the page."
+        }
+      ],
+      "foil": [
+        {
+          "content": "Collection is off, so nothing was kept. Run git config crayon.collect true to keep triage advice. Meanwhile, what problem does this page solve for its reader?"
+        }
+      ]
     }
   ]
 }

@@ -2664,6 +2664,11 @@ class TestEpisodeRule(unittest.TestCase):
         self.assertFalse(agent.mutating("crayon resume cfg --dry-run"))
         self.assertTrue(agent.mutating("crayon resume cfg --dry-run && crayon resume cfg"))
 
+    def test_a_triage_record_records_and_an_export_only_reads(self):
+        self.assertTrue(agent.mutating(
+            "crayon triage record --base HEAD~1 --head HEAD --needs-docs no --note 'x'"))
+        self.assertFalse(agent.mutating("crayon triage export --json"))
+
     def test_the_episode_rule_and_the_cases_read_one_pattern(self):
         self.assertEqual(lanes.MACROS["@MUTATING"], agent.MUTATING_PATTERN)
 

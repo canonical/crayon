@@ -34,7 +34,7 @@ model is run again.
 | Lane | What it asks | Status |
 |---|---|---|
 | A | which skill handles this ask? | built, 15 cases |
-| B | given this `crayon` output, what is the next action? | built, 77 cases |
+| B | given this `crayon` output, what is the next action? | built, 79 cases |
 
 Every case names the skill rule it protects, an S-id from the skill-text suite
 (`tests/test_skill_text.py`), and whether it is critical. A case is critical when it checks that

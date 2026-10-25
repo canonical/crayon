@@ -130,6 +130,14 @@ confines ledger reads to that root, but local Git history, model names and revie
 are not independently authenticated. A `FLAG [report]` for declared gaps or a source changed
 since signoff is informational; inspect the gating checks and exit code before claiming a pass.
 
+`validation/triage/` reads the triage records a repository keeps once its owner runs
+`git config crayon.collect true`; `crayon-plan` hands every triage advice to `crayon triage
+record`, which writes nothing while the setting is off. `measure.py` reports how often the advice
+matched what the authors then did, from `crayon triage export --json`. `build_dataset.py` turns
+the labelled records into a fine-tuning dataset split by time, and refuses below 300 of them.
+Measure first: a model is worth training only if the advice is often wrong and the records are
+there. The unit suite tests both scripts.
+
 `validation/closeout-docpr-3008.md` consolidates the slim-cycle disposition,
 the release delivery that actually occurred, the landed hardening evidence and
 the known limitations. Its Jira snapshot is dated: read any non-terminal item

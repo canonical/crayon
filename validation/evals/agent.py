@@ -146,7 +146,7 @@ READ_TOOLS = ("Read", "Glob", "Grep")
 #: through the shim or the file. The one definition site: ``lanes.MACROS``
 #: names it as ``@MUTATING``, so the episode rule and the cases read the same.
 MUTATING_PATTERN = (r"\bcrayon(\.py)?\s+(unit\s+(new|edit|retire)|context\s+(stage|record)|"
-                    r"signoff|steer|plan-steps|step|draft|edits|review|"
+                    r"triage\s+record|signoff|steer|plan-steps|step|draft|edits|review|"
                     r"resume(?![^\n]*--dry-run))\b")
 MUTATING_RE = re.compile(MUTATING_PATTERN)
 

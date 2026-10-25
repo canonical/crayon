@@ -75,6 +75,7 @@ SNAPSHOTS = (
     "signed",
     "stale",
     "target_exists",
+    "triage_change",
     "walk",
     "walk_accepted",
     "walk_drafted",

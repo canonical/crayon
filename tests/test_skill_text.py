@@ -888,6 +888,7 @@ class TestS03RoutingCopies(unittest.TestCase):
 VERBS = (
     "unit",
     "context",
+    "triage",
     "signoff",
     "steer",
     "plan-steps",
@@ -939,8 +940,13 @@ TRIAGE_FORK = """**Triage fork (advise-only).** When the TA's ask is an assessme
 docs?" — do the same grounding, then deliver a **Triage Recommendation** and STOP:
 what the change touches; which existing pages are affected; the unit you *would*
 declare (id, target, sources, Diataxis type, route) if the TA says go; or "no
-documentation change needed" and why. No intake, no ceremony, no signoff — only an
-explicit "declare it" starts the Socratic intake."""
+documentation change needed" and why. With the recommendation, hand the advice to
+the tool: `crayon triage record --base <the commit before the change> --head <its
+last commit> --needs-docs yes|no`, plus `--page`, `--type` and `--unit-id` for the
+unit you would declare, and `--note '<the advice's reason, one sentence>'`. The tool
+keeps it only when the repository turned collection on, and says which; never ask
+the TA to turn it on. No intake, no ceremony, no signoff — only an explicit "declare
+it" starts the Socratic intake."""
 
 SOCRATIC_INTAKE = """Begin the Socratic intake with the reader's problem, then the audience — the two
 judgment fields. Ask exactly one question per turn, building each on the previous
