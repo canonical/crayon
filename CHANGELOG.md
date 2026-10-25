@@ -131,6 +131,16 @@ across. The contract number stays `1`.
   the runner image's own; the eval self-tests move from the unit matrix to their own `evals` job;
   and the `shellcheck` job checks that the image still ships the version `docs/shellcheck.md`
   names before it runs. Nine jobs.
+- The gate checks what its tests assert, not only that they exist. `tests/check_traces.py` reads
+  every Mechanisms row of `docs/contract.md`, each of which now names the suite its test lives in,
+  and fails on a named test that asserts nothing. The unit suite counts the tests it defines and
+  fails unless it loads exactly that many, replacing a fixed minimum of 509 when 638 were
+  defined. A skipped test, in any suite, is reported by name and must be listed with its reason in
+  `tests/skips.json`. A bash suite that finds no tests exits 2, and `tests/lib.sh` points
+  `GIT_CONFIG_GLOBAL` and `GIT_CONFIG_SYSTEM` at nothing when it loads, so no suite reads the
+  developer's git configuration. `scripts/skill_lint.py` fails on an `allowed-tools` name outside
+  the seven tools the skills may use. The install smoke goes on through a review accept, `show`
+  and `summary` through the installed command.
 - The tool and the five skills move to 0.3.0 together: `crayon.py`'s `__version__`, `min_tool`
   in `docs/compatibility.md` and `docs/contract.md` §5.10, and every SKILL.md's
   `metadata.crayon_min_tool`. The `ledger_corrupt` routing row prescribes
@@ -364,6 +374,10 @@ across. The contract number stays `1`.
 - `scripts/planning_lint.py` and `tests/test_planning_lint.py`, the anonymization lint over
   planning documents the repository no longer keeps, and their two gate commands. The gate is
   fifteen commands.
+- `validation/rubric.md`, a human scoring bar no run ever filled in, and `validation/score.py
+  draft`, a report-only prose scorecard that fitted one project's pages. `score.py protocol` keeps
+  the checks a real-use run's RUN file can answer (its keys and metrics, the transcript digest,
+  compatibility and context origins) and no longer reads leg files or rubric tables.
 - `docs/sessions/` and `validation/legs/` — the recorded session and leg records — and the unit
   tests over them. They carried run-specific paths and identities; the kit's tooling stays.
 - Personal names in comments and prose are replaced by roles.

@@ -27,9 +27,14 @@ _MAX_DESC = 1024
 #: The single-writer rule. Every other skill reaches disk through the tool
 #: (``crayon unit new --body-file -``), so a write-capable tool in its
 #: ``allowed-tools`` is a drift to catch, not a capability to use. This is a lint
-#: and a convention: the real write boundary is the tool's own containment check.
+#: and a convention: every skill also holds Bash, so the real write boundary is
+#: the tool's own containment check.
 WRITERS = {"crayon-write"}
-_WRITE_TOOLS = {"write", "edit", "multiedit", "notebookedit"}
+#: The tools a skill may declare: the seven every skill is written against. The
+#: list is closed, so a tool name the lint does not know, which might write, fails
+#: rather than passing the single-writer check by not being on a list.
+KNOWN_TOOLS = ("Read", "Bash", "Glob", "Grep", "Write", "Edit", "AskUserQuestion")
+_WRITE_TOOLS = {"Write", "Edit"}
 
 #: The tool's version line, anchored to a whole line of ``crayon.py``.
 _VERSION_RE = re.compile(r'^__version__ = "([^"]+)"$', re.MULTILINE)
@@ -135,9 +140,15 @@ def check_skill(skill_dir: Path) -> list:
     tools = _tools(frontmatter)
     if not tools:
         errs.append(f"{skill_dir.name}: missing or empty allowed-tools")
+    for tool in tools:
+        if tool not in KNOWN_TOOLS:
+            errs.append(
+                f"{skill_dir.name}: allowed-tools names {tool!r}, which is not one of "
+                f"the tools a skill may declare: {', '.join(KNOWN_TOOLS)}"
+            )
     if skill_dir.name not in WRITERS:
         for tool in tools:
-            if tool.lower() in _WRITE_TOOLS:
+            if tool in _WRITE_TOOLS:
                 errs.append(
                     f"{skill_dir.name}: allowed-tools holds the write-capable tool "
                     f"{tool!r}, but only {sorted(WRITERS)} may write; the plan and "

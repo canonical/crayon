@@ -92,8 +92,7 @@ fi
 METRIC_KEYS=(install time_to_usable_draft avoidable_questions
              manual_crayon_commands help_requests resume_invocations)
 
-# A conservative leg name, validated BEFORE it becomes a filename. A leg is a
-# pre-registered file under `validation/legs/`, so the alphabet is the one those names use.
+# A conservative leg name, validated BEFORE it becomes a filename (`RUN-<leg>.json`).
 LEG_RE='^[A-Za-z0-9][A-Za-z0-9._-]*$'
 
 # Both temporary trees this script makes: `WORK_DIR` for a Sphinx build's HTML output and its
@@ -191,8 +190,7 @@ resolve_target() {
     # `case "$LEG" in *[!A-Za-z0-9._-]* | "" )`, which does not anchor the FIRST character, so
     # `--leg ..`, `--leg -x` and `--leg .hidden` all passed a refusal message naming a regex the
     # check did not implement. No traversal followed — `/` is excluded and the value is only
-    # ever a filename component — but this guard is cited on `score.py`'s side as the reason a
-    # leg name is trustworthy, and a name trusted there unchecked reads outside the tree. The
+    # ever a filename component — and this guard is the one place a leg name is checked. The
     # value goes in on STDIN, so a leading `-` is data and never an option. One place, one
     # expression.
     printf '%s' "$LEG" | grep -Eq "$LEG_RE" ||

@@ -25,30 +25,16 @@ Scan scope (first the Trace table; later widened to the Mechanisms table):
 1. **The ``## Trace table`` section, every row.** Unchanged: each row names a
    T#, and the checker either finds a test whose name carries the row's test id
    or says which T#, which expected id and which files it looked in.
-2. **The ``## Mechanisms`` section, under one rule.** A Mechanisms row is
-   scanned when its signal cell carries a parenthetical naming a file — the
-   shape ``N-40 (`tests/test_crayon_lifecycle.sh`)`` the table already uses —
-   **and** that file is in :data:`SUITE_FILES`. Two rows qualify today: the
-   ``verify`` row's ``V-01…V-04 (`validation/fixtures.sh`)``, which is the link
-   the Mechanisms scan exists to gate and was once swept by hand, and the
-   ``retire`` row's ``N-40``. The earlier note here said the Mechanisms table
-   was excluded because U-08, A-36 and A-37 were then unlanded; all three have
-   since landed and no ``planned`` mark remains anywhere in the contract, so
-   the exclusion is now the parenthetical rule above and nothing else.
-3. **Every Mechanisms row the rule does not scan is printed by name, with the
-   reason, on every run.** The narrowing is reported, never silent — docs-check
-   surfaces this output on every CI run. Two reasons occur today:
-
-   - ``tests/install_smoke.sh`` (the ``contract`` + ``min_tool`` row's A-37) is
-     named but is not a suite file: it is a linear install walk with zero
-     ``test_`` functions — its A-37 ids live in assertion message strings — and
-     restructuring a 258-line script to satisfy a name grep buys less than it
-     costs.
-   - Eleven rows carry no suite-file parenthetical at all. Five of them
-     (``N-01/02/05``, ``U-05 · U-08``, ``N-04``, ``N-03, N-24``, ``N-16``) name
-     ids no test function carries anywhere; that is known, pre-existing
-     traceability drift, and closing it by renaming real tests to carry ids
-     they do not otherwise have is rejected.
+2. **The ``## Mechanisms`` section, every row.** Each row's signal cell names a
+   test id and, in a parenthetical, the suite file the test lives in — the shape
+   ``N-40 (`tests/test_crayon_lifecycle.sh`)``. A row without one, or naming a
+   file that is not in :data:`SUITE_FILES`, is a violation: a mechanism nobody
+   can trace to a test is the drift this checker exists against.
+3. **Every named test asserts something.** The body of each test function whose
+   name carries a row's id is read, and a function with no assertion in it (no
+   ``assert``, ``self.assert…``, ``self.fail`` or an ``assert_…`` helper in
+   Python, no ``assert_…`` helper in bash) is a violation: a name that exists proves nothing about what
+   is checked.
 
 V-05 (the T25 unknown-kinds trace) is a ``verify`` behaviour test and lives in
 ``tests/test_crayon_lifecycle.sh`` with ``v05`` in its function name, not in the
@@ -179,7 +165,57 @@ def collect_test_names(paths):
             missing.append(path)
             continue
         found[path] = set(_TEST_NAME_RE.findall(text))
+        _TEXTS[str(path.relative_to(ROOT))] = text
     return found, missing
+
+
+#: Each suite file's text, by repo-relative path, for reading a test's body.
+_TEXTS = {}
+_PY_ASSERT_RE = re.compile(r"\bself\.assert\w*\(|\bassert\s|\bself\.fail\(|\bassert_\w+\(")
+_SH_ASSERT_RE = re.compile(r"\bassert_\w+\b")
+
+
+def function_body(text, name):
+    """The body of test function ``name`` in a suite file's ``text``, or "".
+
+    A Python method runs from its ``def`` to the next line indented no deeper; a
+    bash function from ``name() {`` to the closing ``}`` at column 0.
+    """
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith("def %s(" % name):
+            indent = len(line) - len(stripped)
+            end = index
+            while end < len(lines) - 1 and not lines[end].split("#")[0].rstrip().endswith(":"):
+                end += 1  # a signature that wraps ends on the line with the colon
+            body = []
+            for later in lines[end + 1:]:
+                if later.strip() and len(later) - len(later.lstrip()) <= indent:
+                    break
+                body.append(later)
+            return "\n".join(body)
+        if line.startswith("%s() {" % name):
+            body = []
+            for later in lines[index + 1:]:
+                if later.startswith("}"):
+                    break
+                body.append(later)
+            return "\n".join(body)
+    return ""
+
+
+def silent_tests(token, holders):
+    """``[(file, name)]`` of every test carrying ``token`` whose body asserts nothing."""
+    bounded = re.compile(r"(?:^|_)%s(?:_|$)" % re.escape(token))
+    found = []
+    for path in holders:
+        text = _TEXTS.get(path, "")
+        pattern = _PY_ASSERT_RE if path.endswith(".py") else _SH_ASSERT_RE
+        for name in sorted(_TEST_NAME_RE.findall(text)):
+            if bounded.search(name) and not pattern.search(function_body(text, name)):
+                found.append((path, name))
+    return found
 
 
 def locate(token, suites):
@@ -220,6 +256,10 @@ def check_row(row, suites, grepped):
         )
     if not holders:
         return "%s: %s names no test; grepped %s" % (trace_id, expected, grepped)
+    silent = silent_tests(token, holders)
+    if silent:
+        return "%s: %s names %s, which asserts nothing" % (
+            trace_id, expected, ", ".join("%s in %s" % (n, f) for f, n in silent))
     return None
 
 
@@ -268,6 +308,10 @@ def check_mechanism_row(row, suites, grepped):
                 grepped,
             )
         )
+    silent = silent_tests(token, [suite_name])
+    if silent:
+        return "Mechanisms %s: %s names %s, which asserts nothing" % (
+            mechanism, expected, ", ".join("%s in %s" % (n, f) for f, n in silent))
     return None
 
 
@@ -332,10 +376,8 @@ def main():
         )
     sys.stdout.flush()
 
-    # The Mechanisms pass. A row is scanned only when its signal cell
-    # names a file that is in SUITE_FILES; every other row is named below with
-    # the reason, because a narrowing nobody can see is the defect this report
-    # exists against.
+    # The Mechanisms pass. Every row must name a test in a file that is in
+    # SUITE_FILES; a row that does not is a violation, never a quiet skip.
     suite_names = set(str(path.relative_to(ROOT)) for path in SUITE_FILES)
     gated = str(GATED_SUITE.relative_to(ROOT))
     scanned = []
@@ -343,26 +385,19 @@ def main():
     for row in parse_mechanism_rows(text):
         mechanism, _cell, suite_name = row
         if suite_name is None:
-            not_scanned.append(
-                (mechanism, "signal cell carries no suite-file parenthetical")
-            )
+            not_scanned.append(mechanism)
+            violations.append("Mechanisms %s: the signal cell names no suite file in a "
+                              "parenthetical; grepped %s" % (mechanism, grepped))
         elif suite_name not in suite_names:
-            not_scanned.append(
-                (mechanism, "names %s, which is not a suite file" % suite_name)
-            )
+            not_scanned.append(mechanism)
+            violations.append("Mechanisms %s: names %s, which is not a suite file (%s)"
+                              % (mechanism, suite_name, grepped))
         else:
             scanned.append(row)
             message = check_mechanism_row(row, by_file, grepped)
             if message is not None:
                 violations.append(message)
 
-    print(
-        "check-traces: %d Mechanisms row(s) not scanned, named rather than "
-        "silently skipped:" % len(not_scanned),
-        *["%s - %s" % (mechanism, reason) for mechanism, reason in not_scanned],
-        sep="\n  "
-    )
-    sys.stdout.flush()
 
     if violations:
         print(
@@ -390,9 +425,8 @@ def main():
         )
         return 2
     print(
-        "check-traces: OK - %d trace rows and %d scanned Mechanisms rows (%d not "
-        "scanned), every id names a test function that exists (bodies are not "
-        "read)" % (len(rows), len(scanned), len(not_scanned))
+        "check-traces: OK - %d trace rows and %d Mechanisms rows, every id names a "
+        "test function that exists and asserts" % (len(rows), len(scanned))
     )
     return 0
 

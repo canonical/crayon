@@ -175,14 +175,14 @@ scripts/
 └── wiki_lint.py                   ← the docs/ wiki and AGENTS.md shape
 
 validation/                        ← the validation kit: the evidence apparatus, not the tool
-├── score.py                       ← the rubric scorer and the independent audit oracle
+├── score.py                       ← the independent audit oracle over a unit's record, and the
+│                                     RUN-file check of a real-use run
 ├── fixtures.sh                    ← V-01…V-04: four corruptions built from real verbs, and the
 │                                     oracle that catches each one
 ├── audit-docpr-3005.md            ← public-run accountability audit and guarantee table
 ├── closeout-docpr-3008.md         ← slim-cycle dispositions, release truth and known limits
 ├── runmeta.sh                     ← records a leg's RUN metadata alongside its drafts
 ├── dogfood-docpr-3002.md          ← local public-candidate dogfood findings and limits
-├── rubric.md                      ← the scoring bar a leg's drafts are read against
 └── evals/                         ← the model evals: can an author rely on crayon, with the model
     │                                 they use? promptfoo runs them; paid runs by hand only
     ├── README.md                  ← the purpose, running, results, the held-out split, adding a case
@@ -220,6 +220,7 @@ tests/
 ├── test_crayon_lifecycle.sh       ← the lifecycle / recovery suite (hermetic temp git repos)
 ├── test_crayon_acceptance.sh      ← the acceptance suite, A-01 … A-38
 ├── lib.sh                         ← the fixtures both bash suites share; ONE definition site
+├── skips.json                     ← every skip a suite may take, with its reason
 ├── install_smoke.sh               ← A-37: run docs/install.md's INSTALL region, then
 │                                     one unit through the installed tool
 ├── check_traces.py                ← the contract trace-table checker

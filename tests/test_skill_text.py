@@ -215,6 +215,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -671,7 +672,7 @@ class TestS02SingleWriter(unittest.TestCase):
         writers = set()
         for skill_dir in skill_dirs():
             tools = tool_list(frontmatter_of(skill_dir))
-            if any(t.lower() in skill_lint._WRITE_TOOLS for t in tools):
+            if any(t in skill_lint._WRITE_TOOLS for t in tools):
                 writers.add(skill_dir.name)
         return writers
 
@@ -682,6 +683,24 @@ class TestS02SingleWriter(unittest.TestCase):
         # The lint enforces the rule; this pins the lint's allow-list to the
         # fact on disk, so neither can drift without the other going red.
         self.assertEqual(self._writers(), set(skill_lint.WRITERS))
+
+    def test_s02_every_declared_tool_is_one_the_lint_knows(self):
+        # A tool name the lint does not know might write: the list is closed.
+        for skill_dir in skill_dirs():
+            for tool in tool_list(frontmatter_of(skill_dir)):
+                with self.subTest(skill=skill_dir.name, tool=tool):
+                    self.assertIn(tool, skill_lint.KNOWN_TOOLS)
+        self.assertTrue(set(skill_lint._WRITE_TOOLS) <= set(skill_lint.KNOWN_TOOLS))
+
+    def test_s02_an_unknown_tool_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            planted = pathlib.Path(tmp) / "crayon-plan"
+            planted.mkdir()
+            text = (SKILLS_ROOT / "crayon-plan" / "SKILL.md").read_text(encoding="utf-8")
+            text = text.replace("allowed-tools: Read,", "allowed-tools: NotebookEdit, Read,", 1)
+            (planted / "SKILL.md").write_text(text, encoding="utf-8")
+            errors = skill_lint.check_skill(planted)
+        self.assertTrue(any("NotebookEdit" in error for error in errors), errors)
 
 
 class TestProjectReadmeInstallCommands(unittest.TestCase):

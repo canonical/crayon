@@ -70,10 +70,10 @@ is known from the retained proof, dogfood, adoption, audit and regression
 evidence. That conclusion does not erase the missing measurements or turn the
 non-terminal Jira items into completed work.
 
-The richer-retrieval experiment, controlled comparison, naming work and the
-v2.1 work on plain record surfaces, author decisions, calibrated voice and
-labelled evals continue separately. This record and the release reconciliation
-are being prepared in
+The richer-retrieval experiment and the controlled comparison continue
+separately. The work on plain record surfaces, author decisions, calibrated voice
+and the model evals landed in the same pull request as this record, for 0.3.0
+(`CHANGELOG.md`). This record and the release reconciliation are being prepared in
 [canonical/crayon#39](https://github.com/canonical/crayon/pull/39); while that
 pull request remains open, they are non-gating follow-up rather than evidence
 already landed on `main`.
