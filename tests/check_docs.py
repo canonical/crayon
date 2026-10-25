@@ -1,6 +1,6 @@
 """Documentation-accuracy gate: the observables, release checks, one delegation.
 
-Everything else this phase ships can be true on the day it lands and quietly
+Everything else the repository ships can be true on the day it lands and quietly
 false a month later — a verb renamed, a reason added, a file moved. This is the
 one artefact that goes red when that happens, and it goes red naming what it
 compared.
@@ -11,7 +11,7 @@ What it claims, and nothing wider:
    document of the documented set (``docs/internals.md`` today), are exactly
    the subcommands the tool registers. The oracle is ``crayon --help``'s own
    subcommand list, never a list kept here, so a wrong document cannot be made
-   green by editing this file (T-18-30).
+   green by editing this file.
 2. **Reasons** — the ``REASONS`` region, carried by exactly one document of the
    documented set (``docs/internals.md`` today), is ONE compact table, one
    row per exit code with that code's reasons listed in its last cell; the
@@ -29,10 +29,10 @@ What it claims, and nothing wider:
    section, wherever it sits, carries each actual-delivery fact in
    ``RELEASE_020_REQUIRED_FACTS`` and none of the abandoned-plan claims in
    ``RELEASE_020_FORBIDDEN_CLAIMS``. A file with no versioned heading scanned
-   nothing and is a ``2``, never a clean run (REL-02, CI-03).
+   nothing and is a ``2``, never a clean run.
 6. **Traces** — ``tests/check_traces.py``'s ``main()`` is called and folded into
    the tally. There is exactly one trace-table parser in this repository and it
-   is not here (17 D-09).
+   is not here.
 7. **Skills first** — the reader-facing documents in ``SKILLS_FIRST_DOCS`` name
    no ``crayon <verb>`` outside a ``## Under the hood`` section. The verbs are
    ``crayon --help``'s, the same oracle as observable 1. The reader drives crayon
@@ -52,7 +52,7 @@ exists.
 
 Nothing outside the repository is opened, fetched or resolved: a link bearing a
 scheme is skipped by construction, so an outage somewhere else can never turn
-this gate red (D-11, T-18-31).
+this gate red.
 
 The file is deliberately **not** named with a ``test_`` prefix. A ``test_*.py``
 in ``tests/`` is pulled into the unittest namespace and into
@@ -145,12 +145,12 @@ UNDER_THE_HOOD_HEADING = "## Under the hood"
 #: The literal markers that mean a release-time slot was never filled. Their
 #: presence in the TOPMOST released section is a violation and never a vacuous
 #: pass: the section was found and read, and what it says is that it is
-#: incomplete. The first is the fragment 18 CR-02 found live in the tree
+#: incomplete. The first is a fragment once found live in the tree
 #: (``#### Release-time evidence — the one placeholder left`` closed with it),
-#: the second is the reserved-slot wording plan 18-04 introduced when it wrote
-#: the section, and the last two are the generic debt markers — a released
-#: section is the one place in this repository where either is never a note to
-#: self but a gap in the published release record.
+#: the second is the reserved-slot wording the section was first written with,
+#: and the last two are the generic debt markers — a released section is the
+#: one place in this repository where either is never a note to self but a gap
+#: in the published release record.
 #:
 #: Matched as substrings against the section body only. A marker in
 #: ``## [Unreleased]`` or in an older release below the topmost one is not a
@@ -554,7 +554,7 @@ def _compare_compat(report, side, documented, expected):
             # String equality, never a version parse: contract section 5.10 says
             # the two numbers are compared as literal strings, and a skill that
             # reads `0.2` where the tool says `0.2.0` stops. A check that
-            # normalised them would pass a tree the runtime refuses (T-18-33).
+            # normalised them would pass a tree the runtime refuses.
             report.violation(
                 "compatibility",
                 "`%s` reads `%s` in %s and `%s` in the tool"
@@ -605,7 +605,7 @@ def _check_one_link(root, relative, source, target, report):
     if not inside:
         # Reported, never opened for writing: this file is read-only by
         # construction, so a traversal in a document is a finding here rather
-        # than a reach outside the tree (T-18-32).
+        # than a reach outside the tree.
         report.violation(
             observable,
             "`%s` in %s leaves the repository" % (target, relative),
@@ -651,7 +651,7 @@ def check_links(root, documents, report):
             if "://" in target or target.startswith("mailto:"):
                 # Out of scope by construction: nothing outside this repository
                 # is opened or reached, so an outage elsewhere cannot turn this
-                # gate red (D-11, T-18-31).
+                # gate red.
                 continue
             resolved += 1
             _check_one_link(root, relative, source, target, report)
@@ -727,15 +727,15 @@ def _section_body(changelog, heading):
 
 
 def check_release_record(changelog, report):
-    """REL-02 / CI-03: the released section is dated and historically bounded.
+    """The released section is dated and historically bounded.
 
     The topmost ``## [x.y.z]`` heading is the latest published release record:
     it must carry a date, and its section no marker in
     :data:`RELEASE_PLACEHOLDERS`. The ``[0.2.0]`` section, found by version
     wherever it sits, has one additional bounded check: its body must retain
     the actual delivery facts and must not restore the exact abandoned-plan
-    claims, so cutting a later release above it does not switch the pins off
-    (D-03). A changelog with no ``[0.2.0]`` section skips that check.
+    claims, so cutting a later release above it does not switch the pins off.
+    A changelog with no ``[0.2.0]`` section skips that check.
 
     A changelog with no versioned heading at all is a ``2``, never a ``0``: an
     absent, empty or unreleased-only file has no released section, so reporting
@@ -802,7 +802,7 @@ def check_release_record(changelog, report):
 
 
 def check_traces(root, report):
-    """Delegate the trace table to its one parser (17 D-09).
+    """Delegate the trace table to its one parser.
 
     ``tests/check_traces.py`` reads the trace table and this file does not, so
     there is exactly one reader of that table in the repository and a change to

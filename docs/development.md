@@ -38,7 +38,7 @@ bash validation/fixtures.sh                      # the validation kit's four cor
 python3 scripts/skill_lint.py                    # the SKILL.md frontmatter gate
 python3 tests/check_traces.py                    # the trace-table checker
 python3 tests/check_docs.py                      # the docs-accuracy checker
-python3 tests/size_guard.py                      # VERB-09's line budget, reported and enforced
+python3 tests/size_guard.py                      # the line budget, reported and enforced
 python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
 python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
 python3 -m unittest tests.test_evals             # the model-eval kit's offline self-tests
@@ -189,7 +189,7 @@ notation appears nowhere outside the wiki, and every `docs/<slug>.md` path cited
 exists. The live tree is its fixture; `tests/test_wiki_lint.py` mutates a two-page tree once
 per check.
 
-**`tests/size_guard.py`** — VERB-09's line budget over `crayon`, a review trigger rather than a
+**`tests/size_guard.py`** — the line budget over `crayon`, a review trigger rather than a
 design goal. Above the reporting threshold it reports and stays green; at the failing threshold
 it fails. It loads both thresholds and the comparison out of the unit suite, so the CI job and
 the local guard are the same code.

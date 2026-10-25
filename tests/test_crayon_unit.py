@@ -1,7 +1,7 @@
 """Unit tests for the gate-free core of ``crayon`` (U-01, U-02, U-03 caps slice).
 
-Runner (D-12): ``python3 -m unittest tests/test_crayon_unit.py`` — never
-``discover`` (the repo has no ``tests/__init__.py``, RESEARCH P-11) and never
+Runner: ``python3 -m unittest tests/test_crayon_unit.py`` — never
+``discover`` (the repo has no ``tests/__init__.py``) and never
 pytest. The suite imports the extension-less repo-root ``crayon`` through a
 ``SourceFileLoader`` shim, so it needs no package, venv or path hack.
 
@@ -19,7 +19,7 @@ Coverage:
         suite's own wholeness: the ``__main__`` block is the LAST statement in
         the file and the loaded count meets ``EXPECTED_MIN_TESTS``, because
         ``unittest.main()`` exits and a block placed higher up silently drops
-        every class below it behind a green ``OK`` (CR-06)
+        every class below it behind a green ``OK``
   U-11  contract 5.9's V1–V19 verification report
 """
 
@@ -51,7 +51,7 @@ CRAYON_PATH = ROOT / "crayon.py"
 
 
 def _load_crayon():
-    """Import the extension-less repo-root ``crayon`` as a module (RESEARCH P7).
+    """Import the extension-less repo-root ``crayon`` as a module.
 
     A plain ``import crayon`` cannot find a file with no ``.py`` extension, and
     the file's entry point is guarded, so loading it executes no verb.
@@ -100,8 +100,8 @@ class TempRepoTestCase(unittest.TestCase):
     """A hermetic temp git repo, mirroring ``setup_repo`` in the bash suite.
 
     ``GIT_CONFIG_GLOBAL``/``GIT_CONFIG_SYSTEM`` are neutralised so the
-    developer's global ``commit.gpgsign=true`` cannot leak into a test repo
-    (RESEARCH P-9); without that the suite is machine-dependent.
+    developer's global ``commit.gpgsign=true`` cannot leak into a test repo;
+    without that the suite is machine-dependent.
     """
 
     def setUp(self):
@@ -111,7 +111,7 @@ class TempRepoTestCase(unittest.TestCase):
         self.env = dict(os.environ)
         self.env["GIT_CONFIG_GLOBAL"] = "/dev/null"
         self.env["GIT_CONFIG_SYSTEM"] = "/dev/null"
-        # WR-07: the D-15 fixture hooks are armed only by this explicit switch.
+        # The test-only fixture hooks are armed only by this explicit switch.
         self.env["CRAYON_TEST_HOOKS"] = "1"
         self.env.pop("CRAYON_NOW", None)
         self.git("init", "-q", "-b", "main", ".")
@@ -286,7 +286,7 @@ class TestScaffold(unittest.TestCase):
                 self.assertTrue(hasattr(crayon, name), "missing %s" % name)
 
     def test_the_refusal_surface_exists_now_that_the_contract_is_tagged(self):
-        """D-06, post-tag: the gate surface the tag released is present.
+        """Post-tag: the gate surface the tag released is present.
 
         Before ``contract-v1`` this assertion ran inverted — no symbol that
         refuses or writes was allowed to exist. The tag is the event that
@@ -326,7 +326,7 @@ class TestCanonicalLine(unittest.TestCase):
         self.assertEqual(crayon.canonical_line({"a": 1, "b": [1, 2]}), '{"a":1,"b":[1,2]}')
 
     def test_finite_float_is_refused(self):
-        """A finite float is banned: ``allow_nan=False`` alone permits it (P-6)."""
+        """A finite float is banned: ``allow_nan=False`` alone permits it."""
         with self.assertRaises(ValueError):
             crayon.canonical_line({"x": 1.5})
 
@@ -557,7 +557,7 @@ class TestHelpers(TempRepoTestCase):
             )
 
     def test_crayon_now_is_inert_without_the_test_hook_switch(self):
-        # WR-07: an always-live env hook let an environment variable dictate the
+        # An always-live env hook let an environment variable dictate the
         # timestamps of a committed audit record. Both hooks now need
         # CRAYON_TEST_HOOKS=1, so the shipped executable ignores a stray
         # CRAYON_NOW in a developer's shell.
@@ -902,10 +902,10 @@ class TestCleanText(unittest.TestCase):
 
 
 class TestExcerptScrub(unittest.TestCase):
-    """U-03 (LEDG-06, D-02) — the digest is over the RAW bytes; the excerpt is
+    """U-03 — the digest is over the RAW bytes; the excerpt is
     stripped and cut, and stripping and truncation are exercised TOGETHER.
 
-    D-02's only honest claim is that control characters are stripped. Nothing
+    The only honest claim is that control characters are stripped. Nothing
     here asserts the excerpt is redacted or free of secrets, because the tool
     cannot back that claim and saying it would be false provenance.
     """
@@ -925,14 +925,14 @@ class TestExcerptScrub(unittest.TestCase):
         digest, excerpt = crayon.scrub_excerpt(raw)
         # 1. the digest is over the raw full bytes, computed independently here
         self.assertEqual(digest, hashlib.sha256(raw).hexdigest())
-        # 2. the cap is bytes, and the marker lives INSIDE it (Pitfall 4.3)
+        # 2. the cap is bytes, and the marker lives INSIDE it
         self.assertLessEqual(len(excerpt.encode("utf-8")), 4096)
         self.assertLessEqual(len(excerpt.encode("utf-8")), crayon.MAX_EXCERPT_BYTES)
         # 3. no C0 control below 32 survives except newline and tab
         self.assertEqual(
             [c for c in excerpt if ord(c) < 32 and c not in ("\n", "\t")], []
         )
-        # 4. Pitfall 3: dropping C0 first would remove only the ESC and leave
+        # 4. dropping C0 first would remove only the ESC and leave
         #    the bracket-and-parameter text behind in the committed excerpt.
         self.assertNotRegex(excerpt, r"\[[0-9;?]*[mK]")
         self.assertNotIn("window-title", excerpt)
@@ -1080,9 +1080,9 @@ def fs_of(unit_md_sha, **paths):
     return {"unit_md_sha": unit_md_sha, "paths": dict(paths)}
 
 
-# One row per contract 5.11 trace this plan implements: (trace id, events, fs,
-# staging or None, expected subset of derive()'s result). Plan 16-03 adds the
-# `next` token column to this same table.
+# One row per contract 5.11 trace: (trace id, events, fs, staging or None,
+# expected subset of derive()'s result). The expected subset may carry a `next`
+# key: the token contract 5.5 routes that state to.
 DERIVE_TRACES = (
     (
         "T3",
@@ -1604,7 +1604,7 @@ class TestDerive(unittest.TestCase):
         self.assertFalse(pathlib.Path("nowhere/on/disk.rst").exists())
 
     def test_derive_makes_no_io_call(self):
-        """D-19: the fs snapshot is the only channel into derive()."""
+        """The fs snapshot is the only channel into derive()."""
         tree = ast.parse(CRAYON_PATH.read_text(encoding="utf-8"))
         node = None
         for candidate in ast.walk(tree):
@@ -1621,7 +1621,7 @@ class TestDerive(unittest.TestCase):
 
 
 class TestIdenticalDraftConditions(unittest.TestCase):
-    """U-05 — STATE-05's five conditions, each pinned on its own.
+    """U-05 — the five identical-draft conditions, each pinned on its own.
 
     ``derive`` computes the condition SET; ``draft``'s stage d reads it and never
     re-derives it. Pinning each condition separately is what makes a regression
@@ -1713,7 +1713,7 @@ class TestIdenticalDraftConditions(unittest.TestCase):
         self.assertFalse(conditions["all"])
 
     def test_the_steps_condition_is_vacuously_true_for_a_reference_unit(self):
-        """RESEARCH Open Questions 5, pinned so phase 17 cannot change it silently.
+        """Pinned so that a change to the step machinery cannot alter it silently.
 
         A reference or explanation unit never carries a step plan, so both sides
         of the comparison are ``None`` and the condition is satisfied without any
@@ -1740,7 +1740,7 @@ class TestIdenticalDraftConditions(unittest.TestCase):
 
 
 class TestCompleteBasisSet(unittest.TestCase):
-    """U-05 — VERB-05's complete basis set, pure over one fs snapshot.
+    """U-05 — the complete basis set, pure over one fs snapshot.
 
     The event is never a delta: every path of the previous basis survives with
     its recorded digest unless its bytes changed, adopted targets join, and the
@@ -1841,7 +1841,7 @@ class TestCompleteBasisSet(unittest.TestCase):
 
 
 class TestReadFs(TempRepoTestCase):
-    """U-05 support — the D-19 snapshot, the only channel derive() reads."""
+    """U-05 support — the fs snapshot, the only channel derive() reads."""
 
     def test_snapshot_has_exactly_the_two_documented_keys(self):
         snapshot = crayon.read_fs(self.repo, "u", [], [])
@@ -1882,7 +1882,7 @@ class TestReadFs(TempRepoTestCase):
 
 
 class TestChainValidButStructurallyUnexpected(TempRepoTestCase):
-    """CR-04 — a ledger that passes ``verify_chain`` but is shaped wrong.
+    """A ledger that passes ``verify_chain`` but is shaped wrong.
 
     ``verify_chain`` checks ``seq`` contiguity and ``prev`` digests and nothing
     beneath them, so every payload field — ``withdraws[].seq``,
@@ -1989,12 +1989,12 @@ class TestChainValidButStructurallyUnexpected(TempRepoTestCase):
         self.assertIn("TypeError", payload["detail"])
 
     def test_the_backstop_does_not_diagnose_the_record(self):
-        """WR-23 — a fault in repository discovery is not a damaged ledger.
+        """A fault in repository discovery is not a damaged ledger.
 
         The commit that added this arm proved the misdiagnosis in its own test:
         it patches ``git_root`` to raise ``TypeError``, a failure BEFORE any
         ledger is opened, and asserted the author is told to inspect the ledger
-        and run ``resume`` — which is ``not_implemented`` in this phase, so the
+        and run ``resume`` — which was ``not_implemented`` at the time, so the
         route was a dead end as well. ``error``, ``hint`` and ``next`` are the
         three fields a skill routes on, and all three were wrong.
         """
@@ -2005,7 +2005,7 @@ class TestChainValidButStructurallyUnexpected(TempRepoTestCase):
         self.assertNotEqual(
             payload["next"],
             "resume",
-            "`resume` is not_implemented in this phase; a dead-end route is not a route",
+            "a fault before any ledger is opened gives `resume` nothing to recover",
         )
         self.assertIn("defect", payload["hint"])
         # The hint carries the routing row's whole route, show first: a model
@@ -2019,7 +2019,7 @@ class TestChainValidButStructurallyUnexpected(TempRepoTestCase):
         """Vacuous-pass guard: the arm names its own fault and keeps exit 6.
 
         `internal_error` is the arm's own reason now that the contract carries
-        the row (phase 18, D-14). The exit code is unchanged and deliberately
+        the row. The exit code is unchanged and deliberately
         so: 6 is the record-and-recovery code, and a fault reached below the
         verb is reported there rather than on the gate code that would tell a
         skill the gate said no. A future move of the code IS a contract change.
@@ -2043,13 +2043,14 @@ class TestChainValidButStructurallyUnexpected(TempRepoTestCase):
         self.assertIn("PermissionError", json.loads(out)["detail"])
 
     def test_the_oserror_arm_never_leaks_the_absolute_path(self):
-        """WR-22 — ``OSError.__str__`` embeds the ABSOLUTE filename.
+        """``OSError.__str__`` embeds the ABSOLUTE filename.
 
-        ``ledger_label`` exists (WR-10) precisely because a diagnostic a skill
+        ``ledger_label`` exists precisely because a diagnostic a skill
         is invited to paste into an issue or a commit message may not carry the
-        caller's filesystem layout. The WR-15 re-raise is right, but it made the
+        caller's filesystem layout. ``acquire_lock``'s errno re-raise
+        (:class:`TestLockOpenReportsTheRealFault`) is right, but it made the
         common permission / read-only-filesystem case newly reachable through
-        the one arm that still violated WR-10's own rule.
+        the one arm that still violated ``ledger_label``'s rule.
         """
         absolute = "/home/someone/private-project/.crayon/staging/lock"
         code, out, _ = self._main_backstop(
@@ -2081,7 +2082,7 @@ class TestChainValidButStructurallyUnexpected(TempRepoTestCase):
         )
 
     def test_a_damaged_record_is_not_reported_as_bad_input(self):
-        """WR-10 — ``JSONDecodeError`` IS a ``ValueError``.
+        """``JSONDecodeError`` IS a ``ValueError``.
 
         ``read_events`` and ``verify_chain`` guard their own ``json.loads``,
         but ``resume_adopt``, ``resume_pass_two`` and ``prior_generation_seq``
@@ -2113,7 +2114,7 @@ class TestChainValidButStructurallyUnexpected(TempRepoTestCase):
 
 
 class TestContainmentOnRead(TempRepoTestCase):
-    """CR-05 — the read surfaces contain what the ledger names.
+    """The read surfaces contain what the ledger names.
 
     Every WRITE path runs ``validate_target`` and ``contained()``; every READ
     path ran neither, so ``read_fs`` and ``read_page_bytes`` joined
@@ -2147,7 +2148,7 @@ class TestContainmentOnRead(TempRepoTestCase):
 
     def test_read_fs_never_digests_the_escaping_file(self):
         digest = hashlib.sha256(b"SECRET\n").hexdigest()
-        # IN-07: the refusal's own text is the only thing the caller gets back,
+        # The refusal's own text is the only thing the caller gets back,
         # and it may not carry the oracle it was raised to withhold. One
         # `assertRaises` proves both halves; the duplicate block that stood here
         # had no `as caught` and nothing read its result.
@@ -2178,12 +2179,12 @@ class TestContainmentOnRead(TempRepoTestCase):
         os.symlink(str(self.secret), str(self.docs / "link.rst"))
         with self.assertRaises(crayon.Refusal) as caught:
             crayon.read_fs(self.repo, "u", [], ["link.rst"])
-        # CR-06: it still refuses — but as the WORKING-TREE fault it is, not as
+        # It still refuses — but as the WORKING-TREE fault it is, not as
         # a damaged record. See the two tests below for the whole distinction.
         self.assertEqual(caught.exception.reason, "bad_write_path")
 
     def test_the_record_shaped_fault_still_blames_the_record(self):
-        """CR-06 — an escaping path in the LEDGER is decided lexically."""
+        """An escaping path in the LEDGER is decided lexically."""
         with self.assertRaises(crayon.Refusal) as caught:
             crayon.read_fs(self.repo, "u", [], [self.escaping])
         self.assertEqual(caught.exception.reason, "ledger_corrupt")
@@ -2191,7 +2192,7 @@ class TestContainmentOnRead(TempRepoTestCase):
         self.assertIn("the record names a page", caught.exception.hint)
 
     def test_the_disk_shaped_fault_names_the_link_and_not_the_ledger(self):
-        """CR-06 — the two conditions must be distinguishable, and distinguished.
+        """The two conditions must be distinguishable, and distinguished.
 
         Before this, `contained()` answered both: it resolves the leaf with
         `realpath`, so an ordinary shared `CHANGELOG.rst` symlinked under
@@ -2233,7 +2234,7 @@ class TestContainmentOnRead(TempRepoTestCase):
             self.assertEqual(handle.read(), b"SECRET\n")
 
     def test_read_fs_refuses_when_the_docs_root_itself_escapes(self):
-        """CR-05: containing within `docs` is tautological when `docs` escapes.
+        """Containing within `docs` is tautological when `docs` escapes.
 
         The recorded path is an ordinary in-root ``secret.txt``; the escape is
         the second committed blob, ``docs`` as mode 120000. Every containment
@@ -2257,9 +2258,9 @@ class TestContainmentOnRead(TempRepoTestCase):
 
 
 class TestLockOpenReportsTheRealFault(TempRepoTestCase):
-    """WR-15 — ``acquire_lock`` names the errno it identified, or gets out of the way.
+    """``acquire_lock`` names the errno it identified, or gets out of the way.
 
-    The CR-03 fix wrapped ``os.open`` in a blanket ``except OSError`` whose
+    An earlier fix wrapped ``os.open`` in a blanket ``except OSError`` whose
     wording (".crayon/staging/lock cannot be opened as a real file") is only true
     for ``ELOOP``/``EISDIR``/``ENOTDIR``. For permissions, a read-only
     filesystem, ``ENOSPC`` or ``EMFILE`` it reported a cause that is false — and
@@ -2312,10 +2313,11 @@ class TestLockOpenReportsTheRealFault(TempRepoTestCase):
 
 
 class TestLockFlockReportsTheRealFault(TempRepoTestCase):
-    """WR-21 — the OTHER blanket ``except OSError`` in ``acquire_lock``.
+    """The OTHER blanket ``except OSError`` in ``acquire_lock``.
 
-    The WR-15 fix narrowed the ``os.open`` arm and stopped one ``try`` block
-    short. "Another crayon invocation holds .crayon/staging/lock" is true of
+    The fix :class:`TestLockOpenReportsTheRealFault` pins narrowed the
+    ``os.open`` arm and stopped one ``try`` block short. "Another crayon
+    invocation holds .crayon/staging/lock" is true of
     ``EWOULDBLOCK`` and of nothing else: ``ENOLCK`` (an NFS or overlay mount
     with no lock manager), ``EBADF``, ``EINTR`` and ``EINVAL`` all got the same
     sentence, which sends a skill into a wait-and-retry loop against a condition
@@ -2396,7 +2398,7 @@ def routing_state(**overrides):
 
 
 class TestRoutingStateIsProduced(unittest.TestCase):
-    """WR-02 — every key ``route()`` reads is a key ``derive()`` writes.
+    """Every key ``route()`` reads is a key ``derive()`` writes.
 
     ``routing_state()`` is a hand-built dict, so the table above can assert a
     row against a state shape its only producer never emits. It did: neither
@@ -2421,7 +2423,7 @@ class TestRoutingStateIsProduced(unittest.TestCase):
         )
 
     def test_pending_stray_defaults_to_false_and_is_carried_when_passed(self):
-        """WR-03 — routing's second recovery fact travels the same channel."""
+        """Routing's second recovery fact travels the same channel."""
         fs = {"unit_md_sha": None, "paths": {}}
         self.assertFalse(crayon.derive([], fs)["pending_stray"])
         self.assertTrue(
@@ -2432,7 +2434,7 @@ class TestRoutingStateIsProduced(unittest.TestCase):
         )
 
     def test_a_stray_pending_unit_never_routes_to_a_verb_that_refuses_it(self):
-        """WR-03 — the state used to fall to row 10 and answer `review`."""
+        """The state used to fall to row 10 and answer `review`."""
         fs = {"unit_md_sha": None, "paths": {}}
         events = opening() + [signoff(2, ["a.rst"], intent="reference")]
         looped = crayon.route(crayon.derive(events, fs_of("P1")))
@@ -2498,7 +2500,7 @@ EDIT_TIP = {"kind": "reviewer-edit", "seq": 5}
 
 
 class TestPendingSituation(unittest.TestCase):
-    """WR-03 — contract 5.8's situation table, stated once for both callers.
+    """Contract 5.8's situation table, stated once for both callers.
 
     ``classify_stage_a`` decides whether to refuse and ``stray_pending_material``
     decides where to route; a second opinion about the same fact is what let the
@@ -2651,8 +2653,8 @@ _REASON_ROW_RE = re.compile(r"^\|\s*`([a-z_]+)`\s*\|\s*([0-9])\s*\|$")
 def contract_reason_table():
     """The reason table out of ``docs/contract.md``, in the contract's order.
 
-    Parsed the same way phase 18's ``check_docs.py`` will parse it, so the two
-    readers cannot drift apart during this phase.
+    Parsed the same way ``tests/check_docs.py`` parses it, so the two readers
+    cannot drift apart.
     """
     text = (ROOT / "docs" / "contract.md").read_text(encoding="utf-8")
     start = text.index("Reason table:")
@@ -2711,7 +2713,7 @@ _PLACEHOLDER_RE = re.compile(r"<[^>]+>")
 # readable in the contract without making this comparison approximate.
 _FLAGS_PLACEHOLDER = "[flags]"
 
-# `--json` is contract 5.7 / GATE-04's global output-inversion flag: EVERY verb
+# `--json` is contract 5.7's global output-inversion flag: EVERY verb
 # accepts it, because every refusal must be movable to stdout. The §6 table
 # lists it only on the read-only verbs, where it also changes *successful*
 # output. Comparing it row by row would measure that documentation choice
@@ -2723,9 +2725,7 @@ _GLOBAL_FLAGS = frozenset({"--json"})
 def contract_verb_table():
     """The §6 verb table out of ``docs/contract.md``, one entry per signature.
 
-    Returns ``{verb path: {"flags": frozenset, "positionals": int}}``. Parsed
-    the same way phase 18's ``check_docs.py`` will parse it, so the two readers
-    cannot drift apart during this phase.
+    Returns ``{verb path: {"flags": frozenset, "positionals": int}}``.
     """
     text = (ROOT / "docs" / "contract.md").read_text(encoding="utf-8")
     heading = "## 6 Verb table"
@@ -2807,8 +2807,8 @@ def parser_verb_table(parser, prefix=""):
 class TestVerbTable(unittest.TestCase):
     """U-08 — ``crayon --help`` is the contract's §6 verb table, row for row.
 
-    The help output is a machine-diffed observable (phase 18's
-    ``check_docs.py``), not documentation: a verb registered here and absent
+    The help output is a machine-diffed observable (``tests/check_docs.py``
+    diffs its subcommand list), not documentation: a verb registered here and absent
     there, or an argument renamed on one side, is a defect in one of the two.
     """
 
@@ -2887,7 +2887,7 @@ class TestVerbTable(unittest.TestCase):
                 )
 
     def test_force_is_registered_nowhere(self):
-        """VERB-01: ``slim@357c513``'s ``--force`` is removed, not renamed."""
+        """``slim@357c513``'s ``--force`` is removed, not renamed."""
         parser = crayon.build_parser()
         for verb in sorted(self.parser):
             with self.subTest(verb=verb):
@@ -2934,10 +2934,10 @@ def _subparser_for(parser, verb):
 
 
 class TestTheTransitionalReasonIsGone(unittest.TestCase):
-    """D-16 / T-16-45 — `not_implemented` existed for the phase-17 stubs only.
+    """`not_implemented` existed for the unfinished verb stubs only.
 
     `verify` was the last stub, so the reason, the helper that built it and the
-    shared stub body are deleted (plan 17-09). What remains is the guard: the
+    shared stub body are deleted. What remains is the guard: the
     reason was never a row of the contract's table and never a key of
     ``REASONS``, and it must not come back through either door — U-07 keeps
     requiring the two tables to be equal, and these two checks name which side
@@ -2962,7 +2962,7 @@ class TestTheTransitionalReasonIsGone(unittest.TestCase):
 
 
 class TestEveryDestinationReachesTheChokePoint(TempRepoTestCase):
-    """WR-02 — the ledger is a checked destination, not just a pathspec.
+    """The ledger is a checked destination, not just a pathspec.
 
     ``guard_write_paths``'s docstring calls itself "the ONE choke point", but it
     only ever saw ``files`` — the pages and ``unit.md``. The ledger, which every
@@ -3021,7 +3021,7 @@ class TestEveryDestinationReachesTheChokePoint(TempRepoTestCase):
 
 
 class TestIndexLockReasonDoesNotDrift(TempRepoTestCase):
-    """WR-11 — ``.git/index.lock`` is ``git_busy``, never ``busy``.
+    """``.git/index.lock`` is ``git_busy``, never ``busy``.
 
     ``REASONS`` carries both on exit 5 and this codebase uses them for two
     different things: ``busy`` is crayon's own ``.crayon/staging/lock``,
@@ -3068,7 +3068,7 @@ class TestIndexLockReasonDoesNotDrift(TempRepoTestCase):
 
 
 class TestPostCommitCheck(TempRepoTestCase):
-    """WRITE-02 — both git vantage points, because neither alone is evidence."""
+    """Both git vantage points, because neither alone is evidence."""
 
     def setUp(self):
         super().setUp()
@@ -3209,13 +3209,13 @@ class TestClaimPolicy(TempRepoTestCase):
         os.symlink(str(outside / "CHANGELOG.rst"), str(docs / "shared.rst"))
 
     def test_a_siblings_symlinked_page_does_not_wedge_every_other_unit(self):
-        """CR-06 — one unit's link may not take out the whole repository.
+        """One unit's link may not take out the whole repository.
 
         ``find_claim`` turned ANY refusal from a sibling's ``unit_state`` into a
         repo-wide ``ledger_corrupt``. That is right for a record it cannot read;
-        the CR-05 fix widened the input to "any page crayon declines to digest",
-        so one symlinked page in unit A refused ``unit new`` and ``signoff`` for
-        every unit in the repository — and the recovery it named
+        the read-containment fix widened the input to "any page crayon declines
+        to digest", so one symlinked page in unit A refused ``unit new`` and
+        ``signoff`` for every unit in the repository — and the recovery it named
         (``crayon show A``) refused identically.
         """
         self._ledger("holder", ["ledger", "signoff"], ["reference/shared.rst"])
@@ -3228,7 +3228,7 @@ class TestClaimPolicy(TempRepoTestCase):
     def test_falling_through_does_not_lose_the_siblings_claim(self):
         """Vacuous-pass guard: `continue` would also satisfy the test above.
 
-        WR-04's argument still binds — a sibling whose targets vanish from the
+        The fail-closed argument still binds — a sibling whose targets vanish from the
         claim set is how two live units end up holding the same page. The claim
         set is derived from the LEDGER, so it is knowable without the snapshot.
         """
@@ -3250,7 +3250,7 @@ class TestClaimPolicy(TempRepoTestCase):
         )
 
     def test_a_sibling_whose_record_cannot_be_read_still_fails_closed(self):
-        """WR-04's case is untouched: the whitelist is one reason wide."""
+        """The fail-closed case is untouched: the whitelist is one reason wide."""
         self._ledger("holder", ["ledger", "signoff"], ["reference/shared.rst"])
         path = pathlib.Path(crayon.ledger_path(self.repo, "holder"))
         path.write_text("not json at all\n", encoding="utf-8")
@@ -3263,7 +3263,7 @@ class TestClaimPolicy(TempRepoTestCase):
 class TestValidateNote(unittest.TestCase):
     """U-03 — ``validate_note`` is stage b's entry point for every free text.
 
-    ``clean_text`` (plan 16-02) is gate-free input hygiene and raises a plain
+    ``clean_text`` is gate-free input hygiene and raises a plain
     ``ValueError``; the stage-b wrapper is what turns that into ONE reason from
     the contract's table, so no call site has to choose an exit code.
     """
@@ -3335,7 +3335,7 @@ class TestValidateModel(unittest.TestCase):
 
 
 class TestValidateStepId(unittest.TestCase):
-    """U-03 — the step-id regex lives in ONE place for the phase-17 verbs."""
+    """U-03 — the step-id regex lives in ONE place for the step verbs."""
 
     def test_the_contract_shape_is_accepted(self):
         for step_id in ("a", "step-1", "step_1", "step.1", "0", "a" * 32):
@@ -3350,7 +3350,7 @@ class TestValidateStepId(unittest.TestCase):
 
 
 class TestMarkdownCell(unittest.TestCase):
-    """U-08 support — the ONE place a value is escaped, and why (T-16-39)."""
+    """U-08 support — the ONE place a value is escaped, and why."""
 
     def test_a_pipe_is_escaped_and_a_newline_becomes_a_break(self):
         self.assertEqual(
@@ -3365,7 +3365,7 @@ class TestMarkdownCell(unittest.TestCase):
         self.assertEqual(crayon.md_cell("a\rb"), "ab")
 
     def test_a_cell_escapes_html_for_the_same_reason_prose_does(self):
-        # CR-03: this is the position steering notes and withdrawal reasons
+        # This is the position steering notes and withdrawal reasons
         # land in — the most common contributor-controlled strings in the
         # report — and `summary --md` is pasted into a pull request.
         self.assertEqual(
@@ -3394,7 +3394,7 @@ class TestMarkdownCell(unittest.TestCase):
 
 
 class TestMarkdownProseEscapers(unittest.TestCase):
-    """WR-11 — the two escapers the non-cell positions of ``--md`` needed.
+    """The two escapers the non-cell positions of ``--md`` needed.
 
     ``summary --md`` is documented as text a reviewer PASTES INTO A PR, and
     ``.crayon/`` is committed, so every title, audience, note and gap in it is
@@ -3442,10 +3442,10 @@ class TestMarkdownProseEscapers(unittest.TestCase):
 
 
 class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
-    """WR-13 — the rule is "every value", so the function must show it.
+    """The rule is "every value", so the function must show it.
 
-    WR-11 stated the invariant as "every contributor-controlled value goes
-    through an escaper chosen for its position" and then left
+    The prose-escaper fix stated the invariant as "every contributor-controlled
+    value goes through an escaper chosen for its position" and then left
     ``data["provenance"]`` appended raw. Tool-derived today — `git rev-parse`
     output, verify counts, check ids — but the basis ``commit`` it interpolates
     is a ledger value and therefore forgeable, and an invariant with one
@@ -3457,7 +3457,7 @@ class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
     """
 
     BEACON = '<img src="http://attacker.example/b">'
-    # The human record line reaches the renderer as its own argument (P-15); it
+    # The human record line reaches the renderer as its own argument; it
     # quotes a basis commit, which is a ledger value, so it is forged too.
     RECORD = "record: intact at 0000000 · page: drifted since " + BEACON
 
@@ -3577,10 +3577,10 @@ class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
         self.assertEqual(crayon.md_code("reference/fixture.rst"),
                          "reference/fixture.rst")
 
-    # --- WR-01: the other two properties the invariant claims ---------------
+    # --- the other two properties the invariant claims -----------------------
     #
-    # The escaping above is CR-03's. The cap and the non-string guard are
-    # `md_flat`'s, and `md_cell` never called it — so for one iteration the
+    # The escaping above is the HTML rule. The cap and the non-string guard are
+    # `md_flat`'s, and `md_cell` never called it — so for a while the
     # table position had the HTML rule and neither of the other two, and the
     # `summary --md` render (the one whose threat model is "a reviewer pastes
     # this into a PR") was the UNCAPPED one.
@@ -3622,7 +3622,7 @@ class TestSummaryMarkdownEscapesEveryPosition(unittest.TestCase):
 
 
 class TestAuthorDecisionsRender(unittest.TestCase):
-    """SURF-01 (D-12 to D-16) — the author's judgment is read first, and plainly.
+    """The author's judgment is read first, and plainly.
 
     Pure over a data dict shaped like ``summary_data``'s, so every rule is
     driven without a repository: one data object, the text and ``--md`` renders.
@@ -3789,7 +3789,7 @@ class TestAuthorDecisionsRender(unittest.TestCase):
         self.assertIn("| request | disposition | note |", md)
         self.assertIn("## Reviewer edits\n\n- hand edit\n", md)
         self.assertNotRegex(md, r"\bseq\s*[0-9]")
-        # Recorded and disposed, never applied (T-16-36).
+        # Recorded and disposed, never applied.
         self.assertNotIn("applied", text + md)
 
     def test_the_human_renders_print_the_plain_record_line(self):
@@ -3813,7 +3813,7 @@ class TestAuthorDecisionsRender(unittest.TestCase):
                          "no basis recorded")
 
 
-# --- U-05 (STATE-03) — contract 5.4's step status and reuse-prefix rule ------
+# --- U-05 — contract 5.4's step status and reuse-prefix rule ----------------
 #
 # The derivation is PURE — events in, unresolved step ids out — so the whole
 # rule is driven here with literal dicts and the lifecycle suite only has to
@@ -3857,7 +3857,7 @@ def recorded(seq, steps_seq, step_id, verdict, **payload):
 
 
 class TestStepTextHash(unittest.TestCase):
-    """STATE-03 probe 4 — the text hash is sha256 over the UTF-8 encoding."""
+    """The text hash is sha256 over the UTF-8 encoding."""
 
     def test_the_hash_is_sha256_of_the_utf8_bytes(self):
         for text in ("build the html", "café — naïve", "  spaced  ", "日本語"):
@@ -3874,7 +3874,7 @@ class TestStepTextHash(unittest.TestCase):
 
 
 class TestStepResolution(unittest.TestCase):
-    """STATE-03 — ``pass``+sha, ``skipped``+reason, ``deviated``+exit 0+sha resolve;
+    """``pass``+sha, ``skipped``+reason, ``deviated``+exit 0+sha resolve;
     ``fail`` never. A verdict is not a resolution on its own."""
 
     def _unresolved(self, record_payload):
@@ -3915,7 +3915,7 @@ class TestStepResolution(unittest.TestCase):
 
 
 class TestReusePrefixCarryForward(unittest.TestCase):
-    """STATE-03 — evidence carries forward ONLY along consecutive reusing plans
+    """Evidence carries forward ONLY along consecutive reusing plans
     and ONLY for the longest prefix identical in ``(text_hash, mode, stateful)``.
 
     One differing element stops the walk for that step and for every step after
@@ -4149,7 +4149,7 @@ class TestStepTally(unittest.TestCase):
 # golden exists to protect — is a deliberate edit of this constant and never a
 # silent drift.
 #
-# WR-11: every contributor-controlled value here is escaped for the position it
+# Every contributor-controlled value here is escaped for the position it
 # lands in. The reviewer edit's note therefore reads as ONE line — `.crayon/` is
 # committed, so a note is ordinary contributor input, and this document is
 # documented as text a reviewer pastes into a PR, where a note free to contain
@@ -4193,7 +4193,7 @@ record: intact at <sha7> · page: current
 
 
 class TestHandover(unittest.TestCase):
-    """SURF-02 (D-09, D-10, D-11) — what the author decided and what is open.
+    """What the author decided and what is open.
 
     ``handover_of`` is pure over the events ``unit_view()`` already read, so
     every case here is a literal event list. ``judged`` is the latest accept's
@@ -4328,7 +4328,7 @@ class TestHandover(unittest.TestCase):
         )
 
     def test_a_later_request_does_not_hide_the_last_accept(self):
-        # P-11: state `reviewed` -- the accept is still the author's last word.
+        # State `reviewed` -- the accept is still the author's last word.
         events = self.drafted() + [
             steering(4, note="S"),
             review(5, "accept", 3, resolves=[4]),
@@ -4415,7 +4415,8 @@ class TestHandover(unittest.TestCase):
 
 
 class TestAuthorNotes(unittest.TestCase):
-    """SURF-01's data (D-13, D-15) — every note the author wrote, oldest first.
+    """The data behind the author's decisions: every note the author wrote,
+    oldest first.
 
     Drawn only from the event kinds the author's own decisions write. Text the
     drafting agent wrote -- a step's reason, a generation's gaps, the model --
@@ -4653,7 +4654,7 @@ class TestSummaryGolden(TempRepoTestCase):
         self.assertNotIn("checks", line)
 
     def test_summary_json_keeps_the_counted_provenance(self):
-        """P-15: the review skill's reference documents the JSON value."""
+        """The review skill's reference documents the JSON value."""
         self.build_fixture()
         proc = self.crayon("summary", "fixture-unit", "--json")
         provenance = json.loads(proc.stdout)["provenance"]
@@ -4686,7 +4687,7 @@ class TestSummaryGolden(TempRepoTestCase):
             " · page: no page recorded yet" % head,
         )
 
-    def test_the_phase_16_placeholder_is_gone(self):
+    def test_the_verify_placeholder_is_gone(self):
         self.build_fixture()
         for flags in ((), ("--md",), ("--json",)):
             proc = self.crayon("summary", "fixture-unit", *flags)
@@ -4721,14 +4722,14 @@ class TestSummaryGolden(TempRepoTestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         line = [row for row in proc.stdout.splitlines() if row.startswith("record: ")]
         self.assertTrue(line, proc.stderr)
-        # Plain words, and still a failure: never hidden behind them (T-20-15).
+        # Plain words, and still a failure: never hidden behind them.
         self.assertIn("damaged at", line[0])
         self.assertIn("each draft and accept against the signed plan", line[0])
         self.assertNotIn("V5", line[0])
         self.assertNotIn("fail)", line[0])
         md = self.crayon("summary", "fixture-unit", "--md", check=False).stdout
         self.assertIn("record: damaged at", md)
-        # The JSON value keeps the verdict and the failing id (P-15).
+        # The JSON value keeps the verdict and the failing id.
         provenance = json.loads(
             self.crayon("summary", "fixture-unit", "--json", check=False).stdout
         )["provenance"]
@@ -4751,7 +4752,7 @@ class TestSummaryGolden(TempRepoTestCase):
 
 
 class TestNonStringNotesRender(TempRepoTestCase):
-    """20 WR-04 — a forged non-string note renders through every human read.
+    """A forged non-string note renders through every human read.
 
     The chain is an unkeyed sha256, so a contributor can commit a ledger whose
     chain is valid and whose request or reviewer-edit ``note`` is the integer
@@ -4832,14 +4833,13 @@ class TestNonStringNotesRender(TempRepoTestCase):
 
 
 class TestPlainLinePolish(TempRepoTestCase):
-    """20 IN-03..IN-07 (first review): the plain lines hold in every branch."""
+    """The plain lines hold in every branch."""
 
     crayon = TestSummaryGolden.crayon
     build_fixture = TestSummaryGolden.build_fixture
     relink = TestNonStringNotesRender.relink
     renders = TestNonStringNotesRender.renders
 
-    # 20 IN-03
     def test_drifted_since_an_earlier_commit_when_the_recording_commit_is_unknown(self):
         state = {
             "basis": {"commit": "abcdef0" + "1" * 33},
@@ -4855,7 +4855,6 @@ class TestPlainLinePolish(TempRepoTestCase):
         # --json's `provenance` keeps its contract-1 value.
         self.assertEqual(counted, "drifted since abcdef0")
 
-    # 20 IN-04
     def test_an_accept_routed_elsewhere_prints_what_remains(self):
         self.build_fixture(accept=False)
         here = os.getcwd()
@@ -4877,7 +4876,6 @@ class TestPlainLinePolish(TempRepoTestCase):
         self.assertEqual(parts[2], "not handed over yet")
         self.assertIsNone(ledger_words_pattern().search(out.getvalue()))
 
-    # 20 IN-05
     def test_a_withdrawal_without_a_reason_has_no_dangling_colon(self):
         def int_form(event):
             if event.get("kind") == "review" and event.get("verdict") == "accept":
@@ -4895,7 +4893,6 @@ class TestPlainLinePolish(TempRepoTestCase):
         self.assertIn("| 4 | withdrawn | ", md)
         self.assertIn("\n- request 4 withdrawn\n", md)
 
-    # 20 IN-06
     def test_md_text_escapes_a_leading_block_marker(self):
         for raw, escaped in (
             ("# heading", "\\# heading"),
@@ -4913,9 +4910,8 @@ class TestPlainLinePolish(TempRepoTestCase):
         for kept in ("a # b - c 1. d", "-5 degrees", "#hashtag", "2026-10-12"):
             self.assertEqual(crayon.md_text(kept), kept)
 
-    # 20 IN-07, 24 WR-05
     def test_rule_two_names_several_requests_in_the_plural(self):
-        """24 WR-05: every plural case comes from the detail V10 really emits.
+        """Every plural case comes from the detail V10 really emits.
 
         Each detail is built from ledger events through ``verify_derivation``,
         never typed by hand, so the rule is pinned against the ``seq(s) 2, 3``
@@ -4978,7 +4974,7 @@ class TestPlainLinePolish(TempRepoTestCase):
 
 
 class TestFrozenSegmentsAndHumanPaths(TempRepoTestCase):
-    """20 IN-04 (second review) and 20 IN-01 (first review), D-23.
+    """Frozen ``--json`` messages, and human reads that do no ``--json`` work.
 
     ``edits`` and ``resume --dry-run`` build a human line and a frozen
     contract-1 ``--json`` ``message`` from the same items; the strings below
@@ -5087,46 +5083,32 @@ class TestFrozenSegmentsAndHumanPaths(TempRepoTestCase):
 
 # --- U-10 — the tool's own guards: line budget, 3.9 hazards, packaging -------
 #
-# VERB-09's budget is a REVIEW TRIGGER, not a design goal (rev8 section 2.1):
-# behaviour is never deleted to fit it. The guard FAILS above ``BUDGET_FAIL`` and
-# REPORTS above ``BUDGET_ANNOTATE``, mirroring what phase-18 CI's size-guard job
-# will annotate and fail on, so the number is visible here first.
+# The line budget is a REVIEW TRIGGER, not a design goal: behaviour is never
+# deleted to fit it. The guard FAILS above ``BUDGET_FAIL`` and REPORTS above
+# ``BUDGET_ANNOTATE``, mirroring what CI's size-guard job annotates and fails
+# on, so the number is visible here first.
 #
-# Recalibrated at 16-07 by the author, at a blocking-human checkpoint, after the
-# finished file measured 4,748 lines against rev8's 925-line phase-16 slice — a
-# 5.13x miss in the ESTIMATE, not in the file. rev8's own 1,000/1,300 ratios are
-# scaled by that measured factor; the alternative was deleting behaviour to fit,
-# which section 2.1 and the plan both forbid.
+# Both thresholds come from measurement, never from an estimate, and only the
+# maintainer moves them. The first pair scaled the original estimate by the
+# 5.13x it had missed the finished file by; the alternative was deleting
+# behaviour to fit, which the rule above forbids. The second pair, 8,000
+# annotate / 9,500 fail (2026-09-15), replaced a 5,000 trigger that had fired
+# on every run and so carried no information.
 #
-# Recalibrated again at 17-08 (maintainer checkpoint, 2026-09-15),
-# which supersedes the 2026-09-14 temporary lift of the failing threshold. The
-# measurement: after plans 17-01/05/06/07 landed, ``crayon`` was 7,445 lines —
-# already 745 past the 6,700 the 16-07 pair set, so returning to it meant
-# deleting landed, tested behaviour — and the remaining ``verify`` block
-# projected to ~8,090 lines (range 8,046-8,210) at this phase's own measured
-# 1.61x estimate-to-actual ratio, crossing the temporary 8,000 too. The pair
-# moves to 8,000 annotate / 9,500 fail: the trigger is restored to a number
-# that carries information (5,000 had fired on every run since 17-01) and the
-# projected v2.0 ceiling of ~8,600, review-fix allowance included, stays below
-# the failing threshold.
-#
-# Recalibrated a third time at 18-13 (maintainer checkpoint, 2026-09-18,
-# checkpoint), raised by WR-07 in ``18-REVIEW.md``. The measurement: ``crayon``
-# is 9,472 lines against the 8,000 / 9,500 pair, so the trigger has fired on
-# every run for 263 commits — the same information-free state the 17-08 note
-# above gives as its own reason for moving off 5,000 — and only 28 lines of
-# headroom remain below the failing threshold. The pair moves to 10,000
-# annotate / 12,000 fail, applying the +7.5% / +27.6% offsets 17-08 itself
-# used. WR-07's proposed 9,500 / 11,000 was rejected because it restores the
-# annotate verdict after 29 lines of growth — the very state being escaped.
-# ``crayon`` has not changed in 134 commits and v2.0 is feature-complete, so
-# 528 lines to the trigger and 2,528 to the failing threshold is headroom, not
-# over-provisioning.
+# The current pair dates from 2026-09-18. ``crayon`` measured 9,472 lines, so
+# the 8,000 trigger had fired on every run for 263 commits — the same
+# information-free state — and only 28 lines of headroom remained below the
+# failing threshold. The pair moved to 10,000 annotate / 12,000 fail, applying
+# the +7.5% / +27.6% offsets the previous pair used. A proposed 9,500 / 11,000
+# was rejected because it restores the annotate verdict after 29 lines of
+# growth — the very state being escaped. ``crayon`` had not changed in 134
+# commits and v2.0 was feature-complete, so 528 lines to the trigger and 2,528
+# to the failing threshold is headroom, not over-provisioning.
 BUDGET_ANNOTATE = 10000
 BUDGET_FAIL = 12000
 
-# The 3.9 runtime hazards ``ast.parse(feature_version=(3, 9))`` cannot see
-# (RESEARCH P-10). It *does* reject ``match`` and ``except*`` as syntax errors,
+# The 3.9 runtime hazards ``ast.parse(feature_version=(3, 9))`` cannot see.
+# It *does* reject ``match`` and ``except*`` as syntax errors,
 # but ``int | None`` in a runtime position and ``@dataclass(slots=True)`` parse
 # cleanly on every version and only raise TypeError when the line executes on
 # 3.9. These names are what makes a ``|`` read as a type union rather than as an
@@ -5235,7 +5217,7 @@ def dataclass_slots_lines(source):
 
 
 def budget_verdict(lines):
-    """``"ok"``, ``"annotate"`` or ``"fail"`` for a line count, per VERB-09.
+    """``"ok"``, ``"annotate"`` or ``"fail"`` for a line count, per the line budget.
 
     Extracted from the assertion so the ANNOTATE branch is exercised at its
     boundary rather than only on the days ``crayon`` happens to sit above the
@@ -5255,15 +5237,15 @@ def budget_verdict(lines):
 class TestStageAReportMode(TempRepoTestCase):
     """U-09 — ``classify_stage_a``'s report mode, case by case against the raise.
 
-    Phase 16 left the classification complete and the REPORTING missing: the
-    two situations ``resume`` exists to resolve are the two the classifier
-    raises for, so wiring ``cmd_resume`` through the ordinary front door makes
-    ``crayon resume <id>`` refuse with the hint ``crayon resume <id>`` (RESEARCH
-    Pitfall 6). The fix is a third mode, not a second classifier — so every
-    case below is driven through BOTH modes and the two answers are asserted to
-    agree. That equality is the whole point: it is what keeps the reporting
-    surface from drifting away from the refusal surface on the one code path
-    nobody exercises until something has already gone wrong.
+    A classifier that can only raise is not enough: the two situations
+    ``resume`` exists to resolve are the two the classifier raises for, so
+    wiring ``cmd_resume`` through the ordinary front door makes
+    ``crayon resume <id>`` refuse with the hint ``crayon resume <id>``. The fix
+    is a third mode, not a second classifier — so every case below is driven
+    through BOTH modes and the two answers are asserted to agree. That equality
+    is the whole point: it is what keeps the reporting surface from drifting
+    away from the refusal surface on the one code path nobody exercises until
+    something has already gone wrong.
     """
 
     UNIT = "u"
@@ -5571,7 +5553,7 @@ class TestAdoptRevisedManifest(TempRepoTestCase):
         self.assertEqual(crayon.revise_manifest_entries(self.ENTRIES, []), self.ENTRIES)
 
     def test_u11_basis_path_inverts_the_join_cmd_generate_makes(self):
-        """CR-01 — the manifest and a basis event do not speak the same paths.
+        """The manifest and a basis event do not speak the same paths.
 
         `cmd_generate` builds the manifest by joining `DOCS_ROOT` onto each
         signed target; every basis event — the signoff's `targets[]`, the
@@ -5642,7 +5624,7 @@ class TestAdoptRevisedManifest(TempRepoTestCase):
         return crayon.read_manifest(str(self.repo), "u")
 
     def test_u11_read_manifest_holds_after_path_to_the_destination_rule(self):
-        """T-17-30: the re-read is only a check if the reader checks THIS field.
+        """The re-read is only a check if the reader checks THIS field.
 
         ``after_path`` is joined onto ``pending/`` and then READ as the bytes a
         placement writes, so an absolute path or a parent-directory segment
@@ -5750,14 +5732,14 @@ class TestTruncatePartialLine(TempRepoTestCase):
 
 
 class TestLineBudget(unittest.TestCase):
-    """U-10 — VERB-09's line budget, measured rather than estimated."""
+    """U-10 — the line budget, measured rather than estimated."""
 
     def test_the_file_is_below_the_failing_threshold(self):
         lines = len(CRAYON_PATH.read_text(encoding="utf-8").splitlines())
         verdict = budget_verdict(lines)
         if verdict == "annotate":
             sys.stderr.write(
-                "\nANNOTATE: crayon is %d lines, over VERB-09's %d-line review "
+                "\nANNOTATE: crayon is %d lines, over the line budget's %d-line review "
                 "trigger (the guard fails at %d)\n"
                 % (lines, BUDGET_ANNOTATE, BUDGET_FAIL)
             )
@@ -5765,9 +5747,9 @@ class TestLineBudget(unittest.TestCase):
         self.assertNotEqual(
             verdict,
             "fail",
-            "crayon is %d lines, at or above VERB-09's %d-line failing threshold; "
-            "the budget is a review trigger, so recalibrate it deliberately "
-            "rather than deleting behaviour to fit (rev8 section 2.1)"
+            "crayon is %d lines, at or above the line budget's %d-line failing "
+            "threshold; the budget is a review trigger, so recalibrate it "
+            "deliberately rather than deleting behaviour to fit"
             % (lines, BUDGET_FAIL),
         )
 
@@ -5792,17 +5774,17 @@ class TestLineBudget(unittest.TestCase):
 
 
 class TestSizeGuardEntryPoint(unittest.TestCase):
-    """U-10 — phase-18 CI's size-guard entry point is this module's own guard.
+    """U-10 — CI's size-guard entry point is this module's own guard.
 
-    D-06 asks for one authoring site for the pair of thresholds. The strongest
-    reading of it is that the CI job and the local guard become the same *code*
+    The pair of thresholds has one authoring site. The strongest reading of
+    that rule is that the CI job and the local guard become the same *code*
     rather than merely the same numbers: ``tests/size_guard.py`` loads
     :func:`budget_verdict` from this module and exits on what it returns, so the
     four boundary counts pinned by :class:`TestLineBudget` settle CI's behaviour
     too, and the asymmetric relation cannot be restated one line off.
 
     Driven through a subprocess rather than an import because the exit code is
-    the artefact CI reads: D-07 makes the job summary a report and never the
+    the artefact CI reads: the job summary is a report and never the
     verdict, since a summary upload failure does not fail a job.
     """
 
@@ -5832,7 +5814,7 @@ class TestSizeGuardEntryPoint(unittest.TestCase):
             )
 
     def test_u10_the_script_exit_code_agrees_with_budget_verdict_at_the_boundaries(self):
-        """The four counts of Pitfall 3, answered by the shared function."""
+        """The four boundary counts, answered by the shared function."""
         for lines in (
             BUDGET_ANNOTATE,
             BUDGET_ANNOTATE + 1,
@@ -5859,7 +5841,7 @@ class TestSizeGuardEntryPoint(unittest.TestCase):
                 )
 
     def test_u10_the_summary_table_is_written_when_the_variable_names_a_path(self):
-        """D-07's report: five facts, as a markdown table the job renders."""
+        """The job summary: five facts, as a markdown table the job renders."""
         with tempfile.TemporaryDirectory() as tmp:
             summary = pathlib.Path(tmp) / "step-summary.md"
             proc = self.run_guard(BUDGET_ANNOTATE + 1, summary=summary)
@@ -5888,7 +5870,7 @@ class TestSizeGuardEntryPoint(unittest.TestCase):
 
 
 class TestPython39Hazards(unittest.TestCase):
-    """U-10 — the 3.9 hazards ``feature_version`` does not catch (P-10)."""
+    """U-10 — the 3.9 hazards ``feature_version`` does not catch."""
 
     def setUp(self):
         self.source = CRAYON_PATH.read_text(encoding="utf-8")
@@ -5970,8 +5952,8 @@ class TestPython39Hazards(unittest.TestCase):
         self.assertEqual(pattern_match_lines(source), [2])
 
 
-#: Deleted by plan 17-10. Every one is still named in `README.md` and
-#: `AGENTS.md`, whose rewrite is phase 18's.
+#: The deleted v1.x script layer. A document that still names one of these
+#: must carry the tombstone below.
 DELETED_SCRIPT_PATHS = (
     "scripts/dogen-common.sh",
     "scripts/dogen-record-draft.sh",
@@ -5982,11 +5964,11 @@ DELETED_SCRIPT_PATHS = (
 )
 
 #: The marker both tombstones carry. Literal so a paraphrase goes red.
-TOMBSTONE_MARKER = "**were deleted in phase 17**"
+TOMBSTONE_MARKER = "**were deleted**"
 
 #: The two repo-root documents a reader meets first. `docs/before-after.md` is
 #: deliberately out of scope twice over: it is not in the release tree at all
-#: (phase 18 decision (d), and see `UNSHIPPED_PATHS`), and on the branches where
+#: (see `UNSHIPPED_PATHS`), and on the branches where
 #: it does exist it is a narrative comparison of the v1.x and v2.0 shapes, so
 #: naming the old scripts is its subject rather than an instruction.
 TOMBSTONED_DOCS = ("README.md", "AGENTS.md")
@@ -5995,17 +5977,15 @@ TOMBSTONED_DOCS = ("README.md", "AGENTS.md")
 class TestDeletedScriptsAreTombstoned(unittest.TestCase):
     """U-10 — the deleted v1.x layer is gone, and says so where it is still named.
 
-    WR-09: plan 17-10 deleted the five `scripts/dogen-*.sh` and
-    `tests/test_dogen_scripts.sh`. `README.md`'s install step copies a glob that
-    matches nothing, its smoke-test section invokes commands that do not exist,
-    and `AGENTS.md` names the deleted suite twice as part of the green gate. The
-    rewrite is phase 18's; until then a reader who follows either file is
-    following a tree that does not exist.
+    The five `scripts/dogen-*.sh` and `tests/test_dogen_scripts.sh` are
+    deleted. A document that still names them — an install step copying a glob
+    that matches nothing, a smoke-test section invoking commands that do not
+    exist, a green gate naming the deleted suite — sends a reader who follows
+    it into a tree that does not exist.
 
     Self-retiring on purpose: the tombstone is required only while a document
-    still names a deleted path. When phase 18's rewrite removes the last
-    mention, this class stops asking for anything rather than pinning a
-    paragraph nobody needs.
+    still names a deleted path. Once no document mentions one, this class
+    stops asking for anything rather than pinning a paragraph nobody needs.
     """
 
     def test_every_deleted_path_is_really_gone(self):
@@ -6041,7 +6021,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                 self.assertIn(
                     TOMBSTONE_MARKER,
                     text,
-                    "%s still names %s, which phase 17 deleted, and carries no "
+                    "%s still names %s, which were deleted, and carries no "
                     "tombstone saying so — a reader following it is following a "
                     "tree that does not exist"
                     % (relative, ", ".join(sorted(set(named)))),
@@ -6071,7 +6051,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "python3 -m unittest tests.test_evals",
     )
 
-    #: CR-01 — the gate command that deliberately has no separate CI step,
+    #: The gate command that deliberately has no separate CI step,
     #: carrying the reason `.github/workflows/ci.yml` states for it. An
     #: exemption is data here rather than prose in a review report, so a
     #: future reader meets it where the assertion is.
@@ -6081,7 +6061,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         # checker and a second step for it would run it twice.
         "python3 tests/check_traces.py",
     }
-    #: CR-01 — the mirror of the above: a `run:` body CI executes that
+    #: The mirror of the above: a `run:` body CI executes that
     #: `GATE_COMMANDS` does not declare. AGENTS.md pins the shell suites at
     #: warning level in prose ("that exact command, with that exact file
     #: scope, is what CI's `shellcheck` job runs") rather than as a tuple
@@ -6111,7 +6091,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
     def _run_bodies(cls, workflow):
         r"""Every ``run:`` body in ``workflow``, whatever key order its step uses.
 
-        18 CR-03 — this was ``^\s*- run:\s*(.+?)\s*$``, which requires ``run:``
+        This was once ``^\s*- run:\s*(.+?)\s*$``, which requires ``run:``
         to be the FIRST key of the step's mapping. The commonest GitHub Actions
         idiom is a named step, which puts ``name:`` first and ``run:`` on the
         following line, where that pattern cannot reach it. The damaging half is
@@ -6156,7 +6136,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         return bodies
 
     def test_the_ci_mirror_reads_a_run_that_is_not_a_steps_first_key(self):
-        """18 CR-03 — the parser's own fixture, in the forms ci.yml may grow.
+        """The parser's own fixture, in the forms ci.yml may grow.
 
         ``ci.yml`` happens to write every step as ``- run:`` today, so the real
         workflow cannot distinguish a parser that handles one form from one that
@@ -6187,19 +6167,20 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                 "bash scripts/other.sh",
                 "bash scripts/block.sh",
             },
-            "the named-step form is the one CR-03 found invisible; `defaults:`'s "
-            "`run:` mapping carries no body and must not be read as one",
+            "the named-step form is the one the old parser could not see; "
+            "`defaults:`'s `run:` mapping carries no body and must not be read "
+            "as one",
         )
 
     def test_ci_runs_every_gate_command(self):
-        """CR-01 — `ci.yml` is a hand copy of the gate unless something pins it.
+        """`ci.yml` is a hand copy of the gate unless something pins it.
 
         `GATE_COMMANDS` is pinned to `AGENTS.md`, to the tree and to the test
         modules in `tests/`, and the workflow that claims (ci.yml line 1) "one
         job per command that already runs locally" was pinned to nothing at
         all. It had already drifted: `python3 tests/test_crayon_unit.py` — the
         script form that exists because the two runners once reported
-        different counts (CR-06) — was in the gate and in no job, so the one
+        different counts — was in the gate and in no job, so the one
         regression class the second invocation form exists to catch was the
         one class CI could not see.
 
@@ -6221,7 +6202,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
             "workflow shape changed and this test is asserting against an "
             "empty set",
         )
-        # 18 WR-01: both subtracted sets are asserted against their SOURCES
+        # Both subtracted sets are asserted against their SOURCES
         # before either difference is taken. An exemption naming a command the
         # gate no longer declares is inert, and an extra naming a body ci.yml
         # no longer carries hides nothing: in both cases the set goes on being
@@ -6296,7 +6277,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                 )
 
     def test_the_install_smoke_is_declared_in_the_gate(self):
-        """CI-01 — the smoke is a gate command, so the tuple must name it.
+        """The smoke is a gate command, so the tuple must name it.
 
         `tests/install_smoke.sh` is the only gate command that reaches `crayon`
         through `PATH` rather than through the in-tree file, and the only one
@@ -6311,7 +6292,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         self.assertEqual(len(set(self.GATE_COMMANDS)), 15)
 
     def test_no_gate_command_names_a_path_the_tree_does_not_have(self):
-        """T-18-25 — the declared gate may never outrun the tree.
+        """The declared gate may never outrun the tree.
 
         `test_every_test_module_in_tests_is_in_the_gate` pins the tree → gate
         direction: nothing in `tests/` may go unrun. This pins the other one.
@@ -6320,7 +6301,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         "declared gate and real gate disagree" defect the tuple exists to
         prevent, inverted. Both the path form (`tests/check_traces.py`) and the
         module form (`tests.test_skill_text`) are resolved, because the tuple
-        uses both. `validation/` joined the prefixes in phase 19 with
+        uses both. `validation/` is a prefix because of
         `bash validation/fixtures.sh`: without it the scan skips that command's
         path entirely and the vacuous-pass guard below fails on the count, which
         is the trap rather than the check firing.
@@ -6353,7 +6334,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         )
 
     def test_no_test_module_in_tests_needs_a_third_party_runner(self):
-        """WR-08 — the orphan also imported a runner this branch does not have.
+        """The orphan also imported a runner this branch does not have.
 
         Stdlib only: no pyproject, no third-party test runner, no uv. A module
         that imports one is a module the gate cannot run, which is how the
@@ -6377,12 +6358,12 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                     % (path.name, sorted(imported & third_party)),
                 )
 
-    #: WR-03 / T-18-76 — the home-directory prefixes that are legitimately in
+    #: The home-directory prefixes that are legitimately in
     #: the shipped tree, each with the reason it is there. Widening this tuple
     #: to make a real leak pass is the exact failure the scan below exists
     #: against: an entry names a DOCUMENTED SYNTHETIC path, never a real user.
     SYNTHETIC_HOMES = (
-        # The redaction token plan 18-12 introduced, and what the five
+        # The redaction token, and what the five
         # previously-leaking tracked files now carry. It names nobody, and it
         # stays absolute so `validation/score.py`'s `normalise_diagnostics`
         # rule 2 collapses it to the same token the real prefix collapsed to.
@@ -6408,13 +6389,13 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
     SYNTHETIC_MANGLED_HOMES = (
         b"-home-redacted-",
         b"-home-user-example-com-",
-        # 18 WR-02 — `validation/runmeta.sh`'s worked example of the bug that
+        # `validation/runmeta.sh`'s worked example of the bug that
         # proved the harness mangles EVERY character outside [A-Za-z0-9]: the
         # half-mapped form a `/`-only-and-`.`-only rewrite produces, named
         # there beside the correct one above. It is documented illustration,
         # not a machine's path. It passed this scan before the class was
         # aligned with the slash form's, by not matching rather than by being
-        # allow-listed — which is the whole of what WR-02 reported.
+        # allow-listed.
         b"-home-user@example-com-",
     )
 
@@ -6423,18 +6404,18 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
     #: teaches the next reader to widen the allow-list, which is the one move
     #: that turns this gate into decoration.
     #:
-    #: 18 CR-02 — the slash form used to REQUIRE a trailing separator, which
+    #: The slash form used to REQUIRE a trailing separator, which
     #: made a home path that is not followed by a further component invisible:
     #: a `cd` line, an `echo $HOME`, an assignment at end of line, a JSON value
     #: that IS the home directory. That is the single most common shape of the
     #: leak this scan exists to catch, and it passed green. The terminator is
     #: gone: the component class is greedy, so a match ends where the component
     #: ends, whatever follows it — a separator, a quote, a comma or nothing.
-    #: 18 WR-02 — the separator is a class, not a literal ``/``: Windows
+    #: The separator is a class, not a literal ``/``: Windows
     #: spells the same leak ``C:\\Users\\<name>\\`` and no form of it was
     #: covered. The component class is unchanged; only what may delimit it is.
     HOME_RE = re.compile(rb"[/\\](?:home|Users)[/\\][A-Za-z0-9._@%+-]+")
-    #: 18 WR-09 — the mangled token is ANCHORED at its leading separator. A
+    #: The mangled token is ANCHORED at its leading separator. A
     #: real one is a whole path component whose leading separator was rewritten
     #: to a hyphen, so it never begins in the middle of a word; ordinary
     #: hyphenated prose in a tracked markdown file does. Unanchored, a slug or
@@ -6455,9 +6436,10 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
 
         One scanner, reached from the scan over the shipped tree below and from
         that scan's NEGATIVE arm. A scan that only ever runs over a clean tree
-        cannot tell "found nothing" from "matches nothing", and 18 CR-02 was
-        exactly the second of those: the tree was green against a pattern that
-        could not see the commonest form of the leak.
+        cannot tell "found nothing" from "matches nothing", and the slash form's
+        old trailing-separator requirement was exactly the second of those: the
+        tree was green against a pattern that could not see the commonest form
+        of the leak.
 
         The allow-list is compared on the home COMPONENT rather than on the
         exact matched bytes. :data:`SYNTHETIC_HOMES` spells its entries with a
@@ -6470,7 +6452,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         )
         leaks = []
         for match in cls.HOME_RE.findall(blob):
-            # 18 WR-02: a Windows-spelled synthetic is the same synthetic. The
+            # A Windows-spelled synthetic is the same synthetic. The
             # allow-list is written in one separator and compared in one.
             if match.replace(b"\\", b"/") not in allowed:
                 leaks.append(match)
@@ -6489,8 +6471,8 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         source. No fragment matches anything on its own.
 
         ``separator`` and ``root`` are arguments because the same leak has a
-        Windows spelling — ``\\Users\\<name>`` — and 18 WR-02 found no form of
-        it covered.
+        Windows spelling — ``\\Users\\<name>`` — and no form of it used to be
+        covered.
         """
         return separator + root + separator + user
 
@@ -6507,7 +6489,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         return lead + separator + b"home" + separator + user + separator
 
     def test_the_mangled_scan_reads_a_component_and_not_a_hyphenated_word(self):
-        """18 WR-09 — both directions of the anchor, on one pattern.
+        """Both directions of the anchor, on one pattern.
 
         A real mangled home is a whole path component: the separator that
         preceded it was rewritten to a hyphen along with every other one, so it
@@ -6539,7 +6521,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                 )
 
     def test_the_home_path_scan_catches_what_it_claims_to(self):
-        """18 CR-02 — the negative arm the scan below never had.
+        """The negative arm the scan below never had.
 
         `CHANGELOG.md` states that a test over the tree that actually ships
         "fails if either encoding returns". That was false while the slash form
@@ -6579,7 +6561,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                     )
 
     def test_the_scan_covers_the_windows_and_the_punctuated_forms(self):
-        """18 WR-02 — the three shapes neither pattern could see.
+        """The three shapes neither pattern could see.
 
         The mangled class was ``[A-Za-z0-9]`` where the slash form's is
         ``[A-Za-z0-9._@%+-]``, so a harness that rewrites only the separators,
@@ -6672,10 +6654,10 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
         )
 
 
-#: Tracked on the planning branch, deliberately absent from the release tree,
-#: and therefore deliberately absent from ``AGENTS.md``'s tree block. Phase 18's
-#: checkpoint recorded decision (d) as "left out of the release tree" for
-#: ``docs/before-after.md``; it is not linked from anywhere in the tree. It is
+#: Tracked on a development branch, deliberately absent from the release tree,
+#: and therefore deliberately absent from ``AGENTS.md``'s tree block. The
+#: maintainer decided to leave ``docs/before-after.md`` out of the release
+#: tree; it is not linked from anywhere in the tree. It is
 #: named here rather than merely omitted, so that an absence from the listing
 #: is a statement somebody made and not a line somebody forgot. (The two v1-era
 #: ``.html`` records at the root are kept as they are on ``main``; the root
@@ -6881,7 +6863,7 @@ class TestTheTreeBlockIsPinnedToTheTree(unittest.TestCase):
 
 class TestProgressRecordReads(unittest.TestCase):
     """U-09 — ``read_progress``'s "absent, unreadable and malformed read as
-    empty" is the whole of its contract with every consumer (WR-03).
+    empty" is the whole of its contract with every consumer.
 
     The record is an optimisation over the recovery material and never a
     substitute for it, so the safe answer to any unreadable state is "assume
@@ -6923,7 +6905,7 @@ class TestProgressRecordReads(unittest.TestCase):
         self.assertEqual(crayon.read_progress(self.repo, "u1"), self.EMPTY)
 
     def test_an_unreadable_record_reads_as_empty(self):
-        # WR-03: `PermissionError` is an `OSError`, not one of the three
+        # `PermissionError` is an `OSError`, not one of the three
         # subclasses the `except` used to name, so it escaped.
         self.path.write_text('{"placed": [], "transition_attempts": 0}', encoding="utf-8")
         self.path.chmod(0o000)
@@ -6947,15 +6929,15 @@ class TestProgressRecordReads(unittest.TestCase):
 
 
 class TestStepFourFailureArm(unittest.TestCase):
-    """WR-02 — both git calls of step 4 answer by the same rule.
+    """Both git calls of step 4 answer by the same rule.
 
-    CR-01(b) gave the commit arm an attempt counter and left the ``git add``
+    An earlier fix gave the commit arm an attempt counter and left the ``git add``
     arm raising ``uncommitted_tail`` with ``hint="crayon resume <id>"``
     unconditionally, on the reasoning that only a commit hook can reject a
     batch. ``git add`` also fails deterministically — an index that will not
     lock, a pathspec a ``.gitignore`` change excluded after the guard ran, a
     read-only ``.git`` — and in every one of those the hint reproduced its own
-    refusal, which is the closed loop CR-01(b) exists to break.
+    refusal, which is the closed loop the attempt counter exists to break.
 
     Driven directly against the shared arm rather than through a repository:
     a second ``git add`` failure on ONE batch needs a fault injected between
@@ -6985,12 +6967,12 @@ class TestStepFourFailureArm(unittest.TestCase):
             with self.subTest(step=step):
                 refusal = self._refusal(2, step)
                 self.assertEqual(refusal.reason, "recovery_unsupported")
-                # Both arms account for `--adopt`; only one offers it (WR-06).
+                # Both arms account for `--adopt`; only one offers it.
                 self.assertIn("--adopt", refusal.hint)
                 self.assertEqual(refusal.extra.get("step"), step)
 
     def test_the_hint_is_never_only_the_command_that_just_refused(self):
-        """WR-04 — the assertion that used to pin this could not fail.
+        """The assertion that used to pin this could not fail.
 
         It read ``assertNotIn("crayon resume u1\\n", refusal.hint)``. The hint is
         built from implicitly-concatenated string literals with no newline
@@ -7024,7 +7006,7 @@ class TestStepFourFailureArm(unittest.TestCase):
                     "change first, which is the command that just refused",
                 )
                 remainder = hint.replace(sanctioned, "")
-                # WR-06: the conditional escape belongs to the arm where a hook
+                # The conditional escape belongs to the arm where a hook
                 # ran. On a `git add` failure the commit was never attempted,
                 # nothing on disk is `unexpected`, and `--adopt` degrades to
                 # the plain resume that just refused — so it must not be
@@ -7044,7 +7026,7 @@ class TestStepFourFailureArm(unittest.TestCase):
                 self.assertNotIn("crayon resume u1", remainder)
 
     def test_the_two_arms_do_not_share_one_detail(self):
-        """WR-03 — ``detail`` is what the routed surfaces branch on.
+        """``detail`` is what the routed surfaces branch on.
 
         Both arms carried ``commit_rejected``, so a ``git add`` failure — where
         the commit was never attempted and no hook ran — was routed by name to
@@ -7068,7 +7050,7 @@ class TestStepFourFailureArm(unittest.TestCase):
         self.assertNotIn("only the commit was refused", staged)
         self.assertIn("could not stage them", staged)
         self.assertIn("the commit was never attempted", staged)
-        # WR-06: and it names the causes that can actually produce it, in a
+        # And it names the causes that can actually produce it, in a
         # sentence that closes. The old shared template left the parenthetical
         # open — "…because the commit was never attempted, then remove what is
         # refusing the transition…" read as a comma splice — and then offered
@@ -7081,7 +7063,7 @@ class TestStepFourFailureArm(unittest.TestCase):
         self.assertIn("REWROTE the placed bytes", committed)
 
     def test_the_counter_is_not_described_as_a_count_of_refusals(self):
-        """WR-03 — ``transition_attempts`` counts three different things.
+        """``transition_attempts`` counts three different things.
 
         It is persisted before EITHER git call, so it covers an add failure, a
         commit refusal and a run killed between the two. "git refused this
@@ -7170,7 +7152,7 @@ class TestToolPackaging(unittest.TestCase):
         self.assertEqual(third_party, [], "crayon must import standard library only")
 
     def test_the_source_parses_under_a_newer_interpreter(self):
-        """3.9 and 3.13 arrive with phase-18 CI; this is the cheap local smoke."""
+        """CI covers 3.9 and 3.13; this is the cheap local smoke."""
         newer = shutil.which("python3.12")
         if newer is None:
             self.skipTest("no python3.12 on this machine")
@@ -7184,13 +7166,13 @@ class TestToolPackaging(unittest.TestCase):
 
 
 class TestThisSuiteIsWhollyDefined(unittest.TestCase):
-    """U-10 — the suite's own vacuous-pass guard (CR-06).
+    """U-10 — the suite's own vacuous-pass guard.
 
     ``unittest.main()`` calls ``sys.exit()``. A ``__main__`` block anywhere but
     the end of the file therefore truncates the module when it is run as a
     script: everything below is never defined, the short run prints ``OK`` and
     exits 0, and it is indistinguishable from the full run without counting.
-    That is what this file did for the whole of phase 17 — 325 of 404 tests,
+    That is what this file once did — 325 of 404 tests,
     the entire U-11 / V1–V19 block, behind a green ``OK``.
     """
 
@@ -7227,7 +7209,7 @@ class TestThisSuiteIsWhollyDefined(unittest.TestCase):
         self.assertGreaterEqual(EXPECTED_MIN_TESTS, 400)
 
 
-# --- U-11 (VERB-06) — contract 5.9's V1–V19 verification report --------------
+# --- U-11 — contract 5.9's V1–V19 verification report -----------------------
 #
 # One class per check group, each method carrying the V id it pins. V1–V4 and
 # V5–V13 are driven from synthetic event lists rather than from a repository:
@@ -7240,7 +7222,7 @@ _LEDGER_WORDS = {}
 
 
 def ledger_words_pattern():
-    """D-16's banned vocabulary, compiled from ``tests/lib.sh``.
+    """The banned ledger vocabulary, compiled from ``tests/lib.sh``.
 
     ``LEDGER_WORDS_RE`` has ONE definition site, the shell library both bash
     suites source; this reads its single-quoted value out of that file's text
@@ -7259,12 +7241,12 @@ def ledger_words_pattern():
 def by_id(checks):
     """``{V id: record}``, asserting that no id appears twice in one report.
 
-    It also holds every non-ok row's DEFAULT line to D-16: the detail a plain
+    It also holds every non-ok row's DEFAULT line to that rule: the detail a plain
     ``verify`` prints is ``crayon.plain_detail(detail)``, and it may carry no
     ``LEDGER_WORDS_RE`` match. Every V1–V19 test reads its report through here,
     so every forged-check fixture is also a test of the line the author would
-    read. And every non-ok detail must be a ``crayon.Detail`` built by ``said``
-    (CR-03), so a check that formats its detail any other way, and would have
+    read. And every non-ok detail must be a ``crayon.Detail`` built by ``said``,
+    so a check that formats its detail any other way, and would have
     its contributor content scanned as the tool's words, fails here. Explicit
     ``raise``s, so both checks survive ``python3 -O``.
     """
@@ -7907,7 +7889,7 @@ class TestVerifyCorroboration(VerifyRepoTestCase):
     Contract 5.9 fixes these five at WARN and INFO because the chain is
     tamper-EVIDENCE, not tamper-proofing: a maintenance edit or a squash merge
     reported as a failure trains the reader to ignore the one signal that means
-    the record is actually broken (T-17-40).
+    the record is actually broken.
     """
 
     def signed(self, targets=("reference/p.rst",), context=None, commit="0" * 40):
@@ -8081,7 +8063,7 @@ class TestVerifyCorroboration(VerifyRepoTestCase):
 
 
 class TestPlainVerify(unittest.TestCase):
-    """VOICE-04 / D-04, D-05, D-16 — the default ``verify`` answers plainly.
+    """The default ``verify`` answers plainly.
 
     Pure tests over :func:`crayon.check_record` lists: the renderer is a function
     of the checks and the notes, so a repository would add setup without adding
@@ -8159,7 +8141,7 @@ class TestPlainVerify(unittest.TestCase):
                 self.assertNotIn("checks", line)
 
     def test_the_outcome_follows_the_counts_the_exit_rule_reads(self):
-        """T-20-05: a FAIL can never read as intact, whatever else warns."""
+        """A FAIL can never read as intact, whatever else warns."""
         for findings, notes, first in (
             ({}, [], "The record is intact."),
             ({"V19": "w"}, [], "The record is intact; these need a look:"),
@@ -8264,7 +8246,7 @@ class TestPlainVerify(unittest.TestCase):
         self.assertIsNone(ledger_words_pattern().search(plain), plain)
 
     def test_the_verbose_report_prints_each_detail_as_recorded(self):
-        """D-05: ``--verbose`` never passes through the mapper."""
+        """``--verbose`` never passes through the mapper."""
         raw = "the accept at seq 6 seals files that are not the basis at seq 5"
         lines = crayon.verify_report_lines(
             "f" * 40, self.checks(V6=raw), []
@@ -8290,7 +8272,7 @@ class TestPlainVerify(unittest.TestCase):
         self.assertIn("crayon.Detail", str(caught.exception))
 
     def test_no_check_detail_is_formatted_outside_said(self):
-        """CR-03's structural guard: every check detail goes through ``said``.
+        """The structural guard: every check detail goes through ``said``.
 
         A detail formatted any other way is a plain ``str``, which
         :func:`crayon.plain_detail` scans whole, contributor content included.
@@ -8310,7 +8292,7 @@ class TestPlainVerify(unittest.TestCase):
             "verify_currency",
             "verify_corroboration",
             "_finding",
-            # 20 IN-03 (second review): the one note, `derive`'s warning.
+            # The one note, `derive`'s warning.
             "unknown_kind_notes",
         ):
             self.assertIn(name, functions, "%s is gone from crayon.py" % name)
@@ -8331,7 +8313,7 @@ class TestPlainVerify(unittest.TestCase):
                         self.assertNotEqual(node.func.attr, "format", ".format")
 
     def test_every_note_derive_returns_is_a_said_detail(self):
-        """20 IN-03 (second review): notes reach ``plain_detail`` as ``Detail``s too."""
+        """Notes reach ``plain_detail`` as ``Detail``s too."""
         events = opening() + [ev("telemetry", 2), ev("generations", 3)]
         notes = crayon.derive(events, fs_of(None))["warnings"]
         self.assertTrue(notes, "the fixture carries an unknown kind")
@@ -8341,7 +8323,7 @@ class TestPlainVerify(unittest.TestCase):
 
 
 class TestSaidDetail(unittest.TestCase):
-    """CR-03 / G-04, G-05 — ``said`` keeps the bytes and records who wrote them.
+    """``said`` keeps the bytes and records who wrote them.
 
     A :class:`crayon.Detail` is the string ``template % args`` and nothing else,
     so ``--json``, ``--verbose`` and every refusal print what they printed
@@ -8419,7 +8401,7 @@ class TestSaidDetail(unittest.TestCase):
         )
 
     def test_said_join_refuses_a_plain_string(self):
-        """20 IN-01 (second review): no item is taken for the tool's words by default."""
+        """No item is taken for the tool's words by default."""
         for item in ("a", crayon.ToolText("a"), 5):
             with self.subTest(item=item):
                 with self.assertRaises(TypeError):
@@ -8431,7 +8413,7 @@ class TestSaidDetail(unittest.TestCase):
         self.assertEqual(built.pieces, (("x", False), (", ", True), ("y", False)))
 
     def test_said_refuses_an_unknown_percent(self):
-        """20 IN-02 (second review): ``said`` raises wherever ``%`` would."""
+        """``said`` raises wherever ``%`` would."""
         for template, args in (
             ("50%.", ()),
             ("50%", ()),
@@ -8449,11 +8431,11 @@ class TestSaidDetail(unittest.TestCase):
 
 
 class TestPlainVerifyKeepsContributorContent(VerifyRepoTestCase):
-    """CR-03 — default ``verify`` names the page, unit and step as recorded.
+    """Default ``verify`` names the page, unit and step as recorded.
 
-    Each case is a literal input from ``20-VERIFICATION.md``'s CR-03 list, run
-    through the real check rather than a hand-written detail. Rows are indexed
-    directly, not through :func:`by_id` (G-07): ``LEDGER_WORDS_RE`` bans a
+    Each case is a literal contributor input, run through the real check
+    rather than a hand-written detail. Rows are indexed directly, not through
+    :func:`by_id`: ``LEDGER_WORDS_RE`` bans a
     12-character hex run and the word ``sealed`` in a human line, and these
     fixtures carry exactly such names as contributor content, by design.
     """
@@ -8646,7 +8628,7 @@ class TestPlainVerifyKeepsContributorContent(VerifyRepoTestCase):
 
     def test_the_tools_own_words_still_read_plainly_through_v1_to_v19(self):
         # This test pins the tool's own vocabulary through by_id, so its unit id
-        # carries no contributor run that LEDGER_WORDS_RE would flag (G-07).
+        # carries no contributor run that LEDGER_WORDS_RE would flag.
         self.UNIT = "u"
         # V3: a forged 64-character prev reads as seven characters.
         lines = lines_of(opening("u") + [signoff(2, ["a.rst"])])
@@ -8705,7 +8687,7 @@ class TestEscapeHintHistory(unittest.TestCase):
                     self.assertNotIn("would re-place the same bytes and be refused again", hint)
 
     def test_the_escape_is_emitted_below_two_attempts_too(self):
-        """WR-02(a) — the helper used to return ``otherwise`` verbatim.
+        """The helper used to return ``otherwise`` verbatim.
 
         S-13 credits every calling site with this helper's text, so a first
         attempt on a batch a hook is still rejecting printed only the remedy —
@@ -8725,17 +8707,16 @@ class TestEscapeHintHistory(unittest.TestCase):
                 self.assertNotIn("attempted", hint)
 
 
-# --- phase 18: the phase-16 review warnings deferred to this phase ----------
+# --- review warnings: each closed in code AND pinned by a test --------------
 #
-# WR-16 … WR-20 were deferred from phase 16's fourth review round with one
-# instruction attached to each: close it in code AND leave behind a test that
-# goes red if the defect returns. WR-18 and WR-19 are that second half alone —
-# the code was already right and nothing asserted it, which is the "a green
-# suite whose assertions cannot fail" shape this phase exists against.
+# Each class below pins a defect with a test that goes red if the defect
+# returns. Some of them are that test alone — the code was already right and
+# nothing asserted it, which is the "a green suite whose assertions cannot
+# fail" shape.
 
 
 class CrayonCliTestCase(TempRepoTestCase):
-    """A temp repo plus the real `crayon` executable, for the GATE-04 shape.
+    """A temp repo plus the real `crayon` executable, for the one-line refusal shape.
 
     The unit suite reaches `crayon`'s internals through `_load_crayon()`; a
     refusal's ONE-JSON-LINE-on-stderr promise is a property of the process, so
@@ -8771,9 +8752,9 @@ class CrayonCliTestCase(TempRepoTestCase):
         )
 
     def one_refusal(self, proc):
-        """The single stderr JSON line, with the five keys GATE-04 requires."""
+        """The single stderr JSON line, with the five keys a refusal requires."""
         lines = [line for line in proc.stderr.splitlines() if line.strip()]
-        self.assertEqual(len(lines), 1, "GATE-04: exactly one line, got %r" % lines)
+        self.assertEqual(len(lines), 1, "a refusal is exactly one line, got %r" % lines)
         self.assertNotIn("Traceback", proc.stderr)
         payload = json.loads(lines[0])
         for key in ("error", "unit", "detail", "hint", "next"):
@@ -8781,12 +8762,12 @@ class CrayonCliTestCase(TempRepoTestCase):
         return payload
 
 
-class TestWr16GitAddDetail(unittest.TestCase):
-    """WR-16 — offenders past the third are counted, never silently dropped."""
+class TestGitAddDetail(unittest.TestCase):
+    """Offenders past the third are counted, never silently dropped."""
 
     IGNORE_HEADER = "The following paths are ignored by one of your .gitignore files:"
 
-    def test_wr16_a_fourth_offender_is_named_or_its_omission_is_counted(self):
+    def test_a_fourth_offender_is_named_or_its_omission_is_counted(self):
         stderr = "%s\n%s\nhint: Use -f if you really want to add them.\n" % (
             self.IGNORE_HEADER,
             "\n".join("docs/reference/%s.rst" % letter for letter in "abcd"),
@@ -8797,10 +8778,10 @@ class TestWr16GitAddDetail(unittest.TestCase):
         )
         self.assertTrue(
             named == 4 or ("and %d more" % (4 - named)) in detail,
-            "WR-16: %d of 4 offenders named with no count: %r" % (named, detail),
+            "%d of 4 offenders named with no count: %r" % (named, detail),
         )
 
-    def test_wr16_a_large_offender_set_states_how_many_it_omitted(self):
+    def test_a_large_offender_set_states_how_many_it_omitted(self):
         stderr = "%s\n%s\n" % (
             self.IGNORE_HEADER,
             "\n".join("docs/reference/p%d.rst" % n for n in range(9)),
@@ -8809,10 +8790,10 @@ class TestWr16GitAddDetail(unittest.TestCase):
         shown = sum(1 for n in range(9) if "docs/reference/p%d.rst" % n in detail)
         self.assertTrue(
             shown == 9 or ("and %d more" % (9 - shown)) in detail,
-            "WR-16: %d of 9 offenders named with no count: %r" % (shown, detail),
+            "%d of 9 offenders named with no count: %r" % (shown, detail),
         )
 
-    def test_wr16_gits_own_diagnostics_are_never_presented_as_offenders(self):
+    def test_gits_own_diagnostics_are_never_presented_as_offenders(self):
         """The positional parse holds only when the block is alone on stderr."""
         stderr = (
             "%s\n"
@@ -8825,18 +8806,18 @@ class TestWr16GitAddDetail(unittest.TestCase):
         detail = crayon._git_add_detail(stderr)
         self.assertIn("docs/reference/b.rst", detail)
         for prefix in ("hint:", "error:", "warning:", "fatal:"):
-            self.assertNotIn(prefix, detail, "WR-16: %r is git's UI, not a path" % prefix)
+            self.assertNotIn(prefix, detail, "%r is git's UI, not a path" % prefix)
 
-    def test_wr16_a_single_line_stderr_is_unchanged(self):
+    def test_a_single_line_stderr_is_unchanged(self):
         one = "fatal: pathspec 'docs/reference/l.rst' is beyond a symbolic link"
         self.assertEqual(crayon._git_add_detail(one), one)
 
-    def test_wr16_empty_stderr_still_has_an_answer(self):
+    def test_empty_stderr_still_has_an_answer(self):
         self.assertEqual(crayon._git_add_detail(""), "git add failed")
 
 
-class TestIn03TheProbeIsLocalePinned(unittest.TestCase):
-    """Phase-16 IN-03 — the positional read of git's stderr is safe only pinned.
+class TestTheProbeIsLocalePinned(unittest.TestCase):
+    """The positional read of git's stderr is safe only pinned.
 
     `_git_add_detail` reads git's first line positionally and filters git's own
     diagnostic prefixes by name. Both are English facts, and what makes them
@@ -8846,11 +8827,11 @@ class TestIn03TheProbeIsLocalePinned(unittest.TestCase):
     `LC_MESSAGES` with the whole suite still green.
     """
 
-    def test_in03_the_locale_overlay_pins_messages_to_c(self):
+    def test_the_locale_overlay_pins_messages_to_c(self):
         self.assertEqual(crayon.IPC_LOCALE.get("LC_ALL"), "C")
         self.assertEqual(crayon.IPC_LOCALE.get("LANGUAGE"), "")
 
-    def test_in03_the_ignore_probe_is_run_under_the_pinned_locale(self):
+    def test_the_ignore_probe_is_run_under_the_pinned_locale(self):
         tree = ast.parse(CRAYON_PATH.read_text(encoding="utf-8"))
         node = next(
             n for n in ast.walk(tree)
@@ -8867,33 +8848,33 @@ class TestIn03TheProbeIsLocalePinned(unittest.TestCase):
         ]
         self.assertTrue(
             pinned,
-            "IN-03: the probe must pin IPC_LOCALE — _git_add_detail reads its "
+            "the probe must pin IPC_LOCALE — _git_add_detail reads its "
             "stderr positionally and by English prefix",
         )
 
 
-class TestWr17SourcesAreCheckedWhereTheyAreDeclared(TempRepoTestCase):
-    """WR-17 — a plan `signoff` can never sign is never written."""
+class TestSourcesAreCheckedWhereTheyAreDeclared(TempRepoTestCase):
+    """A plan `signoff` can never sign is never written."""
 
-    def test_wr17_a_missing_source_is_refused_by_the_declaring_guard(self):
+    def test_a_missing_source_is_refused_by_the_declaring_guard(self):
         with self.assertRaises(crayon.Refusal) as caught:
             crayon.guard_source_files(self.repo, ["docs/never-existed.md"], "u1")
         self.assertEqual(caught.exception.reason, "unit_invalid")
         self.assertIn(caught.exception.reason, crayon.REASONS)
         self.assertIn("never-existed.md", caught.exception.detail)
 
-    def test_wr17_a_directory_source_is_refused_by_the_declaring_guard(self):
+    def test_a_directory_source_is_refused_by_the_declaring_guard(self):
         (self.repo / "docs").mkdir()
         with self.assertRaises(crayon.Refusal) as caught:
             crayon.guard_source_files(self.repo, ["docs"], "u1")
         self.assertEqual(caught.exception.reason, "unit_invalid")
 
-    def test_wr17_a_readable_in_repo_source_passes(self):
+    def test_a_readable_in_repo_source_passes(self):
         self.assertEqual(
             crayon.guard_source_files(self.repo, ["source.md"], "u1"), ["source.md"]
         )
 
-    def test_wr17_both_declaring_verbs_ask_the_guard(self):
+    def test_both_declaring_verbs_ask_the_guard(self):
         """Stage b, before anything is written — not stage f's regret."""
         tree = ast.parse(CRAYON_PATH.read_text(encoding="utf-8"))
         for verb in ("cmd_unit_new", "cmd_unit_edit"):
@@ -8908,10 +8889,10 @@ class TestWr17SourcesAreCheckedWhereTheyAreDeclared(TempRepoTestCase):
                         if isinstance(call, ast.Call)
                         and getattr(call.func, "id", "") == "guard_source_files"
                     ],
-                    "WR-17: %s commits a plan signoff can never sign" % verb,
+                    "%s commits a plan signoff can never sign" % verb,
                 )
 
-    def test_wr17_signoff_still_asks_too(self):
+    def test_signoff_still_asks_too(self):
         """unit.md is a plain file an author may hand-edit; both guards stay."""
         tree = ast.parse(CRAYON_PATH.read_text(encoding="utf-8"))
         node = next(
@@ -8924,14 +8905,14 @@ class TestWr17SourcesAreCheckedWhereTheyAreDeclared(TempRepoTestCase):
                 if isinstance(call, ast.Call)
                 and getattr(call.func, "id", "") == "guard_source_files"
             ],
-            "WR-17: declaration-time validation may not be the ONLY guard",
+            "declaration-time validation may not be the ONLY guard",
         )
 
 
-class TestWr17DeclaringVerbWritesNothing(CrayonCliTestCase):
-    """WR-17, end to end: the refusal happens before the ledger exists."""
+class TestDeclaringVerbWritesNothing(CrayonCliTestCase):
+    """End to end: the refusal happens before the ledger exists."""
 
-    def test_wr17_unit_new_appends_no_ledger_line_for_an_unsignable_source(self):
+    def test_unit_new_appends_no_ledger_line_for_an_unsignable_source(self):
         proc = self.declare("u1", "reference/u1.rst", "--source", "docs/never.md")
         self.assertEqual(proc.returncode, 2, proc.stderr)
         payload = self.one_refusal(proc)
@@ -8939,7 +8920,7 @@ class TestWr17DeclaringVerbWritesNothing(CrayonCliTestCase):
         self.assertIn(payload["error"], crayon.REASONS)
         self.assertFalse((self.repo / ".crayon" / "units" / "u1").exists())
 
-    def test_wr17_unit_edit_is_the_named_way_back(self):
+    def test_unit_edit_is_the_named_way_back(self):
         """`--source` REPLACES the list, so a declared source can be repointed."""
         self.assertEqual(
             self.declare("u2", "reference/u2.rst", "--source", "docs/index.md").returncode,
@@ -8955,8 +8936,8 @@ class TestWr17DeclaringVerbWritesNothing(CrayonCliTestCase):
         )
 
 
-class TestWr18BusyNamesItsUnitAtTheRaiser(TempRepoTestCase):
-    """WR-18 — the assertion binds to the raiser, not to a shared observable.
+class TestBusyNamesItsUnitAtTheRaiser(TempRepoTestCase):
+    """The assertion binds to the raiser, not to a shared observable.
 
     `main` falls back to `_argv_unit(args)` when a refusal carries no unit, so
     an end-to-end assertion on the refusal's `unit` field is satisfied by the
@@ -8965,7 +8946,7 @@ class TestWr18BusyNamesItsUnitAtTheRaiser(TempRepoTestCase):
     object, the fallback cannot answer for it.
     """
 
-    def test_wr18_the_lock_raiser_populates_unit_itself(self):
+    def test_the_lock_raiser_populates_unit_itself(self):
         held = crayon.acquire_lock(self.repo, "held-unit")
         self.addCleanup(crayon.release_lock, held)
         with self.assertRaises(crayon.Refusal) as caught:
@@ -8973,7 +8954,7 @@ class TestWr18BusyNamesItsUnitAtTheRaiser(TempRepoTestCase):
         self.assertEqual(caught.exception.reason, "busy")
         self.assertEqual(caught.exception.unit, "lk-unit")
 
-    def test_wr18_the_busy_raiser_is_about_crayons_own_lock(self):
+    def test_the_busy_raiser_is_about_crayons_own_lock(self):
         """Negative keystone: `busy` is never git's index lock (`git_busy`)."""
         held = crayon.acquire_lock(self.repo, "held-unit")
         self.addCleanup(crayon.release_lock, held)
@@ -8983,8 +8964,8 @@ class TestWr18BusyNamesItsUnitAtTheRaiser(TempRepoTestCase):
         self.assertNotIn("index.lock", caught.exception.detail)
 
 
-class TestWr19ReadEventsLedgerCorruptArm(TempRepoTestCase):
-    """WR-19 — the claim-policy half of WR-09, asserted at the raiser.
+class TestReadEventsLedgerCorruptArm(TempRepoTestCase):
+    """The claim policy's `ledger_corrupt` arms, asserted at the raiser.
 
     `read_events`' two `ledger_corrupt` arms are reachable in production only
     through `find_claim` -> `unit_state(sibling)`, because for the CURRENT unit
@@ -9000,7 +8981,7 @@ class TestWr19ReadEventsLedgerCorruptArm(TempRepoTestCase):
             path.write_text(payload, encoding="utf-8")
         return str(path)
 
-    def test_wr19_an_unparseable_line_raises_ledger_corrupt(self):
+    def test_an_unparseable_line_raises_ledger_corrupt(self):
         path = self.ledger('{"kind":"ledger"}\nthis is not json\n')
         with self.assertRaises(crayon.Refusal) as caught:
             crayon.read_events(path, "u1")
@@ -9009,24 +8990,24 @@ class TestWr19ReadEventsLedgerCorruptArm(TempRepoTestCase):
         self.assertEqual(caught.exception.next_token, "resume")
         self.assertIn("line 2", caught.exception.detail)
 
-    def test_wr19_undecodable_bytes_raise_ledger_corrupt_at_read_events(self):
+    def test_undecodable_bytes_raise_ledger_corrupt_at_read_events(self):
         path = self.ledger(b'{"kind":"ledger","note":"\xff\xfe"}\n')
         with self.assertRaises(crayon.Refusal) as caught:
             crayon.read_events(path, "u1")
         self.assertEqual(caught.exception.reason, "ledger_corrupt")
         self.assertEqual(caught.exception.next_token, "resume")
 
-    def test_wr19_the_arm_never_leaks_an_absolute_path(self):
+    def test_the_arm_never_leaks_an_absolute_path(self):
         path = self.ledger("not json\n")
         with self.assertRaises(crayon.Refusal) as caught:
             crayon.read_events(path, "u1")
         self.assertNotIn(str(self.repo), caught.exception.hint)
 
 
-class TestWr19TheRefusalIsOneGate04Line(CrayonCliTestCase):
-    """WR-19, end to end: the five keys, one line, no traceback."""
+class TestTheCorruptLedgerRefusalIsOneJsonLine(CrayonCliTestCase):
+    """End to end: the five keys, one line, no traceback."""
 
-    def test_wr19_a_corrupt_ledger_refuses_in_the_gate04_shape(self):
+    def test_a_corrupt_ledger_refuses_as_one_json_line(self):
         self.assertEqual(self.declare("u1", "reference/u1.rst").returncode, 0)
         with open(
             self.repo / ".crayon" / "units" / "u1" / "ledger.jsonl", "a",
@@ -9040,8 +9021,8 @@ class TestWr19TheRefusalIsOneGate04Line(CrayonCliTestCase):
         self.assertEqual(payload["next"], "resume")
 
 
-class TestWr20ADirectoryLedgerIsOneAnswer(TempRepoTestCase):
-    """WR-20 — the two readers of the same file agree on the third case.
+class TestADirectoryLedgerIsOneAnswer(TempRepoTestCase):
+    """The two readers of the same file agree on the third case.
 
     `_read_text` called a directory ABSENT (derive state from nothing — the
     silent wrong answer its own docstring exists to prevent) while
@@ -9059,31 +9040,31 @@ class TestWr20ADirectoryLedgerIsOneAnswer(TempRepoTestCase):
             return "unhandled %s" % type(bad).__name__
         return "no refusal at all"
 
-    def test_wr20_read_events_names_a_directory_ledger(self):
+    def test_read_events_names_a_directory_ledger(self):
         path = self.repo / "ledger.jsonl"
         path.mkdir()
         self.assertEqual(
             self.reason_from(crayon.read_events, str(path)), "ledger_corrupt"
         )
 
-    def test_wr20_read_text_names_it_the_same_way(self):
+    def test_read_text_names_it_the_same_way(self):
         path = self.repo / "ledger.jsonl"
         path.mkdir()
         self.assertEqual(
             self.reason_from(crayon._read_text, str(path)), "ledger_corrupt"
         )
 
-    def test_wr20_an_absent_ledger_is_still_absent_to_both(self):
+    def test_an_absent_ledger_is_still_absent_to_both(self):
         """Negative keystone: agreement must not be bought by refusing more."""
         path = str(self.repo / "nothing-here.jsonl")
         self.assertEqual(crayon.read_events(path, "u1"), [])
         self.assertEqual(crayon._read_text(path, "u1"), "")
 
 
-class TestWr20TheDirectoryLedgerRefusalIsNamed(CrayonCliTestCase):
-    """WR-20, end to end: one named JSON line, and no Python traceback."""
+class TestTheDirectoryLedgerRefusalIsNamed(CrayonCliTestCase):
+    """End to end: one named JSON line, and no Python traceback."""
 
-    def test_wr20_a_directory_ledger_refuses_without_a_traceback(self):
+    def test_a_directory_ledger_refuses_without_a_traceback(self):
         self.assertEqual(self.declare("u1", "reference/u1.rst").returncode, 0)
         ledger = self.repo / ".crayon" / "units" / "u1" / "ledger.jsonl"
         ledger.unlink()
@@ -9094,11 +9075,11 @@ class TestWr20TheDirectoryLedgerRefusalIsNamed(CrayonCliTestCase):
         self.assertEqual(proc.returncode, crayon.REASONS["ledger_corrupt"])
 
 
-# --- phase 18: the small Info items phases 16 and 17 deferred ---------------
+# --- smaller review items, each pinned by a test ---------------------------
 
 
-class TestIn01TheLockMustBeARealFile(TempRepoTestCase):
-    """Phase-16 IN-01 — "not a symlink" is narrower than "is a real file".
+class TestTheLockMustBeARealFile(TempRepoTestCase):
+    """The check "not a symlink" is narrower than "is a real file".
 
     The refusal text and the docstring both say the lock "must be a real file",
     but only `islink` and `O_NOFOLLOW` were enforced, and `O_NOFOLLOW` rejects
@@ -9122,19 +9103,19 @@ class TestIn01TheLockMustBeARealFile(TempRepoTestCase):
         crayon.release_lock(fd)
         return "acquired anyway"
 
-    def test_in01_a_fifo_at_the_lock_path_is_refused(self):
+    def test_a_fifo_at_the_lock_path_is_refused(self):
         os.mkfifo(str(self.lock_path()))
         self.assertEqual(self.refusal_from_acquire(), "bad_write_path")
 
-    def test_in01_a_directory_at_the_lock_path_is_still_refused(self):
-        """WR-15's boundary: the errno arm keeps its own wording."""
+    def test_a_directory_at_the_lock_path_is_still_refused(self):
+        """The errno arm's boundary: it keeps its own wording."""
         self.lock_path().mkdir()
         with self.assertRaises(crayon.Refusal) as caught:
             crayon.acquire_lock(self.repo, "lk-unit")
         self.assertEqual(caught.exception.reason, "bad_write_path")
         self.assertIn("EISDIR", caught.exception.detail)
 
-    def test_in01_a_symlink_at_the_lock_path_is_still_refused_by_name(self):
+    def test_a_symlink_at_the_lock_path_is_still_refused_by_name(self):
         path = self.lock_path()
         os.symlink("/tmp/somewhere-else", str(path))
         with self.assertRaises(crayon.Refusal) as caught:
@@ -9142,18 +9123,18 @@ class TestIn01TheLockMustBeARealFile(TempRepoTestCase):
         self.assertEqual(caught.exception.reason, "bad_write_path")
         self.assertIn("symlink", caught.exception.detail)
 
-    def test_in01_a_regular_lock_file_still_locks(self):
+    def test_a_regular_lock_file_still_locks(self):
         """Negative keystone: the widened check must not refuse the real case."""
         fd = crayon.acquire_lock(self.repo, "lk-unit")
         crayon.release_lock(fd)
         self.assertTrue(self.lock_path().is_file())
 
 
-class TestIn02NoUnreferencedDefinitionSurvives(unittest.TestCase):
-    """Phase-16 IN-02 — `Refusal.exit_code` and `validate_step_id` were dead.
+class TestNoUnreferencedDefinitionSurvives(unittest.TestCase):
+    """`Refusal.exit_code` and `validate_step_id` were dead.
 
     A definition nothing reaches is a claim nothing checks. `validate_step_id`
-    acquired two callers with the phase-17 step verbs; `Refusal.exit_code`
+    acquired two callers with the step verbs; `Refusal.exit_code`
     never did — `refuse()` is the one place the contract's exit code is chosen,
     and a second way to spell it is a second opinion waiting to drift.
     """
@@ -9161,23 +9142,23 @@ class TestIn02NoUnreferencedDefinitionSurvives(unittest.TestCase):
     def source(self):
         return CRAYON_PATH.read_text(encoding="utf-8")
 
-    def test_in02_the_refusal_carries_no_unreferenced_exit_code_property(self):
+    def test_the_refusal_carries_no_unreferenced_exit_code_property(self):
         self.assertFalse(
             hasattr(crayon.Refusal("busy"), "exit_code"),
-            "IN-02: refuse() chooses the exit code; a second speller drifts",
+            "refuse() chooses the exit code; a second speller drifts",
         )
 
-    def test_in02_validate_step_id_is_reached_by_a_caller(self):
+    def test_validate_step_id_is_reached_by_a_caller(self):
         tree = ast.parse(self.source())
         calls = [
             node for node in ast.walk(tree)
             if isinstance(node, ast.Call)
             and getattr(node.func, "id", "") == "validate_step_id"
         ]
-        self.assertTrue(calls, "IN-02: validate_step_id must be reached or deleted")
+        self.assertTrue(calls, "validate_step_id must be reached or deleted")
 
-    def test_in02_every_module_level_helper_is_reached_or_gone(self):
-        """The rule generalised over the two names the row listed."""
+    def test_every_module_level_helper_is_reached_or_gone(self):
+        """The rule generalised beyond the two names in the class docstring."""
         tree = ast.parse(self.source())
         called = {
             getattr(node.func, "id", "") or getattr(node.func, "attr", "")
@@ -9191,45 +9172,45 @@ class TestIn02NoUnreferencedDefinitionSurvives(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertTrue(
                     not defined or name in called,
-                    "IN-02: %s is defined and never reached" % name,
+                    "%s is defined and never reached" % name,
                 )
 
 
-class TestIn05ReadPageBytesNamesItsUnit(TempRepoTestCase):
-    """Phase-16 IN-05 — the `unit=""` default silently misattributed a refusal.
+class TestReadPageBytesNamesItsUnit(TempRepoTestCase):
+    """The `unit=""` default silently misattributed a refusal.
 
     `read_page_bytes` raises through `contained_page`, and a refusal that names
     `""` as its unit is a refusal a skill cannot route on. The default made
     forgetting the argument a silent mistake instead of a loud one.
     """
 
-    def test_in05_read_page_bytes_requires_its_unit(self):
+    def test_read_page_bytes_requires_its_unit(self):
         with self.assertRaises(TypeError):
             crayon.read_page_bytes(self.repo, "ok.rst")
 
-    def test_in05_the_signature_carries_no_unit_default(self):
+    def test_the_signature_carries_no_unit_default(self):
         self.assertNotIn(
             'def read_page_bytes(repo, path, unit="")',
             CRAYON_PATH.read_text(encoding="utf-8"),
         )
 
-    def test_in05_it_still_answers_with_the_unit_supplied(self):
+    def test_it_still_answers_with_the_unit_supplied(self):
         (self.repo / "docs").mkdir()
         (self.repo / "docs" / "ok.rst").write_text("page\n", encoding="utf-8")
         self.assertEqual(crayon.read_page_bytes(self.repo, "ok.rst", "u1"), b"page\n")
 
 
-class TestIn06ABooleanIsNeverASeq(unittest.TestCase):
-    """Phase-16 IN-06 — `isinstance(True, int)` is true, and that is a spoof.
+class TestABooleanIsNeverASeq(unittest.TestCase):
+    """`isinstance(True, int)` is true, and that is a spoof.
 
     `verify_chain` checks seq contiguity and prev digests and nothing beneath
     them, so a hand-repaired, forged or future-tool-written record spells
     `resolves` exactly as it likes. With `bool` admitted, `"resolves": [true]`
     compared equal to seq 1 and closed a steering request the reviewer never
-    resolved (T-18-11).
+    resolved.
     """
 
-    def test_in06_a_boolean_resolves_entry_closes_no_request(self):
+    def test_a_boolean_resolves_entry_closes_no_request(self):
         events = [
             make_event(kind="steering", seq=1),
             make_event(kind="review", seq=2, verdict="accept", resolves=[True]),
@@ -9237,10 +9218,10 @@ class TestIn06ABooleanIsNeverASeq(unittest.TestCase):
         self.assertEqual(
             crayon.pending_requests(events, 0),
             [1],
-            "IN-06: True stood in for seq 1 and closed a live request",
+            "True stood in for seq 1 and closed a live request",
         )
 
-    def test_in06_a_boolean_withdraw_seq_closes_no_request(self):
+    def test_a_boolean_withdraw_seq_closes_no_request(self):
         events = [
             make_event(kind="steering", seq=1),
             make_event(
@@ -9250,14 +9231,14 @@ class TestIn06ABooleanIsNeverASeq(unittest.TestCase):
         ]
         self.assertEqual(crayon.pending_requests(events, 0), [1])
 
-    def test_in06_a_boolean_accept_seq_disposes_of_nothing(self):
+    def test_a_boolean_accept_seq_disposes_of_nothing(self):
         events = [
             make_event(kind="steering", seq=0),
             make_event(kind="review", seq=True, verdict="accept", resolves=[0]),
         ]
         self.assertEqual(crayon.pending_requests(events, -1), [0])
 
-    def test_in06_an_integer_seq_is_still_a_seq(self):
+    def test_an_integer_seq_is_still_a_seq(self):
         """Negative keystone: the exclusion must not refuse a real seq."""
         events = [
             make_event(kind="steering", seq=1),
@@ -9265,7 +9246,7 @@ class TestIn06ABooleanIsNeverASeq(unittest.TestCase):
         ]
         self.assertEqual(crayon.pending_requests(events, 0), [])
 
-    def test_in06_the_cli_still_refuses_a_boolean_spelled_as_text(self):
+    def test_the_cli_still_refuses_a_boolean_spelled_as_text(self):
         for value in ("true", "True", "false"):
             with self.subTest(value=value):
                 with self.assertRaises(crayon.Refusal) as caught:
@@ -9276,8 +9257,8 @@ class TestIn06ABooleanIsNeverASeq(unittest.TestCase):
         self.assertEqual(caught.exception.reason, "bad_resolution")
 
 
-class TestPhase17In01HookReportNeedsItsRepo(unittest.TestCase):
-    """Phase-17 IN-01 — `repo=None` is a trap that fires after the commit.
+class TestHookReportNeedsItsRepo(unittest.TestCase):
+    """`repo=None` is a trap that fires after the commit.
 
     `digest_file(os.path.join(os.fspath(repo), path))` runs whenever a path is
     in `existing_drift`, and `os.fspath(None)` raises `TypeError`. This code
@@ -9286,20 +9267,20 @@ class TestPhase17In01HookReportNeedsItsRepo(unittest.TestCase):
     passed neither argument, which is what kept the trap invisible.
     """
 
-    def test_phase17_in01_the_repository_argument_is_required(self):
+    def test_the_repository_argument_is_required(self):
         with self.assertRaises(TypeError):
             crayon.report_hook_changes({"changed": [], "extra": []})
 
-    def test_phase17_in01_no_repo_default_survives(self):
+    def test_no_repo_default_survives(self):
         self.assertEqual(
             CRAYON_PATH.read_text(encoding="utf-8").count("repo=None"),
             0,
-            "phase-17 IN-01: a hook report with no repository has no vantage point",
+            "a hook report with no repository has no vantage point",
         )
 
 
-class TestPhase17In02EveryInstalledHookIsExecutable(unittest.TestCase):
-    """Phase-17 IN-02 — a hook without its executable bit is not installed.
+class TestEveryInstalledHookIsExecutable(unittest.TestCase):
+    """A hook without its executable bit is not installed.
 
     A fixture that writes `.git/hooks/pre-commit` and never chmods it passes
     only while some EARLIER fixture happened to leave the file executable. When
@@ -9315,7 +9296,7 @@ class TestPhase17In02EveryInstalledHookIsExecutable(unittest.TestCase):
     )
     WRITE = re.compile(r">>?\s*['\"]?(\.git/hooks/[A-Za-z0-9_-]+)")
 
-    def test_phase17_in02_every_hook_write_is_followed_by_a_chmod(self):
+    def test_every_hook_write_is_followed_by_a_chmod(self):
         for name in self.SUITES:
             lines = (ROOT / name).read_text(encoding="utf-8").splitlines()
             for number, line in enumerate(lines, 1):
@@ -9328,11 +9309,11 @@ class TestPhase17In02EveryInstalledHookIsExecutable(unittest.TestCase):
                     self.assertIn(
                         "chmod +x %s" % hook,
                         window,
-                        "phase-17 IN-02: %s:%d writes %s and never chmods it"
+                        "%s:%d writes %s and never chmods it"
                         % (name, number, hook),
                     )
 
-    def test_phase17_in02_the_scan_is_not_vacuous(self):
+    def test_the_scan_is_not_vacuous(self):
         """A regex that stopped matching would make the gate above silent."""
         found = 0
         for name in self.SUITES:
@@ -9342,8 +9323,8 @@ class TestPhase17In02EveryInstalledHookIsExecutable(unittest.TestCase):
         self.assertGreaterEqual(found, 5, "the hook-write scan matched nothing")
 
 
-class TestPhase17In04TheDriftNoticeIsBatchScoped(unittest.TestCase):
-    """Phase-17 IN-04 — the notice's condition and its wording, one statement.
+class TestTheDriftNoticeIsBatchScoped(unittest.TestCase):
+    """The notice's condition and its wording, one statement.
 
     The condition moved to `state["page_drift"]` — ANY drifted basis path or
     signed target of the unit — while the sentence still says "completing THIS
@@ -9353,12 +9334,12 @@ class TestPhase17In04TheDriftNoticeIsBatchScoped(unittest.TestCase):
     spans every signed target today), which is exactly why it needs a test.
     """
 
-    def test_in04_a_drifted_path_outside_the_batch_raises_no_notice(self):
+    def test_a_drifted_path_outside_the_batch_raises_no_notice(self):
         rows = [{"path": "docs/reference/a.rst", "class": "done"}]
         state = {"page_drift": True, "drifted_paths": ["reference/b.rst"]}
         self.assertEqual(crayon.batch_drift(rows, state), [])
 
-    def test_in04_a_drifted_path_inside_the_batch_does(self):
+    def test_a_drifted_path_inside_the_batch_does(self):
         """`rows` spells a page repo-relatively, the snapshot docs-relatively.
 
         Comparing the two spellings raw matched nothing, which suppresses the
@@ -9369,15 +9350,15 @@ class TestPhase17In04TheDriftNoticeIsBatchScoped(unittest.TestCase):
         state = {"page_drift": True, "drifted_paths": ["reference/a.rst"]}
         self.assertEqual(crayon.batch_drift(rows, state), ["docs/reference/a.rst"])
 
-    def test_in04_an_exactly_spelled_drifted_path_matches_too(self):
+    def test_an_exactly_spelled_drifted_path_matches_too(self):
         rows = [{"path": "reference/a.rst", "class": "done"}]
         state = {"page_drift": True, "drifted_paths": ["reference/a.rst"]}
         self.assertEqual(crayon.batch_drift(rows, state), ["reference/a.rst"])
 
-    def test_in04_an_underivable_state_raises_no_notice(self):
+    def test_an_underivable_state_raises_no_notice(self):
         self.assertEqual(crayon.batch_drift([{"path": "x"}], None), [])
 
-    def test_in04_the_resume_notice_asks_the_batch_scoped_question(self):
+    def test_the_resume_notice_asks_the_batch_scoped_question(self):
         tree = ast.parse(CRAYON_PATH.read_text(encoding="utf-8"))
         node = next(
             n for n in ast.walk(tree)
@@ -9389,18 +9370,19 @@ class TestPhase17In04TheDriftNoticeIsBatchScoped(unittest.TestCase):
                 if isinstance(call, ast.Call)
                 and getattr(call.func, "id", "") == "batch_drift"
             ],
-            "IN-04: the notice still asks a unit-scoped question",
+            "the notice still asks a unit-scoped question",
         )
 
 
-class TestPhase17In05HashInequalityIsNotContainment(unittest.TestCase):
-    """Phase-17 IN-05 — a digest comparison is an equality, not a containment.
+class TestHashInequalityIsNotContainment(unittest.TestCase):
+    """A digest comparison is an equality, not a containment.
 
     `assert_not_contains "..." "$before_sha" "$fresh_sha"` passes two
     equal-length hex digests as haystack and needle. It happens to be
     equivalent to inequality for same-length strings, and it reads as a
     containment claim that will mislead the next editor — the same "an
-    assertion that says something other than what it checks" class as WR-18.
+    assertion that says something other than what it checks" class as
+    :class:`TestBusyNamesItsUnitAtTheRaiser`.
     """
 
     SUITES = ("tests/lib.sh", "tests/test_crayon_lifecycle.sh",
@@ -9410,7 +9392,7 @@ class TestPhase17In05HashInequalityIsNotContainment(unittest.TestCase):
         r'assert_(?:not_)?contains\s+"[^"]*"\s+' + DIGEST + r'\s+' + DIGEST
     )
 
-    def test_in05_no_digest_pair_is_compared_by_containment(self):
+    def test_no_digest_pair_is_compared_by_containment(self):
         for name in self.SUITES:
             for number, line in enumerate(
                 (ROOT / name).read_text(encoding="utf-8").splitlines(), 1
@@ -9418,11 +9400,11 @@ class TestPhase17In05HashInequalityIsNotContainment(unittest.TestCase):
                 with self.subTest(file=name, line=number):
                     self.assertIsNone(
                         self.PAIR.search(line),
-                        "IN-05: %s:%d compares two digests by containment"
+                        "%s:%d compares two digests by containment"
                         % (name, number),
                     )
 
-    def test_in05_the_scan_catches_the_shape_it_is_about(self):
+    def test_the_scan_catches_the_shape_it_is_about(self):
         """Non-vacuity: the regex must still match the original defect."""
         self.assertIsNotNone(
             self.PAIR.search(
@@ -9431,7 +9413,7 @@ class TestPhase17In05HashInequalityIsNotContainment(unittest.TestCase):
             )
         )
 
-    def test_in05_the_suites_offer_an_inequality_assertion(self):
+    def test_the_suites_offer_an_inequality_assertion(self):
         self.assertIn(
             "assert_not_eq() {", (ROOT / "tests" / "lib.sh").read_text(encoding="utf-8")
         )
@@ -9759,7 +9741,7 @@ class TestContextVerbs(CrayonCliTestCase):
 
 
 class TestHumanNext(unittest.TestCase):
-    """CLOSE-04 (D-01, D-02): the ``publish`` token reads plainly for humans only.
+    """The ``publish`` token reads plainly for humans only.
 
     The mapping is one constant read by ``next_line``; the routing token in
     ``--json`` is the token ``route()`` chose, byte for byte. Every other token
@@ -9802,7 +9784,7 @@ class TestHumanNext(unittest.TestCase):
                 )
 
     def test_a_payload_never_shadows_the_base_keys(self):
-        # T-20-01: `body.update(payload)` must not overwrite ok, message or next.
+        # `body.update(payload)` must not overwrite ok, message or next.
         body = json.loads(self.respond(
             ["did x"],
             "publish",
@@ -9816,7 +9798,7 @@ class TestHumanNext(unittest.TestCase):
         self.assertEqual(body["files"], [{"path": "reference/a.rst"}])
 
     def test_json_segments_feed_only_the_json_message(self):
-        # CR-01: a verb whose human wording changed keeps its contract-1
+        # A verb whose human wording changed keeps its contract-1
         # `message` by passing the old segments; the human line never sees them.
         body = json.loads(self.respond(
             ["plain a", "plain b"], "draft", as_json=True,
@@ -9840,7 +9822,7 @@ class TestHumanNext(unittest.TestCase):
 
 
 class TestPlainShow(unittest.TestCase):
-    """D-16 on human ``show``: the state, the qualifier and the diff label read plainly.
+    """Human ``show``: the state, the qualifier and the diff label read plainly.
 
     Each is a second, human-only function beside the one ``show --json`` reads,
     so no JSON value moves (SC3): ``HUMAN_STATE`` beside ``state["state"]``,
@@ -9956,9 +9938,9 @@ class TestPlainShow(unittest.TestCase):
         )
 
 
-# CR-06: this block used to sit at line 4567 of a 5378-line file, two thirds of
-# the way up. ``unittest.main()`` calls ``sys.exit()``, so everything below it —
-# the entire U-11 / V1–V19 block, this phase's headline feature — was never
+# This block once sat at line 4567 of a 5378-line file, two thirds of the way
+# up. ``unittest.main()`` calls ``sys.exit()``, so everything below it — the
+# entire U-11 / V1–V19 block, the verification report — was never
 # defined when the file was run as a script, and the short run printed ``OK``
 # and exited 0. It was indistinguishable from the full run without counting:
 #

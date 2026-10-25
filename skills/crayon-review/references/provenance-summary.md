@@ -8,7 +8,7 @@ state, and deriving it is the tool's job, not yours: two verbs already compute i
 from that one file and print it.
 
 ```bash
-crayon summary "$UNIT_ID" --json    # the §3.3 report, as an object
+crayon summary "$UNIT_ID" --json    # the provenance report, as an object
 crayon show "$UNIT_ID" --json       # the whole derived state, as an object
 ```
 

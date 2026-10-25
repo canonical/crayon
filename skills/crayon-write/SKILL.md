@@ -300,7 +300,7 @@ with no option marked, as the author rules above require. Resuming at the first
 unresolved step is not one of them: it is mechanical, because the record says which
 steps are resolved, so it keeps its default.
 
-**Capture the command's output (D-15).** One redirection, one status, no digest:
+**Capture the command's output.** One redirection, one status, no digest:
 
 ```bash
 WS=".crayon/staging/$UNIT_ID/scratch"

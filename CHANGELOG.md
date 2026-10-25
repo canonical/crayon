@@ -475,7 +475,7 @@ pull-request, merge and tag process that had been planned but did not occur.
 - `.github/workflows/ci.yml`, `tests/install_smoke.sh` (the only test that reaches `dogen` through
   `PATH` rather than the in-tree file) and `tests/check_docs.py`, which checks the documented verb
   table, reason table, compatibility numbers and links against the tool's own observables.
-- `tests/size_guard.py` — VERB-09's line budget over `dogen`, reported and enforced. The CI job and
+- `tests/size_guard.py` — the line budget over `dogen`, reported and enforced. The CI job and
   the local guard load both thresholds **and** the comparison out of `tests/test_dogen_unit.py`, so
   there is one authoring site for the pair and the job and the guard are the same code rather than
   merely the same constants.
@@ -493,7 +493,7 @@ pull-request, merge and tag process that had been planned but did not occur.
 - Skills are discovered under `.agents/skills/` in the project, or `~/.agents/skills/` globally.
   Older roots (`.claude/skills/`, `.github/skills/`, `.opencode/skills/`) are found first by some
   agents and must be removed.
-- VERB-09's line budget is recalibrated a third time, to **10,000 lines annotate / 12,000 fail**,
+- The line budget is recalibrated a third time, to **10,000 lines annotate / 12,000 fail**,
   from the 8,000 / 9,500 pair the earlier builds of this release carried. `dogen` measured 9,472
   lines, so the review trigger had fired on every run for 263 commits and 28 lines of headroom
   remained below the failing threshold — a trigger that fires always reports nothing, and 28 lines
@@ -562,15 +562,15 @@ pull-request, merge and tag process that had been planned but did not occur.
 
 ### Where the frozen contract lives
 
-`docs/contract.md` was reviewed and frozen at the signed tag `contract-v1`, on the `gsd` branch at
-commit `30fe9a5`. The tag remains on that planning lineage and was not moved or duplicated onto
-published `main`. It records the contract freeze where it happened; it is not evidence of a
+`docs/contract.md` was reviewed and frozen at the signed tag `contract-v1`, at commit `30fe9a5` on
+a development branch. The tag remains on that branch's lineage and was not moved or duplicated
+onto published `main`. It records the contract freeze where it happened; it is not evidence of a
 `v0.2.0` release tag.
 
 The claim is checkable rather than asserted:
 
 ```
-git fetch origin gsd --tags
+git fetch origin --tags
 git tag -v contract-v1
 ```
 

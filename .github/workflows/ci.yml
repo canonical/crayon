@@ -1,18 +1,18 @@
 # ci.yml — the repository's gate, one job per command that already runs locally
-# (D-02: every job body is the literal local command, so a red check is
-# reproducible with one copy-paste).
+# (every job body is the literal local command, so a red check is reproducible
+# with one copy-paste).
 #
-# Eight jobs, no `needs:` edge between any two of them (D-05). A dependency
+# Eight jobs, no `needs:` edge between any two of them. A dependency
 # graph would hide the second failure behind the first; independent jobs put
 # every verdict on the pull request's checks list at once, which is what makes
 # a red run diagnosable without re-running it.
 #
-# Supply chain (D-05, T-18-01): first-party actions only, pinned to a 40-hex
+# Supply chain: first-party actions only, pinned to a 40-hex
 # commit SHA with the human-readable tag in a trailing comment. Never a tag or
 # a branch — a moved tag is an unreviewed code change on a runner that can read
 # this repository.
 #
-# D-02: CI first runs on the release branch, with no chance to iterate under a
+# CI first runs on the release branch, with no chance to iterate under a
 # reviewer, so every job below was proven here first. The local dry-run that
 # proves each one, with the wall-clock time it took on the authoring machine:
 #
@@ -44,13 +44,13 @@ on:
     branches: [main]
   pull_request:
 
-# D-05 / T-18-02: least-privilege. Every gate reads the repo and needs nothing
+# Least privilege: every gate reads the repo and needs nothing
 # else. No secret is referenced anywhere in this file, and the fork-privileged
 # trigger variant is deliberately not used.
 permissions:
   contents: read
 
-# WR-01 / REL-01: two cases, and only one of them may be cancelled.
+# Two cases, and only one of them may be cancelled.
 #
 # A superseded pull-request push should not keep paying for the suites, so a
 # pull request keys on its own number and the newest push cancels the older
@@ -67,13 +67,13 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # CI-01: the two bash suites. They share every prerequisite and there is
-  # nothing to gain from splitting them across two runners; the lifecycle suite
-  # is the long pole at roughly three minutes locally, so the timeout is
-  # generous rather than inherited (Pitfall 9, and assumption A7's 1.5-3x
-  # slowdown on a hosted runner is absorbed by it either way).
+  # The two bash suites. They share every prerequisite and there is nothing to
+  # gain from splitting them across two runners; the lifecycle suite is the
+  # long pole at roughly three minutes locally, so the timeout is generous
+  # rather than inherited (an assumed 1.5-3x slowdown on a hosted runner is
+  # absorbed by it either way).
   acceptance:
-    # Pitfall 1: pinned explicitly, never the floating "latest" runner label.
+    # Pinned explicitly, never the floating "latest" runner label.
     # That label is one GA promotion away from an image whose Python manifest
     # has no 3.9 leg, which would redden the matrix on a run where nothing in
     # this repository changed.
@@ -82,7 +82,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # T-18-02: no job in this workflow pushes, and every `run:` step
+          # No job in this workflow pushes, and every `run:` step
           # after a checkout executes code authored in the branch under test —
           # `bash tests/install_smoke.sh` extracts and executes shell out of
           # `docs/install.md`, `python3 tests/check_docs.py` imports `<root>/crayon`
@@ -90,13 +90,13 @@ jobs:
           # branch-authored bash. Never leave the job token in the workspace
           # `.git/config` for any of them to read.
           persist-credentials: false
-      # T-18-03: the body is the literal local command. No `${{ }}` expression
+      # The body is the literal local command. No `${{ }}` expression
       # is interpolated into any `run:` in this file — that is the canonical
       # Actions script-injection vector.
       - run: bash tests/test_crayon_acceptance.sh
       - run: bash tests/test_crayon_lifecycle.sh
 
-  # CI-01 / 17 D-12: the supported interpreter range, from the runner's tool
+  # The supported interpreter range, from the runner's tool
   # cache rather than from a fetcher. `tests/run_matrix.sh` is the same three
   # legs locally; the commands below are identical to its, and only the source
   # of the interpreter differs.
@@ -114,7 +114,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # T-18-02: see the first checkout in this file.
+          # See the first checkout in this file.
           persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -131,7 +131,7 @@ jobs:
       # carries no package marker, so discovery finds nothing and reports it
       # as success.
       - run: python3 -m unittest tests.test_crayon_unit
-      # CR-06: the SAME suite, script form. The two runners reported different
+      # The SAME suite, script form. The two runners reported different
       # counts once — a suite whole under one and truncated under the other
       # reports `OK` either way — so both forms are gate commands and both run
       # here.
@@ -143,33 +143,33 @@ jobs:
       # models, so no key and no network. Paid eval runs never run in CI.
       - run: python3 -m unittest tests.test_evals
 
-  # CI-01: the shell suites at warning level. The binary is preinstalled on the
-  # image, so there is no install step and no third-party action. The file scope
-  # is identical to the local command, so the two cannot drift in scope even
-  # where they drift in version (Pitfall 16: the image ships 0.9.0, a developer
-  # machine is likely newer).
+  # The shell suites at warning level. The binary is preinstalled on the image,
+  # so there is no install step and no third-party action. The file scope is
+  # identical to the local command, so the two cannot drift in scope even where
+  # they drift in version (the image ships 0.9.0, a developer machine is likely
+  # newer).
   shellcheck:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # T-18-02: see the first checkout in this file.
+          # See the first checkout in this file.
           persist-credentials: false
       - run: shellcheck -S warning install.sh tests/*.sh validation/*.sh
 
-  # CI-01: the SKILL.md frontmatter gate.
+  # The SKILL.md frontmatter gate.
   skill-lint:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # T-18-02: see the first checkout in this file.
+          # See the first checkout in this file.
           persist-credentials: false
       - run: python3 scripts/skill_lint.py
 
-  # CI-01 / CI-03: the docs-accuracy checker. It calls the trace-table checker
+  # The docs-accuracy checker. It calls the trace-table checker
   # itself, so there is no second step for it here.
   docs-check:
     runs-on: ubuntu-24.04
@@ -177,13 +177,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # T-18-02: see the first checkout in this file.
+          # See the first checkout in this file.
           persist-credentials: false
       - run: python3 tests/check_docs.py
       # The docs/ wiki and AGENTS.md: links resolve, pages reachable, notation reserved.
       - run: python3 scripts/wiki_lint.py
 
-  # CI-02 / A-37: the stranger's install path — docs/install.md's marked
+  # A-37: the stranger's install path — docs/install.md's marked
   # INSTALL region (install.sh --yes), extracted and executed from a temp PATH
   # in a hermetic temp repo, then one unit driven through the installed tool.
   install-smoke:
@@ -192,11 +192,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # T-18-02: see the first checkout in this file.
+          # See the first checkout in this file.
           persist-credentials: false
       - run: bash tests/install_smoke.sh
 
-  # VAL-08 / V-01…V-04 (D-10): the validation kit's four corruption fixtures.
+  # V-01…V-04: the validation kit's four corruption fixtures.
   # Its own job, not a step inside `acceptance`: a kit failure is a failure of
   # the evidence apparatus, not of the tool's acceptance suite, and naming it
   # on its own line in the checks list is what keeps the two readable apart.
@@ -206,11 +206,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # T-18-02: see the first checkout in this file.
+          # See the first checkout in this file.
           persist-credentials: false
       - run: bash validation/fixtures.sh
 
-  # CI-01 / REL-01 (D-06, D-07): VERB-09's line budget. The script loads the
+  # The line budget. The script loads the
   # thresholds AND the comparison out of the unit suite, so this job and the
   # local guard are the same code. Its verdict is its exit code; the markdown
   # table it appends to the job summary is a report, because a summary upload
@@ -221,6 +221,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # T-18-02: see the first checkout in this file.
+          # See the first checkout in this file.
           persist-credentials: false
       - run: python3 tests/size_guard.py

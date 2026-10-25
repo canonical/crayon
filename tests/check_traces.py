@@ -1,7 +1,7 @@
 """Bookkeeping gate: every trace in ``docs/contract.md`` names a test FUNCTION.
 
 The claim is deliberately narrow and the wording everywhere here is chosen to
-keep it that way (WR-12). This script greps the suites for a function whose
+keep it that way. This script greps the suites for a function whose
 NAME carries the row's test id. It never opens that function's body, so it can
 say that a row's test exists and nothing at all about whether the row's outcome
 is the outcome that test asserts — a row can be "cleared" while its clause is
@@ -9,7 +9,7 @@ unexercised in the shape that matters, or unimplemented. The contract's §"Trace
 table" preamble says exactly this, and the two statements are kept in step by
 hand.
 
-D-09 makes each test carry its own id and the trace(s) it discharges in its
+Each test carries its own id and the trace(s) it discharges in its
 name — ``test_n40_t31_t32_retire_releases_the_target_claim`` — so the link
 between the contract's trace table and the suites is greppable rather than
 remembered. This script is the grep: it reads the table, and for every row
@@ -18,10 +18,9 @@ which files it looked in. Clearing a mark is then a one-line edit to the table.
 
 It mirrors :mod:`skill_lint`: a single :func:`main` with
 a ``0`` (clean) / ``1`` (violation) / ``2`` (vacuous pass — nothing was checked)
-contract. Phase 18's docs-check calls it.
+contract. The docs-check calls it.
 
-Scan scope (decided in plan 17-01 for the Trace table; widened to the
-Mechanisms table by 19 D-12):
+Scan scope (first the Trace table; later widened to the Mechanisms table):
 
 1. **The ``## Trace table`` section, every row.** Unchanged: each row names a
    T#, and the checker either finds a test whose name carries the row's test id
@@ -31,7 +30,7 @@ Mechanisms table by 19 D-12):
    shape ``N-40 (`tests/test_crayon_lifecycle.sh`)`` the table already uses —
    **and** that file is in :data:`SUITE_FILES`. Two rows qualify today: the
    ``verify`` row's ``V-01…V-04 (`validation/fixtures.sh`)``, which is the link
-   D-12 exists to gate and was swept by hand until this phase, and the
+   the Mechanisms scan exists to gate and was once swept by hand, and the
    ``retire`` row's ``N-40``. The earlier note here said the Mechanisms table
    was excluded because U-08, A-36 and A-37 were then unlanded; all three have
    since landed and no ``planned`` mark remains anywhere in the contract, so
@@ -47,13 +46,13 @@ Mechanisms table by 19 D-12):
      costs.
    - Eleven rows carry no suite-file parenthetical at all. Five of them
      (``N-01/02/05``, ``U-05 · U-08``, ``N-04``, ``N-03, N-24``, ``N-16``) name
-     ids no test function carries anywhere; that is pre-existing traceability
-     drift STATE.md already records, and closing it by renaming real tests to
-     carry ids they do not otherwise have is rejected.
+     ids no test function carries anywhere; that is known, pre-existing
+     traceability drift, and closing it by renaming real tests to carry ids
+     they do not otherwise have is rejected.
 
 V-05 (the T25 unknown-kinds trace) is a ``verify`` behaviour test and lives in
 ``tests/test_crayon_lifecycle.sh`` with ``v05`` in its function name, not in the
-phase 19 fixture series; A-36 lives in ``tests/test_crayon_lifecycle.sh`` rather
+validation kit's fixture series; A-36 lives in ``tests/test_crayon_lifecycle.sh`` rather
 than in the acceptance file, and the function that landed carries a comment
 saying why an A-id lives in the N file.
 
@@ -69,10 +68,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "docs" / "contract.md"
 
 #: The suites a trace test may live in. Each is skipped with a printed note when
-#: absent — ``tests/test_skill_text.py`` lands in plan 17-02, and
-#: ``validation/fixtures.sh`` is phase 19's validation kit: the four corruption
-#: fixtures V-01…V-04, added here by 19 D-12 so the Mechanisms ``verify`` row's
-#: link to them is a gate rather than a hand sweep.
+#: absent. ``validation/fixtures.sh`` is the validation kit: the four corruption
+#: fixtures V-01…V-04, listed here so the Mechanisms ``verify`` row's link to
+#: them is a gate rather than a hand sweep.
 SUITE_FILES = (
     ROOT / "tests" / "test_crayon_acceptance.sh",
     ROOT / "tests" / "test_crayon_lifecycle.sh",
@@ -81,8 +79,8 @@ SUITE_FILES = (
     ROOT / "validation" / "fixtures.sh",
 )
 
-#: The suite file the Mechanisms scan exists for (19 D-12). The scan must reach
-#: it on every run: dropping the parenthetical from the one row D-12 was written
+#: The suite file the Mechanisms scan exists for. The scan must reach it on
+#: every run: dropping the parenthetical from the one row the scan was written
 #: to gate would otherwise leave the other parenthetical row scanning happily
 #: and the run reading clean, which is the vacuous pass in miniature.
 GATED_SUITE = ROOT / "validation" / "fixtures.sh"
@@ -233,12 +231,12 @@ def check_mechanism_row(row, suites, grepped):
     that ``_TEST_ID_RE`` takes only the first id in a cell, so ``V-01…V-04``
     checks ``v01`` alone — intended, because the four fixtures land together.
 
-    The file the row NAMES is where the test has to be (WR-04). This used to
-    unpack ``suite_name`` and then use it only in the error message, while the
+    The file the row NAMES is where the test has to be. This used to unpack
+    ``suite_name`` and then use it only in the error message, while the
     existence test searched every entry of :data:`SUITE_FILES` — so the
     ``verify`` row's claim that V-01…V-04 live in ``validation/fixtures.sh``,
-    which is the link 19 D-12 exists to gate, was satisfied identically by a
-    ``test_v01_*`` function in any other suite. A row that says *where* and is
+    which is the link the Mechanisms scan exists to gate, was satisfied
+    identically by a ``test_v01_*`` function in any other suite. A row that says *where* and is
     checked for *whether* is not a gate on the row. :data:`GATED_SUITE`'s guard
     in :func:`main` is a different assertion and does not cover this one: it
     checks only that some scanned row still NAMES the file.
@@ -286,10 +284,10 @@ def main():
 
         * zero trace rows parsed (a renamed heading or a reshaped Trace table),
         * zero Mechanisms rows scanned (the same, for the Mechanisms table),
-        * no scanned Mechanisms row naming :data:`GATED_SUITE` — the row 19 D-12
-          exists to gate lost its suite-file parenthetical, which the bare
-          zero-scanned count would miss while the ``retire`` row kept the scan
-          non-empty.
+        * no scanned Mechanisms row naming :data:`GATED_SUITE` — the row the
+          Mechanisms scan exists to gate lost its suite-file parenthetical,
+          which the bare zero-scanned count would miss while the ``retire``
+          row kept the scan non-empty.
     """
     try:
         text = CONTRACT.read_text(encoding="utf-8")
@@ -334,7 +332,7 @@ def main():
         )
     sys.stdout.flush()
 
-    # The Mechanisms pass (19 D-12). A row is scanned only when its signal cell
+    # The Mechanisms pass. A row is scanned only when its signal cell
     # names a file that is in SUITE_FILES; every other row is named below with
     # the reason, because a narrowing nobody can see is the defect this report
     # exists against.
@@ -386,7 +384,7 @@ def main():
     if not any(row[2] == gated for row in scanned):
         print(
             "check-traces: ERROR - no scanned Mechanisms row names %s; the row "
-            "D-12 exists to gate has lost its suite-file parenthetical and its "
+            "this scan exists to gate has lost its suite-file parenthetical and its "
             "link to the fixtures is unchecked" % gated,
             file=sys.stderr,
         )

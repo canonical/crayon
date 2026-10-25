@@ -180,7 +180,7 @@ single-line JSON refusal carrying `error` and `next`. A skill never decides wher
 loop goes — it reads the token or the reason and acts on the row below.
 
 This table is authored **here, once**, between the two sentinel comments, and
-mirrored byte-identically into each skill's `references/routing.md` (D-13). The
+mirrored byte-identically into each skill's `references/routing.md`. The
 mirrors are what actually ship, because the loading model auto-loads each skill
 directory but never this file. When you change a row, change it here and re-copy the
 block between the sentinels — `tests/test_skill_text.py` (S-03) asserts each of the

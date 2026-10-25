@@ -11,14 +11,14 @@ Subcommands:
                                      — the independent oracle over
                                        ``.crayon/units/<id>/ledger.jsonl`` plus ONE
                                        ``crayon verify --json`` reading, compared
-  score.py protocol [dir]            — conformance gate over one pre-registered leg: rev8
-                                       §10's six checks over the RUN file in ``dir``
+  score.py protocol [dir]            — conformance gate over one pre-registered leg: the
+                                       six protocol checks over the RUN file in ``dir``
                                        (default ``<ROOT>/validation``) and the leg file it
                                        names, reporting EVERY failing one
 
-``draft`` is report-only and always exits 0 — it is a prose score, not a gate. D-04
-SUPERSEDES the v1 report-only contract for ``audit`` and ``protocol``: their exit codes are
-load-bearing.
+``draft`` is report-only and always exits 0 — it is a prose score, not a gate. ``audit``
+and ``protocol`` are gates: v1 made every subcommand report-only, and here their exit codes
+are load-bearing.
 
 The exit contract, in the repo's uniform vocabulary (tests/check_traces.py, and
 tests/install_smoke.sh for the bash side):
@@ -31,7 +31,7 @@ tests/install_smoke.sh for the bash side):
 For ``audit``, 0 additionally requires that the ``[verify]`` arm agreed and that no
 DISAGREE line was printed.
 
-``audit`` gates on an ENUMERATED subset of its output, never on all of it (D-04):
+``audit`` gates on an ENUMERATED subset of its output, never on all of it:
 
     (a) any of the four oracle checks FLAGs;
     (b) the ``[verify]`` arm reports ``verdict == "fail"``;
@@ -64,8 +64,8 @@ would make a declared-but-unsigned unit look damaged. A ``SKIP`` never gates.
 repository — a maintenance edit, a squash merge — so requiring ``ok`` would make a green
 audit hostage to facts the validation leg does not control.
 
-Independence (D-02) — a rule, not a comment on one line
--------------------------------------------------------
+Independence — a rule, not a comment on one line
+------------------------------------------------
 
 The oracle reaches the tool ONLY by running ``crayon verify <unit> --json`` in a subprocess,
 and reads the ledger with its own reader (``read_ledger`` below), which restates contract
@@ -77,9 +77,9 @@ bug it exists to catch. The kit is stdlib-only: every parse here is ``json.loads
 WHICH program that subprocess runs is part of the same rule. ``_crayon_executable`` resolves it
 from the KIT's side only — ``CRAYON``, then ``<ROOT>/crayon``, then ``PATH``, each made absolute
 — and never from the tree under audit, which would let the audited repository write the reading
-the oracle trusts (CR-01).
+the oracle trusts.
 
-The cap is part of the rule. There are EXACTLY FOUR oracle checks (VAL-05):
+The cap is part of the rule. There are EXACTLY FOUR oracle checks:
 
     oracle-1   chain recompute          — ``seq`` and ``prev`` over the ledger's bytes
     oracle-2   signoff freshness        — the last signoff's ``plan_hash`` vs ``unit.md``
@@ -89,16 +89,16 @@ The cap is part of the rule. There are EXACTLY FOUR oracle checks (VAL-05):
 and there is no fifth. A fifth check would be a second ``verify``.
 
 Every path taken from the ledger is joined under the RESOLVED ``--root`` before use, and the
-scorer never opens a ledger-supplied path directly (T-11-04); every subprocess call uses a
+scorer never opens a ledger-supplied path directly; every subprocess call uses a
 list argv and never a shell string, so a retargeted root or a crafted unit id cannot inject
-arguments (T-11-05). Oracle check 3 is the one place the oracle reaches the filesystem with a
+arguments. Oracle check 3 is the one place the oracle reaches the filesystem with a
 path the AUDITED RECORD chose, so the rule is enforced there rather than assumed:
 ``_resolved_under`` resolves the join and refuses to return a path that leaves
 ``<root>/docs``, which covers an absolute ``path``, a ``..`` traversal and a symlinked target
-alike, and a path that escapes FLAGs without ever being opened (T-19-09, T-19-10).
+alike, and a path that escapes FLAGs without ever being opened.
 
-The DISAGREE matrix (D-03)
---------------------------
+The DISAGREE matrix
+-------------------
 
     | oracle check            | verify counterpart            | level    | DISAGREE  |
     | ----------------------- | ----------------------------- | -------- | --------- |
@@ -126,8 +126,8 @@ Pairing on the row's status would manufacture a split whenever the non-overlappi
 row fired — the same class of misreading as pairing oracle 1 with V2 separately, and the
 reason ``audit`` reads ``plan_stale`` / ``drifted`` / ``missing`` out of the row's own detail.
 
-Reading a clause is not the same as grepping for its NAME, and the difference was a defect
-(CR-02). ``V14``'s detail is ``"<path>: <status>"`` joined over every row, so a bare substring
+Reading a clause is not the same as grepping for its NAME, and the difference was a defect.
+``V14``'s detail is ``"<path>: <status>"`` joined over every row, so a bare substring
 test over the whole string sees the PAGE PATHS as well as the status words: a healthy sealed
 unit whose target is ``reference/missing-fields.rst`` made ``audit`` print a DISAGREE and exit
 1, and the symmetric case — the oracle FLAGs, V14 is genuinely ``ok``, the path contains
@@ -178,28 +178,28 @@ IMPL_IDENTIFIERS = [
 ]
 IMPL_PATH_RE = re.compile(r"\binternal/[a-z]")
 
-# Legal lifecycle phase tokens the git-log reconstruction may see (D-14). The
+# Legal lifecycle phase tokens the git-log reconstruction may see. The
 # audit requires only `drafted` and `reviewed`; `model-amended` and the rest are
 # legal-but-not-required, and any token OUTSIDE this set surfaces as a non-failing
 # INFO line (never a FLAG).
 KNOWN_PHASES = {"declared", "signed-off", "steered", "drafted", "reviewed",
                 "model-amended", "step-planned", "step-recorded"}
 
-# rST include directive (VAL-01). Matched on the ORIGINAL draft text exactly once
-# so inserted content is never re-scanned — one level, recursion-guarded (D-11).
+# rST include directive. Matched on the ORIGINAL draft text exactly once
+# so inserted content is never re-scanned — one level, recursion-guarded.
 INCLUDE_RE = re.compile(r"^\s*\.\. include:: (.+?)\s*$", flags=re.M)
 
-# v1's `SESSION_RE` / `SESSION_ISH_RE` lived here, carried forward by plan 19-01 for this one
-# to retarget. They are gone rather than kept: v1 discovered legs by globbing `SESSION-*.md`
+# v1's `SESSION_RE` / `SESSION_ISH_RE` lived here. They are gone rather than
+# kept: v1 discovered legs by globbing `SESSION-*.md`
 # beside a single `RESULTS.md`, and v2.0 pre-registers each leg in `validation/legs/<leg>.md`
 # and names it on the RUN file. `protocol`'s fifth check below is where both v1 checks landed —
 # the discovery is the RUN file's `leg`, and the headings are the leg file's. A regex kept
 # against a layout nothing writes any more is not a check, it is a thing a later reader has to
 # work out is dead.
 
-# The keys a COMPLETE RUN file carries, and the six rev8 §3.2 metrics inside `metrics`. Both
+# The keys a COMPLETE RUN file carries, and the six session metrics inside `metrics`. Both
 # lists exist once, here, and `validation/runmeta.sh` is what writes them; a RUN missing any is
-# refused rather than scored, which is the whole of VAL-07's "incomplete RUN" refusal.
+# refused rather than scored, which is the whole of the "incomplete RUN" refusal.
 REQUIRED_RUN_KEYS = ("leg", "harness", "model", "tool", "skills", "baseline", "context",
                      "metrics", "transcript", "sphinx", "sphinx_before", "sphinx_after")
 REQUIRED_METRIC_KEYS = ("install", "time_to_usable_draft", "avoidable_questions",
@@ -229,7 +229,7 @@ LEG_HEADING_RE = re.compile(r"^#{1,6}\s+(.*?)\s*#*\s*$", re.M)
 # deliberately the same expression. `runmeta.sh` validates it before the value becomes a
 # filename it WRITES; this one validates it before the value becomes a path the scorer READS,
 # because by then the name has travelled through a RUN file that is untracked, unvalidated
-# working-tree input (WR-11) and is not the name `runmeta.sh` checked. Anchored at both ends and
+# working-tree input and is not the name `runmeta.sh` checked. Anchored at both ends and
 # at the first character, so `..`, `-x` and `.hidden` are all refused.
 LEG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
@@ -278,7 +278,7 @@ UNIT_ID_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,63}")
 # check 1 (the chain recompute, which needs only bytes) and the `[verify]` arm (which needs only
 # the tool). Everything else — oracle checks 2-4 and all eight report lines — needs EVIDENCE on
 # the record and SKIPs without it. `checks_run` at this floor therefore means "nothing with unit
-# evidence was checked", which is the 2 the exit contract reserves (WR-01).
+# evidence was checked", which is the 2 the exit contract reserves.
 ALWAYS_RUN_CHECKS = 2
 
 # Contract §5.4's H set — the events that count as "something was recorded" between two
@@ -304,8 +304,8 @@ def _note(tag: str, message: str) -> None:
 
     Absence of the evidence is not a pass of the rule, and a reader has to be able to tell the
     two apart — ``PASS [sphinx]`` over a leg whose RUN file was never written would report the
-    §10 Sphinx rule as satisfied by a run that never looked at it. It is not a FLAG either: a
-    unit that has been declared but not signed off has no ``plan_hash`` to compare, and
+    Sphinx before/after rule as satisfied by a run that never looked at it. It is not a FLAG
+    either: a unit that has been declared but not signed off has no ``plan_hash`` to compare, and
     reporting that as a violation would make an ordinary mid-lifecycle unit look damaged.
 
     A SKIP never gates, which is safe here only because something else catches the case it
@@ -391,7 +391,7 @@ def _sha256_file(path: Path) -> tuple:
 def _resolved_under(directory: Path, relative: str) -> Path | None:
     """``directory / relative``, resolved, or ``None`` when the result leaves ``directory``.
 
-    The containment control for oracle check 3 (T-19-09/T-19-10) and the independent second
+    The containment control for oracle check 3 and the independent second
     reading of the property the tool enforces with ``contained()`` + ``realpath``. ``Path.__truediv__``
     DISCARDS the left side when the right is absolute, and ``resolve()`` collapses ``..`` and
     follows symlinks, so an absolute ``path``, a traversal and a link pointing out of ``docs/``
@@ -410,7 +410,7 @@ def _sha256(text: str) -> str:
 
 
 def _find_source_root(start: Path) -> Path | None:
-    """Nearest ancestor (inclusive) holding a conf.py — the Sphinx source root (D-08)."""
+    """Nearest ancestor (inclusive) holding a conf.py — the Sphinx source root."""
     for parent in [start, *start.parents]:
         if (parent / "conf.py").is_file():
             return parent
@@ -418,13 +418,13 @@ def _find_source_root(start: Path) -> Path | None:
 
 
 def expand_includes(text: str, draft_path: Path) -> tuple[str, list[str]]:
-    """One-level, recursion-guarded rST include expansion (D-08/D-11).
+    """One-level, recursion-guarded rST include expansion.
 
     Dir-relative targets resolve under the draft's own directory; a leading-``/``
     target resolves under the located Sphinx source root (nearest conf.py) and is
     treated as unresolvable when no source root is found — never read from the
-    filesystem root (D-08 security control). BOTH are then confined, which the
-    dir-relative branch was not (WR-06): it returned ``draft_path.parent / rel``
+    filesystem root, as a security control. BOTH are then confined, which the
+    dir-relative branch once was not: it returned ``draft_path.parent / rel``
     unchecked, so ``.. include:: ../../../private/notes.txt`` in a draft — which is
     MODEL-PRODUCED content — was read and folded into the text all four scans run
     over, and the matched tokens were echoed. ``draft`` is report-only, so the blast
@@ -437,9 +437,9 @@ def expand_includes(text: str, draft_path: Path) -> tuple[str, list[str]]:
     directory is the boundary instead — narrower than before, never wider.
     Substitution runs over the ORIGINAL
     text exactly once via a single ``INCLUDE_RE.sub`` call, so a directive sitting
-    inside an included file is left verbatim and NOT further expanded (D-11).
+    inside an included file is left verbatim and NOT further expanded.
     Unresolvable targets are collected in ``flags`` and their directive line is
-    left in place; the caller emits the FLAG line (D-09).
+    left in place; the caller emits the FLAG line.
     """
     flags: list[str] = []
     root = _find_source_root(draft_path.parent)
@@ -453,7 +453,7 @@ def expand_includes(text: str, draft_path: Path) -> tuple[str, list[str]]:
             base = draft_path.parent
         # Confine BOTH branches. `.resolve()` collapses any embedded `..` and follows
         # symlinks, and a target that escapes the boundary is treated as unresolvable
-        # (-> FLAG), never read (D-08). The boundary is the source root where there is
+        # (-> FLAG), never read. The boundary is the source root where there is
         # one; with no conf.py anywhere there is no tree to confine to, so the draft's
         # own directory is used instead.
         boundary = root if root is not None else draft_path.parent
@@ -478,15 +478,15 @@ def expand_includes(text: str, draft_path: Path) -> tuple[str, list[str]]:
 
 def score_draft(path: Path) -> None:
     # Report-only contract: draft always exits 0. A missing/unreadable path FLAGs
-    # and returns cleanly instead of crashing with a traceback (WR-03).
+    # and returns cleanly instead of crashing with a traceback.
     try:
         text = path.read_text(encoding="utf-8")
     except (FileNotFoundError, OSError) as exc:
         _flag(False, "io", f"cannot read draft {path}: {exc}")
         return
     # Resolve rST includes once, before any scan, so all four scans run on the
-    # expanded page (D-10). Gate to rST-bearing content — MyST-native {include}/
-    # literalinclude stay out of scope this cycle (D-11).
+    # expanded page. Gate to rST-bearing content — MyST-native {include}/
+    # literalinclude stay out of scope.
     if path.suffix == ".rst" or "{eval-rst}" in text:
         text, unresolved = expand_includes(text, path)
         for missing_include in unresolved:
@@ -513,7 +513,7 @@ def score_draft(path: Path) -> None:
           + (f"; missing: {', '.join(missing)}" if missing else ""))
 
     if path.suffix == ".rst":
-        # Strict D-10: structure scans the expanded page too. Title-less include
+        # Strict: structure scans the expanded page too. Title-less include
         # fragments (a lone subheading, no page title) are a known tolerated edge;
         # if a spurious [struct] FLAG surfaces on a real re-score, narrow this call
         # to the pre-expansion text and record the deviation here.
@@ -580,11 +580,11 @@ def read_ledger(path: Path) -> tuple[list[dict], list[str]]:
     the two sides it compared is the failure mode this tree lints against.
 
     The rule being restated, from ``docs/contract.md`` §5.2 and deliberately NOT from the
-    tool's own ``canonical_line`` / ``chain_prev`` (D-02): ``seq`` is contiguous from 0;
-    ``prev`` is the sha256 of the PREVIOUS LINE'S EXACT BYTES with the trailing LF excluded,
-    and is ``null`` at seq 0. The digest is taken over the bytes read from disk and never
-    over a re-serialisation of the parsed object, so a key-order or whitespace difference
-    that survives ``json.loads`` still FLAGs.
+    tool's own ``canonical_line`` / ``chain_prev`` (the independence rule): ``seq`` is
+    contiguous from 0; ``prev`` is the sha256 of the PREVIOUS LINE'S EXACT BYTES with the
+    trailing LF excluded, and is ``null`` at seq 0. The digest is taken over the bytes read
+    from disk and never over a re-serialisation of the parsed object, so a key-order or
+    whitespace difference that survives ``json.loads`` still FLAGs.
 
     One bad line does not invalidate the reader's account of the lines after it: the walk
     continues with that line's RAW BYTES as the new ``previous``, which is what the writer
@@ -601,7 +601,7 @@ def read_ledger(path: Path) -> tuple[list[dict], list[str]]:
     if lines and lines[-1] == b"":
         lines.pop()  # the writer always ends with exactly one LF
     elif raw:
-        # WR-02. The pop above is the ONLY place the trailing LF is read, and it used to be
+        # The pop above is the ONLY place the trailing LF is read, and it used to be
         # silent when there wasn't one — so a file ending mid-line at a line BOUNDARY (the last
         # event written whole, its LF never reached) came back with every event parsed and no
         # problem at all, and `audit` printed `chain recomputes clean`. Contract §5.2 fixes the
@@ -668,7 +668,7 @@ def _json_documents(text: str) -> list:
 
 
 #: The separator ``verify`` joins one check row's segments with. Restated here from the
-#: OBSERVED report rather than imported from ``crayon``'s ``SEGMENT`` (D-02: the oracle never
+#: OBSERVED report rather than imported from ``crayon``'s ``SEGMENT`` (the oracle never
 #: imports the tool), and used for exactly one thing — splitting ``V14``'s detail back into the
 #: ``"<path>: <status>"`` rows it was built from, so the pair predicate reads a STATUS and not
 #: a page path. A drift here degrades to "the whole detail is one row", which reads a status
@@ -713,7 +713,7 @@ def _crayon_executable() -> str | None:
     then this KIT's own ``<ROOT>/crayon``, then the bare name on ``PATH``. Returns ``None`` when
     the tool cannot be found at all, which the caller reports as a FLAG rather than a crash.
 
-    NEVER ``<root>/crayon``, where ``root`` is the tree under audit (CR-01). That fallback let
+    NEVER ``<root>/crayon``, where ``root`` is the tree under audit. That fallback let
     the audited repository choose the program whose reading the oracle trusts: a three-line
     ``crayon`` shipped in the target made ``audit`` print ``PASS [verify] … verdict 'ok'`` and
     exit 0, and ran as the auditing user besides. The ``[verify]`` arm is the oracle's single
@@ -724,8 +724,8 @@ def _crayon_executable() -> str | None:
         the ledger is the artefact under audit, and a root taken from it would let whoever
         rewrote the digests also choose which directory the oracle compares them against
 
-    T-11-05's claim ("a retargeted root … cannot inject arguments") is about argv SHAPE and
-    never covered which program is executed, so it was not the guard here.
+    The list-argv claim ("a retargeted root … cannot inject arguments") is about argv SHAPE
+    and never covered which program is executed, so it is not the guard here.
 
     Both resolved paths are made ABSOLUTE: ``audit`` runs the subprocess with ``cwd=root``, and
     a relative ``CRAYON`` (or a ``which`` hit from a ``PATH`` carrying ``.``) would otherwise be
@@ -774,13 +774,13 @@ def _oracle_3(events: list, root: Path, unit_id: str) -> tuple:
 
     The basis is determined the way contract §5.4 determines it, and the ``docs/`` join is the
     ORACLE's own: a basis event records ``reference/demo.rst``, never ``docs/reference/demo.rst``
-    (RESEARCH Pitfall 4; ``basis_path()`` documents the inverse). Every entry is type-guarded
+    (``basis_path()`` documents the inverse). Every entry is type-guarded
     before use, so a ``path`` of ``null`` or a non-mapping entry FLAGs with the entry printed
-    rather than raising (T-19-11, the WR-05 posture).
+    rather than raising.
 
     Where the tip is an accepting review, its ``files[]`` is compared against the basis event's
     too: contract V6 requires them equal, and a difference is a finding. It is reported HERE,
-    under check 3, rather than as a check of its own — VAL-05 caps the oracle at four.
+    under check 3, rather than as a check of its own — the oracle is capped at four.
     """
     basis = _basis(events)
     if basis is None:
@@ -940,7 +940,7 @@ def _line_edits(events: list, root: Path, unit_id: str) -> tuple:
     A ``reviewer-edit``'s ``files[]`` entries carry ``path`` and ``sha256`` and NEVER ``bytes``
     (contract §5.3 puts ``bytes`` on ``generation`` alone), so nothing here asks for it — a
     reader that required ``bytes`` would break on every hand-edit adoption, which is the one
-    hazard RESEARCH's eight-row table names against this line.
+    known hazard on this line.
     """
     gating = False
     edits = _events_of(events, "reviewer-edit")
@@ -1018,9 +1018,10 @@ def _line_context(events: list, root: Path, unit_id: str) -> tuple:
     """``[context]`` — the sources the plan was signed against. Informational. ``(gating, ran, ok)``.
 
     This is the SIGNOFF event's ``context``: a ``{path: sha256}`` map populated from
-    ``unit new --source``. It is NOT the RUN file's ``context`` key (D-08) — two different
-    things carrying one name — and the line's own text says so, because a reader who conflates
-    them will read a leg's environment record as the plan's source provenance.
+    ``unit new --source``. It is NOT the RUN file's ``context`` key (the leg's origins
+    digests) — two different things carrying one name — and the line's own text says so,
+    because a reader who conflates them will read a leg's environment record as the plan's
+    source provenance.
     """
     gating = False
     signoff = _last(events, "signoff")
@@ -1037,7 +1038,7 @@ def _line_context(events: list, root: Path, unit_id: str) -> tuple:
             True, "context",
             "no recorded source digests: the signoff at seq %s froze an empty context map "
             "(unit new --source was not used). This is the signoff event's `context`, not "
-            "the RUN file's `context` key — two different things with one name (D-08)"
+            "the RUN file's `context` key — two different things with one name"
             % signoff.get("seq"))
 
     problems = []
@@ -1098,7 +1099,7 @@ _DIAGNOSTIC_START_RE = re.compile(
 
 
 def normalise_diagnostics(text: str, root: Path) -> list:
-    """The Sphinx diagnostics blob as a list of comparable lines (D-07, VAL-06).
+    """The Sphinx diagnostics blob as a list of comparable lines.
 
     Three rules, and they are the whole of it:
 
@@ -1124,8 +1125,8 @@ def normalise_diagnostics(text: str, root: Path) -> list:
 
     And one prohibition, which is why this function is short: nothing here filters, drops or
     reorders lines by filename, by severity or by text. The whole normalised line list is the
-    comparison. Filtering the evidence so a claim comes out clean is the exact failure VAL-06
-    and D-07 exist to prevent, and a reader who finds a filename test added below should read
+    comparison. Filtering the evidence so a claim comes out clean is the exact failure this
+    comparison exists to prevent, and a reader who finds a filename test added below should read
     it as the defect it would be, not as an optimisation.
     """
     if not isinstance(text, str):
@@ -1166,17 +1167,17 @@ def diff_diagnostics(before: list, after: list) -> tuple:
 def _line_sphinx(events: list, root: Path, unit_id: str) -> tuple:
     """``[sphinx]`` — the leg's Sphinx before/after diff and its attribution. GATING.
 
-    D-07's machine half. It normalises both diagnostics blocks, takes the multiset difference,
-    and checks every NEW item against the RUN file's ``sphinx_attribution`` list. The
+    The Sphinx rule's machine half. It normalises both diagnostics blocks, takes the multiset
+    difference, and checks every NEW item against the RUN file's ``sphinx_attribution`` list. The
     JUDGEMENT — is this new warning acceptable? — stays with the author; the BOOKKEEPING does
     not, so an item nobody accounted for FLAGs and gates.
 
     The counts and both builds' exit codes print on a PASS as well as on a FLAG. A gate that
     shows its working only when it fails leaves a green run unreadable, and the two exit codes
-    are half of what §10 asks for: a build that CRASHED with no diagnostics is not the same
-    fact as a build that emitted none.
+    are half of what the Sphinx rule asks for: a build that CRASHED with no diagnostics is not
+    the same fact as a build that emitted none.
 
-    Printing them is not enough, and used not to be (CR-03): the verdict was the diagnostics
+    Printing them is not enough, and used not to be: the verdict was the diagnostics
     diff alone, so two builds that never ran produced two equal empty blobs, an empty diff and
     a PASS on a GATING line. A non-zero ``exit`` on either half is therefore a FLAG in its own
     right, reported ALONGSIDE any unaccounted item rather than instead of it — an author whose
@@ -1184,10 +1185,10 @@ def _line_sphinx(events: list, root: Path, unit_id: str) -> tuple:
     ``exit`` that is absent or is not an integer is treated the same way: a RUN file that does
     not say the build finished is not evidence that it did.
 
-    The RUN file is UNTRACKED, unvalidated working-tree input (WR-11) that both this kit and
+    The RUN file is UNTRACKED, unvalidated working-tree input that both this kit and
     ``crayon summary`` read. Every read below is behind an explicit type guard and every
     malformed shape FLAGs naming what was missing — a traceback at the reader is the outcome
-    T-19-16 is filed against. The file scanned is the FIRST by sorted name, the same one
+    these guards exist to prevent. The file scanned is the FIRST by sorted name, the same one
     ``crayon``'s ``sphinx_result`` would pick.
     """
     gating = True
@@ -1234,12 +1235,12 @@ def _line_sphinx(events: list, root: Path, unit_id: str) -> tuple:
 
     # The attribution list names NORMALISED lines — the strings this line prints — so the
     # author copies a FLAG's own output into the RUN file rather than retyping a build's.
-    # WR-07: MEMBERSHIP used to be the whole test, so `--attribute "<item>="` — or a
+    # MEMBERSHIP used to be the whole test, so `--attribute "<item>="` — or a
     # hand-written `{"item": "…", "account": ""}` — silenced a new warning with no account at
     # all, while the INFO line printed `accounted: ` followed by nothing. The bookkeeping half
-    # of D-07 IS this list; an empty entry is a bookkeeping no-op that reads as done. An entry
-    # whose account is blank is recorded separately so the FLAG can say which kind of nothing
-    # it found, rather than reporting it as an item nobody had noticed.
+    # of the Sphinx rule IS this list; an empty entry is a bookkeeping no-op that reads as done.
+    # An entry whose account is blank is recorded separately so the FLAG can say which kind
+    # of nothing it found, rather than reporting it as an item nobody had noticed.
     accounts = {}
     blank = set()
     for entry in data.get("sphinx_attribution") or []:
@@ -1302,7 +1303,7 @@ def _line_requests(events: list, root: Path, unit_id: str) -> tuple:
     worked is the ordinary state of a unit mid-loop; a pending request at a SEALED tip is the
     finding, because that is a page sealed over a request nobody ever judged.
 
-    LATER is load-bearing and was not implemented (WR-09). The dispositions were collected from
+    LATER is load-bearing and was once not implemented. The dispositions were collected from
     EVERY accept in any position, so a hand-appended accept could name a seq that did not exist
     when it was written and silence a request recorded after it: an accept at seq 4 carrying
     ``"resolves": [5]`` disposed of the steering at seq 5 and this GATING line passed. On a
@@ -1312,7 +1313,7 @@ def _line_requests(events: list, root: Path, unit_id: str) -> tuple:
     is reported as the tamper signal it is, and never silently dropped.
 
     A unit with NO generation and NO request on record reports SKIP rather than "0 request(s)
-    pending" (WR-01). There is neither a request to count nor a generation to count it from, so
+    pending". There is neither a request to count nor a generation to count it from, so
     the zero is a count of nothing, and this line is one of the three that gate: a claim over no
     evidence is precisely what ``checks_run`` must not be allowed to count.
     """
@@ -1375,13 +1376,13 @@ REPORT_LINES = (
 
 
 def audit(unit_id: str, root: Path = ROOT) -> int:
-    """The independent oracle over one unit, plus one ``crayon verify`` reading (D-02/D-04).
+    """The independent oracle over one unit, plus one ``crayon verify`` reading.
 
     Returns the process exit code and never calls ``sys.exit`` itself, so ``main`` stays the
     single place this program decides how to leave: 0 clean, 1 violation, 2 nothing checked.
     """
-    # Resolve the root BEFORE any use (T-11-04): every subsequent path is joined under the
-    # resolved value, and the module-level ROOT global is never reassigned (Pitfall 3).
+    # Resolve the root BEFORE any use: every subsequent path is joined under the
+    # resolved value, and the module-level ROOT global is never reassigned.
     root = Path(root).resolve()
     print(f"== independent audit: {unit_id} (root: {root})")
 
@@ -1399,8 +1400,8 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
         _flag(False, "io", f"ledger path for unit {unit_id!r} leaves audit root {root}")
         return 1
     if not ledger_path.is_file():
-        # WR-03 posture, now with a non-zero exit (D-04): a missing unit FLAGs by name and
-        # returns cleanly rather than raising a traceback at the reader.
+        # A missing unit FLAGs by name, exits 1, and returns cleanly rather than raising a
+        # traceback at the reader.
         _flag(False, "io", f"no ledger for unit {unit_id}: expected a file at "
                            f"{ledger_path}, found none")
         return 1
@@ -1408,7 +1409,7 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
     checks_run = 0
     violation = False
 
-    # --- oracle check 1 of 4: chain recompute (VAL-05; contract §5.2) ----------------
+    # --- oracle check 1 of 4: chain recompute (contract §5.2) ------------------------
     events, problems = read_ledger(ledger_path)
     checks_run += 1
     if problems:
@@ -1422,7 +1423,7 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
     for extra in problems[1:]:
         print(f"INFO [oracle-1] also: {extra}")
 
-    # --- oracle checks 2, 3 and 4 of 4 (VAL-05) --------------------------------------
+    # --- oracle checks 2, 3 and 4 of 4 -----------------------------------------------
     # A check that could not be read (no signoff yet, no sealed files[] yet) reports SKIP and
     # is NOT counted in `checks_run`: counting it would let a unit with nothing on record but
     # a header report three checks it never performed.
@@ -1435,9 +1436,9 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
             checks_run += 1
             violation = violation or not ok
 
-    # --- the [verify] arm: the ONE point of contact with the tool (D-02) -------------
+    # --- the [verify] arm: the ONE point of contact with the tool --------------------
     # List argv, never a shell string, so a retargeted root or a crafted unit id cannot
-    # inject arguments (T-11-05). Both streams are captured: `verify` exits 6 on a FAIL
+    # inject arguments. Both streams are captured: `verify` exits 6 on a FAIL
     # among V1-V13 with the full report already flushed to stdout.
     tool = _crayon_executable()
     verify_payload = None
@@ -1445,7 +1446,7 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
         verify_ok = _flag(False, "verify",
                           "no crayon executable to read with: CRAYON unset, "
                           f"{ROOT / 'crayon'} absent, and none on PATH. The tree under audit "
-                          "is deliberately not searched (CR-01)")
+                          "is deliberately not searched")
     else:
         done = subprocess.run(
             [str(tool), "verify", unit_id, "--json"],
@@ -1492,10 +1493,10 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
     checks_run += 1
     violation = violation or not verify_ok
 
-    # --- DISAGREE (D-03): per-check-pair, over the UNDERLYING FINDING ----------------
+    # --- DISAGREE: per-check-pair, over the UNDERLYING FINDING -----------------------
     # Never a comparison of the two exit codes or the two verdicts. Oracle 1 pairs with V3
     # (seq + chain) and, partly, with V2 (lines parse, canonical, within caps); both are
-    # level `fail`, so this pair is a true head-to-head. Checks 2-4 land in plan 19-02.
+    # level `fail`, so this pair is a true head-to-head. Checks 2 and 3 pair below.
     #
     # The pair's verify-side finding is the CONJUNCTION "V3 (and V2) reported status ok",
     # evaluated once — not one comparison per counterpart. Comparing each counterpart
@@ -1548,10 +1549,10 @@ def audit(unit_id: str, root: Path = ROOT) -> int:
                          "/".join(clauses)))
                 violation = True
 
-    # --- the report lines: each one owns whether it gates (D-04) ---------------------
+    # --- the report lines: each one owns whether it gates ----------------------------
     # A line that SKIPped is NOT counted, for the same reason a SKIPping oracle check is not:
     # counting it would let a unit with nothing on record but a header report checks it never
-    # performed. Until WR-01 these eight incremented unconditionally, which put the floor at 10
+    # performed. These eight used to increment unconditionally, which put the floor at 10
     # and made the guard below unreachable — the code did the one thing the comment above the
     # oracle block says it must not.
     for line in REPORT_LINES:
@@ -1590,9 +1591,9 @@ def _leg_file(directory: Path, leg: str) -> tuple:
     ``<ROOT>/validation/legs/<leg>.md``. Both are named on a miss, because "the leg file is
     absent" is only actionable once a reader knows which two paths were tried.
 
-    ``leg`` is RUN-file input — UNTRACKED, unvalidated working-tree input (WR-11) — and the
+    ``leg`` is RUN-file input — UNTRACKED, unvalidated working-tree input — and the
     module docstring's rule is stated absolutely: the scorer never opens a record-supplied path
-    directly (T-11-04). It used to here (CR-04). ``"leg": "../../secret/loot"`` was interpolated
+    directly. It used to here. ``"leg": "../../secret/loot"`` was interpolated
     straight into both paths, the file outside the tree was read, and check 6 echoed its table
     cells into the report — a read primitive with an output channel, not merely a stat. A
     symlinked ``legs/<leg>.md`` was followed for the same reason.
@@ -1622,7 +1623,7 @@ def _leg_file(directory: Path, leg: str) -> tuple:
 
 
 def protocol(directory: Path = ROOT / "validation") -> int:
-    """rev8 §10's SIX conformance checks over one pre-registered leg (VAL-07, D-04).
+    """The SIX conformance checks over one pre-registered leg.
 
     Returns the process exit code and never calls ``sys.exit`` itself, so ``main`` stays the
     single place this program decides how to leave:
@@ -1643,7 +1644,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
                            ONE RUN file, because ``crayon``'s ``sphinx_result`` takes the first
                            by sorted name and says nothing about a second
         2 ``[transcript]`` ``transcript.sha256`` is present and non-null. ``runmeta.sh end``
-                           writes ``null`` BY DESIGN (Pitfall 6) and the AUTHOR fills it from
+                           writes ``null`` BY DESIGN and the AUTHOR fills it from
                            outside the session, so this check is the two-step's second half
                            made enforceable rather than hoped for
         3 ``[compat]``     ``tool.contract`` and ``tool.min_tool`` against ``crayon version
@@ -1653,21 +1654,21 @@ def protocol(directory: Path = ROOT / "validation") -> int:
                            ``tests/check_docs.py`` already pins README's COMPAT region against,
                            so this is a second reading of ONE source and not a third opinion
         4 ``[context]``    ``context.origins_sha256`` equals ``baseline.origins_sha256``, as
-                           exact hex strings, with BOTH named on a difference (D-08), and the
+                           exact hex strings, with BOTH named on a difference, and the
                            NUMBER of paths digested named on either outcome. With no origins
                            recorded at all the check SKIPs rather than passing: both sides are
-                           then sha256 of the empty list and the comparison asserts nothing
-                           (WR-03), so this is one of the six that may print five lines
+                           then sha256 of the empty list and the comparison asserts nothing,
+                           so this is one of the six that may print five lines
         5 ``[results]``    ``validation/legs/<leg>.md`` exists and carries every heading in
                            ``REQUIRED_LEG_HEADINGS``. This is where v1's two checks landed:
                            the leg file is the v2.0 home of ``RESULTS.md``, and the leg is
                            discovered from the RUN file rather than from a filename glob
         6 ``[rubric]``     no rubric score row still reads ``UNSCORED``
 
-    The RUN file is untracked, unvalidated working-tree input (WR-11). Invalid JSON, a
-    non-object, and a wrong-typed nested value each FLAG naming what was found; a traceback at
-    the reader is the outcome T-19-16 is filed against. When the contents cannot be read at all
-    the leg is taken from the FILENAME instead, so checks 5 and 6 still have something to say.
+    The RUN file is untracked, unvalidated working-tree input. Invalid JSON, a non-object,
+    and a wrong-typed nested value each FLAG naming what was found; a traceback at the reader
+    is the outcome these guards exist to prevent. When the contents cannot be read at all the
+    leg is taken from the FILENAME instead, so checks 5 and 6 still have something to say.
     """
     directory = Path(directory).resolve()
     print(f"== protocol conformance: {directory}")
@@ -1714,17 +1715,17 @@ def protocol(directory: Path = ROOT / "validation") -> int:
             problems.append("missing key(s): %s" % ", ".join(missing))
         metrics = data.get("metrics")
         if "metrics" in data and not isinstance(metrics, dict):
-            problems.append("metrics is %r, expected an object carrying the six rev8 §3.2 "
+            problems.append("metrics is %r, expected an object carrying the six session "
                             "measurements" % (metrics,))
         elif isinstance(metrics, dict):
             absent = [key for key in REQUIRED_METRIC_KEYS if key not in metrics]
             if absent:
-                problems.append("the metrics object is missing §3.2 metric(s): %s"
+                problems.append("the metrics object is missing session metric(s): %s"
                                 % ", ".join(absent))
     violation |= not _flag(
         not problems, "run",
         "; ".join(problems) if problems
-        else "validation/%s carries all %d required keys and all six §3.2 metrics"
+        else "validation/%s carries all %d required keys and all six session metrics"
              % (run_path.name, len(REQUIRED_RUN_KEYS)))
 
     # --- check 2 of 6: the transcript sha -------------------------------------------------
@@ -1755,7 +1756,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
     reported = None
     executable = _crayon_executable()
     if executable is not None:
-        # List argv, never a shell string (T-19-05/T-19-17), and the same reading the
+        # List argv, never a shell string, and the same reading the
         # `[verify]` arm takes: one subprocess, parsed with this kit's own json.
         done = subprocess.run([str(executable), "version", "--json"],
                               capture_output=True, text=True, check=False)
@@ -1767,7 +1768,7 @@ def protocol(directory: Path = ROOT / "validation") -> int:
         violation |= not _flag(False, "compat",
                                "no `crayon version --json` reading to compare against: CRAYON "
                                "unset, %s absent, and none on PATH. The tree the RUN file sits "
-                               "in is deliberately not searched (CR-01)" % (ROOT / "crayon.py",))
+                               "in is deliberately not searched" % (ROOT / "crayon.py",))
     elif not isinstance(tool_record, dict):
         violation |= not _flag(False, "compat",
                                "the RUN file records tool as %r, expected an object carrying "
@@ -1794,15 +1795,15 @@ def protocol(directory: Path = ROOT / "validation") -> int:
     # `origins[]` reaches a generation only when `draft --report` was used. With none recorded,
     # `runmeta.sh` digests an empty list on BOTH sides and this check compared `e3b0c442…` to
     # `e3b0c442…` and PASSed — text indistinguishable from a real pass, asserting the whole of
-    # D-08's claim (the sources the leg read did not move under it) over no sources at all
-    # (WR-03). The honest outcome is the third verdict: the EVIDENCE the rule needs is not here.
+    # this check's claim (the sources the leg read did not move under it) over no sources
+    # at all. The honest outcome is the third verdict: the EVIDENCE the rule needs is not here.
     # A `_note` does not gate, which is the point — it must not read as a pass either.
     origins = baseline.get("origins") if isinstance(baseline, dict) else None
     if not isinstance(origins, list):
         origins = []
     if not isinstance(baseline_digest, str) or not isinstance(context_digest, str):
         violation |= not _flag(False, "context",
-                               "the two D-08 digests are not both strings: baseline %r, "
+                               "the two origins digests are not both strings: baseline %r, "
                                "context %r" % (baseline_digest, context_digest))
     elif not origins:
         _note("context", "no unit recorded an origins[] (draft --report was not used), so there "
@@ -1884,7 +1885,7 @@ def main(argv: list[str] | None = None) -> int:
     -------
     int
         ``0`` clean, ``1`` violation, ``2`` when NOTHING was checked. ``draft`` is
-        report-only and always returns 0; ``audit`` and ``protocol`` are gates (D-04).
+        report-only and always returns 0; ``audit`` and ``protocol`` are gates.
     """
     parser = argparse.ArgumentParser(
         prog="score.py", description=__doc__.splitlines()[0])

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# runmeta.sh — VAL-06: the RUN metadata a validation leg is measured from (D-05, D-06, D-08).
+# runmeta.sh — the RUN metadata a validation leg is measured from.
 #
 # Usage: bash validation/runmeta.sh begin --leg <leg> --repo <dir>
 #                                         [--baseline-ref <ref>] [--harness <name>]
@@ -18,7 +18,7 @@
 # measurement of this one. The guards worth copying from `tests/lib.sh:191-199` — the
 # three-check `mktemp -d` and the pinned git config — are copied below; nothing else is.
 #
-# What it writes: `<repo>/validation/RUN-<leg>.json`, in the D-05 shape. The `sphinx` key is a
+# What it writes: `<repo>/validation/RUN-<leg>.json`. The `sphinx` key is a
 # plain non-empty STRING because `crayon`'s `sphinx_result()` (dogen:7209-7243) accepts nothing
 # else — it scans `RUN-*.json` in sorted NAME order, takes the first usable one, collapses the
 # value to 120 characters and renders it. The structured `sphinx_before` / `sphinx_after` /
@@ -27,7 +27,7 @@
 # lines, and it is why there must be exactly ONE RUN file per working tree: with two, the tool
 # would silently pick one by name order and say nothing.
 #
-# THE TWO-STEP TRANSCRIPT RULE (RESEARCH Pitfall 6) — load-bearing, and not to be "fixed":
+# THE TWO-STEP TRANSCRIPT RULE — load-bearing, and not to be "fixed":
 # `end` writes the transcript's resolved PATH and `"sha256": null`. The AUTHOR fills the sha
 # from OUTSIDE the session, before the RUN file is committed. A sha taken by a tool call inside
 # the session being measured is stale the moment that tool call is itself appended to the
@@ -35,7 +35,7 @@
 # later reader must not collapse the two steps into one. `score.py protocol`'s second check is
 # what refuses a RUN whose sha is still null.
 #
-# The six rev8 3.2 metrics have exactly ONE authoring site, and it is this file's `metrics`
+# The six session metrics have exactly ONE authoring site, and it is this file's `metrics`
 # object. They arrive as `--metric key=value` flags supplied by the AUTHOR at `end`, not by the
 # agent mid-run: three of the six — avoidable questions, help requests, and whether `resume`
 # needed the author — are judgements about the session rather than counters a script can read.
@@ -49,17 +49,17 @@
 # un-normalised text, is exactly the drift that would let two readings of one build pair
 # disagree.
 #
-# Every JSON read and write goes through `python3`, never `jq` (RESEARCH Assumption A1): `jq`
+# Every JSON read and write goes through `python3`, never `jq`: `jq`
 # is not a documented prerequisite of this repository and is not guaranteed on the runner, so
 # a single `jq` call would make the RUN file unwritable precisely where it matters most. Every
 # `git`, `crayon` and `sphinx-build` call uses a list-form argument vector with `-C <dir>` and
-# never a shell string (T-19-17).
+# never a shell string.
 #
 # Exit codes follow the project's 0/1/2 lint contract (tests/check_traces.py, and
 # tests/install_smoke.sh for the bash side):
 #   0  the RUN file was written
 #   1  refused — a bad argument, a repo that is not a git work tree, a RUN file for another
-#      leg, an unresolvable baseline ref, or a missing 3.2 metric. Each names what it found.
+#      leg, an unresolvable baseline ref, or a missing session metric. Each names what it found.
 #   2  NOTHING was written — no subcommand was given. A script that silently defaulted to
 #      `begin` would overwrite a RUN file someone meant to `end`.
 
@@ -68,7 +68,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Pinned OUTSIDE every git call below, the way `tests/install_smoke.sh:40-44` pins them: a
+# Pinned OUTSIDE every git call below, the way `tests/install_smoke.sh` pins them: a
 # developer-side or runner-side global identity — `commit.gpgsign` above all — must not reach
 # a repository this script only reads.
 export GIT_CONFIG_GLOBAL=/dev/null
@@ -87,19 +87,19 @@ else
     CRAYON_BIN="crayon"
 fi
 
-# The six rev8 3.2 metric keys, in the session template's own order
+# The six session metric keys, in the session template's own order
 # This tuple is the definition; nothing below re-types it.
 METRIC_KEYS=(install time_to_usable_draft avoidable_questions
              manual_crayon_commands help_requests resume_invocations)
 
-# A conservative leg name, validated BEFORE it becomes a filename (T-19-17). A leg is a
+# A conservative leg name, validated BEFORE it becomes a filename. A leg is a
 # pre-registered file under `validation/legs/`, so the alphabet is the one those names use.
 LEG_RE='^[A-Za-z0-9][A-Za-z0-9._-]*$'
 
 # Both temporary trees this script makes: `WORK_DIR` for a Sphinx build's HTML output and its
 # captured streams, `LIST_DIR` for the list files handed to the JSON writer. Named, guarded on
 # non-empty, and removed by one trap — `rm -rf ""` on an unset variable is the accident the
-# guards exist against (tests/install_smoke.sh:48-60).
+# guards exist against (see `cleanup` in tests/install_smoke.sh).
 WORK_DIR=""
 LIST_DIR=""
 
@@ -124,8 +124,8 @@ usage: runmeta.sh begin --leg <leg> --repo <dir> [--baseline-ref <ref>]
 
   begin  writes <repo>/validation/RUN-<leg>.json with the harness, model, tool, skills and
          baseline records plus the BEFORE Sphinx build.
-  end    adds the AFTER Sphinx build, the D-08 origins digests, the transcript record and the
-         six rev8 3.2 metrics. Use --transcript-file when the harness has no
+  end    adds the AFTER Sphinx build, the origins digests, the transcript record and the
+         six session metrics. Use --transcript-file when the harness has no
          automatic transcript resolver (for example, Copilot CLI).
 USAGE
 }
@@ -136,9 +136,9 @@ refuse() {
 }
 
 # `cd ""` SUCCEEDS in bash and leaves the shell where it is, so `cd "$X" || exit 1` is not a
-# guard on its own (WR-08). With an unchecked `mktemp -d` — a full or read-only /tmp, a
+# guard on its own. With an unchecked `mktemp -d` — a full or read-only /tmp, a
 # restrictive TMPDIR — the Sphinx build below would write its HTML into the CURRENT directory.
-# The three checks make the failure loud instead (T-19-21).
+# The three checks make the failure loud instead.
 make_work_dir() {
     WORK_DIR=$(mktemp -d) || refuse "could not create a temporary directory for the build output"
     [ -n "$WORK_DIR" ] && [ -d "$WORK_DIR" ] ||
@@ -183,17 +183,18 @@ parse_args() {
 
 # `--repo` resolved to an absolute path and asserted to be a git work tree, and `--leg`
 # validated before it becomes a filename. Every write below is under `<repo>/validation/`, and
-# nothing is ever written to $HOME or to this repository (T-19-22).
+# nothing is ever written to $HOME or to this repository.
 resolve_target() {
     [ -n "$LEG" ] || refuse "--leg is required"
     [ -n "$REPO" ] || refuse "--repo is required"
-    # The DECLARED regex, enforced (WR-10). The check used to be
+    # The DECLARED regex, enforced. The check used to be
     # `case "$LEG" in *[!A-Za-z0-9._-]* | "" )`, which does not anchor the FIRST character, so
     # `--leg ..`, `--leg -x` and `--leg .hidden` all passed a refusal message naming a regex the
     # check did not implement. No traversal followed — `/` is excluded and the value is only
     # ever a filename component — but this guard is cited on `score.py`'s side as the reason a
-    # leg name is trustworthy, and CR-04 is what happens when it is. The value goes in on STDIN,
-    # so a leading `-` is data and never an option. One place, one expression.
+    # leg name is trustworthy, and a name trusted there unchecked reads outside the tree. The
+    # value goes in on STDIN, so a leading `-` is data and never an option. One place, one
+    # expression.
     printf '%s' "$LEG" | grep -Eq "$LEG_RE" ||
         refuse "--leg $LEG does not match $LEG_RE"
     [ -d "$REPO" ] || refuse "--repo $REPO is not a directory"
@@ -210,7 +211,7 @@ resolve_target() {
 # in the file named by `SPHINX_DIAGNOSTICS`. Never `make -C docs html`: that also provisions the
 # venv and emits sitemap artefacts, and is not the reproducible form. Nothing here filters the
 # diagnostics — by filename, by severity or by text. Filtering the evidence to make a claim
-# come out clean is the exact failure VAL-06 and D-07 exist against.
+# come out clean is the exact failure the Sphinx rule exists against.
 run_sphinx() {
     local build="${SPHINX_BUILD:-$REPO/docs/.venv/bin/sphinx-build}"
     [ -d "$REPO/docs" ] || refuse "$REPO/docs does not exist; there is no Sphinx source to build"
@@ -220,7 +221,7 @@ run_sphinx() {
         >"$WORK_DIR/stdout.txt" 2>"$SPHINX_DIAGNOSTICS"
     SPHINX_EXIT=$?
     # A build that could not be EXECUTED is refused here; any other non-zero exit is recorded
-    # and left for `score.py`'s `[sphinx]` line to gate (CR-03). The split is deliberate: a
+    # and left for `score.py`'s `[sphinx]` line to gate. The split is deliberate: a
     # build that ran and failed is evidence, and a build that never ran is not — and 127 with
     # an empty diagnostics file is exactly what a missing `docs/.venv` or a typo'd
     # `SPHINX_BUILD` produces, which used to be recorded as a build that emitted nothing.
@@ -248,7 +249,7 @@ print(hashlib.sha256("\n".join(sorted(rows)).encode("utf-8")).hexdigest())
 ' "$1"
 }
 
-# --- the D-08 origins digests ---------------------------------------------------------------
+# --- the origins digests --------------------------------------------------------------------
 #
 # `baseline` is sha256 over the sorted `(blob-sha, path)` listing of every path the units'
 # generations name in `origins[]`, taken from the baseline tag's tree; `context` is that same
@@ -318,7 +319,7 @@ print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())
 '
 }
 
-# --- the transcript record (the PATH half of Pitfall 6's two steps) --------------------------
+# --- the transcript record (the PATH half of the two-step rule) ------------------------------
 #
 # The transcript's home depends on the harness the RUN file records. Claude Code keeps it at
 # `~/.claude/projects/<slug>/<session-uuid>.jsonl`, where
@@ -331,7 +332,7 @@ print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())
 # rather than a guess: naming what was searched is the courtesy every other vacuous-result
 # guard in this tree extends.
 #
-# Every arm is NAMED and the unknown one is refused rather than swallowed (WR-08). The `case`
+# Every arm is NAMED and the unknown one is refused rather than swallowed. The `case`
 # had exactly one named arm and a catch-all `*)` that searched Claude Code's tree, so a RUN
 # file recording `copilot-cli`, `cursor`, a typo or the empty string was searched in the wrong
 # tree, found nothing, and recorded `{"path": null, "searched": "~/.claude/projects/<slug>"}` —
@@ -528,7 +529,7 @@ with open(path, "w", encoding="utf-8") as handle:
   "$SPHINX_EXIT" "$SPHINX_DIAGNOSTICS" "$summary" ||
         refuse "could not write $RUN_PATH; the RUN file was NOT written"
 
-    # The exit contract's `0  the RUN file was written` made literal (CR-05). The script runs
+    # The exit contract's `0  the RUN file was written` made literal. The script runs
     # under `set -u` alone, so an unguarded writer that died — a `version --json` that is
     # non-empty but not JSON makes `json.loads` raise — printed `wrote <path>` and exited 0
     # over a file that does not exist. The POST-CONDITION is asserted rather than the writer's
@@ -568,7 +569,7 @@ print(json.loads(open(sys.argv[1], encoding="utf-8").read()).get("leg"))
 
     [ "${#UNITS[@]}" -gt 0 ] || refuse "--unit is required at least once"
 
-    # The six 3.2 metrics, refused BY NAME so the author is told which measurement is absent
+    # The six session metrics, refused BY NAME so the author is told which measurement is absent
     # rather than that something is. This is the only authoring site for the six.
     local given=() entry key missing=()
     for entry in "${METRICS[@]}"; do
@@ -586,7 +587,7 @@ print(json.loads(open(sys.argv[1], encoding="utf-8").read()).get("leg"))
         if [ "$found" -eq 0 ]; then missing+=("$key"); fi
     done
     if [ "${#missing[@]}" -gt 0 ]; then
-        refuse "the RUN file needs all six rev8 3.2 metrics; missing: ${missing[*]}"
+        refuse "the RUN file needs all six session metrics; missing: ${missing[*]}"
     fi
 
     run_sphinx
@@ -647,7 +648,7 @@ data["baseline"]["origins"] = origins
 data["baseline"]["origins_sha256"] = baseline_sha
 data["context"] = {"origins": origins, "origins_sha256": context_sha}
 
-# Pitfall 6: the PATH, and a null sha the author fills from OUTSIDE the session.
+# The two-step rule: the PATH, and a null sha the author fills from OUTSIDE the session.
 data["transcript"] = {
     "path": transcript_path or None,
     "sha256": None,

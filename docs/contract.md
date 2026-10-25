@@ -325,9 +325,9 @@ Reason table:
 | `adopt_unsupported` | 6 |
 | `internal_error` | 6 |
 
-`bad_target`, `bad_write_path`, `bad_draft_path` and `bad_resolution` are the `bad_*` family
-rev8 names (§5.6, §5.11 T23, §8.1). Every non-zero exit prints one JSON line
-`{"error","unit","detail","hint","next"}` on stderr (`--json`: stdout).
+`bad_target`, `bad_write_path`, `bad_draft_path` and `bad_resolution` are the `bad_*` family (§5.6,
+§5.11 T23). Every non-zero exit prints one JSON line `{"error","unit","detail","hint","next"}` on
+stderr (`--json`: stdout).
 
 ## 5.8 Write protocol and resume
 
@@ -502,7 +502,7 @@ only; a state-affecting new kind requires contract 2. History policy: squash mer
 `history_squashed`; cherry-pick without the ledger line → `ledger_diverged`; later maintenance
 edits → `drifted`, never FAIL.
 
-This section is contract as of `contract-v1`; the code that implements it lands in phase 17.
+This section is contract as of `contract-v1`; `crayon verify` implements it.
 
 ## 5.10 Compatibility
 
@@ -538,7 +538,7 @@ recovery verb, for a defect in crayon. The exit code does not move: 6 is the rec
 code and the arm already used it.
 
 That reading reverses an earlier one, and both are recorded here rather than only the one that
-won. The phase-16 round-5 fix report classified this same row as "a contract-v2 change" and
+won. An earlier review classified this same row as "a contract-v2 change" and
 deferred it on that basis. Under the stricter reading the row belongs in contract 2, with
 `min_tool` and three SKILL.md metadata values moving beside it and every existing ledger's header
 event refusing 6 `ledger_version_unsupported` on every verb until its unit is archived — a
@@ -710,17 +710,16 @@ One row per trace in §5.11, in §5.11's order; traces whose outcomes compare eq
 source order, so the table is stable across regenerations. The governing-rule cell names the
 section the outcome follows from — this is the closure rule of §"Mechanisms" made checkable.
 
-Test ids are reserved from rev8's own series (A-01…A-35, N-01…N-41, U-01…U-10, S-01…S-09,
-V-01…V-04); ids beyond a series' rev8 range are the next free id in that series. At
-`contract-v1` this table was phase 17's work list and no trace test had been written yet; phase
-17 cleared a mark as each test landed, and plan 17-11 cleared the last of them. Every row below
-now names a test FUNCTION that exists, which `tests/check_traces.py` re-proves by grepping the
-suites for a function whose name carries the id. That is the whole of the claim: the checker does
-not read the function's body, so it cannot re-prove that the outcome this row states is the
-outcome that test asserts. A row can therefore be "cleared" while its clause is unexercised in the
-shape that matters, or unimplemented — WR-12, which CR-01 (T16) and WR-05 (T29) were both
-instances of. Keeping a row honest is the reviewer's job at the point the test is written or
-moved. No cell is ever blank.
+Test ids come from five series whose original ranges are A-01…A-35, N-01…N-41, U-01…U-10, S-01…S-09
+and V-01…V-04; an id beyond a series' original range is the next free id in that series. At
+`contract-v1` no trace test had been written yet, and each row carried a mark that was cleared as
+its test landed; the last mark has been cleared. Every row below now names a test FUNCTION that
+exists, which `tests/check_traces.py` re-proves by grepping the suites for a function whose name
+carries the id. That is the whole of the claim: the checker does not read the function's body, so it
+cannot re-prove that the outcome this row states is the outcome that test asserts. A row can
+therefore be "cleared" while its clause is unexercised in the shape that matters, or unimplemented;
+T16 and T29 were both once in that state. Keeping a row honest is the reviewer's job at the point
+the test is written or moved. No cell is ever blank.
 
 | T# | Governing rule (§) | Test id |
 |---|---|---|
