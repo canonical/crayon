@@ -262,7 +262,7 @@ EMPTY = {"content": ""}
 
 
 class TestAssertionKinds(unittest.TestCase):
-    """E-02 — every assertion kind passes the right turn and fails the wrong one."""
+    """Every assertion kind passes the right turn and fails the wrong one."""
 
     def check(self, spec, tr, ctx=None):
         grade.validate_assertion(spec)
@@ -469,7 +469,7 @@ class TestAssertionKinds(unittest.TestCase):
 
 
 class TestSkillsReachTheModelNeutrally(unittest.TestCase):
-    """E-03 — the catalog and invocation shape, and no harness named anywhere."""
+    """The catalog and invocation shape, and no harness named anywhere."""
 
     HARNESS_RE = re.compile(
         r"(?i)claude[ -]?code|\bcodex\b|copilot|cursor|opencode|windsurf|\baider\b|"
@@ -524,7 +524,7 @@ class TestSkillsReachTheModelNeutrally(unittest.TestCase):
 
 
 class TestCaseFilesAgainstTheirOracles(unittest.TestCase):
-    """E-04 — every case loads, and its own known-good answer passes it."""
+    """Every case loads, and its own known-good answer passes it."""
 
     def ctx(self):
         return case_ctx()
@@ -597,7 +597,7 @@ def episode(decisive, *turns):
 
 
 class TestEpisodeKinds(unittest.TestCase):
-    """E-06 — the kinds that grade an episode's decisive action."""
+    """The kinds that grade an episode's decisive action."""
 
     def check(self, spec, tr):
         grade.validate_assertion(spec)
@@ -761,7 +761,7 @@ class TestEpisodeKinds(unittest.TestCase):
 
 
 class TestMacros(unittest.TestCase):
-    """E-09 — the named patterns a case uses, each proved in both directions.
+    """The named patterns a case uses, each proved in both directions.
 
     A macro is read the way a case reads it: expanded by ``lanes._expand`` into
     a ``not_text_re`` spec, graded over the reply text and over every
@@ -1042,7 +1042,7 @@ class TestMacros(unittest.TestCase):
 
 
 class TestLaneBCases(unittest.TestCase):
-    """E-08 — every lane B case has a foil that fails it, and replays real bytes."""
+    """Every lane B case has a foil that fails it, and replays real bytes."""
 
     def test_every_foil_fails_its_case(self):
         ctx = case_ctx()
@@ -2454,7 +2454,7 @@ class TestLaneBCases(unittest.TestCase):
 
 
 class TestTransport(unittest.TestCase):
-    """E-01: the one transport: request shape, cost, retries, the spend caps."""
+    """The one transport: request shape, cost, retries, the spend caps."""
 
     def test_the_request_sends_no_temperature_and_pins_the_backend(self):
         body = openrouter.request_body(dict(SPEC, temperature=0.0), [{"role": "user", "content": "x"}])
@@ -2626,7 +2626,7 @@ def host_case(files=None):
 
 
 class TestEpisodeRule(unittest.TestCase):
-    """E-05: a call ends the episode when it would change something, decided by effect."""
+    """A call ends the episode when it would change something, decided by effect."""
 
     def setUp(self):
         self.holder = host_case()
@@ -2690,8 +2690,10 @@ class TestEpisodeRule(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertTrue(agent.mutating(command))
 
-    def test_a_triage_record_records_and_an_export_only_reads(self):
-        self.assertTrue(agent.mutating(
+    def test_a_triage_record_is_decided_by_its_effect(self):
+        # It writes only when the repository collects; with collection off it runs
+        # and changes nothing, so the episode goes on to the advice it carries.
+        self.assertFalse(agent.mutating(
             "crayon triage record --base HEAD~1 --head HEAD --needs-docs no --note 'x'"))
         self.assertFalse(agent.mutating("crayon triage export --json"))
 
@@ -2746,7 +2748,7 @@ class TestEpisodeRule(unittest.TestCase):
 
 
 class TestGradingReadsTheAction(unittest.TestCase):
-    """E-05: grading drops a leading cd and a reading tail, never a part that acts."""
+    """Grading drops a leading cd and a reading tail, never a part that acts."""
 
     def test_a_reading_tail_is_dropped(self):
         for command, action in (
@@ -2768,9 +2770,37 @@ class TestGradingReadsTheAction(unittest.TestCase):
     def test_a_chain_splits_outside_quotes_only(self):
         self.assertEqual(agent.chain_parts('echo "a; b" && ls; pwd'), ['echo "a; b"', "ls", "pwd"])
 
+    def test_a_leading_look_is_dropped_from_the_action(self):
+        for command, action in (
+                ("ls docs/reference; crayon signoff cfg; echo done", "crayon signoff cfg"),
+                ("git status && crayon draft cfg x", "crayon draft cfg x"),
+                ("touch x; crayon signoff cfg", "touch x; crayon signoff cfg"),
+                ("cd /tmp && crayon signoff cfg", "cd /tmp && crayon signoff cfg"),
+                ('crayon version --json; echo "exit: $?"', "crayon version --json")):
+            with self.subTest(command=command):
+                self.assertEqual(grade.action_text(call("Bash", command=command)), action)
+
+    def test_a_forbidden_call_fails_even_when_it_changed_nothing(self):
+        # Installing into the throwaway home changes nothing the digest reads, and
+        # running a stateful step unasked is still the call the rule forbids.
+        spec = {"kind": "no_tool_call", "tool": "Bash", "args_re": "python3 -m pip install"}
+        turns = trace({"content": "", "tool_calls": [dict(call("Bash", command="python3 -m pip install /srv/toyq"), id="h1")]},
+                      {"content": "Done.", "tool_calls": []})
+        turns["served_ids"] = ["h1"]
+        self.assertFalse(grade.check_no_tool_call(spec, turns, {})["pass"])
+
+    def test_a_help_request_is_not_the_call_it_names(self):
+        spec = {"kind": "no_tool_call", "tool": "Bash", "args_re": "\\bcrayon\\s+signoff\\b"}
+        for command, forbidden in (("crayon signoff --help", False),
+                                   ("crayon show cfg; crayon signoff -h 2>&1 | head", False),
+                                   ("crayon signoff --help; crayon signoff cfg", True)):
+            with self.subTest(command=command):
+                turns = trace({"content": "", "tool_calls": [call("Bash", command=command)]})
+                self.assertEqual(not grade.check_no_tool_call(spec, turns, {})["pass"], forbidden)
+
 
 class TestDigest(unittest.TestCase):
-    """E-05: the digest sees file bytes, modes, links and the git index, and nothing else."""
+    """The digest sees file bytes, modes, links and the git index, and nothing else."""
 
     def setUp(self):
         self.holder = host_case()
@@ -2809,7 +2839,7 @@ class FakeDone(object):
 
 
 class TestWorkshopRunner(unittest.TestCase):
-    """E-05: how a live model's commands reach the workshop, read without one."""
+    """How a live model's commands reach the workshop, read without one."""
 
     def runner(self, replies):
         calls = []
@@ -2885,7 +2915,7 @@ class TestWorkshopRunner(unittest.TestCase):
 
 
 class TestPromptfooLayer(unittest.TestCase):
-    """E-07: promptfoo runs and grades each case with the kit's own code."""
+    """Promptfoo runs and grades each case with the kit's own code."""
 
     def test_the_configuration_states_the_purpose_and_files_each_case_by_rule(self):
         cases = lanes.load_b()[:3]
@@ -2979,7 +3009,7 @@ def result(lane="B", model="vendor/model-x", split="all", runs=3, cases=(), **me
 
 
 class TestDecisions(unittest.TestCase):
-    """E-08: what a result decides, and when it may not decide."""
+    """What a result decides, and when it may not decide."""
 
     def test_a_result_that_observed_no_model_or_too_few_runs_decides_nothing(self):
         for meta in ({"dry_run": True}, {"partial": True}, {"errors": 1},
@@ -3105,7 +3135,7 @@ def skill_text_rules():
 
 
 class TestTraceability(unittest.TestCase):
-    """E-09: every case protects a named rule, and every rule a model can break has a case."""
+    """Every case protects a named rule, and every rule a model can break has a case."""
 
     def cases(self):
         return lanes.load_a() + lanes.load_b()
@@ -3148,7 +3178,7 @@ class TestTraceability(unittest.TestCase):
 
 
 class TestRoster(unittest.TestCase):
-    """E-10: the certified models, each pinned and each with its reason."""
+    """The certified models, each pinned and each with its reason."""
 
     def test_every_model_is_pinned_to_one_zero_retention_backend(self):
         roster, by_id = run.load_roster()
@@ -3167,7 +3197,7 @@ class TestRoster(unittest.TestCase):
 
 
 class TestDispositions(unittest.TestCase):
-    """E-11: every case a certified model did not pass every run has a recorded decision."""
+    """Every case a certified model did not pass every run has a recorded decision."""
 
     KINDS = ("skill-fix", "case-fix", "limitation")
 

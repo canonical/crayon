@@ -607,7 +607,12 @@
       "assert": [
         {
           "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "tool_call",
           "tool": "Bash",
+          "which": "any",
           "args_re": "\\bcrayon(\\.py)?\\s+triage\\s+record\\b(?=[^\\n]*--needs-docs\\s+yes\\b)(?=[^\\n]*--base\\s)(?=[^\\n]*--head\\s)"
         },
         {
@@ -633,7 +638,7 @@
           ]
         },
         {
-          "content": "Triage Recommendation: yes. The commit adds max_event_age_seconds to src/tidewatch/config.py, with its TIDEWATCH_MAX_EVENT_AGE variable. docs/reference/environment.md lists the variables and lacks it, and no page documents the settings themselves. The unit I would declare: settings, a reference page at reference/configuration.md from src/tidewatch/config.py, routed to /crayon-write. Say \"declare it\" to start.",
+          "content": "",
           "tool_calls": [
             {
               "name": "Bash",
@@ -642,6 +647,9 @@
               }
             }
           ]
+        },
+        {
+          "content": "Triage Recommendation: yes. The commit adds max_event_age_seconds to src/tidewatch/config.py, with its TIDEWATCH_MAX_EVENT_AGE variable. docs/reference/environment.md lists the variables and lacks it, and no page documents the settings themselves. The unit I would declare: settings, a reference page at reference/configuration.md from src/tidewatch/config.py, routed to /crayon-write. Say \"declare it\" to start."
         }
       ],
       "foil": [

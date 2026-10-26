@@ -519,6 +519,36 @@
           "user": "Use the defaults."
         },
         {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "README.md"
+            }
+          },
+          "result": "@RECORDED{context_recorded/file:README.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "docs/index.md"
+            }
+          },
+          "result": "@RECORDED{context_recorded/file:docs/index.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{context_recorded/file:src/toyq/config.py}"
+        },
+        "context_recorded/stage_doc_style",
+        "context_recorded/stage_glossary",
+        "context_recorded/stage_structure",
+        {
           "assistant": "I walked README.md and docs/index.md against src/toyq, and staged doc-style.md, glossary.md and structure.md through crayon context stage."
         },
         "context_recorded/record"
@@ -576,6 +606,36 @@
       "history": [
         "tool/version_json",
         "context_empty/show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "README.md"
+            }
+          },
+          "result": "@RECORDED{context_recorded/file:README.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "docs/index.md"
+            }
+          },
+          "result": "@RECORDED{context_recorded/file:docs/index.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{context_recorded/file:src/toyq/config.py}"
+        },
+        "context_recorded/stage_doc_style",
+        "context_recorded/stage_glossary",
+        "context_recorded/stage_structure",
         {
           "assistant": "I walked README.md and docs/index.md against src/toyq, and staged doc-style.md, glossary.md and structure.md through crayon context stage."
         },

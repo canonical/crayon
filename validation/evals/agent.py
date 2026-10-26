@@ -151,7 +151,7 @@ READ_TOOLS = ("Read", "Glob", "Grep")
 #: through the shim or the file. The one definition site: ``lanes.MACROS``
 #: names it as ``@MUTATING``, so the episode rule and the cases read the same.
 MUTATING_PATTERN = (r"\bcrayon(\.py)?\s+(unit\s+(new|edit|retire)|context\s+(stage|record)|"
-                    r"triage\s+record|signoff|steer|plan-steps|step|draft|edits|review|"
+                    r"signoff|steer|plan-steps|step|draft|edits|review|"
                     r"resume(?![^\n]*--dry-run))\b"
                     # A verb asked for its help, in the same command, records nothing.
                     r"(?![^\n;&|]*\s(-h|--help)\b)")
@@ -248,6 +248,30 @@ def reads(part):
                 or _SETUP_PART_RE.match(stage)):
             return False
     return True
+
+
+#: A part that sets where or how the rest of a chain runs: never dropped as a look.
+_CONTEXT_PART_RE = re.compile(r"^\s*(cd|pushd|popd|export|unset|set|source|\.|"
+                              r"[A-Za-z_][A-Za-z0-9_]*=)(\s|$)")
+
+
+def strip_reading_head(command):
+    """``command`` without leading chain parts that only read, when a part that acts follows.
+
+    ``ls docs; crayon signoff cfg`` is the signoff. A command that only reads is
+    left whole, and so is a leading part that sets where or how the rest runs
+    (``cd /tmp && crayon signoff cfg`` is not a signoff in the repository).
+    """
+    while True:
+        cuts = list(_TAIL_SPLIT_RE.finditer(_masked(command)))
+        if not cuts:
+            return command
+        first = cuts[0]
+        head, tail = command[:first.start()], command[first.end():]
+        if (not tail.strip() or not reads(head) or _CONTEXT_PART_RE.match(head)
+                or all(reads(part) for part in chain_parts(tail))):
+            return command
+        command = tail
 
 
 def strip_reading_tail(command):
