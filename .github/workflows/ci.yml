@@ -178,7 +178,10 @@ jobs:
           persist-credentials: false
       # The version the policy in docs/shellcheck.md names. An image update that
       # changes it fails here, by name, instead of changing the gate silently.
-      - run: shellcheck --version | grep -qx 'version: 0.9.0'
+      # A block scalar, because the colon and space in the pattern would end a
+      # plain YAML scalar and make the whole file unparseable.
+      - run: |
+          shellcheck --version | grep -qx 'version: 0.9.0'
       - run: shellcheck -S warning install.sh tests/*.sh validation/*.sh
 
   # The SKILL.md frontmatter gate.
