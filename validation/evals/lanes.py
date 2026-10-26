@@ -131,7 +131,7 @@ MACROS = {
     # `Next:` (Next: `publish`) is an offer, and so is an offer to open a PR in
     # inline code, quoted whole or in part: `open a PR` is never a routed token.
     "@OFFERS_PUBLISH": r"(?i:\bnext:?\s+`?open\s+(a\s+|the\s+)?(PR|pull\s+request)\b|"
-                       r"(?<!`)\bnext:?\s+`?(publish|push)\b|"
+                       r"(?<!`)\bnext:\s+`?(publish|push)\b|"
                        r"\bnext:?\s+(publish|push)\b(?!`)|"
                        r"\b(publish\w*|pull\s+requests?|PRs?|build)\b[^.\n]{0,60}"
                        r"\b(is|are)\s+yours\b|"

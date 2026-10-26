@@ -60,6 +60,15 @@
       "why": "sign_off after an explicit go-ahead: record the gate act",
       "history": [
         {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{declared/file:.crayon/units/cfg/unit.md}"
+        },
+        {
           "assistant": "The plan for cfg: a reference page for every toyq setting, for operators configuring toyq on a server, from src/toyq/config.py, written to reference/config.md. Outline: one table of settings, each with its toyq.toml key, TOYQ_* override, type and default; the precedence rule, stated once; the validation rule for max_retries. Shall I record the signoff?"
         },
         {

@@ -860,6 +860,8 @@ class TestMacros(unittest.TestCase):
                        "row for `next: publish`." % TOOL_VERSION)),
             trace(turn("The unit is accepted and current (`next: publish` \u2014 crayon stops "
                        "here).")),
+            # The field and its token, described mid-sentence with no colon: a mention.
+            trace(turn("The unit is already accepted (state `sealed`, next `publish`).")),
         ])
 
     def test_offers_note_catches_note_text_offered_in_the_authors_place(self):
@@ -2792,6 +2794,19 @@ class TestGradingReadsTheAction(unittest.TestCase):
                       {"content": "Done.", "tool_calls": []})
         turns["served_ids"] = ["h1"]
         self.assertFalse(grade.check_no_tool_call(spec, turns, {})["pass"])
+
+    def test_a_command_later_in_a_chain_counts_as_a_call(self):
+        trail = trace({"content": "", "tool_calls": [call("Bash", command=(
+            'cat routing.md | head -150; echo "---"; crayon resume cfg --dry-run'))]},
+            {"content": "", "tool_calls": [call("Bash", command="crayon resume cfg")]})
+        self.assertTrue(grade.check_before({"kind": "before", "first": "^crayon resume cfg --dry-run$",
+                                            "then": "^crayon resume cfg$"}, trail, {})["pass"])
+        shown = trace({"content": "", "tool_calls": [call("Bash", command=(
+            "grep -n internal_error routing.md; crayon show cfg --json"))]})
+        self.assertTrue(grade.check_tool_call({"kind": "tool_call", "tool": "Bash", "which": "any",
+                                               "args_re": "^crayon show cfg\\b"}, shown, {})["pass"])
+        self.assertFalse(grade.check_tool_call({"kind": "tool_call", "tool": "Bash", "which": "any",
+                                                "args_re": "^crayon signoff\\b"}, shown, {})["pass"])
 
     def test_a_help_request_is_not_the_call_it_names(self):
         spec = {"kind": "no_tool_call", "tool": "Bash", "args_re": "\\bcrayon\\s+signoff\\b"}
