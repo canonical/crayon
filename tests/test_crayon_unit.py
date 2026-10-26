@@ -6240,6 +6240,36 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
             "as one",
         )
 
+    def test_every_inline_run_body_is_a_plain_yaml_scalar(self):
+        """An inline ``run:`` body must stay one plain YAML scalar.
+
+        In a plain scalar, a colon followed by a space starts a mapping and a
+        space followed by ``#`` starts a comment. The first makes the whole
+        workflow unparseable, so GitHub starts no job at all; the second cuts
+        the command short. This mirror parser reads either one as a command, so
+        it passed a ``grep -qx 'version: 0.9.0'`` body that GitHub refused.
+        Such a body goes in a block scalar (``run: |``) instead.
+        """
+        workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(
+            encoding="utf-8"
+        )
+        unsafe = []
+        for line in workflow.split("\n"):
+            match = self.CI_RUN_RE.match(line)
+            if match is None or match.group("scalar"):
+                continue
+            body = match.group("inline")
+            if body[:1] in ("'", '"'):
+                continue
+            if ": " in body or " #" in body:
+                unsafe.append(body)
+        self.assertEqual(
+            unsafe,
+            [],
+            "inline `run:` bodies that are not one plain YAML scalar: %s; write "
+            "each as a block scalar (`run: |`)" % unsafe,
+        )
+
     def test_ci_runs_every_gate_command(self):
         """`ci.yml` is a hand copy of the gate unless something pins it.
 
