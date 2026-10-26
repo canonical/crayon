@@ -66,6 +66,22 @@ print(json.dumps({"state": sys.argv[1], "label": "file:" + sys.argv[2], "cmd": N
 ' "$1" "$2" >>"$OUT"
 }
 
+# rec_in STATE LABEL BODY ARGS... : run `crayon ARGS...` with BODY (a printf %b
+# format) on stdin, and record it as an agent types it: `printf '%b' BODY | crayon ...`.
+rec_in() {
+    local state="$1" label="$2" body="$3" out rc
+    shift 3
+    out=$(printf '%b' "$body" | "$CRAYON" "$@" 2>&1)
+    rc=$?
+    python3 -c '
+import json, shlex, sys
+state, label, body, rc, out = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5]
+cmd = "printf %s %s | " % (shlex.quote("%b"), shlex.quote(body))
+cmd += " ".join(["crayon"] + [shlex.quote(arg) for arg in sys.argv[6:]])
+print(json.dumps({"state": state, "label": label, "cmd": cmd, "exit": rc, "output": out}))
+' "$state" "$label" "$body" "$rc" "$out" "$@" >>"$OUT"
+}
+
 # snap NAME : keep this moment of the repo as lane B's sandbox NAME.
 snap() {
     [ -n "${SNAPDIR:-}" ] || return 0
@@ -216,7 +232,8 @@ scenario_accepted() {
     rec_unit accepted "$UNIT"
     rec_file accepted "$PAGE"
     snap accepted
-    rec accepted accept_again_json review "$UNIT" --verdict accept --note "Accurate and complete." --json
+    # Bare, as an author's "accept it" is recorded: no note the author did not give.
+    rec accepted accept_again_json review "$UNIT" --verdict accept --json
 }
 
 # An accept on a page the docs tree already links, with nothing left open: the
@@ -365,6 +382,7 @@ reported_unit() {
     declare_cfg "$REPORTED_NOTES"
     "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
     rec "$state" signed_show_json show "$UNIT" --json
+    rec_file "$state" ".crayon/units/$UNIT/unit.md"
     stage_page "$page"
     printf '%s\n' "$report" >"$staged"
     rec_file "$state" "$staged"
@@ -540,11 +558,16 @@ scenario_context() {
     base_bare
     rec context_empty show_json context show --json
     snap context_empty
-    stage_context doc-style.md "$DOC_STYLE"
+    # What an onboarding walk reads, and the three stage calls it makes, as recorded
+    # steps: a history that says it walked and staged shows it doing so.
+    rec_file context_recorded README.md
+    rec_file context_recorded docs/index.md
+    rec_file context_recorded src/toyq/config.py
+    rec_in context_recorded stage_doc_style "$DOC_STYLE" context stage doc-style.md --body-file -
     rec context_staged show_json context show --json
     snap context_staged
-    stage_context glossary.md "$GLOSSARY"
-    stage_context structure.md "$STRUCTURE"
+    rec_in context_recorded stage_glossary "$GLOSSARY" context stage glossary.md --body-file -
+    rec_in context_recorded stage_structure "$STRUCTURE" context stage structure.md --body-file -
     rec context_recorded record context record --note "toyq context"
     rec context_recorded show_json context show --json
     snap context_recorded
@@ -694,8 +717,7 @@ scenario_tw_accepted() {
     rec tw_accepted show_json show "$TW_UNIT" --json
     rec_unit tw_accepted "$TW_UNIT"
     snap tw_accepted
-    rec tw_accepted accept_again_json review "$TW_UNIT" --verdict accept \
-        --note "Matches what tidewatch check enforces." --json
+    rec tw_accepted accept_again_json review "$TW_UNIT" --verdict accept --json
 }
 
 scenario_tw_missing() {

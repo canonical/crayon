@@ -363,11 +363,16 @@
         "tool/version_json",
         "triage_change/show_json"
       ],
-      "why": "A triage ask gets advice and the advice is handed to the tool with crayon triage record; nothing is declared or signed off until the author says to declare it",
+      "why": "A triage ask gets advice and the advice is handed to crayon triage record and given to the author; nothing is declared or signed off until the author says to declare it",
       "assert": [
         {
           "kind": "decisive",
+          "type": "text"
+        },
+        {
+          "kind": "tool_call",
           "tool": "Bash",
+          "which": "any",
           "args_re": "\\bcrayon(\\.py)?\\s+triage\\s+record\\b(?=[^\\n]*--needs-docs\\s+yes\\b)(?=[^\\n]*--base\\s)(?=[^\\n]*--head\\s)"
         },
         {
@@ -393,7 +398,7 @@
           ]
         },
         {
-          "content": "Triage Recommendation: yes. The commit adds max_queue_size to src/toyq/config.py, with its TOYQ_MAX_QUEUE_SIZE override, and no page documents toyq's settings. The unit I would declare: cfg, a reference page at reference/config.md from src/toyq/config.py, routed to /crayon-write. Say \"declare it\" to start.",
+          "content": "",
           "tool_calls": [
             {
               "name": "Bash",
@@ -402,6 +407,9 @@
               }
             }
           ]
+        },
+        {
+          "content": "Triage Recommendation: yes. The commit adds max_queue_size to src/toyq/config.py, with its TOYQ_MAX_QUEUE_SIZE override, and no page documents toyq's settings. The unit I would declare: cfg, a reference page at reference/config.md from src/toyq/config.py, routed to /crayon-write. Say \"declare it\" to start."
         }
       ],
       "foil": [

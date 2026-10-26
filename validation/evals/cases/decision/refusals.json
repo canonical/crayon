@@ -181,6 +181,24 @@
         "drafted/show_json",
         {
           "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:.crayon/units/cfg/unit.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
+          "call": {
             "name": "Write",
             "arguments": {
               "file_path": ".crayon/staging/cfg/draft/reference/config.md",

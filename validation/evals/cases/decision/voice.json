@@ -149,12 +149,30 @@
       "skill": "crayon-write",
       "protects": "S-21",
       "critical": false,
-      "ask": "cfg",
+      "ask": "cfg. This session runs example/drafting-model-1.",
       "sandbox": "reported_noted",
       "why": "The staged report records one gap, so the report states it in the first person and names log_level, with no blanket disclaimer",
       "history": [
         "tool/version_json",
         "reported_noted/signed_show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{reported_noted/file:.crayon/units/cfg/unit.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
         {
           "call": {
             "name": "Write",
@@ -212,12 +230,30 @@
       "skill": "crayon-write",
       "protects": "S-21",
       "critical": false,
-      "ask": "cfg",
+      "ask": "cfg. This session runs example/drafting-model-1.",
       "sandbox": "reported_clean",
       "why": "Absence: the report's gaps list is empty, so no uncertainty line and no hedge appears; an agent that disclaims by default fails",
       "history": [
         "tool/version_json",
         "reported_clean/signed_show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{reported_clean/file:.crayon/units/cfg/unit.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
         {
           "call": {
             "name": "Write",

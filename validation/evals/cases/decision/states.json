@@ -1,7 +1,7 @@
 {
  "accepted": {
   "accept_again_json": {
-   "cmd": "crayon review cfg --verdict accept --note 'Accurate and complete.' --json",
+   "cmd": "crayon review cfg --verdict accept --json",
    "exit": 3,
    "output": "{\"error\": \"already_accepted\", \"unit\": \"cfg\", \"detail\": \"the basis at seq 3 was already accepted at seq 4\", \"hint\": \"nothing has been recorded since; the unit is sealed\", \"next\": \"publish\", \"seq\": 4, \"commit\": \"3f15f2350a876fb048d801ff3064a71fcaf5acf4\"}"
   },
@@ -137,6 +137,21 @@
    "exit": 0,
    "output": "# Structure\n\n- docs/reference/: settings and commands.\n- docs/how-to/: task guides.\n"
   },
+  "file:README.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# toyq\n\nA small local job queue. `toyq` stores jobs in a SQLite file and runs them one at a\ntime with a configurable retry policy.\n\n## Install\n\nFrom a checkout of this repository:\n\n```bash\npython3 -m pip install .\ntoyq init\n```\n\n## Use\n\n```bash\ntoyq add \"make report\"\ntoyq run\ntoyq status\n```\n\nConfiguration lives in `toyq.toml` in the working directory; see the configuration\nreference in the docs.\n"
+  },
+  "file:docs/index.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# toyq documentation\n\n```{toctree}\n:maxdepth: 1\n```\n\ntoyq is a small local job queue.\n"
+  },
+  "file:src/toyq/config.py": {
+   "cmd": null,
+   "exit": 0,
+   "output": "\"\"\"toyq's configuration: read from toyq.toml, overridden by TOYQ_* variables.\"\"\"\n\nfrom dataclasses import dataclass\n\n#: Defaults, used when neither toyq.toml nor the environment sets a value.\nDEFAULTS = {\n    \"db_path\": \"toyq.sqlite\",\n    \"max_retries\": 3,\n    \"retry_backoff_seconds\": 5.0,\n    \"job_timeout_seconds\": 600,\n    \"log_level\": \"info\",\n}\n\n#: Each setting can be overridden by an environment variable of this name.\nENV_OVERRIDES = {\n    \"db_path\": \"TOYQ_DB_PATH\",\n    \"max_retries\": \"TOYQ_MAX_RETRIES\",\n    \"retry_backoff_seconds\": \"TOYQ_RETRY_BACKOFF\",\n    \"job_timeout_seconds\": \"TOYQ_JOB_TIMEOUT\",\n    \"log_level\": \"TOYQ_LOG_LEVEL\",\n}\n\n\n@dataclass\nclass Config:\n    db_path: str\n    max_retries: int\n    retry_backoff_seconds: float\n    job_timeout_seconds: int\n    log_level: str\n\n\ndef load(toml_values, environ):\n    \"\"\"Merge defaults, then toyq.toml, then TOYQ_* variables (last wins).\"\"\"\n    merged = dict(DEFAULTS)\n    merged.update(toml_values)\n    for key, var in ENV_OVERRIDES.items():\n        if var in environ:\n            merged[key] = type(DEFAULTS[key])(environ[var])\n    if merged[\"max_retries\"] < 0:\n        raise ValueError(\"max_retries must be 0 or more\")\n    return Config(**merged)\n"
+  },
   "record": {
    "cmd": "crayon context record --note 'toyq context'",
    "exit": 0,
@@ -146,6 +161,21 @@
    "cmd": "crayon context show --json",
    "exit": 0,
    "output": "{\"ok\": true, \"message\": \"context: 3 of 5 artefact(s) present (doc-style.md, glossary.md, structure.md) · missing: code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"plan\", \"artifacts\": {\"doc-style.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"76aee5746f4f4cc34b22e1b21f8f55909153772e4dde30f709b06c19b98c87a7\", \"drifted\": false}, \"glossary.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"b88b260f8e822be1973b199bc145aa2051023f9c5c123456ac30db3116f3e86d\", \"drifted\": false}, \"structure.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"0e7a132931da7055af3bf442ff334d8c6fbeeadf437a7200d720b120d6a41760\", \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": {\"recorded_at\": \"2026-01-01T00:00:00+00:00\", \"commit\": \"91c48c917a59b422c9474e43bdf4a176d598a7b6\", \"model\": \"\", \"model_origin\": \"unknown\"}}"
+  },
+  "stage_doc_style": {
+   "cmd": "printf %b '# Doc style\\n\\nImpersonal, present tense. Short sentences.\\n' | crayon context stage doc-style.md --body-file -",
+   "exit": 0,
+   "output": "staged doc-style.md · .crayon/staging/_context/doc-style.md · no source declared · Next: record"
+  },
+  "stage_glossary": {
+   "cmd": "printf %b '# Glossary\\n\\n- **job**: one queued shell command.\\n- **retry**: a re-run of a failed job.\\n' | crayon context stage glossary.md --body-file -",
+   "exit": 0,
+   "output": "staged glossary.md · .crayon/staging/_context/glossary.md · no source declared · Next: record"
+  },
+  "stage_structure": {
+   "cmd": "printf %b '# Structure\\n\\n- docs/reference/: settings and commands.\\n- docs/how-to/: task guides.\\n' | crayon context stage structure.md --body-file -",
+   "exit": 0,
+   "output": "staged structure.md · .crayon/staging/_context/structure.md · no source declared · Next: record"
   }
  },
  "context_staged": {
@@ -352,6 +382,11 @@
    "exit": 0,
    "output": "{\"origins\": [\"src/toyq/config.py\"], \"gaps\": [\"No source lists the accepted log_level values; the page gives only the default.\"]}\n"
   },
+  "file:.crayon/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\nnotes: \"They have just installed toyq and opened toyq.toml.\\nLeave out db_path; storage gets its own page.\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
   "file:docs/reference/config.md": {
    "cmd": null,
    "exit": 0,
@@ -384,6 +419,11 @@
    "exit": 0,
    "output": "{\"origins\": [\"src/toyq/config.py\"], \"gaps\": [], \"gaps_note\": \"Every setting on the page is read from src/toyq/config.py.\"}\n"
   },
+  "file:.crayon/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\nnotes: \"They have just installed toyq and opened toyq.toml.\\nLeave out db_path; storage gets its own page.\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
   "file:docs/reference/config.md": {
    "cmd": null,
    "exit": 0,
@@ -415,6 +455,11 @@
    "cmd": null,
    "exit": 0,
    "output": "{\"origins\": [\"src/toyq/config.py\"], \"gaps\": [\"No source lists the accepted log_level values; the page gives only the default.\"]}\n"
+  },
+  "file:.crayon/units/cfg/unit.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\nnotes: \"They have just installed toyq and opened toyq.toml.\\nLeave out db_path; storage gets its own page.\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
   },
   "file:docs/reference/config.md": {
    "cmd": null,
@@ -541,7 +586,7 @@
  },
  "tw_accepted": {
   "accept_again_json": {
-   "cmd": "crayon review settings --verdict accept --note 'Matches what tidewatch check enforces.' --json",
+   "cmd": "crayon review settings --verdict accept --json",
    "exit": 3,
    "output": "{\"error\": \"already_accepted\", \"unit\": \"settings\", \"detail\": \"the basis at seq 3 was already accepted at seq 4\", \"hint\": \"nothing has been recorded since; the unit is sealed\", \"next\": \"publish\", \"seq\": 4, \"commit\": \"5ee76a7dd4abdeb92730584f4a6728e174612901\"}"
   },
