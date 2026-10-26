@@ -89,10 +89,11 @@ snap() {
     cp -a . "$SNAPDIR/$1"
 }
 
-# The three onboarding artefacts, as crayon-onboard would stage them for toyq.
-DOC_STYLE='# Doc style\n\nImpersonal, present tense. Short sentences.\n'
-GLOSSARY='# Glossary\n\n- **job**: one queued shell command.\n- **retry**: a re-run of a failed job.\n'
-STRUCTURE='# Structure\n\n- docs/reference/: settings and commands.\n- docs/how-to/: task guides.\n'
+# The three onboarding artefacts, as crayon-onboard would stage them for toyq after
+# walking README.md, docs/index.md and src/toyq: what they say is true of the project.
+DOC_STYLE='# Doc style\n\nFrom README.md, the only prose so far.\n\n- Impersonal, present tense, short sentences.\n- Commands in fenced bash blocks, one command per line.\n- Settings, files and commands named in backticks: `toyq.toml`, `toyq run`.\n'
+GLOSSARY='# Glossary\n\n- **job**: one queued shell command.\n- **attempt**: one run of a job; `toyq status` counts them.\n- **retry**: a re-run of a failed job, up to `max_retries` times.\n- **backoff**: the wait between attempts, `retry_backoff_seconds`.\n'
+STRUCTURE='# Structure\n\n## 1. Documentation topology\n\n- docs/index.md is the only page: a one-line landing page whose toctree is empty.\n- README.md carries install and use, the only task prose.\n\n## 2. Diataxis coverage and balance\n\n- No tutorial, how-to, reference or explanation page yet.\n\n## 3. Coverage gaps\n\n- [CODE↔DOCS GAP] Config keys in src/toyq/config.py (max_retries, retry_backoff_seconds, job_timeout_seconds, log_level, db_path) and their TOYQ_* variables have no reference page.\n- [CODE↔DOCS GAP] CLI commands in src/toyq/cli.py (init, add, run, status, and init --force-dir) are named only in README.md.\n\n## 4. Risks\n\n- README.md points to a configuration reference that does not exist.\n\n## 5. Prioritized improvements\n\n- [CODE↔DOCS GAP] Add a configuration reference under docs/reference/.\n- [CODE↔DOCS GAP] Add a commands reference, and list both in the toctree.\n'
 
 # stage_context NAME BODY : stage one context artefact through the tool.
 stage_context() {
@@ -373,9 +374,9 @@ PAGE_NOTED=${PAGE_V1/'| `db_path` | `TOYQ_DB_PATH` | string | `toyq.sqlite` |\n'
 
 # reported_unit STATE REPORT [PAGE] : a reference unit drafted by a named model
 # with intake notes and a context report, so review can weigh who drafted it and
-# write can voice its gaps. reported and reported_clean differ only in REPORT, and
-# keep the row the notes leave out, which review is to find; reported_noted is
-# reported with PAGE_NOTED, the writer's own draft as its notes ask.
+# write can voice its gaps. reported keeps the row the notes leave out, which
+# review is to find; reported_noted and reported_clean carry PAGE_NOTED, the
+# writer's own draft as its notes ask, with one gap reported and with none.
 reported_unit() {
     local state="$1" report="$2" page="${3:-$PAGE_V1}" staged=".crayon/staging/$UNIT/report.json"
     base
@@ -398,8 +399,9 @@ scenario_reported() {
     reported_unit reported "$REPORT_GAPS"
 }
 
+# A writer's own draft with no gap: it honours the notes, so its report has nothing to say.
 scenario_reported_clean() {
-    reported_unit reported_clean "$REPORT_CLEAN"
+    reported_unit reported_clean "$REPORT_CLEAN" "$PAGE_NOTED"
 }
 
 scenario_reported_noted() {
@@ -424,7 +426,7 @@ scenario_missing() {
     rec missing show_json show "$UNIT" --json
     rec_unit missing "$UNIT"
     snap missing
-    rec missing accept_json review "$UNIT" --verdict accept --note "Ship it." --json
+    rec missing accept_json review "$UNIT" --verdict accept --json
 }
 
 scenario_target_exists() {
@@ -563,6 +565,7 @@ scenario_context() {
     rec_file context_recorded README.md
     rec_file context_recorded docs/index.md
     rec_file context_recorded src/toyq/config.py
+    rec_file context_recorded src/toyq/cli.py
     rec_in context_recorded stage_doc_style "$DOC_STYLE" context stage doc-style.md --body-file -
     rec context_staged show_json context show --json
     snap context_staged
@@ -615,7 +618,7 @@ TW_TARGET=reference/configuration.md
 TW_PAGE="docs/$TW_TARGET"
 TW_DOC_STYLE='# Doc style\n\nSecond person, present tense. Commands go in console blocks.\n'
 TW_GLOSSARY='# Glossary\n\n- **watch**: a directory tidewatch polls, with its command.\n- **hook**: the command a watch runs when something in it changes.\n'
-TW_STRUCTURE='# Structure\n\n- docs/tutorial/: learning by doing.\n- docs/how-to/: task guides.\n- docs/reference/: commands, hooks, events, variables.\n- docs/explanation/: background.\n'
+TW_STRUCTURE='# Structure\n\n- docs/tutorial/: learning by doing.\n- docs/how-to/: task guides.\n- docs/reference/: commands, hooks, events, variables.\n- docs/explanation/: background.\n\n## Coverage gaps\n\n- The settings in src/tidewatch/config.py have no reference page; docs/reference/environment.md lists only their variables.\n'
 TW_PAGE_V1='# Configuration reference\n\ntidewatch reads its settings from defaults, then `tidewatch.toml`, then `TIDEWATCH_*` environment variables; the last one wins.\n\n| Setting | Variable | Type | Default |\n|---|---|---|---|\n| `poll_interval_seconds` | `TIDEWATCH_POLL_INTERVAL` | float | `2.0` |\n| `debounce_ms` | `TIDEWATCH_DEBOUNCE_MS` | integer | `250` |\n| `max_hooks_in_flight` | `TIDEWATCH_MAX_HOOKS` | integer | `4` |\n| `hook_timeout_seconds` | `TIDEWATCH_HOOK_TIMEOUT` | integer | `300` |\n| `follow_symlinks` | `TIDEWATCH_FOLLOW_SYMLINKS` | boolean | `false` |\n| `log_format` | `TIDEWATCH_LOG_FORMAT` | string | `text` |\n| `state_dir` | `TIDEWATCH_STATE_DIR` | path | `~/.local/state/tidewatch` |\n\n`tidewatch check` reports every setting that breaks a rule: `poll_interval_seconds` must be more than 0, `debounce_ms` 0 or more, `max_hooks_in_flight` 1 or more, and `log_format` one of `text` or `json`.\n'
 TW_HOWTO_PAGE='# Rebuild the docs when they change\n\nInstall tidewatch from the checkout:\n\n```console\n$ python3 -m pip install /srv/tidewatch\n```\n\nWatch the docs, ignoring the build output:\n\n```console\n$ tidewatch add docs --on-change "python3 -m sphinx docs docs/_build/html" --ignore "*/_build/*"\n```\n\nRun one poll to check it:\n\n```console\n$ tidewatch run --once\n```\n'
 
@@ -725,7 +728,7 @@ scenario_tw_missing() {
     rm "$TW_PAGE"
     rec tw_missing show_json show "$TW_UNIT" --json
     snap tw_missing
-    rec tw_missing accept_json review "$TW_UNIT" --verdict accept --note "Ship it." --json
+    rec tw_missing accept_json review "$TW_UNIT" --verdict accept --json
 }
 
 scenario_tw_crashed() {

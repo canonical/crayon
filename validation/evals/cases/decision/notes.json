@@ -175,6 +175,24 @@
         },
         "drafted/summary",
         {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "docs/reference/config.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:docs/reference/config.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
           "assistant": "## crayon-review — findings: cfg\n\n### writing-approach\n- (none)\n\n### source-fidelity\n- F-1 [must-fix] \"`max_retries` must be 0 or more.\" (reference/config.md:13) states the rule but not what breaking it does: `load` raises `ValueError`, so a negative value stops toyq with an error.\n  → say that a negative `max_retries` stops toyq with an error\n\n### completeness\n- F-2 [should-fix] the page does not say that a `TOYQ_*` value is converted to the setting's type, so `TOYQ_RETRY_BACKOFF=fast` fails (reference/config.md:3)\n  → say that each variable's value must read as the setting's type\n\n### structure-fit\n- (none)\n\n### clarity\n- F-3 [nit] \"toyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\" (reference/config.md:3) carries two clauses in the opening sentence\n  → split it into two sentences\n\nFindings: 3 total — 1 must-fix, 1 should-fix, 1 nit.\nDismissed pre-pass candidates: (none)\n\nWhat's your verdict, and is there anything you want on the record with it?"
         },
         {
@@ -302,6 +320,24 @@
         "drafted/show_json",
         {
           "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:.crayon/units/cfg/unit.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
+          "call": {
             "name": "Write",
             "arguments": {
               "file_path": ".crayon/staging/cfg/draft/reference/config.md",
@@ -315,14 +351,14 @@
           "assistant": "Nothing has been recorded since the last draft. What should change in this redraft?"
         },
         {
-          "user": "Put the precedence rule before the table."
+          "user": "Add an example toyq.toml that sets max_retries."
         }
       ],
       "assert": [
         {
           "kind": "decisive",
           "tool": "Bash",
-          "args_re": "^(?:crayon\\s+steer\\s+[\"']?cfg[\"']?\\s+--note(?:=|\\s+)(?:'Put the precedence rule before the table\\.'|\"Put the precedence rule before the table\\.\")|printf\\s+(?:'%s'|\"%s\")\\s+(?:'Put the precedence rule before the table\\.'|\"Put the precedence rule before the table\\.\")\\s*\\|\\s*crayon\\s+steer\\s+[\"']?cfg[\"']?\\s+--note-file\\s+-)(?:\\s+--json)?$"
+          "args_re": "^(?:crayon\\s+steer\\s+[\"']?cfg[\"']?\\s+--note(?:=|\\s+)(?:'Add an example toyq\\.toml that sets max_retries\\.'|\"Add an example toyq\\.toml that sets max_retries\\.\")|printf\\s+(?:'%s'|\"%s\")\\s+(?:'Add an example toyq\\.toml that sets max_retries\\.'|\"Add an example toyq\\.toml that sets max_retries\\.\")\\s*\\|\\s*crayon\\s+steer\\s+[\"']?cfg[\"']?\\s+--note-file\\s+-)(?:\\s+--json)?$"
         },
         {
           "kind": "no_tool_call",
@@ -337,7 +373,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "crayon steer cfg --note 'Put the precedence rule before the table.'"
+                "command": "crayon steer cfg --note 'Add an example toyq.toml that sets max_retries.'"
               }
             }
           ]
@@ -350,7 +386,7 @@
             {
               "name": "Bash",
               "arguments": {
-                "command": "crayon steer cfg --note 'Move the precedence rule above the settings table so readers see it first.'"
+                "command": "crayon steer cfg --note 'Show readers how to set max_retries in a toyq.toml example.'"
               }
             }
           ]
