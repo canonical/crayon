@@ -13,7 +13,7 @@
         "tool/version_json",
         "drafted/show_json",
         {
-          "user": "Record a fix: explain what happens when max_retries is exceeded."
+          "user": "Record a fix with this note: Explain what happens when max_retries is exceeded."
         },
         "drafted/fix_json"
       ],

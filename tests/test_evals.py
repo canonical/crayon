@@ -1550,7 +1550,11 @@ class TestLaneBCases(unittest.TestCase):
                 claimed = int(re.search(r"structure\.md \((\d+) coverage gaps\)", report).group(1))
                 structure = states[case["resolved"]["sandbox"]][
                     "file:.crayon/context/structure.md"]["output"]
-                held = len(re.findall(r"\[(CODE↔DOCS GAP|SDLC)\]", structure))
+                # Section 3 holds the gaps; section 5 prefixes an improvement with the
+                # tag of the gap it answers, so the file holds each tag more than once.
+                gaps = re.search(r"^## 3\..*?(?=^## |\Z)", structure, re.M | re.S)
+                held = len(re.findall(r"\[(CODE↔DOCS GAP|SDLC)\]",
+                                      gaps.group(0) if gaps else structure))
                 asked = [q for floor, q in questions if claimed >= floor][0]
                 with self.subTest(case=case["id"]):
                     self.assertEqual(claimed, held, "%s's history reports %d coverage gaps; "
@@ -2059,7 +2063,7 @@ class TestLaneBCases(unittest.TestCase):
         accept = "The table matches what we ship."
         steer = "Say on the page that toyq init needs --force-dir on a fresh checkout."
         arrival = "They have just seen a job fail twice in toyq status."
-        redraft = "Put the precedence rule before the table."
+        redraft = "Add an example toyq.toml that sets max_retries."
         unsafe = cases["B-58"]["history"][-1]["user"]
         apostrophe = cases["B-59"]["history"][3]["user"]
         declare = ("printf '%%s\\n' '## Intent & scope' | crayon unit new retries --intent reference "

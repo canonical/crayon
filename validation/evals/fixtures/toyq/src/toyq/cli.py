@@ -5,6 +5,7 @@ import os
 import sqlite3
 import subprocess
 import sys
+import time
 
 from toyq.config import DEFAULTS, load
 
@@ -32,7 +33,11 @@ def _connect(config):
     return db
 
 
-def init(config):
+def init(config, force_dir=False):
+    if os.path.exists("pyproject.toml") and not force_dir:
+        print("this looks like a source checkout (pyproject.toml is here); "
+              "pass --force-dir to initialise in it anyway")
+        return 1
     if os.path.exists(CONFIG_FILE):
         print("%s already exists" % CONFIG_FILE)
     else:
@@ -43,6 +48,7 @@ def init(config):
         print("wrote %s" % CONFIG_FILE)
     _connect(config).close()
     print("job database: %s" % config.db_path)
+    return 0
 
 
 def add(config, job):
@@ -61,10 +67,20 @@ def run(config, once):
                 return
             job_id, command = row
             code = subprocess.call(command, shell=True, timeout=config.job_timeout_seconds)
-            state = "done" if code == 0 else "failed"
-            db.execute("UPDATE jobs SET state = ?, attempts = attempts + 1 WHERE id = ?",
-                       (state, job_id))
-            print("job %d %s (exit %d)" % (job_id, state, code))
+            db.execute("UPDATE jobs SET attempts = attempts + 1 WHERE id = ?", (job_id,))
+            attempts = db.execute("SELECT attempts FROM jobs WHERE id = ?",
+                                  (job_id,)).fetchone()[0]
+            # A failed job is retried max_retries times, retry_backoff_seconds apart.
+            if code == 0:
+                state = "done"
+            elif attempts <= config.max_retries:
+                state = "queued"
+            else:
+                state = "failed"
+            db.execute("UPDATE jobs SET state = ? WHERE id = ?", (state, job_id))
+            print("job %d %s (exit %d, attempt %d)" % (job_id, state, code, attempts))
+            if state == "queued":
+                time.sleep(config.retry_backoff_seconds)
             if once:
                 return
 
@@ -79,7 +95,9 @@ def status(config):
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="toyq")
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("init", help="create toyq.toml and the job database")
+    init_cmd = sub.add_parser("init", help="create toyq.toml and the job database")
+    init_cmd.add_argument("--force-dir", action="store_true",
+                          help="initialise even in a source checkout")
     add_cmd = sub.add_parser("add", help="queue a shell command as a job")
     add_cmd.add_argument("job")
     run_cmd = sub.add_parser("run", help="run queued jobs until the queue is empty")
@@ -88,7 +106,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     config = load(_read_toml(CONFIG_FILE), os.environ)
     if args.command == "init":
-        init(config)
+        return init(config, args.force_dir)
     elif args.command == "add":
         add(config, args.job)
     elif args.command == "run":
