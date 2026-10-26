@@ -223,13 +223,13 @@ def check_tool_call(spec, trace, ctx):
                       "tool call" % (spec.get("tool", "tool"), spec.get("args_re")))
     if spec.get("which", "first") == "first":
         first = calls[0]
-        if _matches(first, spec):
+        if _matches_a_part(first, spec):
             return result(True, "first call %s" % render_call(first))
         return result(False, "expected the first call to be %s matching %r; it "
                       "was %s" % (spec.get("tool", "any tool"), spec.get("args_re"),
                                   render_call(first)))
     for call in calls:
-        if _matches(call, spec):
+        if _matches_a_part(call, spec):
             return result(True, "called %s" % render_call(call))
     return result(False, "expected a %s call matching %r; saw %s"
                   % (spec.get("tool", "tool"), spec.get("args_re"),
@@ -443,6 +443,22 @@ def _chain_commands(call):
     return commands
 
 
+def _matches_a_part(call, spec):
+    """:func:`_matches`, or one command of the chain does.
+
+    For a check that a call happened at all: in ``grep -n x routing.md; crayon
+    show cfg --json`` the show ran, though a reading tail is dropped from
+    :func:`call_text` and the grep comes first.
+    """
+    if _matches(call, spec):
+        return True
+    if call.get("name") != "Bash" or not spec.get("args_re"):
+        return False
+    if spec.get("tool") and spec["tool"] != "Bash":
+        return False
+    return any(re.search(spec["args_re"], command) for command in _chain_commands(call))
+
+
 def check_bash_sequence(spec, trace, ctx):
     """The first shell commands, in order, match ``prefix``.
 
@@ -463,8 +479,14 @@ def check_bash_sequence(spec, trace, ctx):
 
 
 def check_before(spec, trace, ctx):
-    """A call matching ``first`` happens, and none matching ``then`` precedes it."""
-    texts = [call_text(call) for call in _all_calls(trace)]
+    """A call matching ``first`` happens, and none matching ``then`` precedes it.
+
+    Each command of a chain counts on its own, in the order it runs, so
+    ``cat routing.md; crayon resume cfg --dry-run`` runs the dry run.
+    """
+    texts = [command for call in _all_calls(trace)
+             for command in (_chain_commands(call) if call.get("name") == "Bash"
+                             else [call_text(call)])]
     firsts = [i for i, text in enumerate(texts) if re.search(spec["first"], text)]
     if not firsts:
         return result(False, "expected a call matching %r; saw %s"
