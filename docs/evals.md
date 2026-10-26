@@ -82,6 +82,18 @@ the digest script and the current case's copy: no eval case, no checkout and no 
 as an unprivileged user with an environment built from scratch, and the copy is reset before every
 case. The container's network is not closed; it holds nothing a command could send.
 
+On 2026-10-25 this rule was checked against the command parser it replaced. Every command models
+typed in the 2026-10-11 lane B runs (7,474 episodes) was run again, once per case it appeared in
+(4,631 runs), in a workshop holding that case's state, with the old tool name translated as the
+rename did. Of 7,943 calls the old parser had judged, 7,880 are judged the same way. The other 63
+are commands the parser called actions, such as `git log --all`, `git ls-tree`, a backtick inside
+a grep pattern, `xargs ls`, an `awk` line range and `python3 -m json.tool`: they change nothing
+when run, and the model now sees their output. The check also found that asking a recording verb
+for its `--help` ended the episode as if it recorded; that is fixed. Grading the stored replies
+again with the current checks changes 169 of 7,459 outcomes: 104 replies quote commit ids that the
+fixture has since recorded afresh, 64 are on cases edited on 2026-10-15, and one passes because
+grading now reads each part of a chained command.
+
 ## Reading a result
 
 Each case runs three times per model, because the backends are not deterministic. A case that
