@@ -1,0 +1,916 @@
+{
+  "meta": {
+    "measures": "skill-following",
+    "engine": "promptfoo@0.124.1",
+    "date": "2026-10-25",
+    "crayon_version": "0.3.0",
+    "repo_head": "89b957a",
+    "skills_sha256": "08a7a75e2681b962f20b897dfb2e1c53418aa9cdf95ddaa394d0ce57b15481ef",
+    "kit_sha256": "2424942186071df28c476fb136e635d0bf301143bf045d41cb863f47dd2208a9",
+    "split": "all",
+    "partial": false,
+    "dry_run": false,
+    "gate_model": false,
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "anthropic/claude-sonnet-5.5",
+    "why": "used by authors through their coding agent",
+    "provider_pin": {
+      "order": [
+        "google-vertex/global"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "runs": 3,
+    "total_cases": 94,
+    "critical_cases": 69,
+    "passes": 277,
+    "pass_rate": 0.9823,
+    "stable_pass": 89,
+    "stable_fail": 0,
+    "flaky": 5,
+    "errors": 0,
+    "cost_usd": 12.810347,
+    "tokens": {
+      "in": 14413741,
+      "out": 219266
+    },
+    "truncated": 0,
+    "retries": 0,
+    "budget_stop": null
+  },
+  "decision": {
+    "supported": {
+      "verdict": "not supported",
+      "critical_failing": [
+        "B-19",
+        "B-85"
+      ],
+      "reason": "2 critical case(s) did not pass every run"
+    }
+  },
+  "cases": [
+    {
+      "id": "B-44",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.162016
+    },
+    {
+      "id": "B-60",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.172964
+    },
+    {
+      "id": "B-45",
+      "protects": "S-17",
+      "critical": false,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.152982,
+      "failed": [
+        "text_re: expected the reply to match '(?m)^\\\\s*(?:\\\\*\\\\*)?1[.)][^\\\\n]*\\\\binit\\\\b[^\\\\n]*\\\\?'; it reads: 'reviewed install: accept \u00b7 accepted how-to/install.md \u00b7 Next: yours \u2014 crayon stops here\\n\\nRequest 8 (\"Say which Python version toyq needs.\") is now recorded as resolved. The page itself didn\\'t c"
+      ]
+    },
+    {
+      "id": "B-46",
+      "protects": "S-17",
+      "critical": false,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.135676,
+      "failed": [
+        "text_re: expected the reply to match '(?im)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*(link|toctree|arriv|come from)[^\\\\n]*\\\\?'; it reads: 'reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 crayon stops here\\n\\n1. F-2 (should-fix) was not addressed in your verdict: the page says `max_retries` mus"
+      ]
+    },
+    {
+      "id": "B-47",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.222174
+    },
+    {
+      "id": "B-48",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.113748
+    },
+    {
+      "id": "B-56",
+      "protects": "S-17",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.055221
+    },
+    {
+      "id": "B-57",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.030611
+    },
+    {
+      "id": "B-62",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.23406
+    },
+    {
+      "id": "B-63",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.652214
+    },
+    {
+      "id": "B-64",
+      "protects": "S-23",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.134963
+    },
+    {
+      "id": "B-65",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.012762
+    },
+    {
+      "id": "B-66",
+      "protects": "S-23",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.040091
+    },
+    {
+      "id": "B-74",
+      "protects": "S-24",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.251011
+    },
+    {
+      "id": "B-75",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.016823
+    },
+    {
+      "id": "B-76",
+      "protects": "S-23",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.039832
+    },
+    {
+      "id": "B-77",
+      "protects": "S-23",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.103347
+    },
+    {
+      "id": "B-32",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.122391
+    },
+    {
+      "id": "B-33",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.087118
+    },
+    {
+      "id": "B-34",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.05027
+    },
+    {
+      "id": "B-35",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.053346
+    },
+    {
+      "id": "B-49",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.19838
+    },
+    {
+      "id": "B-50",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.15968
+    },
+    {
+      "id": "B-53",
+      "protects": "S-18",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.156766
+    },
+    {
+      "id": "B-54",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.173953
+    },
+    {
+      "id": "B-59",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.115625
+    },
+    {
+      "id": "B-71",
+      "protects": "S-24",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.13673
+    },
+    {
+      "id": "B-72",
+      "protects": "S-24",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.079866
+    },
+    {
+      "id": "B-73",
+      "protects": "S-24",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.04609
+    },
+    {
+      "id": "B-78",
+      "protects": "S-05",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.1962
+    },
+    {
+      "id": "B-79",
+      "protects": "S-05",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.085399
+    },
+    {
+      "id": "B-40",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.072489
+    },
+    {
+      "id": "B-41",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.424336
+    },
+    {
+      "id": "B-42",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.083668
+    },
+    {
+      "id": "B-43",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.073225
+    },
+    {
+      "id": "B-51",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.076786
+    },
+    {
+      "id": "B-52",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.059122
+    },
+    {
+      "id": "B-05",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.228139
+    },
+    {
+      "id": "B-06",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.149225
+    },
+    {
+      "id": "B-07",
+      "protects": "S-03",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.426644
+    },
+    {
+      "id": "B-08",
+      "protects": "S-19",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.269181
+    },
+    {
+      "id": "B-09",
+      "protects": "S-03",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.080945
+    },
+    {
+      "id": "B-10",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.072645
+    },
+    {
+      "id": "B-11",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.263125
+    },
+    {
+      "id": "B-12",
+      "protects": "S-03",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.065474
+    },
+    {
+      "id": "B-13",
+      "protects": "S-08",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.11466
+    },
+    {
+      "id": "B-14",
+      "protects": "S-03",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.063847
+    },
+    {
+      "id": "B-15",
+      "protects": "S-05",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.069143
+    },
+    {
+      "id": "B-16",
+      "protects": "S-03",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.162735
+    },
+    {
+      "id": "B-36",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.044793
+    },
+    {
+      "id": "B-37",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00797
+    },
+    {
+      "id": "B-38",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.082529
+    },
+    {
+      "id": "B-39",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.046458
+    },
+    {
+      "id": "B-55",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.141615
+    },
+    {
+      "id": "B-58",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.009741
+    },
+    {
+      "id": "B-01",
+      "protects": "S-04",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.087867
+    },
+    {
+      "id": "B-02",
+      "protects": "S-04",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.100266
+    },
+    {
+      "id": "B-03",
+      "protects": "S-01",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011828
+    },
+    {
+      "id": "B-04",
+      "protects": "S-01",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008658
+    },
+    {
+      "id": "B-17",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.236014
+    },
+    {
+      "id": "B-18",
+      "protects": "S-11",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.020143
+    },
+    {
+      "id": "B-19",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.127568,
+      "failed": [
+        "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-20",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.054409
+    },
+    {
+      "id": "B-21",
+      "protects": "S-09",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.128792
+    },
+    {
+      "id": "B-22",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.210324
+    },
+    {
+      "id": "B-23",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.062866
+    },
+    {
+      "id": "B-24",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.043015
+    },
+    {
+      "id": "B-25",
+      "protects": "S-13",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.071829
+    },
+    {
+      "id": "B-26",
+      "protects": "S-08",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.071995
+    },
+    {
+      "id": "B-27",
+      "protects": "S-11",
+      "critical": false,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.071012,
+      "failed": [
+        "tool_call: expected a Bash call matching '^crayon show cfg\\\\b'; saw Bash(grep -n -i -B1 -A4 \"internal_error\" .agents/skills/crayon-write/references/routing.md; crayon show cfg --json); Bash(crayon draft cfg .crayon/staging/cfg/draft/ --model-origin unknown --report .crayon/staging/cfg/report.json)"
+      ]
+    },
+    {
+      "id": "B-61",
+      "protects": "S-20",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.016867
+    },
+    {
+      "id": "B-80",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.173269
+    },
+    {
+      "id": "B-81",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.142298
+    },
+    {
+      "id": "B-82",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.250272
+    },
+    {
+      "id": "B-83",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.109632
+    },
+    {
+      "id": "B-84",
+      "protects": "S-19",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.225298
+    },
+    {
+      "id": "B-85",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.235572,
+      "failed": [
+        "question_count: expected between 2 and 2 question(s); its reply asked 3; not_text_re: the reply must not match \"(?i)what'?s your verdict\"; it contains \"What's your verdict\""
+      ]
+    },
+    {
+      "id": "B-86",
+      "protects": "S-24",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.140538
+    },
+    {
+      "id": "B-87",
+      "protects": "S-01",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.007998
+    },
+    {
+      "id": "B-88",
+      "protects": "S-03",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.821933
+    },
+    {
+      "id": "B-89",
+      "protects": "S-05",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.27577
+    },
+    {
+      "id": "B-90",
+      "protects": "S-08",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.112242
+    },
+    {
+      "id": "B-91",
+      "protects": "S-09",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.074162
+    },
+    {
+      "id": "B-92",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.156775
+    },
+    {
+      "id": "B-93",
+      "protects": "S-13",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.073641
+    },
+    {
+      "id": "B-94",
+      "protects": "S-20",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.115044
+    },
+    {
+      "id": "B-67",
+      "protects": "S-22",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.298735
+    },
+    {
+      "id": "B-68",
+      "protects": "S-22",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.421347
+    },
+    {
+      "id": "B-69",
+      "protects": "S-21",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.061393
+    },
+    {
+      "id": "B-70",
+      "protects": "S-21",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.022579
+    },
+    {
+      "id": "B-28",
+      "protects": "S-03",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.12595
+    },
+    {
+      "id": "B-29",
+      "protects": "S-18",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.093305
+    },
+    {
+      "id": "B-30",
+      "protects": "S-05",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.092033
+    },
+    {
+      "id": "B-31",
+      "protects": "S-20",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.176304
+    }
+  ]
+}

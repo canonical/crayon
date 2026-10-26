@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "measures": "skill-following",
+    "engine": "promptfoo@0.124.1",
+    "date": "2026-10-25",
+    "crayon_version": "0.3.0",
+    "repo_head": "89b957a",
+    "skills_sha256": "08a7a75e2681b962f20b897dfb2e1c53418aa9cdf95ddaa394d0ce57b15481ef",
+    "kit_sha256": "2424942186071df28c476fb136e635d0bf301143bf045d41cb863f47dd2208a9",
+    "split": "all",
+    "partial": false,
+    "dry_run": false,
+    "gate_model": true,
+    "lane": "A",
+    "lane_title": "skill selection",
+    "model": "anthropic/claude-haiku-5.5",
+    "why": "used by authors through their coding agent; the cheapest certified model, so it is the gate model",
+    "provider_pin": {
+      "order": [
+        "google-vertex/global"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "runs": 3,
+    "total_cases": 15,
+    "critical_cases": 0,
+    "passes": 45,
+    "pass_rate": 1.0,
+    "stable_pass": 15,
+    "stable_fail": 0,
+    "flaky": 0,
+    "errors": 0,
+    "cost_usd": 0.004082,
+    "tokens": {
+      "in": 68217,
+      "out": 2087
+    },
+    "truncated": 0,
+    "retries": 0,
+    "budget_stop": null
+  },
+  "decision": {
+    "supported": {
+      "verdict": "supported",
+      "reason": "every critical case (0) passed every run"
+    },
+    "ship": {
+      "verdict": "undecided",
+      "reason": "no committed baseline on this kit; this result becomes the baseline"
+    }
+  },
+  "cases": [
+    {
+      "id": "A-01",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000585
+    },
+    {
+      "id": "A-02",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000573
+    },
+    {
+      "id": "A-03",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000403
+    },
+    {
+      "id": "A-04",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 7.5e-05
+    },
+    {
+      "id": "A-05",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000123
+    },
+    {
+      "id": "A-06",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000405
+    },
+    {
+      "id": "A-07",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000492
+    },
+    {
+      "id": "A-08",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 6.4e-05
+    },
+    {
+      "id": "A-09",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 6.4e-05
+    },
+    {
+      "id": "A-10",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000236
+    },
+    {
+      "id": "A-11",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000407
+    },
+    {
+      "id": "A-12",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000242
+    },
+    {
+      "id": "A-13",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000301
+    },
+    {
+      "id": "A-14",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 5.7e-05
+    },
+    {
+      "id": "A-15",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 5.5e-05
+    }
+  ]
+}

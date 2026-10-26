@@ -20,8 +20,8 @@ the operational guide: how to run a lane, where results land and how to add a ca
 <!-- supported-models:begin -->
 | Model | Backend | Critical cases | Standard cases | Status |
 |---|---|---|---|---|
-| anthropic/claude-sonnet-5.5 | google-vertex/global | no result | no result | not yet run |
-| anthropic/claude-haiku-5.5 (gate) | google-vertex/global | no result | no result | not yet run |
+| anthropic/claude-sonnet-5.5 | google-vertex/global | 67 of 69 passed every run | 22 of 25 passed every run | not supported: B-19, B-85 (2026-10-25-B-anthropic__claude-sonnet-5.5-k3-all.json) |
+| anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 51 of 69 passed every run | 14 of 25 passed every run | not supported: B-47, B-62, B-59, B-41, B-06, B-11, B-13, B-17, B-19, B-22, B-23, B-25, B-26, B-82, B-84, B-85, B-89, B-94 (2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json) |
 <!-- supported-models:end -->
 
 `uv run --project validation/evals python validation/evals/run.py --table --write` generates this
