@@ -6559,6 +6559,64 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                 leaks.append(match)
         return leaks
 
+    #: The domains RFC 2606 and RFC 6761 reserve for documentation and tests.
+    #: No mailbox can exist under them, so an address there names nobody.
+    RESERVED_DOMAINS = (b"example.com", b"example.net", b"example.org")
+    RESERVED_SUFFIXES = (
+        b".example.com", b".example.net", b".example.org",
+        b".example", b".invalid", b".test", b".localhost",
+    )
+
+    #: The addresses outside those domains that are legitimately in the tree or
+    #: in the history it publishes, each with the reason it is there. The same
+    #: warning as :data:`SYNTHETIC_HOMES` applies: an entry names a published
+    #: role or a documented specimen, never a person's own mailbox.
+    PUBLISHED_ADDRESSES = (
+        # The reporting mailboxes the v1-era `SECURITY.md` and
+        # `CODE_OF_CONDUCT.md` published. Roles, and public by design.
+        b"security@canonical.com",
+        b"conduct@canonical.com",
+        # The user of an SSH clone URL, which this pattern cannot tell from a
+        # mailbox. It names nobody.
+        b"git@github.com",
+        # The home scans' specimen user, here and in this file's history.
+        b"jane.doe@corp.com",
+    )
+
+    #: An address was the leak the home scans could not see: a harness banner
+    #: printed the author's own mailbox beside a `~/` path, in a session record
+    #: that was committed and later deleted, so neither home pattern and no scan
+    #: of the tip ever read it.
+    ADDRESS_RE = re.compile(
+        rb"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}"
+    )
+
+    @classmethod
+    def _address_leaks(cls, blob):
+        """Every address in ``blob`` outside the reserved domains and the list."""
+        leaks = []
+        for match in cls.ADDRESS_RE.findall(blob):
+            address = match.lower()
+            domain = address.rsplit(b"@", 1)[1]
+            if domain in cls.RESERVED_DOMAINS:
+                continue
+            if domain.endswith(cls.RESERVED_SUFFIXES):
+                continue
+            if address in cls.PUBLISHED_ADDRESSES:
+                continue
+            leaks.append(match)
+        return leaks
+
+    @classmethod
+    def _leaks(cls, blob):
+        """Every home path and every address in ``blob`` that names a person."""
+        return cls._home_leaks(blob) + cls._address_leaks(blob)
+
+    @staticmethod
+    def _address_specimen(local, domain):
+        """An address, assembled at call time so this file never spells one."""
+        return local + b"@" + domain
+
     @staticmethod
     def _slash_specimen(user, separator=b"/", root=b"home"):
         """A slash-form specimen, assembled from fragments at call time.
@@ -6700,8 +6758,46 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
                     "flagged" % entry,
                 )
 
-    def test_the_shipped_tree_carries_no_real_home_path(self):
-        """The tree that ships carries no real home path.
+    def test_the_address_scan_reports_a_mailbox_and_spares_the_reserved(self):
+        """Both directions of the address scan, on one pattern.
+
+        The shapes are the ones a session record carries: a banner that names
+        the account, an assignment, a quoted JSON value. Each must be reported,
+        or the scans below are green by not looking. The reserved domains and
+        the published addresses stay clean in the same shapes, so this cannot
+        pass by flagging everything.
+        """
+        mailbox = self._address_specimen(b"jane.doe", b"mail.example-isp.net")
+        shapes = (
+            ("a banner", b"Model \xc2\xb7 Plan \xc2\xb7 %s's Organization"),
+            ("an assignment", b"EMAIL=%s\n"),
+            ("quoted in JSON", b'{"account": "%s"}'),
+        )
+        clean = (
+            self._address_specimen(b"anne", b"example.com"),
+            self._address_specimen(b"t", b"example.invalid"),
+            self._address_specimen(b"ci", b"runner.test"),
+            self._address_specimen(b"ops", b"docs.example.org"),
+        ) + self.PUBLISHED_ADDRESSES
+        for label, shape in shapes:
+            with self.subTest(shape=label, arm="mailbox is reported"):
+                self.assertEqual(
+                    self._address_leaks(shape % mailbox),
+                    [mailbox],
+                    "a mailbox in %s is invisible to the scan" % label,
+                )
+            for address in clean:
+                with self.subTest(shape=label, arm="stays clean",
+                                  address=address):
+                    self.assertEqual(
+                        self._address_leaks(shape % address),
+                        [],
+                        "%r is reserved or published and the scan flags it"
+                        % address,
+                    )
+
+    def test_the_shipped_tree_carries_no_real_home_path_or_address(self):
+        """The tree that ships carries no real home path and no real address.
 
         A tracked file once carried an author's absolute home directory and
         username, including private agent-transcript locations inside the
@@ -6733,14 +6829,108 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
             path = ROOT / name.decode("utf-8", "surrogateescape")
             if not path.is_file():
                 continue  # a submodule or a broken symlink has no bytes here
-            for match in self._home_leaks(path.read_bytes()):
+            for match in self._leaks(path.read_bytes()):
                 findings.append((name, match))
         self.assertEqual(
             findings,
             [],
-            "the tree this release publishes carries %d home path(s) naming a "
-            "real user: %s — redact the prefix, and never widen "
-            "SYNTHETIC_HOMES to make a real leak pass"
+            "the tree this release publishes carries %d home path(s) or "
+            "address(es) naming a real user: %s — redact them, and never widen "
+            "SYNTHETIC_HOMES or PUBLISHED_ADDRESSES to make a real leak pass"
+            % (
+                len(findings),
+                sorted(
+                    "%s: %s"
+                    % (n.decode("utf-8", "replace"), m.decode("utf-8", "replace"))
+                    for n, m in findings
+                ),
+            ),
+        )
+
+    def test_the_published_history_carries_no_real_home_path_or_address(self):
+        """No commit this branch publishes carries a real home path or address.
+
+        The scan above reads the tip, and a leak that is committed and deleted
+        again is never at a tip: three agent session records, one of them
+        printing the author's own mailbox, sat in the history of `main` from the
+        commit that added them to the one that removed them, and every published
+        pull-request ref reached them. Removing them took a rewrite of the
+        published history. This reads every blob reachable from HEAD, so a
+        branch that merges a pre-rewrite commit back goes red.
+
+        A shallow clone reaches only part of the history and would pass by not
+        looking, so it FAILS here rather than skipping; CI checks out the whole
+        history for this job.
+        """
+        shallow = subprocess.run(
+            ["git", "rev-parse", "--is-shallow-repository"],
+            cwd=str(ROOT),
+            stdout=subprocess.PIPE,
+            check=True,
+        ).stdout.strip()
+        self.assertEqual(
+            shallow,
+            b"false",
+            "the clone in %s is shallow; the history scan cannot read what it "
+            "does not have and cannot be green — fetch the whole history "
+            "(`git fetch --unshallow`)" % ROOT,
+        )
+        objects = subprocess.run(
+            ["git", "rev-list", "--objects", "HEAD"],
+            cwd=str(ROOT),
+            stdout=subprocess.PIPE,
+            check=True,
+        ).stdout.splitlines()
+        paths = {}
+        for line in objects:
+            sha, _, name = line.partition(b" ")
+            if name:
+                paths.setdefault(sha, name)
+        batch = subprocess.run(
+            ["git", "cat-file", "--batch-check=%(objectname) %(objecttype)"],
+            cwd=str(ROOT),
+            input=b"".join(sha + b"\n" for sha in paths),
+            stdout=subprocess.PIPE,
+            check=True,
+        ).stdout.split()
+        blobs = [
+            batch[index]
+            for index in range(0, len(batch), 2)
+            if batch[index + 1] == b"blob"
+        ]
+        # Vacuous-pass guard, as above: a history of no blobs is no history.
+        self.assertTrue(
+            blobs,
+            "`git rev-list --objects HEAD` run in %s reached 0 blobs; the scan "
+            "has nothing to read and cannot be green" % ROOT,
+        )
+        findings = set()
+        reader = subprocess.Popen(
+            ["git", "cat-file", "--batch"],
+            cwd=str(ROOT),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+        try:
+            for sha in blobs:
+                reader.stdin.write(sha + b"\n")
+                reader.stdin.flush()
+                size = int(reader.stdout.readline().split()[2])
+                data = reader.stdout.read(size)
+                reader.stdout.read(1)  # the newline after every object
+                for match in self._leaks(data):
+                    findings.add((paths[sha], match))
+        finally:
+            reader.stdin.close()
+            reader.stdout.close()
+            reader.wait()
+        self.assertEqual(
+            sorted(findings),
+            [],
+            "the history this branch publishes carries %d home path(s) or "
+            "address(es) naming a real user: %s — a deleted file is still "
+            "published; removing it takes a history rewrite, and never widening "
+            "SYNTHETIC_HOMES or PUBLISHED_ADDRESSES"
             % (
                 len(findings),
                 sorted(
@@ -6757,9 +6947,7 @@ class TestDeletedScriptsAreTombstoned(unittest.TestCase):
 #: maintainer decided to leave ``docs/before-after.md`` out of the release
 #: tree; it is not linked from anywhere in the tree. It is
 #: named here rather than merely omitted, so that an absence from the listing
-#: is a statement somebody made and not a line somebody forgot. (The two v1-era
-#: ``.html`` records at the root are kept as they are on ``main``; the root
-#: block is outside the pin, so they need no entry here.)
+#: is a statement somebody made and not a line somebody forgot.
 #:
 #: The path does not exist on a release checkout. Nothing below asserts that
 #: it does — the tuple's job is to say it is not listed, not that it is here.

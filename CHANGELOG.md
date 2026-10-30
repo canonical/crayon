@@ -382,6 +382,16 @@ across. The contract number stays `1`.
   writer a draft that leaves out what its intake notes leave out, from a new `reported_noted`
   state whose report keeps the one `log_level` gap. A test reads each against its state. Every
   oracle still passes and every foil still fails.
+- The published history carried an author's personal email address, their account banner and
+  their home directory, in three agent session records and two provenance and evidence files
+  that later commits had deleted. No scan of the tip could see them, and every published
+  pull-request ref reached them. The history is rewritten without those files. The unit suite
+  now reads every blob HEAD reaches, not only the tip, for a home path or for an address outside
+  the reserved documentation domains, and fails in a shallow clone; CI's unit job checks out the
+  whole history. Commit identifiers this repository cites, in prose, in comments and in the eval
+  results' `repo_head`, name the history as it was before the rewrite. Each maps onto the
+  rewritten commit with the same subject and date: `357c513` is now `a56e9ea`, `edec520` is
+  now `e295672`, and `contract-v1`, re-signed, tags `3d9c5be` where it tagged `30fe9a5`.
 
 ### Removed
 
@@ -399,6 +409,9 @@ across. The contract number stays `1`.
   `tests/check_docs.py`, with the release-record prose that cross-referenced them below.
 - The README's credit section. The acceptance tests A-31 … A-35 keep the names they were ported
   under, and the *Fixed* entry below keeps the attribution.
+- `dogen-architecture.html` and `project-timeline.html`, the v1-era records at the root. They
+  named people with their assignments and the positions they took, and they are gone from the
+  history as well.
 
 ## [0.2.0] - 2026-09-18
 
