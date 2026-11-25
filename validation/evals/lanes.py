@@ -502,7 +502,7 @@ LANES = {
 #: What each protected rule is about, for reading results by purpose: the metric
 #: promptfoo files a case under, and the groups the supported-models table names.
 RULE_GROUPS = {
-    "author control": ("S-15", "S-16", "S-17", "S-18", "S-19", "S-23", "S-24"),
+    "author control": ("S-15", "S-16", "S-17", "S-18", "S-19", "S-23", "S-24", "S-28"),
     "following the tool": ("S-01", "S-03", "S-04", "S-05", "S-08", "S-09", "S-11", "S-13"),
     "plain voice": ("S-20", "S-21", "S-22"),
     "skill choice": ("catalog",),

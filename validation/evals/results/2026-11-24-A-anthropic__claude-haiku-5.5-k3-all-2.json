@@ -1,0 +1,192 @@
+{
+  "meta": {
+    "measures": "skill-following",
+    "engine": "promptfoo@0.124.1",
+    "date": "2026-11-24",
+    "crayon_version": "0.3.0",
+    "repo_head": "a512934",
+    "skills_sha256": "3e7b663252d1b4a77b1d4fa73bfa722ad39b110d05392bc9487f8a2393b4c7e2",
+    "kit_sha256": "a1d6f563785d3e53ce4f246dc5b35b0a58a05fb3fe9131605e6df04426f6d73a",
+    "split": "all",
+    "partial": false,
+    "dry_run": false,
+    "gate_model": true,
+    "lane": "A",
+    "lane_title": "skill selection",
+    "model": "anthropic/claude-haiku-5.5",
+    "why": "used by authors through their coding agent; the cheapest certified model, so it is the gate model",
+    "provider_pin": {
+      "order": [
+        "google-vertex/global"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "runs": 3,
+    "total_cases": 15,
+    "critical_cases": 0,
+    "passes": 45,
+    "pass_rate": 1.0,
+    "stable_pass": 15,
+    "stable_fail": 0,
+    "flaky": 0,
+    "errors": 0,
+    "cost_usd": 0.003313,
+    "tokens": {
+      "in": 68217,
+      "out": 2324
+    },
+    "truncated": 0,
+    "retries": 0,
+    "budget_stop": null
+  },
+  "decision": {
+    "supported": {
+      "verdict": "supported",
+      "reason": "every critical case (0) passed every run"
+    },
+    "ship": {
+      "verdict": "ship",
+      "baseline": "2026-11-24-A-anthropic__claude-haiku-5.5-k3-all.json",
+      "regressions": [],
+      "reason": "no case that passed every run in the baseline fails a run"
+    }
+  },
+  "cases": [
+    {
+      "id": "A-01",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000433
+    },
+    {
+      "id": "A-02",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000243
+    },
+    {
+      "id": "A-03",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000244
+    },
+    {
+      "id": "A-04",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 6.9e-05
+    },
+    {
+      "id": "A-05",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000241
+    },
+    {
+      "id": "A-06",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 6.7e-05
+    },
+    {
+      "id": "A-07",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000361
+    },
+    {
+      "id": "A-08",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 6.7e-05
+    },
+    {
+      "id": "A-09",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 6.8e-05
+    },
+    {
+      "id": "A-10",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000282
+    },
+    {
+      "id": "A-11",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000245
+    },
+    {
+      "id": "A-12",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00027
+    },
+    {
+      "id": "A-13",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000217
+    },
+    {
+      "id": "A-14",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000448
+    },
+    {
+      "id": "A-15",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 5.8e-05
+    }
+  ]
+}

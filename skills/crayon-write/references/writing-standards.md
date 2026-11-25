@@ -94,7 +94,11 @@ normalizes relative paths instead of refusing them.)
   placeholder stubs, and never identifiers dragged in from a different context
   (a stream example must not carry an HTTP-ism).
 - **Mirror the siblings.** A new entry in an existing series copies the
-  siblings' section shape, ordering, and phrasing skeleton.
+  siblings' section shape, ordering, and phrasing skeleton. A page with no
+  series copies the section shape and ordering of the nearest existing page of
+  the same Diátaxis type, looked for in the same docs section first, then
+  anywhere in the docs tree. When the docs hold no page of that type, use the
+  direction stance's shape and tell the author which shape the page follows.
 - **Lead with the primary behaviour.** The common case comes first; exceptions
   and edge conditions follow it, never precede it.
 

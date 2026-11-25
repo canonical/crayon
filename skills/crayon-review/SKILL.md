@@ -337,8 +337,9 @@ Then assess the six dimensions, presenting findings grouped by dimension:
    intake notes say to leave out (must-fix), and a complete page whose sections do not
    build toward the reader's problem, meet the reader where they arrive or hand them
    their next step.
-5. **structure-fit** — format hygiene (MyST/rST), cross-page consistency for
-   multi-file units, relative link paths resolve from the page's location.
+5. **structure-fit** — format hygiene (MyST/rST), section shape against the
+   siblings, cross-page consistency for multi-file units, relative link paths
+   resolve from the page's location.
 6. **clarity** — sentence-level clarity, jargon, forward references.
 
 Number findings `F-1`, `F-2`, … Each carries: page path, the verbatim offending

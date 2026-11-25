@@ -155,6 +155,7 @@
       "history": [
         "tool/version_json",
         "reported_noted/signed_show_json",
+        "reported_noted/context_show_json",
         {
           "call": {
             "name": "Read",
@@ -236,6 +237,7 @@
       "history": [
         "tool/version_json",
         "reported_clean/signed_show_json",
+        "reported_clean/context_show_json",
         {
           "call": {
             "name": "Read",

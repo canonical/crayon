@@ -201,6 +201,14 @@ Coverage:
         caught. Nor does a skill repeat the fixture's free text (an author answer a
         case replays, a string of four or more words ``states.sh`` passes the tool)
         or name an eval case id
+  S-28  established structure is reused, not reinvented — ``crayon-write`` step 2
+        reads the recorded ``doc-style.md``, ``glossary.md`` and ``structure.md``
+        through ``crayon context show --json`` and puts any disagreement between an
+        artefact and the sibling pages to the author; the writing standards give a
+        page with no series the shape of the nearest page of its Diátaxis type;
+        the style stance records each type's page skeleton; review's structure-fit
+        checks the section shape against the siblings and no longer claims there
+        is no house style guide
 """
 
 from __future__ import annotations
@@ -1714,8 +1722,9 @@ SIX_DIMENSIONS = """Then assess the six dimensions, presenting findings grouped 
    intake notes say to leave out (must-fix), and a complete page whose sections do not
    build toward the reader's problem, meet the reader where they arrive or hand them
    their next step.
-5. **structure-fit** — format hygiene (MyST/rST), cross-page consistency for
-   multi-file units, relative link paths resolve from the page's location.
+5. **structure-fit** — format hygiene (MyST/rST), section shape against the
+   siblings, cross-page consistency for multi-file units, relative link paths
+   resolve from the page's location.
 6. **clarity** — sentence-level clarity, jargon, forward references.
 
 Number findings `F-1`, `F-2`, … Each carries: page path, the verbatim offending
@@ -3763,6 +3772,84 @@ class TestS27ClosingRunRules(unittest.TestCase):
         section = tagged_section(self.body, "must_not")
         self.assertIsNotNone(section, "crayon-write has no <must_not>")
         assert_contains(self, folded(section), self.WRITE_MUST_NOT, "crayon-write <must_not>")
+
+
+class TestS28StructureReuse(unittest.TestCase):
+    """S-28 — established structure is reused, not reinvented.
+
+    Each literal is typed: the writer reads the recorded context by name, the
+    standards cover a page with no series, onboard records the skeleton the
+    writer copies, and review grades the shape.
+    """
+
+    WRITE_STEP_2 = (
+        "crayon context show --json",
+        "`doc-style.md`",
+        "`glossary.md`",
+        "`structure.md`",
+        "An artefact that is not recorded is not an error",
+        "stop before authoring and put the disagreement to the author",
+        "mark neither as the answer",
+    )
+    WRITE_MUST = (
+        "Read the recorded context artefacts before authoring, and put any "
+        "disagreement between an artefact and the sibling pages to the author."
+    )
+    WRITE_MUST_NOT = (
+        "Never settle a disagreement between a recorded context artefact and the "
+        "sibling pages yourself, in either direction: following the artefact silently "
+        "is as wrong as following the siblings."
+    )
+    STANDARDS = (
+        "A page with no series copies the section shape and ordering of the "
+        "nearest existing page of the same Diátaxis type",
+        "When the docs hold no page of that type, use the direction stance's shape",
+    )
+    STYLE_STANCE = "For each Diátaxis type the docs use, the page skeleton"
+    RUBRIC = (
+        "**Sibling shape.**",
+        "A divergence that neither the intake notes nor the recorded steering "
+        "explains is `[should-fix]`.",
+    )
+    RUBRIC_STALE = "crayon has no STYLE_GUIDE"
+
+    def setUp(self):
+        self.body = body_of(SKILLS_ROOT / "crayon-write")
+
+    def test_s28_write_reads_the_recorded_context_and_asks_on_disagreement(self):
+        step = skill_step_body(self.body, 2)
+        self.assertIsNotNone(step, "crayon-write has no step 2")
+        for literal in self.WRITE_STEP_2:
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(step), literal, "crayon-write step 2")
+        section = tagged_section(self.body, "must")
+        self.assertIsNotNone(section, "crayon-write has no <must>")
+        assert_contains(self, folded(section), self.WRITE_MUST, "crayon-write <must>")
+        # B-95: a model that saw both sides sometimes followed the artefact unasked.
+        section = tagged_section(self.body, "must_not")
+        self.assertIsNotNone(section, "crayon-write has no <must_not>")
+        assert_contains(self, folded(section), self.WRITE_MUST_NOT, "crayon-write <must_not>")
+
+    def test_s28_a_page_with_no_series_still_has_a_shape_to_mirror(self):
+        standards = (
+            SKILLS_ROOT / "crayon-write" / "references" / "writing-standards.md"
+        ).read_text(encoding="utf-8")
+        for literal in self.STANDARDS:
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(standards), literal, "writing-standards.md")
+
+    def test_s28_onboard_records_each_types_page_skeleton(self):
+        stance = (
+            SKILLS_ROOT / "crayon-onboard" / "references" / "style-stance.md"
+        ).read_text(encoding="utf-8")
+        assert_contains(self, folded(stance), self.STYLE_STANCE, "style-stance.md")
+
+    def test_s28_review_grades_the_section_shape(self):
+        rubric = REVIEW_RUBRIC.read_text(encoding="utf-8")
+        for literal in self.RUBRIC:
+            with self.subTest(literal=literal):
+                assert_contains(self, folded(rubric), literal, "review-rubric.md")
+        assert_omits(self, rubric, self.RUBRIC_STALE, "review-rubric.md")
 
 
 class TestS10ReferenceFiles(unittest.TestCase):

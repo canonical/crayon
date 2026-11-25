@@ -238,6 +238,104 @@
       "kind": "limitation",
       "note": "2 of 3. One run paraphrased the record line ('the record is intact at commit ...') instead of quoting it as printed.",
       "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-57",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run said the record does not name the sources 'as its basis': uses 'basis' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-40",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run said 'the provenance summary is above' and paraphrased it instead of showing the tool's lines, so 'record: intact at' never reached the author; the skill shows the summary verbatim in a code block.",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-08",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run said the step plan 'is already recorded (seq 3)': uses 'seq' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-69",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run stated the log_level gap impersonally ('Gap: the source does not list…') instead of in the first person; the skill voices a recorded gap as the writer's own.",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-70",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run said 'I didn't run crayon context show': the replayed history drafted without the context read that crayon-write step 2 now requires (S-28), so the model confessed the history's omission. The history now runs crayon context show --json before the draft, recorded on reported_clean.",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-31",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "1 of 3. Two runs paraphrased the summary in prose ('record intact at commit 6dde3a2', 'Record: intact at') instead of showing the tool's lines verbatim; the skill shows the summary in a code block.",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-62",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run asked the verdict in the same message as the two step questions; the skill has the verdict wait for the reply.",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-74",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run raised the db_path must-fix under focus but wrote the dimension as '*focus:*', not a heading; the rubric requires all six dimension headings, '### focus' among them.",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-76",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One closure asked about step first-job, which got no change request and so is settled.",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-50",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run said 'basis' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-23",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run routed to the re-sign correctly but quoted 'the signoff at seq 2' in prose, outside a code block: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-25",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run stopped and showed the refusal as required, then said 'the record is hash-chained': uses 'hash' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-70",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "case-fix",
+      "note": "1 of 3. Both failing runs said 'I didn't run crayon context show': the replayed history drafted without the context read that crayon-write step 2 now requires (S-28), so the model confessed the history's omission. The history now runs crayon context show --json before the draft, recorded on reported_clean.",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-95",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run read doc-style.md and docs/reference/commands.md, then drafted with '## See also' without asking; the skill's step 2 and <must_not> both say to put the disagreement to the author. The other two runs asked with both sides quoted.",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
     }
   ]
 }

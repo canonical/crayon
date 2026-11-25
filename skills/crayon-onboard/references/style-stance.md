@@ -31,6 +31,8 @@ Write the file with these five sections.
 - How are sections structured — flat, hierarchical, mixed?
 - What patterns repeat (always a code example, always a Note admonition)?
 - Header-depth habits; use of admonitions, tables, lists versus prose.
+- For each Diátaxis type the docs use, the page skeleton: its section headings in
+  order, with one example page path.
 
 ## 4. Completeness patterns
 

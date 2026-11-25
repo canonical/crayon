@@ -2396,7 +2396,7 @@ class TestLaneBCases(unittest.TestCase):
         self.assertEqual(set(c["group"] for c in cases),
                          {"opening", "next", "refusals", "wording", "go", "notes", "lean",
                           "closure", "intake", "depth", "voice", "tidewatch"})
-        self.assertGreaterEqual(len(cases), 94)
+        self.assertGreaterEqual(len(cases), 95)
 
     def test_every_sandbox_agrees_with_its_history(self):
         """What a model sees when it looks is what the replayed history said.
@@ -3134,7 +3134,7 @@ class TestDecisions(unittest.TestCase):
 #: each must be protected by at least one case. Every other rule in the
 #: skill-text catalogue is about the text itself, with the reason here.
 BEHAVIOURAL = ("S-01", "S-03", "S-04", "S-05", "S-08", "S-09", "S-11", "S-13", "S-15", "S-16",
-               "S-17", "S-18", "S-19", "S-20", "S-21", "S-22", "S-23", "S-24")
+               "S-17", "S-18", "S-19", "S-20", "S-21", "S-22", "S-23", "S-24", "S-28")
 TEXT_ONLY = {
     "S-02": "only crayon-write declares a write tool: frontmatter, checked by skill_lint",
     "S-06": "the evidence verbs: the tool computes and checks every digest itself",

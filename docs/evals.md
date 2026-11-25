@@ -20,8 +20,8 @@ the operational guide: how to run a lane, where results land and how to add a ca
 <!-- supported-models:begin -->
 | Model | Backend | Critical cases | Standard cases | Status |
 |---|---|---|---|---|
-| anthropic/claude-sonnet-5.5 | google-vertex/global | 67 of 69 passed every run | 22 of 25 passed every run | not supported: B-19, B-85 (2026-10-25-B-anthropic__claude-sonnet-5.5-k3-all.json) |
-| anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 51 of 69 passed every run | 14 of 25 passed every run | not supported: B-47, B-62, B-59, B-41, B-06, B-11, B-13, B-17, B-19, B-22, B-23, B-25, B-26, B-82, B-84, B-85, B-89, B-94 (2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json) |
+| anthropic/claude-sonnet-5.5 | google-vertex/global | 64 of 70 passed every run | 21 of 25 passed every run | not supported: B-62, B-50, B-23, B-25, B-85, B-95 (2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json) |
+| anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 55 of 70 passed every run | 14 of 25 passed every run | not supported: B-47, B-57, B-62, B-40, B-41, B-08, B-17, B-19, B-23, B-25, B-26, B-82, B-84, B-85, B-31 (2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json) |
 <!-- supported-models:end -->
 
 `uv run --project validation/evals python validation/evals/run.py --table --write` generates this
@@ -34,7 +34,7 @@ model is run again.
 | Lane | What it asks | Status |
 |---|---|---|
 | A | which skill handles this ask? | built, 15 cases |
-| B | given this `crayon` output, what is the next action? | built, 94 cases |
+| B | given this `crayon` output, what is the next action? | built, 95 cases |
 
 Every case names the skill rule it protects, an S-id from the skill-text suite
 (`tests/test_skill_text.py`), and whether it is critical. A case is critical when it checks that

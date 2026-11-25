@@ -381,6 +381,15 @@ implementations, fixtures, sibling docs, `.crayon/context/` artifacts, and — i
 present — a top-level `optional-guidance/` directory. The declared sources are
 starting points, not a boundary.
 
+**The recorded context.** Run `crayon context show --json` and read each artefact it
+reports as recorded: `doc-style.md` for the voice and the recurring page patterns,
+`glossary.md` for the terms, `structure.md` for the page's neighbours and its place in
+the docs' layout. An artefact that is not recorded is not an error; the sibling pages
+are then the only guide. Where a recorded artefact and the nearest sibling pages
+disagree on shape or conventions, stop before authoring and put the disagreement to
+the author: quote the artefact's line and the sibling page's path side by side, mark
+neither as the answer, and author on what the author says. Ask once per disagreement.
+
 **The author's intake notes.** Before you author, read the author's intake notes:
 `crayon summary "$UNIT_ID"` lists them under author decisions, and they are the `notes`
 field of `unit.md`. Whatever the author said the page can leave out is scope: it stays
@@ -601,6 +610,8 @@ applies. Say so before a step prints anything the author would not publish.
   link from the page's own location.
 - Write ONLY under `.crayon/staging/<id>/draft/` and `.crayon/staging/<id>/scratch/`.
 - Author in the unit's format: MyST for `.md`, rST for `.rst`.
+- Read the recorded context artefacts before authoring, and put any disagreement
+  between an artefact and the sibling pages to the author.
 - Echo each verb's own response line, and the walk tallies, verbatim.
 </must>
 <must_not>
@@ -618,6 +629,9 @@ applies. Say so before a step prints anything the author would not publish.
 - Never hand-edit the ledger.
 - Never commit, stage, push, or build — the tool's seam owns the commit.
 - Never assert a fact you have not read at its origin.
+- Never settle a disagreement between a recorded context artefact and the sibling
+  pages yourself, in either direction: following the artefact silently is as wrong as
+  following the siblings.
 - Never narrate your evidence in the drafted prose ("observed", "the fixtures show").
 - Never paste a whole capture into the page, and never claim the committed excerpt is
   anything other than what the command printed.

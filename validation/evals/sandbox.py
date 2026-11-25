@@ -72,6 +72,7 @@ SNAPSHOTS = (
     "reported_clean",
     "reported_noted",
     "retired",
+    "shape_conflict",
     "signed",
     "stale",
     "target_exists",

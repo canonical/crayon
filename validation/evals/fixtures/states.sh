@@ -383,6 +383,7 @@ reported_unit() {
     declare_cfg "$REPORTED_NOTES"
     "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
     rec "$state" signed_show_json show "$UNIT" --json
+    rec "$state" context_show_json context show --json
     rec_file "$state" ".crayon/units/$UNIT/unit.md"
     stage_page "$page"
     printf '%s\n' "$report" >"$staged"
@@ -577,6 +578,35 @@ scenario_context() {
     rec_file context_recorded .crayon/context/doc-style.md
     rec_file context_recorded .crayon/context/glossary.md
     rec_file context_recorded .crayon/context/structure.md
+}
+
+# The shape_conflict context: the recorded doc-style.md says every reference page
+# closes on a See also section, and the one reference page on disk has none.
+DOC_STYLE_SEE_ALSO='# Doc style\n\nFrom README.md and the house guide the author supplied.\n\n- Impersonal, present tense, short sentences.\n- Commands in fenced bash blocks, one command per line.\n- Settings, files and commands named in backticks: `toyq.toml`, `toyq run`.\n- Every reference page closes with a `## See also` section that links the other reference pages.\n'
+STRUCTURE_SIBLING='# Structure\n\n## 1. Documentation topology\n\n- docs/index.md is a one-line landing page whose toctree is empty.\n- docs/reference/commands.md is the only reference page.\n\n## 2. Diataxis coverage and balance\n\n- One reference page; no tutorial, how-to or explanation page yet.\n\n## 3. Coverage gaps\n\n- [CODE↔DOCS GAP] Config keys in src/toyq/config.py (max_retries, retry_backoff_seconds, job_timeout_seconds, log_level, db_path) and their TOYQ_* variables have no reference page.\n\n## 4. Risks\n\n- docs/reference/commands.md is not in the toctree.\n\n## 5. Prioritized improvements\n\n- [CODE↔DOCS GAP] Add a configuration reference under docs/reference/, and list both reference pages in the toctree.\n'
+COMMANDS_PAGE='# Commands reference\n\nEach command runs in the current directory.\n\n| Command | What it does |\n|---|---|\n| `toyq init` | Writes `toyq.toml` and names the job database. In a source checkout it needs `--force-dir`. |\n| `toyq add JOB` | Queues `JOB`, one shell command. |\n| `toyq run` | Runs queued jobs until the queue is empty; `--once` runs one. |\n| `toyq status` | Lists every job with its state and attempts. |\n'
+
+# scenario_shape_conflict : cfg signed, beside a sibling reference page whose shape
+# the recorded doc-style.md contradicts. The writer puts the disagreement to the
+# author before it authors.
+scenario_shape_conflict() {
+    base_bare
+    mkdir -p docs/reference
+    printf '%b' "$COMMANDS_PAGE" >docs/reference/commands.md
+    git add docs/reference/commands.md && git commit -q -m "Add the commands reference" ||
+        { echo "setup failed: commit the commands reference" >&2; exit 1; }
+    stage_context doc-style.md "$DOC_STYLE_SEE_ALSO"
+    stage_context glossary.md "$GLOSSARY"
+    stage_context structure.md "$STRUCTURE_SIBLING"
+    "$CRAYON" context record --note "toyq context" >/dev/null 2>&1 ||
+        { echo "setup failed: context record (shape_conflict)" >&2; exit 1; }
+    declare_cfg
+    "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
+    rec shape_conflict show_json show "$UNIT" --json
+    rec shape_conflict context_show_json context show --json
+    rec_file shape_conflict .crayon/context/doc-style.md
+    rec_file shape_conflict docs/reference/commands.md
+    snap shape_conflict
 }
 
 # scenario_triage : a change to toyq lands after the context was recorded, and the
@@ -821,7 +851,7 @@ PY
 # baseline. record_states.py runs this with check=True.
 for scenario in declared signed drafted accepted closing_linked closing_nested closing closing_walk \
     walk_drafted reported reported_clean reported_noted edited missing target_exists stale retired walk crashed \
-    diverged no_material docs_outside context triage tw_context tw_declared tw_signed tw_drafted \
+    diverged no_material docs_outside context shape_conflict triage tw_context tw_declared tw_signed tw_drafted \
     tw_accepted tw_missing tw_crashed tw_diverged tw_walk tw_walk_drafted tw_triage; do
     (trap cleanup EXIT; "scenario_$scenario"; exit 0) ||
         { echo "setup failed: scenario $scenario" >&2; exit 1; }

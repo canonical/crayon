@@ -59,7 +59,7 @@ across. The contract number stays `1`.
   supported only if it passes every critical case three of three times on the current skills.
   They measure skill-following, not the quality of a page, or speed or effort saved.
   Lane A checks skill selection (15 cases). Lane B checks the next action after real, recorded
-  `crayon` output (94 cases): the model acts in a copy of the state inside a Workshop container,
+  `crayon` output (95 cases): the model acts in a copy of the state inside a Workshop container,
   as an unprivileged user with an environment built from scratch, and the first call that would
   change the copy's files or git index, or that names a recording verb, ends the episode and is
   graded. Every case names the skill rule it protects and whether it is critical, carries a reply
@@ -216,6 +216,17 @@ across. The contract number stays `1`.
   finding that names its thing. A prelude replays a skill invocation with its body. The kit
   checks that every oracle passes every deterministic assertion of every other case in its
   conversation, and that quoted tool output in a known-good reply sits in a fenced block.
+- The skills reuse the structure the docs already have. `crayon-write` reads the recorded
+  `doc-style.md`, `glossary.md` and `structure.md` through `crayon context show --json` before
+  it authors, and when an artefact and the sibling pages disagree on shape or conventions it
+  puts the disagreement to the author, with no option marked, and never settles it itself. A
+  page with no series takes the section shape of the nearest page of its Diátaxis type, or the
+  direction stance's shape when the docs hold none. `crayon-onboard` and `crayon-fetch` record
+  each Diátaxis type's page skeleton in `doc-style.md`. `crayon-review`'s structure-fit
+  dimension checks the page's section shape against its siblings and makes an unexplained
+  divergence a should-fix. Lane B gains the case that pins the writer's question when an
+  artefact and a sibling page disagree, on a recorded state where they do, and the two cases
+  that replay a finished draft with a context report now replay the context read before it.
 - The tool's human lines are plain. On a sealed unit the handover line reads
   `Next: yours — crayon stops here`, and the accept line names the pages it accepted, with no
   count and no "sealed". The `signoff`, re-sign, `edits` and `resume` lines name the ledger

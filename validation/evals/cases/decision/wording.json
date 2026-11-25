@@ -246,6 +246,96 @@
           "content": "The draft looks fine and all steering was applied. What is your verdict?"
         }
       ]
+    },
+    {
+      "id": "B-95",
+      "skill": "crayon-write",
+      "protects": "S-28",
+      "critical": true,
+      "ask": "cfg",
+      "opening": "shape_conflict",
+      "max_turns": 24,
+      "why": "an artefact and the sibling page disagree on shape: put it to the author before authoring, both sides quoted, no option marked",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)see also"
+        },
+        {
+          "kind": "text_re",
+          "re": "commands\\.md"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@MARKER"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Read",
+              "arguments": {
+                "file_path": ".crayon/context/doc-style.md"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Read",
+              "arguments": {
+                "file_path": "docs/reference/commands.md"
+              }
+            }
+          ]
+        },
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "Before I draft reference/config.md: the recorded doc-style.md says \"Every reference page closes with a `## See also` section that links the other reference pages\", but docs/reference/commands.md, the only reference page, has no See also section. Which should the configuration page follow?",
+                    "options": [
+                      {
+                        "label": "Close with See also",
+                        "description": "As doc-style.md says"
+                      },
+                      {
+                        "label": "No See also",
+                        "description": "As commands.md does"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Write",
+              "arguments": {
+                "file_path": ".crayon/staging/cfg/draft/reference/config.md",
+                "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n\n## See also\n\n- [Commands reference](commands.md)\n"
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

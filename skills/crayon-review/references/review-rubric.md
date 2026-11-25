@@ -239,8 +239,13 @@ Then, for either type, check **format hygiene, judged per the page's own format*
   required blank lines, no MyST fences (```` ``` ````/`:::`) anywhere — they
   render as literal text.
 
-This is Diátaxis conformance + format well-formedness, **not** a house style
-guide (crayon has no STYLE_GUIDE this cycle).
+This is Diátaxis conformance, section shape and format well-formedness, **not** a
+voice review: voice is writing-approach's and clarity's question.
+
+**Sibling shape.** Compare the page's section shape and ordering with its series
+siblings or, when it has no series, with the nearest existing page of the same
+Diátaxis type. A divergence that neither the intake notes nor the recorded
+steering explains is `[should-fix]`.
 
 Two mandatory checks inside this dimension:
 
