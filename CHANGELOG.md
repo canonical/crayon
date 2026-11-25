@@ -312,6 +312,15 @@ across. The contract number stays `1`.
 - Lane B's `@OFFERS_PUBLISH` pattern reads `next: publish` quoted whole in inline code as a
   mention of the routed token, as its own comment says, not as publishing offered. The bare
   token is still an offer. Case B-47.
+- Lane B's six `crayon-write` histories that draft (B-18, B-19, B-27, B-55, B-69 and B-70)
+  now make the reads the skill requires before authoring: its routing reference,
+  `crayon context show --json` and the three recorded artefacts, the intake notes through
+  `crayon summary`, the sibling page, and the writing standards and reference stance. Before,
+  a model confessed reads the history had skipped, or made them late and wrote the page again.
+  A history reads a skill file through `@SKILL{<skill>/<path>}`, spliced from `skills/` at
+  load time, and the eval suite checks every drafting history for these reads. B-69 also
+  takes "I don't know …" as a first-person gap line. Every oracle still passes and every foil
+  still fails.
 - Lane B cases that failed replies saying what the skill asks now ask only their rule. B-56's history confirms the walk scope before the walk. B-64 reads a line saying no
   step is open as no step question. B-65 and B-75 take the record named before the fix or
   redraft verdict that puts the words on it. B-43 reads a lean set in bold, and B-46 asks where

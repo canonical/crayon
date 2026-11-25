@@ -66,6 +66,17 @@ print(json.dumps({"state": sys.argv[1], "label": "file:" + sys.argv[2], "cmd": N
 ' "$1" "$2" >>"$OUT"
 }
 
+# rec_grounding STATE : what crayon-write reads before it authors, so a history
+# that drafts can replay it: the recorded context, its three artefacts and the one
+# page the docs already hold, the sibling. Read-only: no commit, no change.
+rec_grounding() {
+    rec "$1" context_show_json context show --json
+    rec_file "$1" .crayon/context/doc-style.md
+    rec_file "$1" .crayon/context/glossary.md
+    rec_file "$1" .crayon/context/structure.md
+    rec_file "$1" docs/index.md
+}
+
 # rec_in STATE LABEL BODY ARGS... : run `crayon ARGS...` with BODY (a printf %b
 # format) on stdin, and record it as an agent types it: `printf '%b' BODY | crayon ...`.
 rec_in() {
@@ -201,7 +212,9 @@ scenario_signed() {
     "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
     rec signed show_json show "$UNIT" --json
     rec signed show show "$UNIT"
+    rec signed summary summary "$UNIT"
     rec_unit signed "$UNIT"
+    rec_grounding signed
     # The declared source, so a history that grounds a draft replays its real bytes.
     rec_file signed src/toyq/config.py
     snap signed
@@ -215,6 +228,7 @@ scenario_drafted() {
     rec drafted show show "$UNIT"
     rec drafted summary summary "$UNIT"
     rec_unit drafted "$UNIT"
+    rec_grounding drafted
     rec_file drafted "$PAGE"
     snap drafted
     stage_page "$PAGE_V2"
@@ -383,7 +397,8 @@ reported_unit() {
     declare_cfg "$REPORTED_NOTES"
     "$CRAYON" signoff "$UNIT" >/dev/null 2>&1 || { echo "setup failed: signoff $UNIT" >&2; exit 1; }
     rec "$state" signed_show_json show "$UNIT" --json
-    rec "$state" context_show_json context show --json
+    rec "$state" signed_summary summary "$UNIT"
+    rec_grounding "$state"
     rec_file "$state" ".crayon/units/$UNIT/unit.md"
     stage_page "$page"
     printf '%s\n' "$report" >"$staged"

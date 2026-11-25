@@ -264,6 +264,26 @@
   }
  },
  "drafted": {
+  "context_show_json": {
+   "cmd": "crayon context show --json",
+   "exit": 0,
+   "output": "{\"ok\": true, \"message\": \"context: 3 of 5 artefact(s) present (doc-style.md, glossary.md, structure.md) · missing: code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"plan\", \"artifacts\": {\"doc-style.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"99b8021241e6106fb6e3c44f3f9e37601345faaa9fdf00a546d99470a5a83145\", \"drifted\": false}, \"glossary.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"a2c181455e4e744c50b2539ba3983e7c516c6f91e63a9dcd7ccf068f1b664720\", \"drifted\": false}, \"structure.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"309bac52e108ab0eac827eedcd742778e08fa5b4ae24766d0e58041c79009d94\", \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": {\"recorded_at\": \"2026-01-01T00:00:00+00:00\", \"commit\": \"a4cabbb25bfeed834c6dc313f3f859b7c58704de\", \"model\": \"\", \"model_origin\": \"unknown\"}}"
+  },
+  "file:.crayon/context/doc-style.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Doc style\n\nFrom README.md, the only prose so far.\n\n- Impersonal, present tense, short sentences.\n- Commands in fenced bash blocks, one command per line.\n- Settings, files and commands named in backticks: `toyq.toml`, `toyq run`.\n"
+  },
+  "file:.crayon/context/glossary.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Glossary\n\n- **job**: one queued shell command.\n- **attempt**: one run of a job; `toyq status` counts them.\n- **retry**: a re-run of a failed job, up to `max_retries` times.\n- **backoff**: the wait between attempts, `retry_backoff_seconds`.\n"
+  },
+  "file:.crayon/context/structure.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Structure\n\n## 1. Documentation topology\n\n- docs/index.md is the only page: a one-line landing page whose toctree is empty.\n- README.md carries install and use, the only task prose.\n\n## 2. Diataxis coverage and balance\n\n- No tutorial, how-to, reference or explanation page yet.\n\n## 3. Coverage gaps\n\n- [CODE↔DOCS GAP] Config keys in src/toyq/config.py (max_retries, retry_backoff_seconds, job_timeout_seconds, log_level, db_path) and their TOYQ_* variables have no reference page.\n- [CODE↔DOCS GAP] CLI commands in src/toyq/cli.py (init, add, run, status, and init --force-dir) are named only in README.md.\n\n## 4. Risks\n\n- README.md points to a configuration reference that does not exist.\n\n## 5. Prioritized improvements\n\n- [CODE↔DOCS GAP] Add a configuration reference under docs/reference/.\n- [CODE↔DOCS GAP] Add a commands reference, and list both in the toctree.\n"
+  },
   "file:.crayon/units/cfg/ledger.jsonl": {
    "cmd": null,
    "exit": 0,
@@ -273,6 +293,11 @@
    "cmd": null,
    "exit": 0,
    "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "file:docs/index.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# toyq documentation\n\n```{toctree}\n:maxdepth: 1\n```\n\ntoyq is a small local job queue.\n"
   },
   "file:docs/reference/config.md": {
    "cmd": null,
@@ -387,6 +412,21 @@
    "exit": 0,
    "output": "git: committed 5af90f8 — crayon: drafted cfg\ndrafted cfg · reference/config.md · 1 file(s) written · Next: review"
   },
+  "file:.crayon/context/doc-style.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Doc style\n\nFrom README.md, the only prose so far.\n\n- Impersonal, present tense, short sentences.\n- Commands in fenced bash blocks, one command per line.\n- Settings, files and commands named in backticks: `toyq.toml`, `toyq run`.\n"
+  },
+  "file:.crayon/context/glossary.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Glossary\n\n- **job**: one queued shell command.\n- **attempt**: one run of a job; `toyq status` counts them.\n- **retry**: a re-run of a failed job, up to `max_retries` times.\n- **backoff**: the wait between attempts, `retry_backoff_seconds`.\n"
+  },
+  "file:.crayon/context/structure.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Structure\n\n## 1. Documentation topology\n\n- docs/index.md is the only page: a one-line landing page whose toctree is empty.\n- README.md carries install and use, the only task prose.\n\n## 2. Diataxis coverage and balance\n\n- No tutorial, how-to, reference or explanation page yet.\n\n## 3. Coverage gaps\n\n- [CODE↔DOCS GAP] Config keys in src/toyq/config.py (max_retries, retry_backoff_seconds, job_timeout_seconds, log_level, db_path) and their TOYQ_* variables have no reference page.\n- [CODE↔DOCS GAP] CLI commands in src/toyq/cli.py (init, add, run, status, and init --force-dir) are named only in README.md.\n\n## 4. Risks\n\n- README.md points to a configuration reference that does not exist.\n\n## 5. Prioritized improvements\n\n- [CODE↔DOCS GAP] Add a configuration reference under docs/reference/.\n- [CODE↔DOCS GAP] Add a commands reference, and list both in the toctree.\n"
+  },
   "file:.crayon/staging/cfg/report.json": {
    "cmd": null,
    "exit": 0,
@@ -396,6 +436,11 @@
    "cmd": null,
    "exit": 0,
    "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\nnotes: \"They have just installed toyq and opened toyq.toml.\\nLeave out db_path; storage gets its own page.\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "file:docs/index.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# toyq documentation\n\n```{toctree}\n:maxdepth: 1\n```\n\ntoyq is a small local job queue.\n"
   },
   "file:docs/reference/config.md": {
    "cmd": null,
@@ -411,6 +456,11 @@
    "cmd": "crayon show cfg --json",
    "exit": 0,
    "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"signed-off\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"draft\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  },
+  "signed_summary": {
+   "cmd": "crayon summary cfg",
+   "exit": 0,
+   "output": "Configuration reference\nauthor decisions:\n  intent: reference\n  audience: operators configuring toyq on a server\n  notes:\n    intake: They have just installed toyq and opened toyq.toml. Leave out db_path; storage gets its own page.\nrecord: intact at 078b440 · page: no page recorded yet"
   },
   "summary": {
    "cmd": "crayon summary cfg",
@@ -429,6 +479,21 @@
    "exit": 0,
    "output": "git: committed 8a91d05 — crayon: drafted cfg\ndrafted cfg · reference/config.md · 1 file(s) written · Next: review"
   },
+  "file:.crayon/context/doc-style.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Doc style\n\nFrom README.md, the only prose so far.\n\n- Impersonal, present tense, short sentences.\n- Commands in fenced bash blocks, one command per line.\n- Settings, files and commands named in backticks: `toyq.toml`, `toyq run`.\n"
+  },
+  "file:.crayon/context/glossary.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Glossary\n\n- **job**: one queued shell command.\n- **attempt**: one run of a job; `toyq status` counts them.\n- **retry**: a re-run of a failed job, up to `max_retries` times.\n- **backoff**: the wait between attempts, `retry_backoff_seconds`.\n"
+  },
+  "file:.crayon/context/structure.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Structure\n\n## 1. Documentation topology\n\n- docs/index.md is the only page: a one-line landing page whose toctree is empty.\n- README.md carries install and use, the only task prose.\n\n## 2. Diataxis coverage and balance\n\n- No tutorial, how-to, reference or explanation page yet.\n\n## 3. Coverage gaps\n\n- [CODE↔DOCS GAP] Config keys in src/toyq/config.py (max_retries, retry_backoff_seconds, job_timeout_seconds, log_level, db_path) and their TOYQ_* variables have no reference page.\n- [CODE↔DOCS GAP] CLI commands in src/toyq/cli.py (init, add, run, status, and init --force-dir) are named only in README.md.\n\n## 4. Risks\n\n- README.md points to a configuration reference that does not exist.\n\n## 5. Prioritized improvements\n\n- [CODE↔DOCS GAP] Add a configuration reference under docs/reference/.\n- [CODE↔DOCS GAP] Add a commands reference, and list both in the toctree.\n"
+  },
   "file:.crayon/staging/cfg/report.json": {
    "cmd": null,
    "exit": 0,
@@ -438,6 +503,11 @@
    "cmd": null,
    "exit": 0,
    "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\nnotes: \"They have just installed toyq and opened toyq.toml.\\nLeave out db_path; storage gets its own page.\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "file:docs/index.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# toyq documentation\n\n```{toctree}\n:maxdepth: 1\n```\n\ntoyq is a small local job queue.\n"
   },
   "file:docs/reference/config.md": {
    "cmd": null,
@@ -453,6 +523,11 @@
    "cmd": "crayon show cfg --json",
    "exit": 0,
    "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"signed-off\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"draft\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  },
+  "signed_summary": {
+   "cmd": "crayon summary cfg",
+   "exit": 0,
+   "output": "Configuration reference\nauthor decisions:\n  intent: reference\n  audience: operators configuring toyq on a server\n  notes:\n    intake: They have just installed toyq and opened toyq.toml. Leave out db_path; storage gets its own page.\nrecord: intact at 078b440 · page: no page recorded yet"
   },
   "summary": {
    "cmd": "crayon summary cfg",
@@ -471,6 +546,21 @@
    "exit": 0,
    "output": "git: committed a46cd73 — crayon: drafted cfg\ndrafted cfg · reference/config.md · 1 file(s) written · Next: review"
   },
+  "file:.crayon/context/doc-style.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Doc style\n\nFrom README.md, the only prose so far.\n\n- Impersonal, present tense, short sentences.\n- Commands in fenced bash blocks, one command per line.\n- Settings, files and commands named in backticks: `toyq.toml`, `toyq run`.\n"
+  },
+  "file:.crayon/context/glossary.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Glossary\n\n- **job**: one queued shell command.\n- **attempt**: one run of a job; `toyq status` counts them.\n- **retry**: a re-run of a failed job, up to `max_retries` times.\n- **backoff**: the wait between attempts, `retry_backoff_seconds`.\n"
+  },
+  "file:.crayon/context/structure.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Structure\n\n## 1. Documentation topology\n\n- docs/index.md is the only page: a one-line landing page whose toctree is empty.\n- README.md carries install and use, the only task prose.\n\n## 2. Diataxis coverage and balance\n\n- No tutorial, how-to, reference or explanation page yet.\n\n## 3. Coverage gaps\n\n- [CODE↔DOCS GAP] Config keys in src/toyq/config.py (max_retries, retry_backoff_seconds, job_timeout_seconds, log_level, db_path) and their TOYQ_* variables have no reference page.\n- [CODE↔DOCS GAP] CLI commands in src/toyq/cli.py (init, add, run, status, and init --force-dir) are named only in README.md.\n\n## 4. Risks\n\n- README.md points to a configuration reference that does not exist.\n\n## 5. Prioritized improvements\n\n- [CODE↔DOCS GAP] Add a configuration reference under docs/reference/.\n- [CODE↔DOCS GAP] Add a commands reference, and list both in the toctree.\n"
+  },
   "file:.crayon/staging/cfg/report.json": {
    "cmd": null,
    "exit": 0,
@@ -480,6 +570,11 @@
    "cmd": null,
    "exit": 0,
    "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\nnotes: \"They have just installed toyq and opened toyq.toml.\\nLeave out db_path; storage gets its own page.\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "file:docs/index.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# toyq documentation\n\n```{toctree}\n:maxdepth: 1\n```\n\ntoyq is a small local job queue.\n"
   },
   "file:docs/reference/config.md": {
    "cmd": null,
@@ -495,6 +590,11 @@
    "cmd": "crayon show cfg --json",
    "exit": 0,
    "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"signed-off\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"draft\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  },
+  "signed_summary": {
+   "cmd": "crayon summary cfg",
+   "exit": 0,
+   "output": "Configuration reference\nauthor decisions:\n  intent: reference\n  audience: operators configuring toyq on a server\n  notes:\n    intake: They have just installed toyq and opened toyq.toml. Leave out db_path; storage gets its own page.\nrecord: intact at 078b440 · page: no page recorded yet"
   },
   "summary": {
    "cmd": "crayon summary cfg",
@@ -542,10 +642,30 @@
   }
  },
  "signed": {
+  "context_show_json": {
+   "cmd": "crayon context show --json",
+   "exit": 0,
+   "output": "{\"ok\": true, \"message\": \"context: 3 of 5 artefact(s) present (doc-style.md, glossary.md, structure.md) · missing: code-to-docs-map.md, doc-gaps.md · drifted: none · unrecorded: none · staged: none\", \"next\": \"plan\", \"artifacts\": {\"doc-style.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"99b8021241e6106fb6e3c44f3f9e37601345faaa9fdf00a546d99470a5a83145\", \"drifted\": false}, \"glossary.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"a2c181455e4e744c50b2539ba3983e7c516c6f91e63a9dcd7ccf068f1b664720\", \"drifted\": false}, \"structure.md\": {\"present\": true, \"recorded\": true, \"sha256\": \"309bac52e108ab0eac827eedcd742778e08fa5b4ae24766d0e58041c79009d94\", \"drifted\": false}, \"code-to-docs-map.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}, \"doc-gaps.md\": {\"present\": false, \"recorded\": false, \"sha256\": null, \"drifted\": false}}, \"staged\": [], \"manifest\": {\"recorded_at\": \"2026-01-01T00:00:00+00:00\", \"commit\": \"a4cabbb25bfeed834c6dc313f3f859b7c58704de\", \"model\": \"\", \"model_origin\": \"unknown\"}}"
+  },
   "draft_json": {
    "cmd": "crayon draft cfg .crayon/staging/cfg/draft/reference/config.md --json",
    "exit": 0,
    "output": "git: committed cf1c334 — crayon: drafted cfg\n{\"ok\": true, \"message\": \"drafted cfg · reference/config.md · 1 file(s) written\", \"next\": \"review\"}"
+  },
+  "file:.crayon/context/doc-style.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Doc style\n\nFrom README.md, the only prose so far.\n\n- Impersonal, present tense, short sentences.\n- Commands in fenced bash blocks, one command per line.\n- Settings, files and commands named in backticks: `toyq.toml`, `toyq run`.\n"
+  },
+  "file:.crayon/context/glossary.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Glossary\n\n- **job**: one queued shell command.\n- **attempt**: one run of a job; `toyq status` counts them.\n- **retry**: a re-run of a failed job, up to `max_retries` times.\n- **backoff**: the wait between attempts, `retry_backoff_seconds`.\n"
+  },
+  "file:.crayon/context/structure.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# Structure\n\n## 1. Documentation topology\n\n- docs/index.md is the only page: a one-line landing page whose toctree is empty.\n- README.md carries install and use, the only task prose.\n\n## 2. Diataxis coverage and balance\n\n- No tutorial, how-to, reference or explanation page yet.\n\n## 3. Coverage gaps\n\n- [CODE↔DOCS GAP] Config keys in src/toyq/config.py (max_retries, retry_backoff_seconds, job_timeout_seconds, log_level, db_path) and their TOYQ_* variables have no reference page.\n- [CODE↔DOCS GAP] CLI commands in src/toyq/cli.py (init, add, run, status, and init --force-dir) are named only in README.md.\n\n## 4. Risks\n\n- README.md points to a configuration reference that does not exist.\n\n## 5. Prioritized improvements\n\n- [CODE↔DOCS GAP] Add a configuration reference under docs/reference/.\n- [CODE↔DOCS GAP] Add a commands reference, and list both in the toctree.\n"
   },
   "file:.crayon/units/cfg/ledger.jsonl": {
    "cmd": null,
@@ -556,6 +676,11 @@
    "cmd": null,
    "exit": 0,
    "output": "---\ntitle: \"Configuration reference\"\nintent: \"reference\"\naudience: \"operators configuring toyq on a server\"\ntargets:\n  - \"reference/config.md\"\nsources:\n  - \"src/toyq/config.py\"\n---\n# Plan\n\nA reference page for every toyq setting: its key in toyq.toml, its TOYQ_*\nenvironment override, its type and its default, and the precedence rule\n(defaults, then toyq.toml, then the environment).\n\n- One table of settings.\n- Precedence, stated once.\n- The validation rule for max_retries.\n"
+  },
+  "file:docs/index.md": {
+   "cmd": null,
+   "exit": 0,
+   "output": "# toyq documentation\n\n```{toctree}\n:maxdepth: 1\n```\n\ntoyq is a small local job queue.\n"
   },
   "file:src/toyq/config.py": {
    "cmd": null,
@@ -571,6 +696,11 @@
    "cmd": "crayon show cfg --json",
    "exit": 0,
    "output": "{\"unit\": \"cfg\", \"title\": \"Configuration reference\", \"intent\": \"reference\", \"state\": \"signed-off\", \"qualifier\": \"\", \"paths\": [], \"requests\": [], \"reviewer_edits\": [], \"steps\": null, \"orphans\": [], \"pending\": [], \"seqs\": {\"signoff\": 2, \"generation\": null, \"reviewer_edit\": null, \"review\": null, \"basis\": null, \"tip\": null}, \"next\": \"draft\", \"handover\": {\"steps\": [], \"judged\": [], \"withdrawn\": []}}"
+  },
+  "summary": {
+   "cmd": "crayon summary cfg",
+   "exit": 0,
+   "output": "Configuration reference\nauthor decisions:\n  intent: reference\n  audience: operators configuring toyq on a server\nrecord: intact at e9d5699 · page: no page recorded yet"
   }
  },
  "stale": {

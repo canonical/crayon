@@ -250,8 +250,29 @@ def _recorded_text(states, ref, where):
     return output.rstrip("\n")
 
 
+#: ``@SKILL{<skill>/<path>}`` in a history step or a reply: the bytes of that
+#: file of an installed skill, read at load time from ``skills/``, so a history
+#: that reads a skill reference replays the skill text as it is now.
+_SKILL_RE = re.compile(r"@SKILL\{([^{}]+)\}")
+
+
+def _skill_text(ref, where):
+    """The bytes of ``skills/<skill>/<path>``; a path outside the skill is refused."""
+    name, _, path = ref.partition("/")
+    root = skillmod.SKILLS_ROOT / name
+    if not name or not (root / "SKILL.md").is_file():
+        raise ValueError("%s: @SKILL{%s} names no skill %r" % (where, ref, name))
+    target = (root / path).resolve()
+    if not path or path.startswith("/") or root.resolve() not in target.parents:
+        raise ValueError("%s: @SKILL{%s} reaches outside %s" % (where, ref, name))
+    if not target.is_file():
+        raise ValueError("%s: @SKILL{%s} names no skill file" % (where, ref))
+    return target.read_text(encoding="utf-8")
+
+
 def _splice_text(text, states, where):
-    return _RECORDED_RE.sub(lambda m: _recorded_text(states, m.group(1), where), text)
+    text = _RECORDED_RE.sub(lambda m: _recorded_text(states, m.group(1), where), text)
+    return _SKILL_RE.sub(lambda m: _skill_text(m.group(1), where), text)
 
 
 def _splice(turns, states, where):

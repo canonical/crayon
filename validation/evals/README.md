@@ -196,7 +196,10 @@ commit>`), match any seven hex characters, or compare with what the tool printed
 `@RECORDED{<state>/<label>}`, which `lanes.py` replaces with that recorded output when it loads the
 case. The same ref works inside history and prelude steps and in an assertion's `text`. A `file:`
 label keeps the recorded bytes exactly, trailing newline included; any other label drops the
-trailing newline.
+trailing newline. A history step that reads a skill file splices its current bytes with
+`@SKILL{<skill>/<path>}`, read from `skills/` at load time, so the replayed read never goes
+stale. A `crayon-write` history that stages a draft first makes every read the skill requires
+before authoring, and the eval suite checks that it does.
 
 The assertion kinds, all deterministic:
 - `skill_choice`, `tool_call`, `no_tool_call`, `text_re`, `not_text_re` and `not_prescribed`;

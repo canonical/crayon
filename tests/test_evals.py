@@ -2021,6 +2021,73 @@ class TestLaneBCases(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "no recorded"):
             lanes._splice([{"content": "@RECORDED{drafted/nothing}"}], states, "x")
 
+    def test_a_skill_file_is_spliced_into_a_history_step(self):
+        """A history Read of an installed skill file returns the skill's current bytes."""
+        stance = "crayon-write/references/reference-stance.md"
+        body = (skillmod.SKILLS_ROOT / stance).read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory(prefix="eval-splice-") as root:
+            self.lane_b_root(root, {
+                "id": "B-98", "sandbox": "drafted",
+                "history": [{"call": {"name": "Read", "arguments": {
+                    "file_path": "%s/%s" % (skillmod.INSTALLED_AT, stance)}},
+                    "result": "@SKILL{%s}" % stance}]})
+            case, = lanes.load_b(root)
+        self.assertEqual(case["resolved"]["history"][0]["result"], body)
+        for ref, message in (("crayon-write/references/nothing.md", "no skill file"),
+                             ("crayon-write/../crayon-plan/SKILL.md", "outside"),
+                             ("crayon-write//etc/passwd", "outside"),
+                             ("crayon-nothing/SKILL.md", "no skill")):
+            with self.subTest(ref=ref):
+                with self.assertRaisesRegex(ValueError, message):
+                    lanes._splice_text("@SKILL{%s}" % ref, {}, "x")
+
+    def test_every_write_history_grounds_before_it_stages_a_draft(self):
+        """crayon-write reads its routing, the recorded context, the intake notes, a
+        sibling page, the writing standards and its stance before it authors. A history
+        that stages a draft without them has the model confess or redo reads the history
+        skipped, which grades the case's omission, not the model."""
+        installed = skillmod.INSTALLED_AT + "/crayon-write/references/"
+        seen = 0
+        for case in lanes.load_b():
+            history = case["resolved"]["history"]
+            staged = [i for i, step in enumerate(history)
+                      if (step.get("call") or {}).get("name") == "Write"
+                      and "/draft/" in step["call"]["arguments"].get("file_path", "")]
+            if case["skill"] != "crayon-write" or not staged:
+                continue
+            seen += 1
+            before = history[:staged[0]]
+            cmds = [step["cmd"] for step in before if step.get("cmd")]
+            reads = set(step["call"]["arguments"].get("file_path") for step in before
+                        if (step.get("call") or {}).get("name") == "Read")
+            shown = [json.loads(step["output"]) for step in before
+                     if re.match(r"^crayon show \S+ --json$", step.get("cmd") or "")]
+            with self.subTest(case=case["id"]):
+                self.assertTrue(shown, "the history shows the unit before it drafts")
+                stance = installed + "%s-stance.md" % shown[0]["intent"]
+                self.assertIn("crayon context show --json", cmds)
+                self.assertTrue(any(re.match(r"^crayon summary \S+$", cmd) for cmd in cmds),
+                                "the intake notes are read through crayon summary")
+                for path in (installed + "routing.md", installed + "writing-standards.md",
+                             stance, ".crayon/context/doc-style.md",
+                             ".crayon/context/glossary.md", ".crayon/context/structure.md"):
+                    self.assertIn(path, reads)
+                self.assertTrue(any(path.startswith("docs/") for path in reads),
+                                "a sibling page is read before authoring")
+        self.assertGreaterEqual(seen, 6, "the scan found too few drafting histories")
+
+    def test_b69_takes_a_first_person_gap_in_any_wording_the_rule_allows(self):
+        b69 = dict((case["id"], case) for case in lanes.load_b())["B-69"]
+        said = ("- I don't know which `log_level` values are valid, because "
+                "`src/toyq/config.py` doesn't list them. The page gives only the default, `info`.")
+        reply = b69["oracle"][0]["content"].replace(
+            next(line for line in b69["oracle"][0]["content"].splitlines()
+                 if "log_level" in line), said)
+        tr = lanes.run_b(b69, SPEC, StubProvider(openrouter.scripted([{"content": reply}])),
+                         case_ctx())
+        out = grade.grade(b69["assert"], tr)
+        self.assertTrue(out["passed"], out["feedback"])
+
     def test_the_step_question_states_hold_their_premise(self):
         """walk_drafted routes to review with both open steps listed before any accept."""
         states = lanes.load_states()

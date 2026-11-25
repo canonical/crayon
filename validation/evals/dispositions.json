@@ -327,7 +327,7 @@
       "id": "B-70",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "case-fix",
-      "note": "2 of 3. The failing run said 'I didn't run crayon summary cfg' and listed other grounding reads it skipped: the replayed history drafts without the reads crayon-write now requires before authoring (the writing-standards and stance references, the context files, the sibling pages), so the model confessed the history's omissions rather than hedging. The history needs those reads before the draft; not yet made.",
+      "note": "2 of 3. The failing run said 'I didn't run crayon summary cfg' and listed other grounding reads it skipped: the replayed history drafted without the reads crayon-write requires before authoring (the routing and writing references, the context files, the intake notes, the sibling page), so the model confessed the history's omissions rather than hedging. The history now makes them before the draft.",
       "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
@@ -474,14 +474,14 @@
       "id": "B-18",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "case-fix",
-      "note": "2 of 3. After the busy refusal, the failing run read the context files and the writing references, then wrote the staged draft again instead of re-running crayon draft unchanged: the replayed history drafted without the reads crayon-write now requires before authoring, so the model made those reads then and revised the page. The history needs those reads before the draft; not yet made.",
+      "note": "2 of 3. After the busy refusal, the failing run read the context files and the writing references, then wrote the staged draft again instead of re-running crayon draft unchanged: the replayed history had drafted without the reads crayon-write requires before authoring, so the model made those reads then and revised the page. The history now makes them before the draft.",
       "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-69",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "case-fix",
-      "note": "2 of 3. The failing run stated the gap in the first person ('I don't know which log_level values are valid'), which the check's wording does not take, and also listed the grounding reads it skipped: the replayed history drafts without the reads crayon-write now requires before authoring. The history needs those reads before the draft; not yet made.",
+      "note": "2 of 3. The failing run stated the gap in the first person ('I don't know which log_level values are valid'), which the check's wording did not take, and also listed the grounding reads the replayed history had skipped. The check now takes 'I don't know', and the history makes the reads crayon-write requires before the draft.",
       "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
     }
   ]

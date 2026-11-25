@@ -60,6 +60,44 @@
           "call": {
             "name": "Read",
             "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/routing.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/routing.md}"
+        },
+        "signed/context_show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/doc-style.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/doc-style.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/glossary.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/glossary.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/structure.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/structure.md}"
+        },
+        "signed/summary",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
               "file_path": ".crayon/units/cfg/unit.md"
             }
           },
@@ -73,6 +111,33 @@
             }
           },
           "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "docs/index.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:docs/index.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/writing-standards.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/writing-standards.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/reference-stance.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/reference-stance.md}"
         },
         {
           "call": {
@@ -183,6 +248,44 @@
           "call": {
             "name": "Read",
             "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/routing.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/routing.md}"
+        },
+        "drafted/context_show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/doc-style.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:.crayon/context/doc-style.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/glossary.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:.crayon/context/glossary.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/structure.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:.crayon/context/structure.md}"
+        },
+        "drafted/summary",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
               "file_path": ".crayon/units/cfg/unit.md"
             }
           },
@@ -196,6 +299,33 @@
             }
           },
           "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "docs/index.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:docs/index.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/writing-standards.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/writing-standards.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/reference-stance.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/reference-stance.md}"
         },
         {
           "call": {
@@ -643,6 +773,44 @@
           "call": {
             "name": "Read",
             "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/routing.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/routing.md}"
+        },
+        "signed/context_show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/doc-style.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/doc-style.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/glossary.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/glossary.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/structure.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/structure.md}"
+        },
+        "signed/summary",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
               "file_path": ".crayon/units/cfg/unit.md"
             }
           },
@@ -656,6 +824,33 @@
             }
           },
           "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "docs/index.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:docs/index.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/writing-standards.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/writing-standards.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/reference-stance.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/reference-stance.md}"
         },
         {
           "call": {
