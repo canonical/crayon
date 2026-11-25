@@ -142,6 +142,11 @@ across. The contract number stays `1`.
 
 ### Changed
 
+- `crayon-review` step 5 states the findings tally line itself, word for word and total first
+  (`Findings: N total — X must-fix, Y should-fix, Z nit.`), in every review, a clean one
+  included. Before, the exact form was only in the rubric's template, and Haiku 5.5 retitled
+  the line or dropped its total (lane B case B-41, 0 of 3). `tests/test_skill_text.py` (S-16)
+  checks that step 5 and the rubric carry the same line.
 - CI runs every Python command on 3.9, the oldest interpreter the tool supports, rather than on
   the runner image's own; the eval self-tests move from the unit matrix to their own `evals` job;
   and the `shellcheck` job checks that the image still ships the version `docs/shellcheck.md`

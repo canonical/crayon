@@ -91,7 +91,8 @@ Coverage:
         draft should change), and an answer that names no verdict or an accept with
         a condition is asked again; the lean is held until the author answers and a
         departing verdict gets one ``Keep <verdict>?``, and the rubric's layout ends
-        on the verdict question with no recommended verdict and no publishing line;
+        on the verdict question with no recommended verdict and no publishing line,
+        and step 5 carries the rubric's tally line word for word, total first;
         finding numbers cited in a note are restated with the author, the
         hook-adoption note is the author's words, and the skill's lists name these
         rules
@@ -2025,6 +2026,19 @@ class TestS16TheVerdict(unittest.TestCase):
         self.assertIsNotNone(step, "crayon-review has no step 6")
         assert_contains(self, step, "is not a verdict", "crayon-review step 6")
         assert_contains(self, step, "is not a go", "crayon-review step 6")
+
+    def test_s16_step_5_carries_the_rubrics_tally_line_in_its_own_words(self):
+        """The findings end on the rubric's tally line, total first, in step 5 itself,
+        so a model that reads the step without the rubric's template still writes it."""
+        rubric = (SKILLS_ROOT / "crayon-review" / "references" / "review-rubric.md").read_text(
+            encoding="utf-8")
+        step = skill_step_body(self.body, 5)
+        self.assertIsNotNone(step, "crayon-review has no step 5")
+        for line in ("Findings: N total — X must-fix, Y should-fix, Z nit.",
+                     "Findings: 0 total — 0 must-fix, 0 should-fix, 0 nit."):
+            with self.subTest(line=line):
+                assert_contains(self, rubric, line, "review-rubric.md")
+                assert_contains(self, step, line, "crayon-review step 5")
 
     def test_s16_the_lean_waits_for_the_verdict(self):
         assert_contains(self, self.body, KEEP_VERDICT, "crayon-review")

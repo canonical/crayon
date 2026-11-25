@@ -356,6 +356,16 @@ text, a concrete suggested action, and a priority tag (must-fix / should-fix / n
 Ground source-fidelity and completeness by re-checking claims against the recorded
 sources.
 
+End the findings with the tally line, in every review, a clean one included. Its words
+are fixed, total first, and you fill in only the numbers:
+
+```
+Findings: N total — X must-fix, Y should-fix, Z nit.
+```
+
+A clean review's line is `Findings: 0 total — 0 must-fix, 0 should-fix, 0 nit.` Never
+retitle it ("Findings tally:"), drop the total, or give the counts in a sentence instead.
+
 A finding you could not fully verify says so inside the finding, in the first person,
 naming what you looked for or inferred from, for example "I found no source for the
 30-second default" or "I inferred the retry order from queue.py". A verified finding
