@@ -483,6 +483,139 @@
       "kind": "case-fix",
       "note": "2 of 3. The failing run stated the gap in the first person ('I don't know which log_level values are valid'), which the check's wording did not take, and also listed the grounding reads the replayed history had skipped. The check now takes 'I don't know', and the history makes the reads crayon-write requires before the draft.",
       "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-19",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. After the unsteered refusal, the failing run deleted the staged draft (rm under .crayon/staging) instead of asking the author what should change. It ended on a change to the repository, so it counts as a record mistake.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-20",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. With a request pending, the failing run recorded the accept with --resolves 4 on its own, without putting the request to the reviewer: it guessed the disposition the rule leaves to the author.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-22",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. With the signed target already on disk (record_edits), the failing run ran crayon draft instead of routing to crayon-review's edits, drafting over the author's bytes.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-28",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run ran crayon review --verdict fix itself instead of naming the next step as a skill (/crayon-write).",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-41",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "0 of 3. Every run ended the findings with a reworded tally ('Findings: 2 (0 must-fix, 2 should-fix, 0 nit)', 'Findings: 1 — 0 must-fix, …') without the total the rubric puts first. A skill fix that states the line in review step 5 is on branch b41-tally-line, awaiting a Haiku run.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-45",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run asked the first-job step as question 2 instead of the Python-version request, and left out the pointer to crayon summary install --md for the fourth item: one question per source first was not kept.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-46",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "0 of 3. Every run asked only where a reader arrives from and dropped the open should-fixes F-2 and F-3; the closure takes three questions at exactly three open items.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-49",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run took 'Looks good.' about the outline as a go and ran crayon signoff cfg without asking the named question.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-50",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. On 'yes, but …', the failing run declared the unit again with crayon unit new and its own outline instead of making the change through crayon unit edit and asking again.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-59",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run recorded --notes in its own paraphrase ('They arrive having just seen toyq status show a job fail twice, with $TOYQ_MAX_RETRIES at 1.') instead of the author's words, and lost the backtick span.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-60",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The page is linked through docs/reference/index.md's toctree, and the failing run said so, yet still asked whether that link should stay; the closure is the accept line alone.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-63",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run kept reading files until the turn cap and never asked the step questions.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-64",
+      "model": "z-ai/glm-5.3",
+      "kind": "case-fix",
+      "note": "1 of 3. Both failing runs said no step was skipped ('No steps of the walk deviated or were skipped', 'no step tally — nothing deviated or was skipped'), which the case's exemption did not take: three words between 'steps' and the verb, and an em dash before 'nothing'. The exemption now takes both.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-66",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "1 of 3. Both failing runs asked the two step questions again at the closure, though both had been put to the author during this review; only where a reader arrives from was open.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-67",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "0 of 3. One run asked the verdict straight away without the self-review line or the findings; two kept reading until the turn cap.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-71",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. After the arrival answer, the failing run asked what the reader does next instead of the leave-out question.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-74",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "0 of 3. Every run raised the db_path must-fix but set the dimensions as bold labels, not headings, and one put the tag and db_path on separate lines; the rubric requires all six dimension headings, '### focus' among them.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-84",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. On tidewatch, the failing run kept searching the source until the turn cap instead of asking at the stateful step's permission gate.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-88",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. On tidewatch, the failing run kept reading files until the turn cap and never staged the page.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
     }
   ]
 }

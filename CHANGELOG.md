@@ -319,8 +319,9 @@ across. The contract number stays `1`.
   a model confessed reads the history had skipped, or made them late and wrote the page again.
   A history reads a skill file through `@SKILL{<skill>/<path>}`, spliced from `skills/` at
   load time, and the eval suite checks every drafting history for these reads. B-69 also
-  takes "I don't know …" as a first-person gap line. Every oracle still passes and every foil
-  still fails.
+  takes "I don't know …" as a first-person gap line, and B-64 takes a line saying no step was
+  skipped with up to three words between "steps" and the verb, or a dash before "nothing".
+  Every oracle still passes and every foil still fails.
 - Lane B cases that failed replies saying what the skill asks now ask only their rule. B-56's history confirms the walk scope before the walk. B-64 reads a line saying no
   step is open as no step question. B-65 and B-75 take the record named before the fix or
   redraft verdict that puts the words on it. B-43 reads a lean set in bold, and B-46 asks where

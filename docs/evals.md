@@ -31,7 +31,7 @@ the operational guide: how to run a lane, where results land and how to add a ca
 |---|---|---|---|---|
 | anthropic/claude-sonnet-5.5 | google-vertex/global | 67 of 70 passed every run | 20 of 25 passed every run | supported; known misses: B-62, B-41, B-85 (2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json) |
 | anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 61 of 70 passed every run | 16 of 25 passed every run | not supported: B-41 failed every run (2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json) |
-| z-ai/glm-5.3 | fireworks | no result | no result | not yet run |
+| z-ai/glm-5.3 | fireworks | 59 of 70 passed every run | 17 of 25 passed every run | not supported: record mistakes in B-49, B-50, B-59, B-19, B-20, B-22; B-41 failed every run; critical runs passed 93.8% (needs 95%) (2026-11-25-B-z-ai__glm-5.3-k3-all.json) |
 | deepseek/deepseek-v4.1-flash | deepinfra/fp8 | 62 of 70 passed every run | 18 of 25 passed every run | not supported: record mistakes in B-59, B-13, B-22 (2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json) |
 <!-- supported-models:end -->
 

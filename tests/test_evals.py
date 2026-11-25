@@ -2088,6 +2088,22 @@ class TestLaneBCases(unittest.TestCase):
         out = grade.grade(b69["assert"], tr)
         self.assertTrue(out["passed"], out["feedback"])
 
+    def test_b64_takes_a_line_saying_no_step_was_skipped(self):
+        """GLM-5.3's two ways of saying nothing was skipped, with three words between
+        'steps' and the verb, or an em dash before 'nothing', are no step question."""
+        b64 = dict((case["id"], case) for case in lanes.load_b())["B-64"]
+        for said in ("No steps of the walk deviated or were skipped, so nothing there "
+                     "needs your call.",
+                     "There is no walk and no step tally — nothing deviated or was "
+                     "skipped."):
+            with self.subTest(said=said):
+                reply = said + "\n\n" + b64["oracle"][0]["content"]
+                tr = lanes.run_b(b64, SPEC,
+                                 StubProvider(openrouter.scripted([{"content": reply}])),
+                                 case_ctx())
+                out = grade.grade(b64["assert"], tr)
+                self.assertTrue(out["passed"], out["feedback"])
+
     def test_the_step_question_states_hold_their_premise(self):
         """walk_drafted routes to review with both open steps listed before any accept."""
         states = lanes.load_states()
