@@ -26,15 +26,15 @@
       "id": "B-46",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "limitation",
-      "note": "2 of 3. One closure asked F-2 and F-3 before where a reader arrives from; the skill takes one question per source first, in a fixed order.",
-      "ref": "2026-10-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+      "note": "1 of 3. Two closures asked F-2 and F-3 before where a reader arrives from; the skill takes one question per source first, in a fixed order.",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-85",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "limitation",
-      "note": "2 of 3. One run put the verdict question after the two step questions in the same message; the skill makes the step questions the last thing in that message and has the verdict wait for the reply.",
-      "ref": "2026-10-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+      "note": "2 of 3. One run asked the verdict in the same message as the two step questions; the skill makes the step questions the last thing in that message and has the verdict wait for the reply.",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-06",
@@ -292,8 +292,8 @@
       "id": "B-74",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "limitation",
-      "note": "2 of 3. One run raised the db_path must-fix under focus but wrote the dimension as '*focus:*', not a heading; the rubric requires all six dimension headings, '### focus' among them.",
-      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+      "note": "0 of 3. Every run raised the db_path must-fix but set the dimensions as bold or italic labels, not headings; the rubric requires all six dimension headings, '### focus' among them.",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-76",
@@ -327,8 +327,8 @@
       "id": "B-70",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "case-fix",
-      "note": "1 of 3. Both failing runs said 'I didn't run crayon context show': the replayed history drafted without the context read that crayon-write step 2 now requires (S-28), so the model confessed the history's omission. The history now runs crayon context show --json before the draft, recorded on reported_clean.",
-      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+      "note": "2 of 3. The failing run said 'I didn't run crayon summary cfg' and listed other grounding reads it skipped: the replayed history drafts without the reads crayon-write now requires before authoring (the writing-standards and stance references, the context files, the sibling pages), so the model confessed the history's omissions rather than hedging. The history needs those reads before the draft; not yet made.",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-95",
@@ -462,6 +462,27 @@
       "kind": "limitation",
       "note": "2 of 3. The failing run kept reading (pyproject.toml, .gitignore, crayon unit new --help) until the turn cap, and never gave the triage advice or ran crayon triage record.",
       "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-41",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run closed its findings with 'Findings: 0 must-fix, 0 should-fix, 0 nit', without the total the rubric puts first ('Findings: 0 total — …').",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-18",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. After the busy refusal, the failing run read the context files and the writing references, then wrote the staged draft again instead of re-running crayon draft unchanged: the replayed history drafted without the reads crayon-write now requires before authoring, so the model made those reads then and revised the page. The history needs those reads before the draft; not yet made.",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-69",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run stated the gap in the first person ('I don't know which log_level values are valid'), which the check's wording does not take, and also listed the grounding reads it skipped: the replayed history drafts without the reads crayon-write now requires before authoring. The history needs those reads before the draft; not yet made.",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
     }
   ]
 }

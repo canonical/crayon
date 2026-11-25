@@ -29,7 +29,7 @@ the operational guide: how to run a lane, where results land and how to add a ca
 <!-- supported-models:begin -->
 | Model | Backend | Critical cases | Standard cases | Status |
 |---|---|---|---|---|
-| anthropic/claude-sonnet-5.5 | google-vertex/global | 64 of 70 passed every run | 21 of 25 passed every run | stale: the skills changed since 2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json; re-run. On its skills: supported; known misses: B-62, B-50, B-23, B-25, B-85, B-95 |
+| anthropic/claude-sonnet-5.5 | google-vertex/global | 67 of 70 passed every run | 20 of 25 passed every run | supported; known misses: B-62, B-41, B-85 (2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json) |
 | anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 61 of 70 passed every run | 16 of 25 passed every run | not supported: B-41 failed every run (2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json) |
 | z-ai/glm-5.3 | fireworks | no result | no result | not yet run |
 | deepseek/deepseek-v4.1-flash | deepinfra/fp8 | 62 of 70 passed every run | 18 of 25 passed every run | not supported: record mistakes in B-59, B-13, B-22 (2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json) |
