@@ -67,6 +67,11 @@ PURPOSE = ("can an author rely on crayon, with the model they use, to keep them 
            "control and keep the record true?")
 #: Runs per case a decision needs.
 DECISION_RUNS = 3
+#: How long promptfoo lets one case run before it reports an error. Its own
+#: default, five minutes, cut off a slow reasoning model mid-case (GLM-5.3 on
+#: 2026-11-25): a case may take up to its turn cap of model calls, each with
+#: the transport's own timeout and retries, so the bound is generous.
+CASE_TIMEOUT_MS = 30 * 60 * 1000
 #: Every file whose change alters what a case sees or how it is graded.
 KIT_FILES = ("agent.py", "digest.py", "grade.py", "lanes.py", "pf_assert.py", "pf_provider.py",
              "sandbox.py", "skills.py", "fixtures/states.sh")
@@ -165,7 +170,8 @@ def promptfoo_config(lane_name, cases, model_id, mode, run_dir, jobs, budget_pat
             "id": "file://%s" % (HERE / "pf_provider.py"),
             "label": model_id,
             "config": {"model": model_id, "mode": mode, "run": str(run_dir),
-                       "budget": str(budget_path), "pool": jobs, "workers": jobs},
+                       "budget": str(budget_path), "pool": jobs, "workers": jobs,
+                       "timeout": CASE_TIMEOUT_MS},
         }],
         "tracing": {"enabled": True, "otlp": {"http": {}}},
         "tests": tests,

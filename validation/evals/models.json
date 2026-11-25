@@ -1,5 +1,5 @@
 {
-  "_comment": "The certified models: the ones authors run crayon with. Each is pinned to one backend (provider.order + allow_fallbacks:false) and to Zero Data Retention endpoints only (zdr:true), so a score belongs to one model on one backend; both pins were on OpenRouter's /api/v1/endpoints/zdr list on 2026-10-25. price_per_mtok is [input, output] USD per million tokens on that backend; it sizes each call's budget reservation and is the fallback when a response carries no usage.cost. Models run with their default sampling and reasoning, as authors run them. prompt_cache adds cache breakpoints on the system prompt and the last user message. The gate model runs on every skill change; it is the cheapest certified model.",
+  "_comment": "The certified models: the ones authors run crayon with. Each is pinned to one backend (provider.order + allow_fallbacks:false) and to Zero Data Retention endpoints only (zdr:true), so a score belongs to one model on one backend; the Anthropic pins were on OpenRouter's /api/v1/endpoints/zdr list on 2026-10-25, the GLM and DeepSeek pins on 2026-11-25. price_per_mtok is [input, output] USD per million tokens on that backend; it sizes each call's budget reservation and is the fallback when a response carries no usage.cost. Models run with their default sampling and reasoning, as authors run them. prompt_cache adds cache breakpoints on the system prompt and the last user message. The gate model runs on every skill change; it is the cheapest certified model.",
   "caps": {
     "sweep_usd": 60.0,
     "per_model_usd": 15.0
@@ -21,6 +21,20 @@
       "prompt_cache": true,
       "provider": {"order": ["google-vertex/global"], "allow_fallbacks": false, "zdr": true},
       "price_per_mtok": [0.10, 0.50]
+    },
+    {
+      "id": "z-ai/glm-5.3",
+      "why": "an open-weight model authors can run for well under Sonnet's price",
+      "max_tokens": 32000,
+      "provider": {"order": ["fireworks"], "allow_fallbacks": false, "zdr": true},
+      "price_per_mtok": [1.40, 4.40]
+    },
+    {
+      "id": "deepseek/deepseek-v4.1-flash",
+      "why": "an open-weight model authors can run for about Haiku's price",
+      "max_tokens": 16000,
+      "provider": {"order": ["deepinfra/fp8"], "allow_fallbacks": false, "zdr": true},
+      "price_per_mtok": [0.14, 0.42]
     }
   ]
 }

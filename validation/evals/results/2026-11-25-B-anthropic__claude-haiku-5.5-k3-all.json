@@ -1,0 +1,988 @@
+{
+  "meta": {
+    "measures": "skill-following",
+    "engine": "promptfoo@0.124.1",
+    "date": "2026-11-25",
+    "crayon_version": "0.3.0",
+    "repo_head": "e73ccd1",
+    "skills_sha256": "1ac7c0b79efe48a89e75668f883f07358355d63e9cf2e932cb075a6684803167",
+    "kit_sha256": "6108884be808b35e6e9749fa99268a832915af8fdf27830e6a81a8f8ea30ad5f",
+    "split": "all",
+    "partial": false,
+    "dry_run": false,
+    "gate_model": true,
+    "lane": "B",
+    "lane_title": "next action",
+    "model": "anthropic/claude-haiku-5.5",
+    "why": "used by authors through their coding agent; the cheapest certified model, so it is the gate model",
+    "provider_pin": {
+      "order": [
+        "google-vertex/global"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "runs": 3,
+    "total_cases": 95,
+    "critical_cases": 70,
+    "passes": 254,
+    "pass_rate": 0.8912,
+    "stable_pass": 77,
+    "stable_fail": 4,
+    "flaky": 14,
+    "errors": 0,
+    "cost_usd": 0.617658,
+    "tokens": {
+      "in": 13105779,
+      "out": 339970
+    },
+    "truncated": 0,
+    "retries": 0,
+    "budget_stop": null
+  },
+  "decision": {
+    "supported": {
+      "verdict": "not supported",
+      "critical_failing": [
+        "B-41",
+        "B-08",
+        "B-17",
+        "B-19",
+        "B-26",
+        "B-84",
+        "B-89",
+        "B-93",
+        "B-94"
+      ],
+      "reason": "9 critical case(s) did not pass every run"
+    },
+    "ship": {
+      "verdict": "undecided",
+      "reason": "no committed baseline on this kit; this result becomes the baseline"
+    }
+  },
+  "cases": [
+    {
+      "id": "B-44",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.006785
+    },
+    {
+      "id": "B-60",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003917
+    },
+    {
+      "id": "B-45",
+      "protects": "S-17",
+      "critical": false,
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.010654,
+      "failed": [
+        "text_re: expected the reply to match '(?m)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*Python version[^\\\\n]*\\\\?'; it reads: \"The accept is recorded. Before the closure, I'll check the page for the Python version and search for links to it.\\nThe accept is recorded for the install unit, and the Python-version request ",
+        "question_count: expected between 3 and 3 question(s); its reply asked 0; text_re: expected the reply to match '(?m)^\\\\s*(?:\\\\*\\\\*)?1[.)][^\\\\n]*\\\\binit\\\\b[^\\\\n]*\\\\?'; it reads: 'The accept is recorded. Before I close out, I want to check whether the page actually says which Python version toyq needs,"
+      ]
+    },
+    {
+      "id": "B-46",
+      "protects": "S-17",
+      "critical": false,
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.006505,
+      "failed": [
+        "text_re: expected the reply to match '(?im)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*(link|toctree|arriv|come from)[^\\\\n]*\\\\?'; it reads: 'git: committed 74b60fd \u2014 crayon: reviewed cfg\\nreviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 crayon stops here\\n\\nThe record shows three items still open",
+        "text_re: expected the reply to match '(?im)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*(link|toctree|arriv|come from)[^\\\\n]*\\\\?'; it reads: 'Accepted. The record committed it as 74b60fd:\\n\\n```\\nreviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 crayon stops here\\n```\\n\\nThree things are still open"
+      ]
+    },
+    {
+      "id": "B-47",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008394
+    },
+    {
+      "id": "B-48",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003577
+    },
+    {
+      "id": "B-56",
+      "protects": "S-17",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003878
+    },
+    {
+      "id": "B-57",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00316
+    },
+    {
+      "id": "B-62",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004991
+    },
+    {
+      "id": "B-63",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.012105
+    },
+    {
+      "id": "B-64",
+      "protects": "S-23",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001167
+    },
+    {
+      "id": "B-65",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003482
+    },
+    {
+      "id": "B-66",
+      "protects": "S-23",
+      "critical": false,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.005487,
+      "failed": [
+        "text_re: expected the reply to match 'crayon stops here'; it reads: 'The accept is recorded: `crayon review` committed 6058bda as \"crayon: reviewed install\", and the page is accepted. The record stops here.\\n\\nNothing links to `how-to/install.md` yet. Where should a read'"
+      ]
+    },
+    {
+      "id": "B-74",
+      "protects": "S-24",
+      "critical": false,
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.021031,
+      "failed": [
+        "text_re: expected the reply to match '(?im)^#{2,4}\\\\s*focus\\\\b'; it reads: \"The page includes `db_path`, which the intake notes say to leave out. Next I'll check the claims against the declared source.\\nThe page's claims check out against `src/toyq/config.py`, but it still inc\"",
+        "text_re: expected the reply to match '(?im)^#{2,4}\\\\s*focus\\\\b'; it reads: 'The unit is at `review`. Here is the provenance summary as the tool printed it, then the findings.\\n\\n```\\nConfiguration reference\\nauthor decisions:\\n  intent: reference\\n  audience: operators configuring '",
+        "text_re: expected the reply to match '(?im)^#{2,4}\\\\s*focus\\\\b'; it reads: '**Review mode, cfg.** The page is `reference/config.md`, drafted at commit 5af90f8. Its bytes are current, so no edits are needed before the verdict.\\n\\n**Provenance summary** (from `crayon summary cfg`'"
+      ]
+    },
+    {
+      "id": "B-75",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003187
+    },
+    {
+      "id": "B-76",
+      "protects": "S-23",
+      "critical": false,
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.003736,
+      "failed": [
+        "not_text_re: the reply must not match '(?m)^\\\\s*(?:\\\\*\\\\*)?\\\\d[.)][^\\\\n]*\\\\bfirst-job\\\\b[^\\\\n]*\\\\?'; it contains '2. Step first-job was skipped: no network in CI. Does the page need to say so?'",
+        "not_text_re: the reply must not match '(?m)^\\\\s*(?:\\\\*\\\\*)?\\\\d[.)][^\\\\n]*\\\\bfirst-job\\\\b[^\\\\n]*\\\\?'; it contains '2. Step first-job was skipped: no network in CI. Does the page need to say so?'",
+        "not_text_re: the reply must not match '(?m)^\\\\s*(?:\\\\*\\\\*)?\\\\d[.)][^\\\\n]*\\\\bfirst-job\\\\b[^\\\\n]*\\\\?'; it contains '2. Step first-job was skipped: no network in CI. Does the page need to say so?'"
+      ]
+    },
+    {
+      "id": "B-77",
+      "protects": "S-23",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.007976
+    },
+    {
+      "id": "B-32",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000877
+    },
+    {
+      "id": "B-33",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001014
+    },
+    {
+      "id": "B-34",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003488
+    },
+    {
+      "id": "B-35",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001143
+    },
+    {
+      "id": "B-49",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008869
+    },
+    {
+      "id": "B-50",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005626
+    },
+    {
+      "id": "B-53",
+      "protects": "S-18",
+      "critical": false,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.005545,
+      "failed": [
+        "question_count: expected between 1 and 1 question(s); its reply asked 2"
+      ]
+    },
+    {
+      "id": "B-54",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005452
+    },
+    {
+      "id": "B-59",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.0053
+    },
+    {
+      "id": "B-71",
+      "protects": "S-24",
+      "critical": false,
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.00369,
+      "failed": [
+        "text_re: expected the reply to match '(?i)\\\\bleave\\\\s+out\\\\b'; it reads: \"The unit doesn't exist yet, so this is a fresh declaration. I checked `src/toyq/config.py`: the defaults are `max_retries` = 3 and `retry_backoff_seconds` = 5.0, the overrides are `TOYQ_MAX_RETRIES` a\"",
+        "text_re: expected the reply to match '(?i)\\\\bleave\\\\s+out\\\\b'; it reads: 'Thanks. Next question: what do they do right after?'",
+        "text_re: expected the reply to match '(?i)\\\\bleave\\\\s+out\\\\b'; it reads: \"Thanks, that gives me the reader's problem: a job has failed twice in `toyq status`, and they want to tune the retry behaviour.\\n\\nWhat do they do right after they land here?\""
+      ]
+    },
+    {
+      "id": "B-72",
+      "protects": "S-24",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.0036
+    },
+    {
+      "id": "B-73",
+      "protects": "S-24",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003108
+    },
+    {
+      "id": "B-78",
+      "protects": "S-05",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.014643
+    },
+    {
+      "id": "B-79",
+      "protects": "S-05",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00458
+    },
+    {
+      "id": "B-40",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001624
+    },
+    {
+      "id": "B-41",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 0,
+      "errors": 0,
+      "cost": 0.006989,
+      "failed": [
+        "text_re: expected the reply to match 'Findings: \\\\d+ total'; it reads: \"Let me re-check the page's claims against the source.\\nI checked the page against `src/toyq/config.py`. Defaults, env variable names, types, precedence and the `max_retries` rule all match the source. \"",
+        "text_re: expected the reply to match 'Findings: \\\\d+ total'; it reads: \"Let me check the page's claims against the recorded source.\\nThe page matches the recorded source. Here is the review.\\n\\n**Provenance (from `crayon summary cfg`)**\\n\\n```\\nConfiguration reference\\nauthor de\"; not_text_re: the r",
+        "text_re: expected the reply to match 'Findings: \\\\d+ total'; it reads: '**Provenance summary** (`crayon summary cfg`):\\n\\n```\\nConfiguration reference\\nauthor decisions:\\n  intent: reference\\n  audience: operators configuring toyq on a server\\nfiles changed:\\n  reference/config.m'"
+      ]
+    },
+    {
+      "id": "B-42",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001631
+    },
+    {
+      "id": "B-43",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002184
+    },
+    {
+      "id": "B-51",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.009876
+    },
+    {
+      "id": "B-52",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002899
+    },
+    {
+      "id": "B-05",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.010179
+    },
+    {
+      "id": "B-06",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002628
+    },
+    {
+      "id": "B-07",
+      "protects": "S-03",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.028417
+    },
+    {
+      "id": "B-08",
+      "protects": "S-19",
+      "critical": true,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.008603,
+      "failed": [
+        "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-09",
+      "protects": "S-03",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.007782
+    },
+    {
+      "id": "B-10",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004823
+    },
+    {
+      "id": "B-11",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004666
+    },
+    {
+      "id": "B-12",
+      "protects": "S-03",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004378
+    },
+    {
+      "id": "B-13",
+      "protects": "S-08",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.010545
+    },
+    {
+      "id": "B-14",
+      "protects": "S-03",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002735
+    },
+    {
+      "id": "B-15",
+      "protects": "S-05",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.006354
+    },
+    {
+      "id": "B-16",
+      "protects": "S-03",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.013848
+    },
+    {
+      "id": "B-36",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00081
+    },
+    {
+      "id": "B-37",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000861
+    },
+    {
+      "id": "B-38",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00191
+    },
+    {
+      "id": "B-39",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000956
+    },
+    {
+      "id": "B-55",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00353
+    },
+    {
+      "id": "B-58",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00102
+    },
+    {
+      "id": "B-01",
+      "protects": "S-04",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.006196
+    },
+    {
+      "id": "B-02",
+      "protects": "S-04",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003658
+    },
+    {
+      "id": "B-03",
+      "protects": "S-01",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001078
+    },
+    {
+      "id": "B-04",
+      "protects": "S-01",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000837
+    },
+    {
+      "id": "B-17",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.007442,
+      "failed": [
+        "plain_words: the reply uses 'sealed', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-18",
+      "protects": "S-11",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001448
+    },
+    {
+      "id": "B-19",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.003999,
+      "failed": [
+        "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code",
+        "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-20",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005832
+    },
+    {
+      "id": "B-21",
+      "protects": "S-09",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003547
+    },
+    {
+      "id": "B-22",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011937
+    },
+    {
+      "id": "B-23",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004421
+    },
+    {
+      "id": "B-24",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005663
+    },
+    {
+      "id": "B-25",
+      "protects": "S-13",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004428
+    },
+    {
+      "id": "B-26",
+      "protects": "S-08",
+      "critical": true,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.006778,
+      "failed": [
+        "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-27",
+      "protects": "S-11",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001472
+    },
+    {
+      "id": "B-61",
+      "protects": "S-20",
+      "critical": false,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.003453,
+      "failed": [
+        "asks_user: expected the model to ask the author before acting; it ended on a reply with no tool call"
+      ]
+    },
+    {
+      "id": "B-80",
+      "protects": "S-15",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.008838
+    },
+    {
+      "id": "B-81",
+      "protects": "S-16",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.0032
+    },
+    {
+      "id": "B-82",
+      "protects": "S-17",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.011309
+    },
+    {
+      "id": "B-83",
+      "protects": "S-18",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.01034
+    },
+    {
+      "id": "B-84",
+      "protects": "S-19",
+      "critical": true,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.009148,
+      "failed": [
+        "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-85",
+      "protects": "S-23",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00562
+    },
+    {
+      "id": "B-86",
+      "protects": "S-24",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005945
+    },
+    {
+      "id": "B-87",
+      "protects": "S-01",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.000852
+    },
+    {
+      "id": "B-88",
+      "protects": "S-03",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.051344
+    },
+    {
+      "id": "B-89",
+      "protects": "S-05",
+      "critical": true,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.011396,
+      "failed": [
+        "tool_call: expected a Bash call matching '\\\\bcrayon(\\\\.py)?\\\\s+triage\\\\s+record\\\\b(?=[^\\\\n]*--needs-docs\\\\s+yes\\\\b)(?=[^\\\\n]*--base\\\\s)(?=[^\\\\n]*--head\\\\s)'; saw Bash(cd /srv/tidewatch && git log -1 --stat && git show HEAD --format= | head -200); Bash(cd /srv/tidewatch && cat .crayon/context/structu"
+      ]
+    },
+    {
+      "id": "B-90",
+      "protects": "S-08",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00781
+    },
+    {
+      "id": "B-91",
+      "protects": "S-09",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.006596
+    },
+    {
+      "id": "B-92",
+      "protects": "S-11",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.005765
+    },
+    {
+      "id": "B-93",
+      "protects": "S-13",
+      "critical": true,
+      "runs": 3,
+      "passes": 2,
+      "errors": 0,
+      "cost": 0.004446,
+      "failed": [
+        "plain_words: the reply uses 'hash', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
+      ]
+    },
+    {
+      "id": "B-94",
+      "protects": "S-20",
+      "critical": true,
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.001125,
+      "failed": [
+        "text_re: expected the reply to match 'record:\\\\ intact\\\\ at\\\\ [0-9a-f]{7}'; it reads: \"The provenance summary is above. The record is intact at commit a364c33, the page is current, and no steps were deviated or skipped.\\n\\n**What's your verdict, and is there anything you want on the recor\"; quotes_r",
+        "text_re: expected the reply to match 'record:\\\\ intact\\\\ at\\\\ [0-9a-f]{7}'; it reads: 'The provenance summary is above: the page is `reference/configuration.md`, intent reference, audience people running tidewatch on a workstation or a server. The record is intact at commit a364c33, and'; quotes_rec"
+      ]
+    },
+    {
+      "id": "B-67",
+      "protects": "S-22",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.017408
+    },
+    {
+      "id": "B-68",
+      "protects": "S-22",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.012732
+    },
+    {
+      "id": "B-69",
+      "protects": "S-21",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.004332
+    },
+    {
+      "id": "B-70",
+      "protects": "S-21",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002401
+    },
+    {
+      "id": "B-28",
+      "protects": "S-03",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001244
+    },
+    {
+      "id": "B-29",
+      "protects": "S-18",
+      "critical": false,
+      "runs": 3,
+      "passes": 1,
+      "errors": 0,
+      "cost": 0.008592,
+      "failed": [
+        "question_count: expected between 1 and 1 question(s); its reply asked 2",
+        "question_count: expected between 1 and 1 question(s); its reply asked 2"
+      ]
+    },
+    {
+      "id": "B-30",
+      "protects": "S-05",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.013954
+    },
+    {
+      "id": "B-31",
+      "protects": "S-20",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001236
+    },
+    {
+      "id": "B-95",
+      "protects": "S-28",
+      "critical": true,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.023621
+    }
+  ]
+}

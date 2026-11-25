@@ -20,8 +20,10 @@ the operational guide: how to run a lane, where results land and how to add a ca
 <!-- supported-models:begin -->
 | Model | Backend | Critical cases | Standard cases | Status |
 |---|---|---|---|---|
-| anthropic/claude-sonnet-5.5 | google-vertex/global | 64 of 70 passed every run | 21 of 25 passed every run | not supported: B-62, B-50, B-23, B-25, B-85, B-95 (2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json) |
-| anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 55 of 70 passed every run | 14 of 25 passed every run | not supported: B-47, B-57, B-62, B-40, B-41, B-08, B-17, B-19, B-23, B-25, B-26, B-82, B-84, B-85, B-31 (2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json) |
+| anthropic/claude-sonnet-5.5 | google-vertex/global | 64 of 70 passed every run | 21 of 25 passed every run | stale: the skills changed since 2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json; re-run |
+| anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 61 of 70 passed every run | 16 of 25 passed every run | not supported: B-41, B-08, B-17, B-19, B-26, B-84, B-89, B-93, B-94 (2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json) |
+| z-ai/glm-5.3 | fireworks | no result | no result | not yet run |
+| deepseek/deepseek-v4.1-flash | deepinfra/fp8 | 62 of 70 passed every run | 18 of 25 passed every run | not supported: B-62, B-59, B-78, B-41, B-05, B-08, B-13, B-22 (2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json) |
 <!-- supported-models:end -->
 
 `uv run --project validation/evals python validation/evals/run.py --table --write` generates this
@@ -116,10 +118,11 @@ supported.
 
 ## Models and cost
 
-The certified models are the ones authors run crayon with: Claude Sonnet 5.5, and Claude Haiku 5.5,
-which is also the gate model because it costs least. Each is pinned to one backend that serves Zero
-Data Retention endpoints only, and runs with its default sampling and reasoning, as authors run it.
-The system prompt and the skill text are sent with cache breakpoints, since every turn repeats them.
+The certified models are the ones authors run crayon with: Claude Sonnet 5.5; Claude Haiku 5.5,
+which is also the gate model because it costs least; and two open-weight models, GLM-5.3 and
+DeepSeek V4.1 Flash. Each is pinned to one backend that serves Zero Data Retention endpoints only,
+and runs with its default sampling and reasoning, as authors run it. For the two Claude models the
+system prompt and the skill text are sent with cache breakpoints, since every turn repeats them.
 
 Before every paid call, its largest possible cost is reserved against two caps in `models.json`: one
 per run and one per model. Calls in flight therefore never spend past a cap, and the backend

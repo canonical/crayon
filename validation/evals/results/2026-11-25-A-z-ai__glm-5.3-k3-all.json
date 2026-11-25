@@ -1,0 +1,186 @@
+{
+  "meta": {
+    "measures": "skill-following",
+    "engine": "promptfoo@0.124.1",
+    "date": "2026-11-25",
+    "crayon_version": "0.3.0",
+    "repo_head": "e73ccd1",
+    "skills_sha256": "1ac7c0b79efe48a89e75668f883f07358355d63e9cf2e932cb075a6684803167",
+    "kit_sha256": "6108884be808b35e6e9749fa99268a832915af8fdf27830e6a81a8f8ea30ad5f",
+    "split": "all",
+    "partial": false,
+    "dry_run": false,
+    "gate_model": false,
+    "lane": "A",
+    "lane_title": "skill selection",
+    "model": "z-ai/glm-5.3",
+    "why": "an open-weight model authors can run for well under Sonnet's price",
+    "provider_pin": {
+      "order": [
+        "fireworks"
+      ],
+      "allow_fallbacks": false,
+      "zdr": true
+    },
+    "runs": 3,
+    "total_cases": 15,
+    "critical_cases": 0,
+    "passes": 45,
+    "pass_rate": 1.0,
+    "stable_pass": 15,
+    "stable_fail": 0,
+    "flaky": 0,
+    "errors": 0,
+    "cost_usd": 0.037491,
+    "tokens": {
+      "in": 44739,
+      "out": 9554
+    },
+    "truncated": 0,
+    "retries": 0,
+    "budget_stop": null
+  },
+  "decision": {
+    "supported": {
+      "verdict": "supported",
+      "reason": "every critical case (0) passed every run"
+    }
+  },
+  "cases": [
+    {
+      "id": "A-01",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002294
+    },
+    {
+      "id": "A-02",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001118
+    },
+    {
+      "id": "A-03",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00184
+    },
+    {
+      "id": "A-04",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001249
+    },
+    {
+      "id": "A-05",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.002756
+    },
+    {
+      "id": "A-06",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001726
+    },
+    {
+      "id": "A-07",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.009077
+    },
+    {
+      "id": "A-08",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.00224
+    },
+    {
+      "id": "A-09",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001698
+    },
+    {
+      "id": "A-10",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003275
+    },
+    {
+      "id": "A-11",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001873
+    },
+    {
+      "id": "A-12",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001862
+    },
+    {
+      "id": "A-13",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.003085
+    },
+    {
+      "id": "A-14",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001807
+    },
+    {
+      "id": "A-15",
+      "protects": "catalog",
+      "critical": false,
+      "runs": 3,
+      "passes": 3,
+      "errors": 0,
+      "cost": 0.001591
+    }
+  ]
+}

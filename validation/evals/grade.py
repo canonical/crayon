@@ -104,7 +104,9 @@ def action_text(call):
 
 
 #: A chain part that asks a command for its help (``crayon signoff --help``).
-_HELP_PART_RE = re.compile(r"\s(-h|--help)(\s|$)")
+#: The flag may end the part or be followed by the separator that ends it, as in
+#: ``crayon signoff --help; crayon unit --help``.
+_HELP_PART_RE = re.compile(r"\s(-h|--help)(?=[\s;&|]|$)")
 
 
 def typed_less_help(call):

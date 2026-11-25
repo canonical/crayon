@@ -118,6 +118,15 @@ What the author reads from this skill is in plain words. The record's own words 
   fenced code block, never inside a sentence. That covers what a step or a routing row
   says to show, and any other line you quote beyond the success line, such as a
   diagnostic a verb prints.
+- **Read it back before you send.** Before every message to the author, read your
+  prose again: everything outside code spans and fenced blocks, option labels and
+  descriptions included. Look for seal, seals, sealed, basis, seq, seqs, plan hash,
+  hash, hashes, sha256, digest, digests, and "event" or "ledger line" before a number,
+  in any case and inside a compound such as "hash-chained". Rewrite each one you find:
+  "accepted", "the pages as accepted", "request 2", "current", "the record cannot be
+  edited", or the commit's id. A qualifier you retell from `--json`, such as "edited
+  since the signoff at seq 2", is retold the same way: "edited since the signoff at
+  request 2".
 </plain_words>
 <!-- plain-words:end -->
 

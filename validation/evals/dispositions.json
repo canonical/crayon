@@ -336,6 +336,132 @@
       "kind": "limitation",
       "note": "2 of 3. The failing run read doc-style.md and docs/reference/commands.md, then drafted with '## See also' without asking; the skill's step 2 and <must_not> both say to put the disagreement to the author. The other two runs asked with both sides quoted.",
       "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-61",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run named request 4 and laid out resolve and withdraw as options, but asked nothing: its reply carries no question, so the author is not asked before the accept is re-run.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-66",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run recorded the closure and asked where readers arrive from, but wrote 'The record stops here' for the skill's fixed 'crayon stops here'.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-93",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run showed the git recipe verbatim, then used 'hash' in its own prose: a record word the plain-words rule (S-20) keeps out, despite the new read-back bullet.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-05",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run only read help: 'crayon signoff --help; crayon unit --help; ...'. The grader left help parts out only when a flag was followed by a space or the end, so a flag followed by ';' counted as a signoff. grade.py now accepts the separator, and the self-tests carry this command.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-08",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run used 'seq' in its own prose: a record word the plain-words rule (S-20) keeps out.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-13",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run chained 'crayon resume cfg --dry-run' and 'crayon resume cfg' in one command, so the resume ran before anyone saw what the dry run said.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-18",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. On busy, the failing run re-ran crayon draft with an added '--model \"\"' instead of the same command unchanged.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-22",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run ran 'crayon draft cfg ... --json' under the label 'drift attempt' to see what the tool would say, where the rule is to adopt the signed target through crayon-review's edits and never draft over it.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-27",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. On internal_error, the failing run re-ran crayon draft at once, without the read-only crayon show the row prescribes first.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-28",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run gave the author a raw 'crayon review cfg --verdict fix --note ...' command to type, where the next step is named as a skill.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-41",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "1 of 3. Two runs gave the provenance summary and findings without the 'Findings: N total' tally the review mode requires before the verdict.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-46",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "1 of 3. One run recorded the accept and listed what stays open but asked no second question about how readers arrive; the other numbered its points without a question and left out the negative-value gap.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-56",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "1 of 3. After crayon context record had run, two runs staged doc-style.md again instead of reporting the set and asking one question.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-59",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run ran crayon unit new with --notes in its own words ('They arrive from seeing ...') instead of the author's answer verbatim: it put words in the author's mouth.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-62",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "1 of 3. Two runs asked 'What's your verdict' in the same list as the two step questions, so three questions came before the steps were answered.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-68",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run wrote 'No self-review line applies', naming the self-review it was told not to mention when nothing ran in the session.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-70",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. With an empty gaps list, the failing run still added 'I didn't run toyq', a hedge the report gives no ground for; the replayed history now includes the context read, so this is the model's own.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-78",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run kept reading (pyproject.toml, .gitignore, crayon unit new --help) until the turn cap, and never gave the triage advice or ran crayon triage record.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
     }
   ]
 }

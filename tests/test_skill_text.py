@@ -2551,6 +2551,11 @@ class TestS20PlainWords(unittest.TestCase):
         # for, and the hashes the rule bans are a file's or the record's.
         "name a commit by its id, never as a hash",
         "a file or record hash",
+        # The read-back: one list of every form, checked before each message,
+        # compounds and retold --json qualifiers included.
+        "**Read it back before you send.**",
+        "inside a compound such as \"hash-chained\"",
+        "edited since the signoff at\n  request 2",
     )
 
     #: Where the block binds: the line it follows in each skill.

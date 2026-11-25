@@ -65,8 +65,9 @@ across. The contract number stays `1`.
   graded. Every case names the skill rule it protects and whether it is critical, carries a reply
   that must pass and one that must fail, and is graded by deterministic checks only. promptfoo
   runs and grades the cases; a held-out set of 25 lane B cases guards skill fixes, and every case
-  a certified model fails gets a recorded disposition. The certified models are Claude Sonnet 5.5
-  and Claude Haiku 5.5, the gate model, each pinned to one Zero Data Retention backend in
+  a certified model fails gets a recorded disposition. The certified models are Claude Sonnet 5.5,
+  Claude Haiku 5.5 (the gate model) and the open-weight GLM-5.3 and DeepSeek V4.1 Flash, each
+  pinned to one Zero Data Retention backend in
   `validation/evals/models.json`, whose caps are reserved before every paid call. Paid runs are
   started by hand, never in CI; the gate gains the kit's offline self-tests,
   `uv run --project validation/evals python -m unittest tests.test_evals`. Fifteen critical
@@ -227,6 +228,9 @@ across. The contract number stays `1`.
   divergence a should-fix. Lane B gains the case that pins the writer's question when an
   artefact and a sibling page disagree, on a recorded state where they do, and the two cases
   that replay a finished draft with a context report now replay the context read before it.
+- The plain-words rule ends with a read-back: before every message to the author, the agent
+  rereads its prose for the one list of record words the `plain_words` check reads, compounds
+  such as "hash-chained" and qualifiers retold from `--json` included, and rewrites each one.
 - The tool's human lines are plain. On a sealed unit the handover line reads
   `Next: yours — crayon stops here`, and the accept line names the pages it accepted, with no
   count and no "sealed". The `signoff`, re-sign, `edits` and `resume` lines name the ledger
