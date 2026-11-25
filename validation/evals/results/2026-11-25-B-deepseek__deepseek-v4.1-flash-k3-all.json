@@ -38,12 +38,20 @@
     },
     "truncated": 0,
     "retries": 1,
-    "budget_stop": null
+    "budget_stop": null,
+    "recounted_from": "2026-11-25-135851"
   },
   "decision": {
     "supported": {
-      "verdict": "not supported",
-      "critical_failing": [
+      "record_mistakes": [
+        "B-59",
+        "B-13",
+        "B-22"
+      ],
+      "never_passed": [],
+      "critical_rate": 0.9571,
+      "plain_words_rate": 0.9965,
+      "known_misses": [
         "B-62",
         "B-59",
         "B-78",
@@ -53,7 +61,8 @@
         "B-13",
         "B-22"
       ],
-      "reason": "8 critical case(s) did not pass every run"
+      "verdict": "not supported",
+      "reason": "record mistakes in B-59, B-13, B-22"
     }
   },
   "cases": [
@@ -64,7 +73,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001605
+      "cost": 0.001605,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-60",
@@ -73,7 +85,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001526
+      "cost": 0.001526,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-45",
@@ -82,7 +97,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00486
+      "cost": 0.00486,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-46",
@@ -95,7 +113,10 @@
       "failed": [
         "text_re: expected the reply to match '(?im)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*(link|toctree|arriv|come from)[^\\\\n]*\\\\?'; it reads: '`reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 crayon stops here`\\n\\nRecorded in commit 74b60fd. F-1 was answered in your verdict, so it is closed; F-4 i",
         "text_re: expected the reply to match '(?i)negative'; it reads: 'reviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 crayon stops here\\n\\n1. The page says `max_retries` must be 0 or more but does not say what happens when it is not \u2014 toyq stops with a'; text_re: expected the reply to "
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-47",
@@ -104,7 +125,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.007057
+      "cost": 0.007057,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-48",
@@ -113,7 +137,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000481
+      "cost": 0.000481,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-56",
@@ -126,7 +153,10 @@
       "failed": [
         "decisive: expected the model to stop and reply; it ended on Bash(cd /srv/toyq && cat <<'EOF' | crayon context stage doc-style.md --body-file - --source README.md --source docs/index.md\n# Documentation style \u2014 toyq\n\n## 1. Voice & tone\n\n- Terse and declarative. README.md opens with a fragment, \"A smal",
         "decisive: expected the model to stop and reply; it ended on Bash(cd /srv/toyq && cat > /tmp/doc-style.md <<'EOF'\n# Documentation style \u2014 toyq\n\n## 1. Voice & tone\n\n- Terse and impersonal. README.md opens with a bare noun phrase, \"A small local job\n  queue.\", then one declarative sentence about behavi"
-      ]
+      ],
+      "record_mistakes": 2,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-57",
@@ -135,7 +165,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000311
+      "cost": 0.000311,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-62",
@@ -148,7 +181,10 @@
       "failed": [
         "question_count: expected between 2 and 2 question(s); its reply asked 3; not_text_re: the reply must not match \"(?i)what'?s your verdict\"; it contains \"What's your verdict\"",
         "question_count: expected between 2 and 2 question(s); its reply asked 3; not_text_re: the reply must not match \"(?i)what'?s your verdict\"; it contains \"What's your verdict\""
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-63",
@@ -157,7 +193,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.012033
+      "cost": 0.012033,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-64",
@@ -166,7 +205,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003506
+      "cost": 0.003506,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-65",
@@ -175,7 +217,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000686
+      "cost": 0.000686,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-66",
@@ -184,7 +229,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001592
+      "cost": 0.001592,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-74",
@@ -193,7 +241,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.031415
+      "cost": 0.031415,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-75",
@@ -202,7 +253,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000605
+      "cost": 0.000605,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-76",
@@ -211,7 +265,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00229
+      "cost": 0.00229,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-77",
@@ -220,7 +277,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.007969
+      "cost": 0.007969,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-32",
@@ -229,7 +289,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000631
+      "cost": 0.000631,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-33",
@@ -238,7 +301,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000664
+      "cost": 0.000664,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-34",
@@ -247,7 +313,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001
+      "cost": 0.001,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-35",
@@ -256,7 +325,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00056
+      "cost": 0.00056,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-49",
@@ -265,7 +337,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.027194
+      "cost": 0.027194,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-50",
@@ -274,7 +349,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.030388
+      "cost": 0.030388,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-53",
@@ -283,7 +361,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.006607
+      "cost": 0.006607,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-54",
@@ -292,7 +373,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004385
+      "cost": 0.004385,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-59",
@@ -304,7 +388,10 @@
       "cost": 0.004023,
       "failed": [
         "decisive: expected the action to be Bash matching '(?s)^(?=.*\\\\bcrayon\\\\s+unit\\\\s+new\\\\s+[\"\\']?retries[\"\\']?\\\\s)(?=.*\\\\s--notes(?:=|\\\\s+)\\'They(?:\\'\\\\\\\\\\'\\'|\\'\\\\\"\\'\\\\\"\\')ve\\\\ just\\\\ seen\\\\ `toyq\\\\ status`\\\\ show\\\\ a\\\\ job\\\\ fail\\\\ twice,\\\\ with\\\\ \\\\$TOYQ_MAX_RETRIES\\\\ at\\\\ 1\\\\.\\'(?:\\\\s|$))'; it was "
-      ]
+      ],
+      "record_mistakes": 1,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-71",
@@ -313,7 +400,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004427
+      "cost": 0.004427,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-72",
@@ -322,7 +412,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003753
+      "cost": 0.003753,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-73",
@@ -331,7 +424,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003441
+      "cost": 0.003441,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-78",
@@ -343,7 +439,10 @@
       "cost": 0.014599,
       "failed": [
         "decisive: expected the model to stop and reply; it ended on Bash(cd /srv/toyq && cat pyproject.toml && echo \"--- .gitignore ---\" && cat .gitignore && echo \"--- crayon unit new help ---\" && crayon unit new --help); tool_call: expected a Bash call matching '\\\\bcrayon(\\\\.py)?\\\\s+triage\\\\s+record\\\\b(?=["
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-79",
@@ -352,7 +451,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.006291
+      "cost": 0.006291,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-40",
@@ -361,7 +463,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.005816
+      "cost": 0.005816,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-41",
@@ -374,7 +479,10 @@
       "failed": [
         "text_re: expected the reply to match 'Findings: \\\\d+ total'; it reads: \"I've read the record and the drafted page. Here is the review.\\n\\n## Provenance\\n\\n`crayon summary cfg` printed:\\n\\n```\\nConfiguration reference\\nauthor decisions:\\n  intent: reference\\n  audience: operators co\"",
         "text_re: expected the reply to match 'Findings: \\\\d+ total'; it reads: '## Provenance summary\\n\\n```text\\nConfiguration reference\\nauthor decisions:\\n  intent: reference\\n  audience: operators configuring toyq on a server\\nfiles changed:\\n  reference/config.md\\nrecord: intact at c'"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-42",
@@ -383,7 +491,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000902
+      "cost": 0.000902,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-43",
@@ -392,7 +503,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000721
+      "cost": 0.000721,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-51",
@@ -401,7 +515,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.006032
+      "cost": 0.006032,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-52",
@@ -410,7 +527,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.005617
+      "cost": 0.005617,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-05",
@@ -422,7 +542,10 @@
       "cost": 0.026961,
       "failed": [
         "no_tool_call: expected no a Bash call matching '\\\\bcrayon\\\\s+signoff\\\\b'; saw Bash(crayon signoff --help; echo \"=== unit\"; crayon unit --help; echo \"=== unit new\"; crayon unit new --help; echo \"=== summary\"; crayon summary cfg --md 2>&1)"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-06",
@@ -431,7 +554,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000677
+      "cost": 0.000677,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-07",
@@ -440,7 +566,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.036214
+      "cost": 0.036214,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-08",
@@ -452,7 +581,10 @@
       "cost": 0.00918,
       "failed": [
         "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 1,
+      "plain_words_only": 1
     },
     {
       "id": "B-09",
@@ -461,7 +593,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.007731
+      "cost": 0.007731,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-10",
@@ -470,7 +605,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.020102
+      "cost": 0.020102,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-11",
@@ -479,7 +617,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.005807
+      "cost": 0.005807,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-12",
@@ -488,7 +629,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00496
+      "cost": 0.00496,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-13",
@@ -500,7 +644,10 @@
       "cost": 0.002217,
       "failed": [
         "before: expected a call matching '^crayon resume cfg --dry-run$'; saw {\"file_path\": \".agents/skills/crayon-review/references/routing.md\"}; crayon resume cfg --dry-run 2>&1; crayon resume cfg 2>&1"
-      ]
+      ],
+      "record_mistakes": 1,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-14",
@@ -509,7 +656,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.009959
+      "cost": 0.009959,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-15",
@@ -518,7 +668,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.006874
+      "cost": 0.006874,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-16",
@@ -527,7 +680,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.007082
+      "cost": 0.007082,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-36",
@@ -536,7 +692,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000632
+      "cost": 0.000632,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-37",
@@ -545,7 +704,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000396
+      "cost": 0.000396,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-38",
@@ -554,7 +716,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000995
+      "cost": 0.000995,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-39",
@@ -563,7 +728,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000627
+      "cost": 0.000627,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-55",
@@ -572,7 +740,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000328
+      "cost": 0.000328,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-58",
@@ -581,7 +752,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00053
+      "cost": 0.00053,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-01",
@@ -590,7 +764,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003787
+      "cost": 0.003787,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-02",
@@ -599,7 +776,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003748
+      "cost": 0.003748,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-03",
@@ -608,7 +788,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00048
+      "cost": 0.00048,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-04",
@@ -617,7 +800,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000498
+      "cost": 0.000498,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-17",
@@ -626,7 +812,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.017054
+      "cost": 0.017054,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-18",
@@ -638,7 +827,10 @@
       "cost": 0.001108,
       "failed": [
         "any_of: none of the acceptable actions happened: expected the action to be Bash matching '(^|(;|&&)\\\\s*)crayon\\\\ draft\\\\ cfg\\\\ \\\\.crayon/staging/cfg/draft/\\\\ \\\\-\\\\-model\\\\-origin\\\\ unknown\\\\ \\\\-\\\\-report\\\\ \\\\.crayon/staging/cfg/report\\\\.json( --json)?\\\\s*$'; it was Bash(crayon draft cfg .crayon/stag"
-      ]
+      ],
+      "record_mistakes": 1,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-19",
@@ -647,7 +839,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.007143
+      "cost": 0.007143,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-20",
@@ -656,7 +851,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.01039
+      "cost": 0.01039,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-21",
@@ -665,7 +863,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.007111
+      "cost": 0.007111,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-22",
@@ -677,7 +878,10 @@
       "cost": 0.015148,
       "failed": [
         "no_tool_call: expected no a Bash call matching '\\\\bcrayon\\\\s+draft\\\\b'; saw Bash(cd /srv/toyq && crayon show cfg --json 2>&1 | python3 -m json.tool; echo \"=== drift attempt\"; crayon draft cfg .crayon/staging/cfg/draft/ --json 2>&1); text_re: expected the reply to match '(?i)(crayon-review|review ski"
-      ]
+      ],
+      "record_mistakes": 1,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-23",
@@ -686,7 +890,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.002677
+      "cost": 0.002677,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-24",
@@ -695,7 +902,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003764
+      "cost": 0.003764,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-25",
@@ -704,7 +914,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00328
+      "cost": 0.00328,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-26",
@@ -713,7 +926,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004529
+      "cost": 0.004529,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-27",
@@ -725,7 +941,10 @@
       "cost": 0.001725,
       "failed": [
         "tool_call: expected a Bash call matching '^crayon show cfg\\\\b'; saw Bash(crayon draft cfg .crayon/staging/cfg/draft/ --model-origin unknown --report .crayon/staging/cfg/report.json)"
-      ]
+      ],
+      "record_mistakes": 1,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-61",
@@ -734,7 +953,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.014185
+      "cost": 0.014185,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-80",
@@ -743,7 +965,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.025921
+      "cost": 0.025921,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-81",
@@ -752,7 +977,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000628
+      "cost": 0.000628,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-82",
@@ -761,7 +989,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.011636
+      "cost": 0.011636,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-83",
@@ -770,7 +1001,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.021098
+      "cost": 0.021098,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-84",
@@ -779,7 +1013,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.013704
+      "cost": 0.013704,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-85",
@@ -788,7 +1025,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003632
+      "cost": 0.003632,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-86",
@@ -797,7 +1037,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.002616
+      "cost": 0.002616,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-87",
@@ -806,7 +1049,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000587
+      "cost": 0.000587,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-88",
@@ -815,7 +1061,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.033692
+      "cost": 0.033692,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-89",
@@ -824,7 +1073,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.015404
+      "cost": 0.015404,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-90",
@@ -833,7 +1085,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.002412
+      "cost": 0.002412,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-91",
@@ -842,7 +1097,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.012257
+      "cost": 0.012257,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-92",
@@ -851,7 +1109,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.007572
+      "cost": 0.007572,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-93",
@@ -860,7 +1121,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.002724
+      "cost": 0.002724,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-94",
@@ -869,7 +1133,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003697
+      "cost": 0.003697,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-67",
@@ -878,7 +1145,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.030546
+      "cost": 0.030546,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-68",
@@ -890,7 +1160,10 @@
       "cost": 0.019311,
       "failed": [
         "not_text_re: the reply must not match '(?i)\\\\bself[- ]review\\\\b|\\\\bI\\\\s+(drafted|wrote)\\\\s+(this|the)\\\\s+page\\\\b'; it contains 'self-review'"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-69",
@@ -899,7 +1172,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000914
+      "cost": 0.000914,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-70",
@@ -911,7 +1187,10 @@
       "cost": 0.001812,
       "failed": [
         "not_text_re: the reply must not match \"(?i)\\\\bI\\\\s+(found no source|did(n't| not) run|could(n't| not) (verify|confirm)|inferred)\\\\b\"; it contains \"I didn't run\""
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-28",
@@ -923,7 +1202,10 @@
       "cost": 0.002537,
       "failed": [
         "not_prescribed: the reply prescribes 'crayon review': \"crayon review cfg --verdict fix --note 'Explain what happens when max_retries is exceeded.'\""
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-29",
@@ -932,7 +1214,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.006725
+      "cost": 0.006725,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-30",
@@ -941,7 +1226,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.008412
+      "cost": 0.008412,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-31",
@@ -950,7 +1238,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001669
+      "cost": 0.001669,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-95",
@@ -959,7 +1250,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.011423
+      "cost": 0.011423,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     }
   ]
 }

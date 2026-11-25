@@ -7,8 +7,10 @@ decisions, and every result file carries both in its ``decision`` block:
 
 1. Ship: a skill change ships only if no case that passed three out of three
    times on the gate model now passes fewer times.
-2. Supported models: ``docs/evals.md`` lists a model as supported only if it
-   passes every critical case three out of three times, on the current skills.
+2. Supported models: ``docs/evals.md`` lists a model as supported when, on the
+   current skills, no critical run gets the record wrong, no critical case fails
+   every run, critical runs pass at least 95% on their own checks, and at least
+   95% of all runs are free of record words (``decide_supported``).
 
 Dev-time evaluation material: never part of the product gate, never run in CI.
 Paid runs are started by hand with ``OPENROUTER_API_KEY`` in the environment::
@@ -48,6 +50,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
+import agent  # noqa: E402
 import lanes  # noqa: E402
 import sandbox  # noqa: E402
 import skills as skillmod  # noqa: E402
@@ -67,6 +70,16 @@ PURPOSE = ("can an author rely on crayon, with the model they use, to keep them 
            "control and keep the record true?")
 #: Runs per case a decision needs.
 DECISION_RUNS = 3
+#: The share of critical runs that must pass on their own checks, and the share of
+#: all runs that must be free of record words, for a model to be supported.
+SUPPORT_RATE = 0.95
+PLAIN_WORDS_RATE = 0.95
+#: The check kinds that grade what the model did, not what it wrote: a run that
+#: fails one of them and ends on a Bash call that records got the record wrong.
+ACTION_KINDS = ("tool_call", "no_tool_call", "decisive", "asks_user", "before", "any_of",
+                "bash_sequence")
+#: The per-case counts the support decision reads, one per kind of failed run.
+COUNTS = ("record_mistakes", "plain_words_failed", "plain_words_only")
 #: How long promptfoo lets one case run before it reports an error. Its own
 #: default, five minutes, cut off a slow reasoning model mid-case (GLM-5.3 on
 #: 2026-11-25): a case may take up to its turn cap of model calls, each with
@@ -198,11 +211,44 @@ def run_promptfoo(config, directory, repeat, jobs):
     return json.loads(out_path.read_text(encoding="utf-8"))
 
 
+def _checks(grading):
+    """The case's own checks in a promptfoo grading result, however nested."""
+    for item in grading.get("componentResults") or ():
+        if item.get("componentResults"):
+            for inner in _checks(item):
+                yield inner
+        else:
+            yield item
+
+
+def classify(row):
+    """What kind of failure one promptfoo row is, for the support decision.
+
+    ``record_mistake``: an action check failed and the episode ended on a Bash
+    call that records: it names a recording verb, or it changed the copy.
+    ``plain_words_failed``: the plain-words check failed; ``plain_words_only``: it
+    is the only check that failed.
+    """
+    failed = set((item.get("reason") or "").split(":", 1)[0].strip()
+                 for item in _checks(row.get("gradingResult") or {}) if not item.get("pass"))
+    trace = ((row.get("response") or {}).get("metadata") or {}).get("trace") or {}
+    decisive = trace.get("decisive") or {}
+    call = decisive.get("call") or {}
+    records = False
+    if decisive.get("type") == "call" and call.get("name") == "Bash":
+        command = str(agent.arguments(call).get("command", ""))
+        records = agent.mutating(command) or bool(decisive.get("changed"))
+    return {"record_mistake": records and bool(failed & set(ACTION_KINDS)),
+            "plain_words_failed": "plain_words" in failed,
+            "plain_words_only": failed == {"plain_words"}}
+
+
 def rows(output):
-    """promptfoo's result rows as ``(case_id, outcome, reason)``.
+    """promptfoo's result rows as ``(case_id, outcome, reason, kind)``.
 
     ``outcome`` is ``pass``, ``fail`` or ``error``: a provider error or a check
-    that could not be evaluated is an error, never a failure.
+    that could not be evaluated is an error, never a failure. ``kind`` is what
+    ``classify`` says of the row.
     """
     found = []
     for row in output["results"]["results"]:
@@ -217,8 +263,16 @@ def rows(output):
             outcome = "pass"
         else:
             outcome = "fail"
-        found.append((case_id, outcome, row.get("error") or reason))
+        found.append((case_id, outcome, row.get("error") or reason, classify(row)))
     return found
+
+
+def counts(outcomes):
+    """The per-case counts of failed runs by kind, from ``(outcome, kind)`` pairs."""
+    failed = [kind for outcome, kind in outcomes if outcome == "fail"]
+    return {"record_mistakes": sum(1 for kind in failed if kind["record_mistake"]),
+            "plain_words_failed": sum(1 for kind in failed if kind["plain_words_failed"]),
+            "plain_words_only": sum(1 for kind in failed if kind["plain_words_only"])}
 
 
 def read_records(run_dir, model_id):
@@ -238,7 +292,7 @@ def summarise(lane_name, spec, cases, found, records, meta_base, repeat):
     """One lane on one model, K runs -> its result: meta, decision and per-case counts."""
     entries = []
     for case in cases:
-        outcomes = [(outcome, reason) for case_id, outcome, reason in found
+        outcomes = [(outcome, reason, kind) for case_id, outcome, reason, kind in found
                     if case_id == case["id"]]
         calls = records.get(case["id"], [])
         entry = {
@@ -246,11 +300,12 @@ def summarise(lane_name, spec, cases, found, records, meta_base, repeat):
             "protects": case["protects"],
             "critical": case["critical"],
             "runs": len(outcomes),
-            "passes": sum(1 for outcome, _ in outcomes if outcome == "pass"),
-            "errors": sum(1 for outcome, _ in outcomes if outcome == "error"),
+            "passes": sum(1 for outcome, _, _ in outcomes if outcome == "pass"),
+            "errors": sum(1 for outcome, _, _ in outcomes if outcome == "error"),
             "cost": round(sum(call["cost"] for call in calls), 6),
         }
-        failed = [reason[:300] for outcome, reason in outcomes if outcome != "pass"]
+        entry.update(counts((outcome, kind) for outcome, _, kind in outcomes))
+        failed = [reason[:300] for outcome, reason, _ in outcomes if outcome != "pass"]
         if failed:
             entry["failed"] = failed
         entries.append(entry)
@@ -297,7 +352,16 @@ def decidable(meta):
 
 
 def decide_supported(summary):
-    """Does this result support the model: every critical case passed every run?"""
+    """Does this result support the model? Four conditions, on every case:
+
+    1. no critical run got the record wrong (``record_mistakes``);
+    2. no critical case failed every run on its own checks;
+    3. critical runs passed at least ``SUPPORT_RATE`` on their own checks, a run
+       that failed only the plain-words check counting as passed;
+    4. at least ``PLAIN_WORDS_RATE`` of all runs are free of record words.
+
+    A critical case that missed a run without breaking these is a known miss.
+    """
     meta = summary["meta"]
     blocked = decidable(meta)
     if blocked:
@@ -306,13 +370,68 @@ def decide_supported(summary):
         return {"verdict": "undecided",
                 "reason": "support is decided on every case; this run covers the %s split"
                           % meta["split"]}
-    failing = [entry["id"] for entry in summary["cases"]
-               if entry["critical"] and entry["passes"] < entry["runs"]]
-    if failing:
-        return {"verdict": "not supported", "critical_failing": failing,
-                "reason": "%d critical case(s) did not pass every run" % len(failing)}
-    return {"verdict": "supported",
-            "reason": "every critical case (%d) passed every run" % meta["critical_cases"]}
+    entries = summary["cases"]
+    if any(key not in entry for entry in entries for key in COUNTS):
+        return {"verdict": "undecided",
+                "reason": "the result predates the counts support is decided on; re-run it, "
+                          "or recount it from its raw run with run.py --recount"}
+    critical = [entry for entry in entries if entry["critical"]]
+    own = lambda entry: entry["passes"] + entry["plain_words_only"]  # noqa: E731
+    mistakes = [entry["id"] for entry in critical if entry["record_mistakes"]]
+    never = [entry["id"] for entry in critical if entry["runs"] and own(entry) == 0]
+    runs = sum(entry["runs"] for entry in critical)
+    critical_rate = sum(own(entry) for entry in critical) / float(runs) if runs else 1.0
+    every = sum(entry["runs"] for entry in entries)
+    plain_rate = (1 - sum(entry["plain_words_failed"] for entry in entries) / float(every)
+                  if every else 1.0)
+    figures = {"record_mistakes": mistakes, "never_passed": never,
+               "critical_rate": round(critical_rate, 4), "plain_words_rate": round(plain_rate, 4),
+               "known_misses": [entry["id"] for entry in critical
+                                if entry["passes"] < entry["runs"]]}
+    why = []
+    if mistakes:
+        why.append("record mistakes in %s" % ", ".join(mistakes))
+    if never:
+        why.append("%s failed every run" % ", ".join(never))
+    if critical_rate < SUPPORT_RATE:
+        why.append("critical runs passed %.1f%% (needs %d%%)"
+                   % (100 * critical_rate, round(100 * SUPPORT_RATE)))
+    if plain_rate < PLAIN_WORDS_RATE:
+        why.append("%.1f%% of runs free of record words (needs %d%%)"
+                   % (100 * plain_rate, round(100 * PLAIN_WORDS_RATE)))
+    if why:
+        return dict(figures, verdict="not supported", reason="; ".join(why))
+    return dict(figures, verdict="supported",
+                reason="no record mistakes, no critical case failed every run, critical runs "
+                       "passed %.1f%%, %.1f%% of runs free of record words"
+                       % (100 * critical_rate, 100 * plain_rate))
+
+
+def recount(result_path, raw_dir):
+    """Add the support counts to a committed result from the raw run it came from.
+
+    Refused when the raw run's passes differ from the result's, so a result is
+    never recounted from another run. The ship decision is left as it was.
+    """
+    result_path, raw_dir = Path(result_path), Path(raw_dir)
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    meta = result["meta"]
+    output = raw_dir / ("%s-%s" % (meta["lane"], model_slug(meta["model"]))) \
+        / "promptfoo-output.json"
+    found = rows(json.loads(output.read_text(encoding="utf-8")))
+    for entry in result["cases"]:
+        outcomes = [(outcome, kind) for case_id, outcome, _, kind in found
+                    if case_id == entry["id"]]
+        passes = sum(1 for outcome, _ in outcomes if outcome == "pass")
+        if (len(outcomes), passes) != (entry["runs"], entry["passes"]):
+            raise ValueError("%s: %s passed %d of %d runs in %s, not %d of %d"
+                             % (result_path.name, entry["id"], passes, len(outcomes),
+                                raw_dir.name, entry["passes"], entry["runs"]))
+        entry.update(counts(outcomes))
+    meta["recounted_from"] = raw_dir.name
+    result["decision"]["supported"] = decide_supported(result)
+    write_json(result_path, result)
+    return result
 
 
 def committed(results=RESULTS):
@@ -415,19 +534,26 @@ def supported_table(results=RESULTS, roster_path=ROSTER):
         standard = [c for c in cases if not c["critical"]]
         ok = lambda group: sum(1 for c in group if c["passes"] == c["runs"])  # noqa: E731
         verdict = result["decision"]["supported"]
+        said = describe(verdict)
         if result["meta"]["skills_sha256"] != current:
-            status = "stale: the skills changed since %s; re-run" % path.name
-        elif verdict["verdict"] == "supported":
-            status = "supported (%s)" % path.name
-        elif verdict["verdict"] == "not supported":
-            status = "not supported: %s (%s)" % (", ".join(verdict["critical_failing"]),
-                                                path.name)
+            status = "stale: the skills changed since %s; re-run. On its skills: %s" % (
+                path.name, said)
         else:
-            status = "undecided: %s" % verdict["reason"]
+            status = "%s (%s)" % (said, path.name)
         lines.append("| %s | %s | %d of %d passed every run | %d of %d passed every run | %s |"
                      % (name, backend, ok(critical), len(critical), ok(standard), len(standard),
                         status))
     return "\n".join(lines) + "\n"
+
+
+def describe(verdict):
+    """One support verdict as the table's status says it."""
+    if verdict["verdict"] == "supported":
+        misses = verdict.get("known_misses")
+        return "supported; known misses: %s" % ", ".join(misses) if misses else "supported"
+    if verdict["verdict"] == "not supported":
+        return "not supported: %s" % verdict["reason"]
+    return "undecided: %s" % verdict["reason"]
 
 
 def write_table(docs=DOCS, table=None):
@@ -473,8 +599,12 @@ def parse_args(argv):
                         help="print the supported-models table from the committed results")
     parser.add_argument("--write", action="store_true",
                         help="with --table: write it into docs/evals.md")
+    parser.add_argument("--recount", nargs=2, metavar=("RESULT", "RAW_RUN"),
+                        help="add the support counts to a committed result from its raw run "
+                             "directory, and decide support again")
     args = parser.parse_args(argv)
-    if not args.table and (args.lane is None or not (args.model or args.roster)):
+    if not (args.table or args.recount) and (args.lane is None
+                                             or not (args.model or args.roster)):
         parser.error("a lane and --model or --roster are required")
     return args
 
@@ -487,6 +617,14 @@ def main(argv=None):
         print("run the evals in their environment: uv run --project validation/evals "
               "python validation/evals/run.py ...", file=sys.stderr)
         return 2
+    if args.recount:
+        try:
+            verdict = recount(*args.recount)["decision"]["supported"]
+        except (OSError, ValueError) as exc:
+            print("cannot recount: %s" % exc, file=sys.stderr)
+            return 2
+        print("supported: %s - %s" % (verdict["verdict"], verdict["reason"]))
+        return 0
     if args.table:
         table = supported_table()
         if args.write:

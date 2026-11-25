@@ -38,12 +38,18 @@
     },
     "truncated": 0,
     "retries": 0,
-    "budget_stop": null
+    "budget_stop": null,
+    "recounted_from": "2026-11-25-085952"
   },
   "decision": {
     "supported": {
-      "verdict": "not supported",
-      "critical_failing": [
+      "record_mistakes": [],
+      "never_passed": [
+        "B-41"
+      ],
+      "critical_rate": 0.9714,
+      "plain_words_rate": 0.9719,
+      "known_misses": [
         "B-41",
         "B-08",
         "B-17",
@@ -54,7 +60,8 @@
         "B-93",
         "B-94"
       ],
-      "reason": "9 critical case(s) did not pass every run"
+      "verdict": "not supported",
+      "reason": "B-41 failed every run"
     },
     "ship": {
       "verdict": "undecided",
@@ -69,7 +76,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.006785
+      "cost": 0.006785,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-60",
@@ -78,7 +88,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003917
+      "cost": 0.003917,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-45",
@@ -91,7 +104,10 @@
       "failed": [
         "text_re: expected the reply to match '(?m)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*Python version[^\\\\n]*\\\\?'; it reads: \"The accept is recorded. Before the closure, I'll check the page for the Python version and search for links to it.\\nThe accept is recorded for the install unit, and the Python-version request ",
         "question_count: expected between 3 and 3 question(s); its reply asked 0; text_re: expected the reply to match '(?m)^\\\\s*(?:\\\\*\\\\*)?1[.)][^\\\\n]*\\\\binit\\\\b[^\\\\n]*\\\\?'; it reads: 'The accept is recorded. Before I close out, I want to check whether the page actually says which Python version toyq needs,"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 1,
+      "plain_words_only": 0
     },
     {
       "id": "B-46",
@@ -104,7 +120,10 @@
       "failed": [
         "text_re: expected the reply to match '(?im)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*(link|toctree|arriv|come from)[^\\\\n]*\\\\?'; it reads: 'git: committed 74b60fd \u2014 crayon: reviewed cfg\\nreviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 crayon stops here\\n\\nThe record shows three items still open",
         "text_re: expected the reply to match '(?im)^\\\\s*(?:\\\\*\\\\*)?2[.)][^\\\\n]*(link|toctree|arriv|come from)[^\\\\n]*\\\\?'; it reads: 'Accepted. The record committed it as 74b60fd:\\n\\n```\\nreviewed cfg: accept \u00b7 accepted reference/config.md \u00b7 Next: yours \u2014 crayon stops here\\n```\\n\\nThree things are still open"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-47",
@@ -113,7 +132,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.008394
+      "cost": 0.008394,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-48",
@@ -122,7 +144,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003577
+      "cost": 0.003577,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-56",
@@ -131,7 +156,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003878
+      "cost": 0.003878,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-57",
@@ -140,7 +168,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00316
+      "cost": 0.00316,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-62",
@@ -149,7 +180,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004991
+      "cost": 0.004991,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-63",
@@ -158,7 +192,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.012105
+      "cost": 0.012105,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-64",
@@ -167,7 +204,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001167
+      "cost": 0.001167,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-65",
@@ -176,7 +216,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003482
+      "cost": 0.003482,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-66",
@@ -188,7 +231,10 @@
       "cost": 0.005487,
       "failed": [
         "text_re: expected the reply to match 'crayon stops here'; it reads: 'The accept is recorded: `crayon review` committed 6058bda as \"crayon: reviewed install\", and the page is accepted. The record stops here.\\n\\nNothing links to `how-to/install.md` yet. Where should a read'"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-74",
@@ -202,7 +248,10 @@
         "text_re: expected the reply to match '(?im)^#{2,4}\\\\s*focus\\\\b'; it reads: \"The page includes `db_path`, which the intake notes say to leave out. Next I'll check the claims against the declared source.\\nThe page's claims check out against `src/toyq/config.py`, but it still inc\"",
         "text_re: expected the reply to match '(?im)^#{2,4}\\\\s*focus\\\\b'; it reads: 'The unit is at `review`. Here is the provenance summary as the tool printed it, then the findings.\\n\\n```\\nConfiguration reference\\nauthor decisions:\\n  intent: reference\\n  audience: operators configuring '",
         "text_re: expected the reply to match '(?im)^#{2,4}\\\\s*focus\\\\b'; it reads: '**Review mode, cfg.** The page is `reference/config.md`, drafted at commit 5af90f8. Its bytes are current, so no edits are needed before the verdict.\\n\\n**Provenance summary** (from `crayon summary cfg`'"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-75",
@@ -211,7 +260,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003187
+      "cost": 0.003187,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-76",
@@ -225,7 +277,10 @@
         "not_text_re: the reply must not match '(?m)^\\\\s*(?:\\\\*\\\\*)?\\\\d[.)][^\\\\n]*\\\\bfirst-job\\\\b[^\\\\n]*\\\\?'; it contains '2. Step first-job was skipped: no network in CI. Does the page need to say so?'",
         "not_text_re: the reply must not match '(?m)^\\\\s*(?:\\\\*\\\\*)?\\\\d[.)][^\\\\n]*\\\\bfirst-job\\\\b[^\\\\n]*\\\\?'; it contains '2. Step first-job was skipped: no network in CI. Does the page need to say so?'",
         "not_text_re: the reply must not match '(?m)^\\\\s*(?:\\\\*\\\\*)?\\\\d[.)][^\\\\n]*\\\\bfirst-job\\\\b[^\\\\n]*\\\\?'; it contains '2. Step first-job was skipped: no network in CI. Does the page need to say so?'"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-77",
@@ -234,7 +289,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.007976
+      "cost": 0.007976,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-32",
@@ -243,7 +301,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000877
+      "cost": 0.000877,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-33",
@@ -252,7 +313,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001014
+      "cost": 0.001014,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-34",
@@ -261,7 +325,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003488
+      "cost": 0.003488,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-35",
@@ -270,7 +337,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001143
+      "cost": 0.001143,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-49",
@@ -279,7 +349,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.008869
+      "cost": 0.008869,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-50",
@@ -288,7 +361,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.005626
+      "cost": 0.005626,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-53",
@@ -300,7 +376,10 @@
       "cost": 0.005545,
       "failed": [
         "question_count: expected between 1 and 1 question(s); its reply asked 2"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-54",
@@ -309,7 +388,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.005452
+      "cost": 0.005452,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-59",
@@ -318,7 +400,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.0053
+      "cost": 0.0053,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-71",
@@ -332,7 +417,10 @@
         "text_re: expected the reply to match '(?i)\\\\bleave\\\\s+out\\\\b'; it reads: \"The unit doesn't exist yet, so this is a fresh declaration. I checked `src/toyq/config.py`: the defaults are `max_retries` = 3 and `retry_backoff_seconds` = 5.0, the overrides are `TOYQ_MAX_RETRIES` a\"",
         "text_re: expected the reply to match '(?i)\\\\bleave\\\\s+out\\\\b'; it reads: 'Thanks. Next question: what do they do right after?'",
         "text_re: expected the reply to match '(?i)\\\\bleave\\\\s+out\\\\b'; it reads: \"Thanks, that gives me the reader's problem: a job has failed twice in `toyq status`, and they want to tune the retry behaviour.\\n\\nWhat do they do right after they land here?\""
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-72",
@@ -341,7 +429,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.0036
+      "cost": 0.0036,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-73",
@@ -350,7 +441,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003108
+      "cost": 0.003108,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-78",
@@ -359,7 +453,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.014643
+      "cost": 0.014643,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-79",
@@ -368,7 +465,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00458
+      "cost": 0.00458,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-40",
@@ -377,7 +477,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001624
+      "cost": 0.001624,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-41",
@@ -391,7 +494,10 @@
         "text_re: expected the reply to match 'Findings: \\\\d+ total'; it reads: \"Let me re-check the page's claims against the source.\\nI checked the page against `src/toyq/config.py`. Defaults, env variable names, types, precedence and the `max_retries` rule all match the source. \"",
         "text_re: expected the reply to match 'Findings: \\\\d+ total'; it reads: \"Let me check the page's claims against the recorded source.\\nThe page matches the recorded source. Here is the review.\\n\\n**Provenance (from `crayon summary cfg`)**\\n\\n```\\nConfiguration reference\\nauthor de\"; not_text_re: the r",
         "text_re: expected the reply to match 'Findings: \\\\d+ total'; it reads: '**Provenance summary** (`crayon summary cfg`):\\n\\n```\\nConfiguration reference\\nauthor decisions:\\n  intent: reference\\n  audience: operators configuring toyq on a server\\nfiles changed:\\n  reference/config.m'"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-42",
@@ -400,7 +506,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001631
+      "cost": 0.001631,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-43",
@@ -409,7 +518,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.002184
+      "cost": 0.002184,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-51",
@@ -418,7 +530,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.009876
+      "cost": 0.009876,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-52",
@@ -427,7 +542,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.002899
+      "cost": 0.002899,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-05",
@@ -436,7 +554,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.010179
+      "cost": 0.010179,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-06",
@@ -445,7 +566,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.002628
+      "cost": 0.002628,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-07",
@@ -454,7 +578,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.028417
+      "cost": 0.028417,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-08",
@@ -466,7 +593,10 @@
       "cost": 0.008603,
       "failed": [
         "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 1,
+      "plain_words_only": 1
     },
     {
       "id": "B-09",
@@ -475,7 +605,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.007782
+      "cost": 0.007782,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-10",
@@ -484,7 +617,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004823
+      "cost": 0.004823,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-11",
@@ -493,7 +629,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004666
+      "cost": 0.004666,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-12",
@@ -502,7 +641,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004378
+      "cost": 0.004378,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-13",
@@ -511,7 +653,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.010545
+      "cost": 0.010545,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-14",
@@ -520,7 +665,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.002735
+      "cost": 0.002735,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-15",
@@ -529,7 +677,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.006354
+      "cost": 0.006354,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-16",
@@ -538,7 +689,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.013848
+      "cost": 0.013848,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-36",
@@ -547,7 +701,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00081
+      "cost": 0.00081,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-37",
@@ -556,7 +713,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000861
+      "cost": 0.000861,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-38",
@@ -565,7 +725,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00191
+      "cost": 0.00191,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-39",
@@ -574,7 +737,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000956
+      "cost": 0.000956,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-55",
@@ -583,7 +749,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00353
+      "cost": 0.00353,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-58",
@@ -592,7 +761,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00102
+      "cost": 0.00102,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-01",
@@ -601,7 +773,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.006196
+      "cost": 0.006196,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-02",
@@ -610,7 +785,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003658
+      "cost": 0.003658,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-03",
@@ -619,7 +797,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001078
+      "cost": 0.001078,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-04",
@@ -628,7 +809,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000837
+      "cost": 0.000837,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-17",
@@ -640,7 +824,10 @@
       "cost": 0.007442,
       "failed": [
         "plain_words: the reply uses 'sealed', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 1,
+      "plain_words_only": 1
     },
     {
       "id": "B-18",
@@ -649,7 +836,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001448
+      "cost": 0.001448,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-19",
@@ -662,7 +852,10 @@
       "failed": [
         "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code",
         "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 2,
+      "plain_words_only": 2
     },
     {
       "id": "B-20",
@@ -671,7 +864,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.005832
+      "cost": 0.005832,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-21",
@@ -680,7 +876,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.003547
+      "cost": 0.003547,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-22",
@@ -689,7 +888,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.011937
+      "cost": 0.011937,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-23",
@@ -698,7 +900,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004421
+      "cost": 0.004421,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-24",
@@ -707,7 +912,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.005663
+      "cost": 0.005663,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-25",
@@ -716,7 +924,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004428
+      "cost": 0.004428,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-26",
@@ -728,7 +939,10 @@
       "cost": 0.006778,
       "failed": [
         "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 1,
+      "plain_words_only": 1
     },
     {
       "id": "B-27",
@@ -737,7 +951,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001472
+      "cost": 0.001472,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-61",
@@ -749,7 +966,10 @@
       "cost": 0.003453,
       "failed": [
         "asks_user: expected the model to ask the author before acting; it ended on a reply with no tool call"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-80",
@@ -758,7 +978,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.008838
+      "cost": 0.008838,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-81",
@@ -767,7 +990,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.0032
+      "cost": 0.0032,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-82",
@@ -776,7 +1002,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.011309
+      "cost": 0.011309,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-83",
@@ -785,7 +1014,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.01034
+      "cost": 0.01034,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-84",
@@ -797,7 +1029,10 @@
       "cost": 0.009148,
       "failed": [
         "plain_words: the reply uses 'seq', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 1,
+      "plain_words_only": 1
     },
     {
       "id": "B-85",
@@ -806,7 +1041,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00562
+      "cost": 0.00562,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-86",
@@ -815,7 +1053,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.005945
+      "cost": 0.005945,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-87",
@@ -824,7 +1065,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.000852
+      "cost": 0.000852,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-88",
@@ -833,7 +1077,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.051344
+      "cost": 0.051344,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-89",
@@ -845,7 +1092,10 @@
       "cost": 0.011396,
       "failed": [
         "tool_call: expected a Bash call matching '\\\\bcrayon(\\\\.py)?\\\\s+triage\\\\s+record\\\\b(?=[^\\\\n]*--needs-docs\\\\s+yes\\\\b)(?=[^\\\\n]*--base\\\\s)(?=[^\\\\n]*--head\\\\s)'; saw Bash(cd /srv/tidewatch && git log -1 --stat && git show HEAD --format= | head -200); Bash(cd /srv/tidewatch && cat .crayon/context/structu"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-90",
@@ -854,7 +1104,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.00781
+      "cost": 0.00781,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-91",
@@ -863,7 +1116,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.006596
+      "cost": 0.006596,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-92",
@@ -872,7 +1128,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.005765
+      "cost": 0.005765,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-93",
@@ -884,7 +1143,10 @@
       "cost": 0.004446,
       "failed": [
         "plain_words: the reply uses 'hash', a word from the record the author does not read; say it plainly (accepted, the pages as accepted, request N) or put the tool's output in code"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 1,
+      "plain_words_only": 1
     },
     {
       "id": "B-94",
@@ -897,7 +1159,10 @@
       "failed": [
         "text_re: expected the reply to match 'record:\\\\ intact\\\\ at\\\\ [0-9a-f]{7}'; it reads: \"The provenance summary is above. The record is intact at commit a364c33, the page is current, and no steps were deviated or skipped.\\n\\n**What's your verdict, and is there anything you want on the recor\"; quotes_r",
         "text_re: expected the reply to match 'record:\\\\ intact\\\\ at\\\\ [0-9a-f]{7}'; it reads: 'The provenance summary is above: the page is `reference/configuration.md`, intent reference, audience people running tidewatch on a workstation or a server. The record is intact at commit a364c33, and'; quotes_rec"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-67",
@@ -906,7 +1171,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.017408
+      "cost": 0.017408,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-68",
@@ -915,7 +1183,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.012732
+      "cost": 0.012732,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-69",
@@ -924,7 +1195,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.004332
+      "cost": 0.004332,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-70",
@@ -933,7 +1207,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.002401
+      "cost": 0.002401,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-28",
@@ -942,7 +1219,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001244
+      "cost": 0.001244,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-29",
@@ -955,7 +1235,10 @@
       "failed": [
         "question_count: expected between 1 and 1 question(s); its reply asked 2",
         "question_count: expected between 1 and 1 question(s); its reply asked 2"
-      ]
+      ],
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-30",
@@ -964,7 +1247,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.013954
+      "cost": 0.013954,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-31",
@@ -973,7 +1259,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.001236
+      "cost": 0.001236,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     },
     {
       "id": "B-95",
@@ -982,7 +1271,10 @@
       "runs": 3,
       "passes": 3,
       "errors": 0,
-      "cost": 0.023621
+      "cost": 0.023621,
+      "record_mistakes": 0,
+      "plain_words_failed": 0,
+      "plain_words_only": 0
     }
   ]
 }

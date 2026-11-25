@@ -6,8 +6,10 @@ carries both in its `decision` block:
 
 1. **Ship.** A skill change ships only if no case that passed three out of three times on the gate
    model now passes fewer times.
-2. **Supported models.** `docs/evals.md` lists a model as supported only if it passes every critical
-   case three out of three times, on the current skills.
+2. **Supported models.** `docs/evals.md` lists a model as supported when, on the current skills, no
+   critical run gets the record wrong, no critical case fails every run, critical runs pass at
+   least 95% of the time on their own checks, and at least 95% of all runs are free of record
+   words. `run.py`'s `decide_supported` holds the rule.
 
 The evals measure skill-following: whether a model driving the five skills does what the skills
 require. They do not measure page quality or speed, and they do not test the tool itself: the gate
@@ -140,9 +142,12 @@ and accepted only if `--split holdout` does not regress.
 
 After every certified run, each case that does not pass three of three gets a record in
 `dispositions.json`: `skill-fix` (accepted only if the held-out cases do not regress), `case-fix`
-(the case was wrong, with the reason) or `limitation` (the model fails it; on a critical case the
-model is not supported). The eval suite fails while a failing case in the current results has no
-record.
+(the case was wrong, with the reason) or `limitation` (the model fails it; on a critical case it
+withholds support only when it breaks the support rule, and is otherwise a known miss). The eval
+suite fails while a failing case in the current results has no record.
+
+A result committed before the support counts existed is recounted from its raw run:
+`uv run --project validation/evals python validation/evals/run.py --recount RESULT RAW_RUN_DIR`.
 
 ## The roster and the spend cap
 

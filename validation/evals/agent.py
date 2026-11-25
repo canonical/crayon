@@ -159,8 +159,13 @@ MUTATING_RE = re.compile(MUTATING_PATTERN)
 
 
 def mutating(command):
-    """True when ``command`` names a ``crayon`` verb that records, anywhere in it."""
-    return bool(MUTATING_RE.search(command))
+    """True when ``command`` names a ``crayon`` verb that records, anywhere in it.
+
+    Quoted text names no verb: ``echo "--- crayon unit new ---"`` only prints. A
+    verb run from inside quotes (``bash -c "crayon signoff cfg"``) is run, and
+    the digest sees what it changed.
+    """
+    return bool(MUTATING_RE.search(_masked(command)))
 
 
 # --- reading a command for grading --------------------------------------------
@@ -605,7 +610,12 @@ def run_episode(provider, spec, messages, tools, repo, max_turns=6, scope=None):
             except Exception as exc:
                 raise carry_cost(exc, sum(held["usage"]["cost"] for held in turns))
             if consequential:
-                return {"turns": turns, "decisive": {"type": "call", "call": call},
+                decisive = {"type": "call", "call": call}
+                if call["name"] == "Bash":
+                    # Named no recording verb, so it ended the episode by what it
+                    # changed in the copy.
+                    decisive["changed"] = not mutating(str(arguments(call).get("command", "")))
+                return {"turns": turns, "decisive": decisive,
                         "served": served, "served_ids": served_ids, "retries": retries}
             served.append({"name": call["name"], "arguments": call["arguments"]})
             served_ids.append(call["id"])

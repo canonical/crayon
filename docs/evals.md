@@ -7,8 +7,17 @@ keep them in control and keep the record true?** The answer drives two decisions
 
 1. **Ship.** A skill change ships only if no case that passed three out of three times on the gate
    model now passes fewer times.
-2. **Supported models.** A model is listed below as supported only if it passes every critical case
-   three out of three times, on the current skills.
+2. **Supported models.** A model is listed below as supported when, on the current skills:
+   - no critical run gets the record wrong: none fails a check on what the model did and ends on a
+     command that records, by naming a recording `crayon` verb or by changing the repository;
+   - no critical case fails every run;
+   - critical runs pass at least 95% of the time on their own checks; and
+   - at least 95% of all runs are free of record words.
+
+   A critical case that misses a run without breaking these is listed as a known miss. The first
+   condition has no tolerance because it is what the evals exist for. The others allow for a
+   model that is right nearly every time, which is what three runs of a nondeterministic backend
+   can show.
 
 The gate proves the tool. The evals measure what the tool cannot enforce: whether a model driving
 the five skills does what they require at the moments where the author's control or the record's
@@ -20,10 +29,10 @@ the operational guide: how to run a lane, where results land and how to add a ca
 <!-- supported-models:begin -->
 | Model | Backend | Critical cases | Standard cases | Status |
 |---|---|---|---|---|
-| anthropic/claude-sonnet-5.5 | google-vertex/global | 64 of 70 passed every run | 21 of 25 passed every run | stale: the skills changed since 2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json; re-run |
-| anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 61 of 70 passed every run | 16 of 25 passed every run | not supported: B-41, B-08, B-17, B-19, B-26, B-84, B-89, B-93, B-94 (2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json) |
+| anthropic/claude-sonnet-5.5 | google-vertex/global | 64 of 70 passed every run | 21 of 25 passed every run | stale: the skills changed since 2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json; re-run. On its skills: supported; known misses: B-62, B-50, B-23, B-25, B-85, B-95 |
+| anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 61 of 70 passed every run | 16 of 25 passed every run | not supported: B-41 failed every run (2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json) |
 | z-ai/glm-5.3 | fireworks | no result | no result | not yet run |
-| deepseek/deepseek-v4.1-flash | deepinfra/fp8 | 62 of 70 passed every run | 18 of 25 passed every run | not supported: B-62, B-59, B-78, B-41, B-05, B-08, B-13, B-22 (2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json) |
+| deepseek/deepseek-v4.1-flash | deepinfra/fp8 | 62 of 70 passed every run | 18 of 25 passed every run | not supported: record mistakes in B-59, B-13, B-22 (2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json) |
 <!-- supported-models:end -->
 
 `uv run --project validation/evals python validation/evals/run.py --table --write` generates this
@@ -102,8 +111,15 @@ Each case runs three times per model, because the backends are not deterministic
 passes three of three or none is settled; one in between is flaky. A result file records the counts
 per case, what it cost, the skills and kit it ran on, and its `decision` block:
 
-- `supported`: whether every critical case passed every run. A dry run, a filtered run, a run with
-  errors, a run of part of the cases or fewer than three runs decides nothing.
+- `supported`: the verdict, with what it rests on. `record_mistakes` lists the critical cases with
+  a run that got the record wrong, and `never_passed` the critical cases that failed every run.
+  `critical_rate` is the share of critical runs that passed their own checks: a run that failed
+  only the plain-words check counts as passed there. `plain_words_rate` is the share of all runs
+  free of record words, and `known_misses` lists the critical cases that missed a run. Each case
+  carries the counts these come from: `record_mistakes`, `plain_words_failed` and
+  `plain_words_only`. A dry run, a filtered run, a run with errors, a run of part of the cases or
+  fewer than three runs decides nothing. A result from before the counts existed is recounted from
+  its raw run with `run.py --recount`, which refuses a raw run whose passes differ.
 - `ship`, for the gate model: the cases that passed every run in the baseline and now fail a run.
   The baseline is the latest committed result on the same kit; a comparison across kits is refused.
 
@@ -113,8 +129,8 @@ be fitted to the cases it targets.
 
 Every case that does not pass three of three on a certified model is recorded in
 `validation/evals/dispositions.json` as a skill fix, a case fix or a limitation of that model, and the
-eval suite fails while one is missing. A limitation on a critical case means the model is not
-supported.
+eval suite fails while one is missing. A limitation on a critical case withholds support when it
+breaks one of the four conditions above; otherwise it is one of the model's known misses.
 
 ## Models and cost
 

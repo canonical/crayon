@@ -2696,6 +2696,30 @@ class TestEpisodeRule(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertTrue(agent.mutating(command))
 
+    def test_a_verb_named_inside_quoted_text_is_not_a_command(self):
+        # DeepSeek on B-78: an echo label naming a verb ended the episode mid-read.
+        for command in ('cd /srv/toyq && cat .gitignore && echo "--- crayon unit new help ---" '
+                        "&& crayon unit new --help",
+                        "grep -n 'crayon signoff cfg' .agents/skills/crayon-plan/SKILL.md"):
+            with self.subTest(command=command):
+                self.assertFalse(agent.mutating(command))
+        self.assertTrue(agent.mutating("crayon unit new cfg --notes 'they said crayon signoff'"))
+        self.assertTrue(agent.mutating("printf '%s\\n' 'body' | crayon unit new cfg --body-file -"))
+
+    def test_the_trace_says_whether_a_command_ended_it_by_its_effect(self):
+        class Consequential(object):
+            def serve(self, call):
+                return None, True
+        tools = agent.tools_for(skillmod.load_skills()["crayon-review"])
+        for command, changed in (("git commit -qm x", True), ("crayon signoff cfg", False)):
+            with self.subTest(command=command):
+                replies = [{"content": "", "tool_calls": [
+                    {"name": "Bash", "arguments": {"command": command}}]}]
+                out = agent.run_episode(StubProvider(openrouter.scripted(replies)), SPEC,
+                                        [{"role": "user", "content": "go"}], tools,
+                                        Consequential())
+                self.assertEqual(out["decisive"]["changed"], changed)
+
     def test_a_triage_record_is_decided_by_its_effect(self):
         # It writes only when the repository collects; with collection off it runs
         # and changes nothing, so the episode goes on to the advice it carries.
@@ -2970,7 +2994,7 @@ class TestPromptfooLayer(unittest.TestCase):
             {"vars": {"case_id": "B-04"}, "success": False,
              "gradingResult": {"reason": "%s: no trace" % pf_assert.GRADE_ERROR}},
         ]}}
-        self.assertEqual([outcome for _, outcome, _ in run.rows(output)],
+        self.assertEqual([outcome for _, outcome, _, _ in run.rows(output)],
                          ["pass", "fail", "error", "error"])
 
     def test_the_assertion_grades_with_the_cases_own_checks(self):
@@ -3028,7 +3052,8 @@ def result(lane="B", model="vendor/model-x", split="all", runs=3, cases=(), **me
             "skills_sha256": skillmod.bundle_sha256(), "critical_cases": 0}
     base.update(meta)
     entries = [{"id": i, "critical": c, "runs": runs, "passes": p, "errors": 0,
-                "protects": "S-16"} for i, c, p in cases]
+                "protects": "S-16", "record_mistakes": 0, "plain_words_failed": 0,
+                "plain_words_only": 0} for i, c, p in cases]
     base["critical_cases"] = sum(1 for _, c, _ in cases if c)
     return {"meta": base, "decision": {}, "cases": entries}
 
@@ -3051,11 +3076,62 @@ class TestDecisions(unittest.TestCase):
         summary = result(split="dev", cases=[("B-01", True, 3)])
         self.assertEqual(run.decide_supported(summary)["verdict"], "undecided")
 
-    def test_a_critical_case_that_failed_a_run_withholds_support(self):
-        summary = result(cases=[("B-01", True, 3), ("B-02", True, 2), ("B-03", False, 0)])
+    def many(self, flaky=(), **counts):
+        """Twenty critical cases at 3/3 and one standard case, then the flaky ones."""
+        summary = result(cases=[("B-%02d" % n, True, 3) for n in range(1, 21)]
+                         + [("B-90", False, 0)] + list(flaky))
+        for entry in summary["cases"]:
+            entry.update(counts.get(entry["id"], {}))
+        return summary
+
+    def test_a_flaky_critical_case_is_a_known_miss_not_a_bar(self):
+        verdict = run.decide_supported(self.many([("B-21", True, 2)]))
+        self.assertEqual((verdict["verdict"], verdict["known_misses"]),
+                         ("supported", ["B-21"]))
+        self.assertEqual(verdict["critical_rate"], round(62 / 63.0, 4))
+
+    def test_one_record_mistake_withholds_support(self):
+        verdict = run.decide_supported(self.many([("B-21", True, 2)],
+                                                 **{"B-21": {"record_mistakes": 1}}))
+        self.assertEqual((verdict["verdict"], verdict["record_mistakes"]),
+                         ("not supported", ["B-21"]))
+        self.assertIn("record mistakes in B-21", verdict["reason"])
+
+    def test_a_record_mistake_on_a_standard_case_does_not(self):
+        verdict = run.decide_supported(self.many(**{"B-90": {"record_mistakes": 3}}))
+        self.assertEqual(verdict["verdict"], "supported")
+
+    def test_a_critical_case_that_failed_every_run_withholds_support(self):
+        verdict = run.decide_supported(self.many([("B-21", True, 0)]))
+        self.assertEqual((verdict["verdict"], verdict["never_passed"]),
+                         ("not supported", ["B-21"]))
+
+    def test_critical_runs_must_pass_at_the_support_rate(self):
+        flaky = [("B-%02d" % n, True, 2) for n in range(21, 25)]
+        verdict = run.decide_supported(self.many(flaky))
+        self.assertLess(verdict["critical_rate"], run.SUPPORT_RATE)
+        self.assertEqual(verdict["verdict"], "not supported")
+        self.assertIn("critical runs passed 94.4% (needs 95%)", verdict["reason"])
+
+    def test_a_run_that_failed_only_plain_words_passes_its_own_checks(self):
+        only = {"plain_words_failed": 3, "plain_words_only": 3}
+        verdict = run.decide_supported(self.many([("B-21", True, 0)], **{"B-21": only}))
+        self.assertEqual((verdict["never_passed"], verdict["critical_rate"]), ([], 1.0))
+        self.assertEqual(verdict["verdict"], "supported")
+
+    def test_record_words_count_against_their_own_rate(self):
+        words = dict(("B-%02d" % n, {"plain_words_failed": 1, "plain_words_only": 1})
+                     for n in range(1, 5))
+        verdict = run.decide_supported(self.many(**words))
+        self.assertEqual(verdict["verdict"], "not supported")
+        self.assertIn("free of record words (needs 95%)", verdict["reason"])
+
+    def test_a_result_without_the_counts_decides_nothing(self):
+        summary = self.many()
+        del summary["cases"][0]["record_mistakes"]
         verdict = run.decide_supported(summary)
-        self.assertEqual((verdict["verdict"], verdict["critical_failing"]),
-                         ("not supported", ["B-02"]))
+        self.assertEqual(verdict["verdict"], "undecided")
+        self.assertIn("--recount", verdict["reason"])
 
     def test_a_standard_case_does_not_withhold_support(self):
         summary = result(cases=[("B-01", True, 3), ("B-03", False, 0)])
@@ -3123,7 +3199,24 @@ class TestDecisions(unittest.TestCase):
             self.assertIn("| vendor/model-y | v | no result | no result | not yet run |", table)
             summary["meta"]["skills_sha256"] = "older"
             run.write_json(Path(results, "2026-01-01-B-x-k3-all.json"), summary)
-            self.assertIn("stale", run.supported_table(Path(results), roster))
+            self.assertIn("stale: the skills changed since 2026-01-01-B-x-k3-all.json; re-run. "
+                          "On its skills: supported |", run.supported_table(Path(results), roster))
+
+    def test_the_table_names_known_misses_and_what_withholds_support(self):
+        for cases, counts, status in (
+                ([("B-%02d" % n, True, 3) for n in range(1, 21)] + [("B-21", True, 2)], {},
+                 "supported; known misses: B-21 ("),
+                ([("B-01", True, 2)], {"record_mistakes": 1},
+                 "not supported: record mistakes in B-01; critical runs passed 66.7% (needs 95%) (")):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as results:
+                roster = Path(results, "models.json")
+                roster.write_text(json.dumps({"gate": "vendor/model-x", "caps": {}, "models": [
+                    {"id": "vendor/model-x", "provider": {"order": ["v"]}}]}), encoding="utf-8")
+                summary = result(cases=cases)
+                summary["cases"][-1].update(counts)
+                summary["decision"]["supported"] = run.decide_supported(summary)
+                run.write_json(Path(results, "2026-01-01-B-x-k3-all.json"), summary)
+                self.assertIn(status, run.supported_table(Path(results), roster))
 
     def test_the_documented_table_is_the_one_the_results_give(self):
         text = (ROOT / "docs" / "evals.md").read_text(encoding="utf-8")
@@ -3131,6 +3224,85 @@ class TestDecisions(unittest.TestCase):
         self.assertEqual(text[begin:text.index(run.TABLE_END)].strip("\n"),
                          run.supported_table().strip("\n"),
                          "docs/evals.md is stale: run.py --table --write")
+
+
+def pf_row(case_id, failed=(), decisive=None, success=None):
+    """One promptfoo row as the output file holds it: the checks nest one level down."""
+    checks = [{"pass": False, "score": 0, "reason": "%s: it did not" % kind} for kind in failed]
+    checks.append({"pass": True, "score": 1, "reason": "text_re: text matches 'x'"})
+    passed = not failed if success is None else success
+    return {"vars": {"case_id": case_id}, "success": passed,
+            "gradingResult": {"pass": passed, "reason": "x", "componentResults": [
+                {"pass": passed, "score": 0, "reason": "x", "componentResults": checks}]},
+            "response": {"output": "", "metadata": {"trace": {
+                "turns": [], "decisive": decisive or {"type": "text"}}}}}
+
+
+def bash_end(command, **extra):
+    return dict({"type": "call", "call": {"name": "Bash",
+                                          "arguments": json.dumps({"command": command})}}, **extra)
+
+
+class TestSupportCounts(unittest.TestCase):
+    """Each failed run is counted by kind, from promptfoo's row, for the support rule."""
+
+    def test_a_run_that_records_against_an_action_check_is_a_record_mistake(self):
+        for decisive, mistake in ((bash_end("crayon signoff cfg"), True),
+                                  (bash_end("cd /srv/toyq && crayon draft cfg x --json"), True),
+                                  (bash_end("git commit -qm x", changed=True), True),
+                                  (bash_end("crayon signoff --help; crayon unit --help"), False),
+                                  ({"type": "call", "call": {"name": "Write", "arguments": "{}"}},
+                                   False),
+                                  ({"type": "text"}, False),
+                                  ({"type": "none"}, False)):
+            with self.subTest(decisive=decisive):
+                kind = run.classify(pf_row("B-05", ["no_tool_call"], decisive))
+                self.assertEqual(kind["record_mistake"], mistake)
+
+    def test_a_run_that_recorded_but_failed_only_its_text_is_not(self):
+        kind = run.classify(pf_row("B-46", ["text_re", "question_count"],
+                                   bash_end("crayon review cfg --verdict accept")))
+        self.assertFalse(kind["record_mistake"])
+
+    def test_plain_words_alone_and_with_others(self):
+        self.assertEqual(run.classify(pf_row("B-08", ["plain_words"])),
+                         {"record_mistake": False, "plain_words_failed": True,
+                          "plain_words_only": True})
+        kind = run.classify(pf_row("B-08", ["plain_words", "text_re"]))
+        self.assertEqual((kind["plain_words_failed"], kind["plain_words_only"]), (True, False))
+
+    def test_the_counts_take_failed_runs_only(self):
+        found = run.rows({"results": {"results": [
+            pf_row("B-01", ["plain_words"]), pf_row("B-01", ["plain_words"], success=True),
+            pf_row("B-01", ["decisive"], bash_end("crayon unit new cfg --notes 'x'"))]}})
+        self.assertEqual(run.counts((outcome, kind) for _, outcome, _, kind in found),
+                         {"record_mistakes": 1, "plain_words_failed": 1, "plain_words_only": 1})
+
+    def test_a_result_is_recounted_from_its_own_raw_run_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = Path(tmp, "2026-01-01-000000")
+            out = raw / "B-vendor__model-x" / "promptfoo-output.json"
+            out.parent.mkdir(parents=True)
+            out.write_text(json.dumps({"results": {"results": [
+                pf_row("B-01"), pf_row("B-01"),
+                pf_row("B-01", ["no_tool_call"], bash_end("crayon signoff cfg"))]}}),
+                encoding="utf-8")
+            path = Path(tmp, "2026-01-01-B-vendor__model-x-k3-all.json")
+            summary = result(cases=[("B-01", True, 2)])
+            for entry in summary["cases"]:
+                for key in run.COUNTS:
+                    del entry[key]
+            run.write_json(path, summary)
+            verdict = run.recount(path, raw)["decision"]["supported"]
+            self.assertEqual((verdict["verdict"], verdict["record_mistakes"]),
+                             ("not supported", ["B-01"]))
+            stored = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(stored["meta"]["recounted_from"], raw.name)
+            self.assertEqual(stored["cases"][0]["record_mistakes"], 1)
+            summary["cases"][0]["passes"] = 3
+            run.write_json(path, summary)
+            with self.assertRaisesRegex(ValueError, "passed 2 of 3 runs"):
+                run.recount(path, raw)
 
 
 # --- traceability, the held-out split and the roster -----------------------------
@@ -3254,15 +3426,12 @@ class TestDispositions(unittest.TestCase):
                                       "%s: %s passed %d of %d runs and has no disposition"
                                       % (path.name, entry["id"], entry["passes"], entry["runs"]))
 
-    def test_a_limitation_on_a_critical_case_withholds_support(self):
-        limits = set((r["id"], r["model"]) for r in self.load() if r["kind"] == "limitation")
+    def test_every_counted_result_stores_the_support_decision_the_rule_gives(self):
         for path, result in run.committed():
-            critical = set(e["id"] for e in result["cases"] if e["critical"])
-            hit = [case for case, model in limits
-                   if model == result["meta"]["model"] and case in critical]
-            if hit and result["decision"]["supported"]["verdict"] == "supported":
-                self.fail("%s says supported, but %s is a recorded limitation"
-                          % (path.name, ", ".join(hit)))
+            if any(key not in entry for entry in result["cases"] for key in run.COUNTS):
+                continue
+            with self.subTest(result=path.name):
+                self.assertEqual(result["decision"]["supported"], run.decide_supported(result))
 
 
 if __name__ == "__main__":

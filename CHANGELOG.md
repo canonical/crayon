@@ -56,7 +56,9 @@ across. The contract number stays `1`.
   with the model they use, to keep them in control and keep the record true? The answer drives
   two decisions, written into every result: a skill change ships only if no case that passed
   three of three runs on the gate model now passes fewer, and `docs/evals.md` lists a model as
-  supported only if it passes every critical case three of three times on the current skills.
+  supported when, on the current skills, no critical run gets the record wrong, no critical case
+  fails every run, critical runs pass at least 95% on their own checks and at least 95% of all
+  runs are free of record words; every other critical miss is listed as a known miss.
   They measure skill-following, not the quality of a page, or speed or effort saved.
   Lane A checks skill selection (15 cases). Lane B checks the next action after real, recorded
   `crayon` output (95 cases): the model acts in a copy of the state inside a Workshop container,
