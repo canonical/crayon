@@ -5,6 +5,8 @@
     {
       "id": "B-17",
       "skill": "crayon-review",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg - it's accurate, accept it.",
       "history": [
         "tool/version_json",
@@ -28,7 +30,7 @@
       ],
       "oracle": [
         {
-          "content": "cfg was already accepted at seq 4 (commit 38186c2); nothing new was recorded. crayon stops here."
+          "content": "cfg was already accepted; nothing new was recorded. crayon stops here."
         }
       ],
       "foil": [
@@ -48,16 +50,101 @@
     {
       "id": "B-18",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": false,
       "ask": "cfg",
       "history": [
         "tool/version_json",
         "signed/show_json",
         {
           "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/routing.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/routing.md}"
+        },
+        "signed/context_show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/doc-style.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/doc-style.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/glossary.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/glossary.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/structure.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/structure.md}"
+        },
+        "signed/summary",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/units/cfg/unit.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "docs/index.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:docs/index.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/writing-standards.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/writing-standards.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/reference-stance.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/reference-stance.md}"
+        },
+        {
+          "call": {
             "name": "Write",
             "arguments": {
               "file_path": ".crayon/staging/cfg/draft/reference/config.md",
-              "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n"
+              "content": "@RECORDED{drafted/file:docs/reference/config.md}"
             }
           },
           "result": "File written: .crayon/staging/cfg/draft/reference/config.md"
@@ -67,7 +154,7 @@
             "name": "Write",
             "arguments": {
               "file_path": ".crayon/staging/cfg/report.json",
-              "content": "{\"origins\": [\"src/toyq/config.py\"], \"gaps\": []}\n"
+              "content": "{\"origins\": [\"src/toyq/config.py\"], \"gaps\": [], \"gaps_note\": \"Every setting on the page is read from src/toyq/config.py.\"}\n"
             }
           },
           "result": "File written: .crayon/staging/cfg/report.json"
@@ -151,10 +238,95 @@
     {
       "id": "B-19",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg - draft it again, please.",
       "history": [
         "tool/version_json",
         "drafted/show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/routing.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/routing.md}"
+        },
+        "drafted/context_show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/doc-style.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:.crayon/context/doc-style.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/glossary.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:.crayon/context/glossary.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/structure.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:.crayon/context/structure.md}"
+        },
+        "drafted/summary",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:.crayon/units/cfg/unit.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "docs/index.md"
+            }
+          },
+          "result": "@RECORDED{drafted/file:docs/index.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/writing-standards.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/writing-standards.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/reference-stance.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/reference-stance.md}"
+        },
         {
           "call": {
             "name": "Write",
@@ -225,6 +397,8 @@
     {
       "id": "B-20",
       "skill": "crayon-review",
+      "protects": "S-16",
+      "critical": true,
       "ask": "cfg - accept it.",
       "sandbox": "fixed",
       "history": [
@@ -285,6 +459,8 @@
     {
       "id": "B-21",
       "skill": "crayon-review",
+      "protects": "S-09",
+      "critical": true,
       "ask": "cfg - ship it, accept.",
       "history": [
         "tool/version_json",
@@ -305,6 +481,10 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "\\bcrayon\\s+steer\\b"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@MARKER"
         }
       ],
       "oracle": [
@@ -349,6 +529,8 @@
     {
       "id": "B-22",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -394,6 +576,8 @@
     {
       "id": "B-23",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -437,6 +621,8 @@
     {
       "id": "B-24",
       "skill": "crayon-review",
+      "protects": "S-11",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -481,6 +667,8 @@
     {
       "id": "B-25",
       "skill": "crayon-review",
+      "protects": "S-13",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -529,6 +717,8 @@
     {
       "id": "B-26",
       "skill": "crayon-review",
+      "protects": "S-08",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -573,16 +763,101 @@
     {
       "id": "B-27",
       "skill": "crayon-write",
+      "protects": "S-11",
+      "critical": false,
       "ask": "cfg",
       "history": [
         "tool/version_json",
         "signed/show_json",
         {
           "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/routing.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/routing.md}"
+        },
+        "signed/context_show_json",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/doc-style.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/doc-style.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/glossary.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/glossary.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/context/structure.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/context/structure.md}"
+        },
+        "signed/summary",
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:.crayon/units/cfg/unit.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "src/toyq/config.py"
+            }
+          },
+          "result": "@RECORDED{signed/file:src/toyq/config.py}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": "docs/index.md"
+            }
+          },
+          "result": "@RECORDED{signed/file:docs/index.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/writing-standards.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/writing-standards.md}"
+        },
+        {
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".agents/skills/crayon-write/references/reference-stance.md"
+            }
+          },
+          "result": "@SKILL{crayon-write/references/reference-stance.md}"
+        },
+        {
+          "call": {
             "name": "Write",
             "arguments": {
               "file_path": ".crayon/staging/cfg/draft/reference/config.md",
-              "content": "# Configuration reference\n\ntoyq reads its settings from defaults, then `toyq.toml`, then `TOYQ_*` environment variables; the last one wins.\n"
+              "content": "@RECORDED{drafted/file:docs/reference/config.md}"
             }
           },
           "result": "File written: .crayon/staging/cfg/draft/reference/config.md"
@@ -592,7 +867,7 @@
             "name": "Write",
             "arguments": {
               "file_path": ".crayon/staging/cfg/report.json",
-              "content": "{\"origins\": [\"src/toyq/config.py\"], \"gaps\": []}\n"
+              "content": "{\"origins\": [\"src/toyq/config.py\"], \"gaps\": [], \"gaps_note\": \"Every setting on the page is read from src/toyq/config.py.\"}\n"
             }
           },
           "result": "File written: .crayon/staging/cfg/report.json"
@@ -649,6 +924,84 @@
               "name": "Bash",
               "arguments": {
                 "command": "crayon draft cfg .crayon/staging/cfg/draft/ --model-origin unknown --report .crayon/staging/cfg/report.json"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-61",
+      "skill": "crayon-review",
+      "protects": "S-20",
+      "critical": false,
+      "ask": "cfg - accept it.",
+      "sandbox": "fixed",
+      "history": [
+        "tool/version_json",
+        "drafted/steering_show_json",
+        "drafted/steering_accept_json"
+      ],
+      "why": "A pending request is put to the reviewer as request 4, never by its record name. The foil names the request and also its record number, so only the always-on check fails it",
+      "assert": [
+        {
+          "kind": "asks_user"
+        },
+        {
+          "kind": "text_re",
+          "re": "(?i)\\brequest\\s+4\\b"
+        },
+        {
+          "kind": "no_tool_call",
+          "tool": "Bash",
+          "args_re": "--(resolves|withdraw)\\b"
+        }
+      ],
+      "oracle": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "Request 4 (\"Explain what happens when max_retries is exceeded.\") is still pending. Did the current page settle it, or does it no longer apply?",
+                    "options": [
+                      {
+                        "label": "Settled by the page"
+                      },
+                      {
+                        "label": "No longer applies"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foil": [
+        {
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "AskUserQuestion",
+              "arguments": {
+                "questions": [
+                  {
+                    "question": "Request 4 (seq 4, \"Explain what happens when max_retries is exceeded.\") is still pending. Did the current page settle it, or does it no longer apply?",
+                    "options": [
+                      {
+                        "label": "Settled by the page"
+                      },
+                      {
+                        "label": "No longer applies"
+                      }
+                    ]
+                  }
+                ]
               }
             }
           ]

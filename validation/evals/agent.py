@@ -7,21 +7,37 @@ carry the names the skills declare in their ``allowed-tools`` frontmatter
 the tools its invoked skill declares.
 
 Lane B uses ``run_episode``: the conversation up to a recorded ``crayon`` output
-is replayed as real tool calls and results, then the model acts, in a real copy
-of the recorded state (``SandboxRepo``). Looking is free: reads, searches,
-inspection commands and read-only ``crayon`` calls run for real there and the
-episode goes on. The first *consequential* action ends it — a ``crayon`` verb
-that records, any other command, a write, a question to the author, or a turn
-with no tool call — and that action is what the case grades. It is never run.
+is replayed as real tool calls and results, then the model acts in a real copy
+of the recorded state (``Repo``). Reads, searches and commands run there for
+real, and the episode goes on while nothing changes. The first call that would
+change something ends the episode and is what the case grades:
+
+- ``Write``, ``Edit``, a question to the author (``AskUserQuestion``), or a turn
+  with no tool call;
+- a command that names a ``crayon`` verb that records (``MUTATING_RE``); it is
+  not run;
+- any other command after which the copy's files or git index differ from
+  before it (``digest.tree``); its output is not shown to the model.
+
+The kit decides by what a command changed, not by predicting what a shell
+command will do: the copy runs in a sandbox that holds nothing else and is
+thrown away after the case (``sandbox.WorkshopRunner``).
 """
 
 import fnmatch
 import json
 import os
 import re
-import subprocess
 
+from openrouter import carry_cost, retry_empty_turn
+
+#: Where the model is told the repository is.
 WORKDIR = "/srv/toyq"
+
+
+def workdir_for(project):
+    """Where a case's repository sits, as the model sees it: named after its project."""
+    return "/srv/%s" % project
 
 TOOL_SCHEMAS = {
     "Read": {
@@ -131,170 +147,149 @@ TOOL_SCHEMAS = {
 
 READ_TOOLS = ("Read", "Glob", "Grep")
 
-#: ``crayon`` calls that only look. Any other ``crayon`` call is consequential.
+#: A ``crayon`` verb that records anything (``resume --dry-run`` only looks),
+#: through the shim or the file. The one definition site: ``lanes.MACROS``
+#: names it as ``@MUTATING``, so the episode rule and the cases read the same.
+MUTATING_PATTERN = (r"\bcrayon(\.py)?\s+(unit\s+(new|edit|retire)|context\s+(stage|record)|"
+                    r"signoff|steer|plan-steps|step|draft|edits|review|"
+                    r"resume(?![^\n]*--dry-run))\b"
+                    # A verb asked for its help, in the same command, records nothing.
+                    r"(?![^\n;&|]*\s(-h|--help)\b)")
+MUTATING_RE = re.compile(MUTATING_PATTERN)
+
+
+def mutating(command):
+    """True when ``command`` names a ``crayon`` verb that records, anywhere in it.
+
+    Quoted text names no verb: ``echo "--- crayon unit new ---"`` only prints. A
+    verb run from inside quotes (``bash -c "crayon signoff cfg"``) is run, and
+    the digest sees what it changed.
+    """
+    return bool(MUTATING_RE.search(_masked(command)))
+
+
+# --- reading a command for grading --------------------------------------------
+#
+# Grading compares a command with a case's pattern. A leading ``cd`` into the
+# working directory and trailing parts that only read (``; echo "exit:$?"``,
+# ``&& crayon show cfg``) are not the graded action, so they are dropped first.
+# These helpers decide nothing about running a command: the sandbox does that by
+# what the command changed.
+
+#: ``crayon`` calls that only read.
 _READONLY_CRAYON_RE = re.compile(
     r"^crayon(\s+(version|show|summary|verify|context\s+show|resume\s+\S+\s+--dry-run"
     r"|[a-z-]+(\s+[a-z-]+)?\s+(--help|-h))\b|\s+(--help|-h|--version)\b)"
 )
-#: Shell inspection a careful agent does before acting. Run for real in the
-#: sandbox and never graded. Deliberately a short list of commands that read.
+#: Shell commands that read.
 _INSPECT_RE = re.compile(
-    r"^(cat|ls|head|tail|sed|grep|egrep|find|wc|pwd|echo|printf|cd|tree|file|stat|ps|"
-    r"pdfinfo|pdftotext|"
-    r"sort|uniq|cut|tr|true|test|\[|which|type|command\s+-v|sha256sum|md5sum|du|diff|"
-    r"basename|dirname|realpath|readlink|nl|jq|column|od|xxd|hexdump|strings|cmp|comm|"
-    r"fold|fmt|rev|printenv|env|id|whoami|uname|date|"
-    r"(python3?\s+-m\s+)?pip3?\s+(show|list|freeze|index|--version)|python3?\s+(--version|-V)|"
-    r"git(\s+-C\s+\S+)?\s+(status|log|diff|show|ls-files|rev-parse|branch|blame))(?=\s|$)"
+    r"^(cat|ls|head|tail|grep|egrep|fgrep|rg|find|wc|pwd|echo|printf|cd|tree|file|stat|"
+    r"sort|cut|tr|true|:|test|\[|which|type|command\s+-v|sha256sum|md5sum|du|diff|"
+    r"basename|dirname|realpath|readlink|nl|jq|column|od|hexdump|strings|cmp|comm|"
+    r"fold|fmt|rev|printenv|id|whoami|uname|date|sleep|"
+    r"git(\s+(-C\s+\S+|--no-pager))*\s+(status|log|diff|show|ls-files|ls-tree|rev-parse|"
+    r"blame|grep|check-ignore|branch(\s+--show-current)?))(?=\s|$)"
 )
-#: Shell control flow around the commands of a chain. Its keywords are peeled
-#: off a part before the part's command word is checked, so a ``for`` loop of
-#: ``cat`` calls is looking and a ``for`` loop of ``rm`` calls is not.
-_CONTROL_LEAD_RE = re.compile(r"^(do|then|else|elif|if|while|until|!|\{|\()\s+")
-_CONTROL_WHOLE_RE = re.compile(
-    r"^(done|fi|esac|;;|\}|\)|for\s+\w+\s+in\b.*|case\s+\S+\s+in(\s+[^\s()]+\))?)$")
-_CASE_PATTERN_RE = re.compile(r"^[^\s()]+\)\s*")
-#: Arguments that turn a reading command into a writing or executing one.
-_ACTING_WORD_RE = re.compile(
-    r"(^|\s)(-delete|-exec|-execdir|-ok|-okdir|-fprint\S*|-fls|--output\S*)(\s|$)"
-    r"|^(sort|tree)\b.*\s-o\b"
-    r"|^sed\b.*(\s-i\S*|--in-place|[/;\s]w\s|[/;\s]W\s|/e\b|;\s*e\b)"
-    # pdftotext writes a .txt beside its input unless the output is `-` (stdout).
-    r"|^pdftotext\b(?!.*\s-\s*$)"
-)
-#: ``ps`` is on the list above only because a live episode always runs inside
-#: the jail (:class:`Jail`), whose own process namespace holds nothing but the
-#: command itself: outside it, ``ps`` would show a model the host's processes.
-#: Redirections that change nothing on disk; any other ``>`` writes a file.
-_HARMLESS_REDIRECT_RE = re.compile(r"\d?>\s*/dev/null|\d?>&\d|&>\s*/dev/null")
-_SEGMENT_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\||\n)\s*")
-_QUOTED_RE = re.compile(r"'[^']*'|\"(?:\\.|[^\"\\])*\"")
-
-#: Setup is not the graded action: naming variables, creating a directory under
-#: the staging tree (or one named by a variable), and waiting.
+#: Setup: naming a variable, or creating a directory under the staging tree.
 _SETUP_PART_RE = re.compile(
-    r"^([A-Za-z_][A-Za-z0-9_]*=\S*|"
-    r"mkdir\s+-p\s+((/srv/toyq/)?\.crayon/staging/\S+|\$\{?[A-Za-z_]\S*)|"
-    r"sleep\s+\d+(\.\d+)?)$"
-)
-
-
-_SUBSTITUTION_RE = re.compile(r"\$\(([^()]*)\)|`([^`]*)`")
-
-
-def _unsubstitute(command):
-    """``command`` with each command substitution replaced by a word, or None.
-
-    A substitution is allowed only when what it runs is itself looking, checked
-    innermost first; anything else makes the whole command acting.
-    """
-    while True:
-        match = _SUBSTITUTION_RE.search(command)
-        if match is None:
-            return command
-        inner = match.group(1) if match.group(1) is not None else match.group(2)
-        if not looking(inner):
-            return None
-        command = command[:match.start()] + "SUBST" + command[match.end():]
-
-
-def _segments(command):
-    """The parts of a chain, split outside quotes, with harmless redirects dropped.
-
-    None when the command runs an acting substitution or redirects into a file:
-    such a command is never "only looking", whatever its parts are.
-    """
-    command = _unsubstitute(command)
-    if command is None or "$(" in command or "`" in command:
-        return None
-    masked = _QUOTED_RE.sub(lambda m: "Q" * len(m.group(0)), command)
-    cleaned = _HARMLESS_REDIRECT_RE.sub(lambda m: " " * len(m.group(0)), masked)
-    if ">" in cleaned:
-        return None
-    parts, position = [], 0
-    for match in _SEGMENT_SPLIT_RE.finditer(cleaned):
-        parts.append(command[position:match.start()])
-        position = match.end()
-    parts.append(command[position:])
-    return [_HARMLESS_REDIRECT_RE.sub("", part).strip() for part in parts if part.strip()]
-
-
-#: ``python3 -c '<script>'``: looking only inside the jail, and only a script
-#: that names nothing able to write, delete, spawn, reach the network or run
-#: code it builds. Models reach for it to read the ledger or a JSON payload;
-#: the jail makes a mistake in this list cost a throwaway copy, not the host.
-_PYTHON_PART_RE = re.compile(r"^python3?\s+-c\s+")
-_PYTHON_ACTS_RE = re.compile(
-    r"\b(shutil|subprocess|socket|urllib|http|requests|ctypes|multiprocessing|importlib|"
-    r"tempfile|sqlite3|pty|signal)\b"
-    r"|\bfrom\s+os\b|\bos\.(remove|unlink|rmdir|removedirs|rename|renames|replace|system|"
-    r"popen|exec\w*|spawn\w*|fork\w*|kill\w*|mkdir|makedirs|chmod|chown|link|symlink|"
-    r"truncate|write|open|putenv|unsetenv|chdir|utime|mkfifo|mknod)\b|\bos\.environ\s*\["
-    r"|\.(write|writelines|write_text|write_bytes|unlink|rename|replace|mkdir|rmdir|touch|"
-    r"chmod|symlink_to|hardlink_to)\s*\("
-    r"|\bopen\s*\([^)]*,\s*(mode\s*=\s*)?[rbt]*['\"][^'\"]*[wax+]"
-    r"|\b(exec|eval|compile|__import__|breakpoint|input)\s*\("
-)
-
+    r"^([A-Za-z_][A-Za-z0-9_]*=\S*|mkdir\s+-p\s+((/srv/[A-Za-z0-9._-]+/)?\.crayon/staging/\S+|"
+    r"\$\{?[A-Za-z_]\S*))$")
+#: What a part may do and still only read: no redirect into a file, no command or
+#: process substitution, no ``find`` action.
+_ACTS_RE = re.compile(r">|<\(|\$\(|`|-exec\b|-delete\b|-ok\b")
+_HARMLESS_REDIRECT_RE = re.compile(r"\d?>\s*/dev/null|\d?>&\d|&>\s*/dev/null")
+#: A quoted word, whose separators never split a chain.
+_QUOTED_RE = re.compile(r"\$'(?:\\.|[^'\\])*'|'[^']*'|\"(?:\\.|[^\"\\])*\"")
 _TAIL_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\n)\s*")
+_PIPE_SPLIT_RE = re.compile(r"\s*\|\s*")
 
 
-def strip_looking_tail(command):
-    """``command`` without trailing parts that only look (``; echo "exit:$?"``).
+def _masked(command):
+    return _QUOTED_RE.sub(lambda m: "Q" * len(m.group(0)), command)
 
-    A chain's last looking parts change nothing the graded action did, so a
-    pattern anchored at the command's end ignores them. Pipes stay: what a
-    command is piped into is part of running it. Quotes are masked first, so a
-    separator inside a string never splits.
+
+def _split(command, pattern):
+    masked = _masked(command)
+    parts, position = [], 0
+    for cut in pattern.finditer(masked):
+        parts.append(command[position:cut.start()])
+        position = cut.end()
+    parts.append(command[position:])
+    return [part.strip() for part in parts if part.strip()]
+
+
+def chain_parts(command):
+    """The commands a chain runs, in order: ``a; b`` and ``a && b`` are two.
+
+    Split outside quotes. Pipes stay: what a command is piped into is part of
+    running it.
     """
-    while True:
-        masked = _QUOTED_RE.sub(lambda m: "Q" * len(m.group(0)), command)
-        cuts = list(_TAIL_SPLIT_RE.finditer(masked))
-        if not cuts:
-            return command
-        last = cuts[-1]
-        head, tail = command[:last.start()], command[last.end():]
-        if not head.strip() or (tail.strip() and not looking(tail)):
-            return command
-        command = head
+    return _split(command, _TAIL_SPLIT_RE)
 
 
-def looking(command, python=False):
-    """True when every part of ``command`` only reads (or is setup).
+#: ``awk`` reads unless its program runs a command, writes a file or reads one
+#: through ``getline``; ``sort`` writes with ``-o``, quoted or not.
+_AWK_RE = re.compile(r"^g?awk(\s|$)")
+_AWK_ACTS_RE = re.compile(r"system\s*\(|getline|>|\||fflush|close\s*\(|inplace")
+_SORT_WRITES_RE = re.compile(r"^sort\b.*?(?:^|\s)['\"]?(-o|--output)")
 
-    ``python`` admits a read-only ``python3 -c`` part; only a jailed sandbox
-    passes it, so on the host every such script stays consequential.
+
+def reads(part):
+    """True when one chain part only reads, as grading counts it.
+
+    Every stage of a pipe must read, and nothing may be redirected into a file.
     """
-    parts = _segments(command)
-    if not parts:
+    cleaned = _HARMLESS_REDIRECT_RE.sub("", part).strip()
+    if not cleaned or _ACTS_RE.search(_masked(cleaned)):
         return False
-    for part in parts:
-        if _ACTING_WORD_RE.search(part):
-            return False
-        part = _command_word_first(part)
-        if not part:
-            continue
-        if python and _PYTHON_PART_RE.match(part):
-            if _PYTHON_ACTS_RE.search(part):
+    for stage in _split(cleaned, _PIPE_SPLIT_RE):
+        if _AWK_RE.match(stage):
+            if _AWK_ACTS_RE.search(stage):
                 return False
             continue
-        if not (_INSPECT_RE.match(part) or _READONLY_CRAYON_RE.match(normalise(part))
-                or _SETUP_PART_RE.match(part)):
+        if _SORT_WRITES_RE.search(stage):
+            return False
+        if not (_READONLY_CRAYON_RE.match(stage) or _INSPECT_RE.match(stage)
+                or _SETUP_PART_RE.match(stage)):
             return False
     return True
 
 
-def _command_word_first(part):
-    """``part`` with its control-flow keywords peeled off; "" if it is only those."""
+#: A part that sets where or how the rest of a chain runs: never dropped as a look.
+_CONTEXT_PART_RE = re.compile(r"^\s*(cd|pushd|popd|export|unset|set|source|\.|"
+                              r"[A-Za-z_][A-Za-z0-9_]*=)(\s|$)")
+
+
+def strip_reading_head(command):
+    """``command`` without leading chain parts that only read, when a part that acts follows.
+
+    ``ls docs; crayon signoff cfg`` is the signoff. A command that only reads is
+    left whole, and so is a leading part that sets where or how the rest runs
+    (``cd /tmp && crayon signoff cfg`` is not a signoff in the repository).
+    """
     while True:
-        part = part.strip().rstrip(";").strip()
-        if not part or _CONTROL_WHOLE_RE.match(part):
-            return ""
-        peeled = _CONTROL_LEAD_RE.sub("", part, count=1)
-        peeled = _CASE_PATTERN_RE.sub("", peeled, count=1) if peeled == part else peeled
-        if peeled == part:
-            return part
-        part = peeled
+        cuts = list(_TAIL_SPLIT_RE.finditer(_masked(command)))
+        if not cuts:
+            return command
+        first = cuts[0]
+        head, tail = command[:first.start()], command[first.end():]
+        if (not tail.strip() or not reads(head) or _CONTEXT_PART_RE.match(head)
+                or all(reads(part) for part in chain_parts(tail))):
+            return command
+        command = tail
+
+
+def strip_reading_tail(command):
+    """``command`` without trailing chain parts that only read."""
+    while True:
+        cuts = list(_TAIL_SPLIT_RE.finditer(_masked(command)))
+        if not cuts:
+            return command
+        last = cuts[-1]
+        head, tail = command[:last.start()], command[last.end():]
+        if not head.strip() or (tail.strip() and not reads(tail)):
+            return command
+        command = head
 
 
 def normalise(command):
@@ -333,98 +328,61 @@ def render_output(output, exit_code):
     return text
 
 
-class Jail(object):
-    """Where a model's looking command runs: a bubblewrap jail of one sandbox.
+#: The environment every command runs under, built from scratch: nothing of the
+#: machine running the eval reaches a model's command. ``GIT_OPTIONAL_LOCKS=0``
+#: keeps ``git status`` from rewriting the index, and ``PYTHONDONTWRITEBYTECODE``
+#: keeps ``python3`` from writing bytecode, so a command that only reads leaves
+#: the digest as it was.
+COMMAND_ENV = {
+    "PATH": "/opt/crayon/bin:/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/srv/home",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "GIT_CONFIG_GLOBAL": "/dev/null",
+    "GIT_CONFIG_SYSTEM": "/dev/null",
+    "GIT_OPTIONAL_LOCKS": "0",
+    "GIT_PAGER": "cat",
+    "PAGER": "cat",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TERM": "dumb",
+}
 
-    The command sees the sandbox copy at the real ``WORKDIR`` and each sibling
-    of it (the throwaway home, a docs root moved beside the repository) at
-    ``/srv/<name>``; ``/usr`` read-only, a ``crayon`` shim on ``/opt/crayon``, an
-    empty ``/tmp``, its own process table, and no network. Nothing else of the
-    machine running the eval exists in there — not its home, not the checkout
-    the eval runs from — so a command that goes looking beyond the repository
-    finds nothing to show a model.
+#: How long one command may run, and how much of its output a model sees.
+TIMEOUT = 20
+LIMIT = 20000
+
+
+class Repo(object):
+    """A real copy of a recorded state, in which every tool call is carried out.
+
+    The copy lives at ``root`` on the machine running the eval; ``runner`` runs
+    commands against the same copy where the model's commands run (a workshop
+    for a live model, the host for a replay of fixed commands). ``Read`` and
+    ``Glob`` read the copy at ``root``; ``Grep`` and ``Bash`` go through the
+    runner. ``overrides`` answer a command from the replayed history instead,
+    where the history was written rather than recorded (a refusal no real state
+    here would print).
+
+    A call is consequential when it would change something: ``serve`` returns
+    ``(None, True)`` for it, and the episode ends there.
     """
 
-    SHIM = "/opt/crayon/bin"
-    PATH = SHIM + ":/usr/local/bin:/usr/bin:/bin"
-
-    def __init__(self, shim_dir, crayon_py, bwrap="bwrap"):
-        self.shim_dir = str(shim_dir)
-        self.crayon_py = str(crayon_py)
-        self.bwrap = bwrap
-
-    def argv(self, root, env, command):
-        args = [self.bwrap, "--unshare-all", "--die-with-parent", "--new-session",
-                "--ro-bind", "/usr", "/usr"]
-        for top in ("/bin", "/lib", "/lib64", "/sbin"):
-            if os.path.islink(top):
-                args += ["--symlink", os.readlink(top), top]
-            elif os.path.isdir(top):
-                args += ["--ro-bind", top, top]
-        for kept in ("/etc/ld.so.cache", "/etc/alternatives", "/etc/localtime"):
-            args += ["--ro-bind-try", kept, kept]
-        args += ["--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp",
-                 "--ro-bind", self.shim_dir, self.SHIM,
-                 "--ro-bind", self.crayon_py, "/opt/crayon/crayon.py"]
-        holder = os.path.dirname(root)
-        for name in sorted(os.listdir(holder)):
-            full = os.path.join(holder, name)
-            if full == root:
-                args += ["--bind", full, WORKDIR]
-            elif name != os.path.basename(WORKDIR):
-                args += ["--bind", full, "/srv/" + name]
-        args += ["--chdir", WORKDIR, "--clearenv"]
-        for key, value in sorted(env.items()):
-            args += ["--setenv", key, value]
-        return args + ["bash", "-c", command]
-
-
-class SandboxRepo(object):
-    """A real copy of a recorded state, in which only looking is carried out.
-
-    The copy lives at ``root``; the model is told it works in ``WORKDIR``, and
-    paths are mapped both ways. ``Read``/``Glob``/``Grep`` read the copy. A
-    ``Bash`` call that only looks (``looking``) runs for real, in the copy,
-    under a constructed environment: ``PATH`` with a ``crayon`` shim first, a
-    throwaway ``HOME``, git's global and system config switched off, and
-    nothing inherited, so no key or setting of the machine running the eval can
-    reach a model's command. With a ``jail`` (:class:`Jail`) it runs inside it,
-    where nothing of the machine but ``/usr`` exists; without one it runs on
-    the host, which only a replay of fixed commands may do (``lanes.run_b``
-    refuses a live model that). ``overrides`` answer a command from the replayed
-    history instead, where the history was written rather than recorded (a
-    refusal no real state here would print). Anything else is consequential:
-    it ends the episode and is never run.
-    """
-
-    def __init__(self, root, bin_dir, overrides=(), timeout=20, limit=20000, jail=None):
+    def __init__(self, root, runner, overrides=(), workdir=WORKDIR):
         self.root = os.path.realpath(str(root))
-        self.jail = jail
+        self.runner = runner
         self.overrides = list(overrides)
-        self.timeout = timeout
-        self.limit = limit
-        home = os.path.join(os.path.dirname(self.root), "home")
-        if not os.path.isdir(home):
-            os.makedirs(home)
-        self.env = {
-            "PATH": Jail.PATH if jail else "%s:/usr/local/bin:/usr/bin:/bin" % bin_dir,
-            "HOME": "/srv/home" if jail else home,
-            "LANG": "C.UTF-8",
-            "LC_ALL": "C.UTF-8",
-            "GIT_CONFIG_GLOBAL": "/dev/null",
-            "GIT_CONFIG_SYSTEM": "/dev/null",
-            "GIT_PAGER": "cat",
-            "PAGER": "cat",
-            "TERM": "dumb",
-        }
+        self.workdir = workdir
+        self.before = None
+
+    def start(self):
+        """Hand the copy to the runner and take its digest: the state nothing may change."""
+        self.runner.reset(os.path.dirname(self.root), self.workdir)
+        self.before = self.runner.digest()
 
     # -- paths ----------------------------------------------------------------
 
     def _to_disk(self, text):
-        return (text or "").replace(WORKDIR, self.root)
-
-    def _from_disk(self, text):
-        return (text or "").replace(self.root, WORKDIR)
+        return (text or "").replace(self.workdir, self.root)
 
     def _inside(self, path):
         """The real path for a model's path, or None outside the repository."""
@@ -439,7 +397,24 @@ class SandboxRepo(object):
 
     # -- the read tools -------------------------------------------------------
 
+    @staticmethod
+    def _not_text(args, *keys):
+        """A tool error for the first of ``keys`` given but not a string, else None.
+
+        A model's argument of the wrong type, or a string holding a NUL byte, is
+        answered the way a harness answers it: as a tool error the model sees.
+        """
+        for key in keys:
+            if args.get(key) is not None and not isinstance(args[key], str):
+                return "Error: %s must be a string" % key
+            if "\x00" in (args.get(key) or ""):
+                return "Error: %s must not contain a NUL byte" % key
+        return None
+
     def read(self, args):
+        wrong = self._not_text(args, "file_path")
+        if wrong:
+            return wrong
         full = self._inside(args.get("file_path", ""))
         if full is None:
             return "Error: %s is outside the repository" % args.get("file_path")
@@ -447,9 +422,12 @@ class SandboxRepo(object):
             return "Error: file not found: %s" % args.get("file_path")
         with open(full, encoding="utf-8", errors="replace") as handle:
             lines = handle.read().split("\n")
-        offset = max(int(args.get("offset") or 1), 1) - 1
-        limit = int(args.get("limit") or len(lines))
-        return "\n".join(lines[offset: offset + limit])[: self.limit]
+        try:
+            offset = max(int(args.get("offset") or 1), 1) - 1
+            limit = int(args.get("limit") or len(lines))
+        except (TypeError, ValueError, OverflowError):
+            return "Error: offset and limit must be integers"
+        return "\n".join(lines[offset: offset + limit])[:LIMIT]
 
     def _files(self, base):
         for directory, dirs, files in os.walk(base):
@@ -458,8 +436,11 @@ class SandboxRepo(object):
                 yield os.path.join(directory, name)
 
     def glob(self, args):
+        wrong = self._not_text(args, "pattern", "path")
+        if wrong:
+            return wrong
         base = self._inside(args.get("path", "")) or self.root
-        pattern = args.get("pattern", "*")
+        pattern = "*" if args.get("pattern") is None else args["pattern"]
         hits = []
         for full in self._files(base):
             rel = os.path.relpath(full, base)
@@ -468,51 +449,50 @@ class SandboxRepo(object):
         return "\n".join(hits[:500]) or "(no matches)"
 
     def grep(self, args):
-        try:
-            pattern = re.compile(args.get("pattern", ""))
-        except re.error as exc:
-            return "Error: bad pattern: %s" % exc
-        base = self._inside(args.get("path", "")) or self.root
-        targets = [base] if os.path.isfile(base) else self._files(base)
-        out = []
-        for full in targets:
-            if args.get("glob") and not fnmatch.fnmatch(os.path.basename(full), args["glob"]):
-                continue
-            try:
-                with open(full, encoding="utf-8") as handle:
-                    for number, line in enumerate(handle, 1):
-                        if pattern.search(line):
-                            out.append("%s:%d:%s" % (self._shown(full), number, line.rstrip("\n")))
-            except (UnicodeDecodeError, OSError):
-                continue
-        return "\n".join(out[:200]) or "(no matches)"
+        """``rg`` through the runner: a linear-time search under the command time limit."""
+        wrong = self._not_text(args, "pattern", "path", "glob")
+        if wrong:
+            return wrong
+        full = self._inside(args.get("path", ""))
+        if full is None:
+            return "Error: %s is outside the repository" % args.get("path")
+        argv = ["rg", "--no-heading", "--line-number", "--color", "never",
+                "--glob", "!.git"]
+        if args.get("glob"):
+            argv += ["--glob", args["glob"]]
+        argv += ["-e", args.get("pattern") or "", "--", self._shown(full)]
+        output, code = self.runner.run_argv(argv)
+        if code == 1:
+            return "(no matches)"
+        if code != 0:
+            return "Error: %s" % (output.strip() or "the search failed (exit %d)" % code)
+        lines = [line[2:] if line.startswith("./") else line for line in output.splitlines()]
+        return "\n".join(lines[:200]) or "(no matches)"
 
     # -- the shell ------------------------------------------------------------
 
     def bash(self, command):
-        """(output, exit) for a command carried out or answered here, else None."""
+        """(output, exit) for a command that changed nothing, else None.
+
+        A ``command`` that is not a string, or that holds a NUL byte, is answered
+        as a usage error.
+        """
+        if not isinstance(command, str):
+            return "Error: command must be a string", 2
+        if "\x00" in command:
+            return "Error: command must not contain a NUL byte", 2
         normal = normalise(command)
         for override in self.overrides:
             if normal == override.get("exact") or (
                     override.get("prefix") and (normal == override["prefix"]
                                                 or normal.startswith(override["prefix"] + " "))):
                 return override["output"], override["exit"]
-        if not looking(command, python=self.jail is not None):
+        if mutating(command):
             return None
-        if self.jail:
-            argv, env = self.jail.argv(self.root, self.env, command), {}
-        else:
-            argv, env = ["bash", "-c", self._to_disk(command)], self.env
-        try:
-            done = subprocess.run(
-                argv, cwd=self.root, env=env,
-                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                timeout=self.timeout,
-            )
-        except subprocess.TimeoutExpired:
-            return "(timed out after %ds)" % self.timeout, 124
-        text = done.stdout.decode("utf-8", "replace")[: self.limit].rstrip("\n")
-        return (text if self.jail else self._from_disk(text)), done.returncode
+        output, code = self.runner.run(command)
+        if self.runner.digest() != self.before:
+            return None
+        return output, code
 
     def serve(self, call):
         """(result text, consequential?) for one tool call."""
@@ -541,12 +521,14 @@ class SandboxRepo(object):
             handle.write(content)
 
 
-def history_messages(steps):
+def history_messages(steps, prefix="h"):
     """Resolved steps -> the assistant/tool/user messages that replay them.
 
     A step is ``{"user": text}``, ``{"assistant": text}``, a shell step
     ``{"cmd", "exit", "output"}``, or any other tool call
-    ``{"call": {"name", "arguments"}, "result": text}``.
+    ``{"call": {"name", "arguments"}, "result": text}``. Call ids are the
+    prefix and the step's index, so two replays with different prefixes (a
+    prelude's ``p``, a history's ``h``) never pair a result with the wrong call.
     """
     messages = []
     for index, step in enumerate(steps):
@@ -561,7 +543,7 @@ def history_messages(steps):
         else:
             name, args = "Bash", {"command": step["cmd"]}
             result = render_output(step["output"], step["exit"])
-        call_id = "h%d" % index
+        call_id = "%s%d" % (prefix, index)
         messages.append({
             "role": "assistant",
             "content": step.get("say", ""),
@@ -583,42 +565,61 @@ def assistant_message(turn):
     return message
 
 
-def run_episode(provider, spec, messages, tools, repo, max_turns=6, cache=True,
-                scope=None):
+def run_episode(provider, spec, messages, tools, repo, max_turns=6, scope=None):
     """Live turns until the first consequential action (or ``max_turns``).
 
     Returns a trace: ``turns`` (every live turn), ``decisive`` (what ended the
     episode: ``{"type": "call", "call": ...}``, ``{"type": "text"}`` or
-    ``{"type": "none"}`` when the turn cap was reached) and ``served`` (the
-    looking the model did on the way).
+    ``{"type": "none"}`` when the turn cap was reached), ``served`` (the calls
+    carried out on the way) and ``retries`` (how many empty turns were re-sent,
+    once each).
+
+    Any exception from the provider or a tool leaves as a ``ProviderError`` or a
+    ``BudgetExceeded`` carrying the cost of the turns already held (``carry_cost``),
+    so the case's record keeps them.
     """
     messages = list(messages)
     turns, served = [], []
     served_ids = []
+    retries = 0
     offered = [tool["function"]["name"] for tool in tools or ()]
     for _ in range(max_turns):
-        turn = provider.complete(spec, messages, tools=tools, cache=cache, scope=scope)
+        try:
+            turn = provider.complete(spec, messages, tools=tools, scope=scope)
+            turn, retried = retry_empty_turn(provider, turn, spec, messages, tools=tools,
+                                             scope=scope)
+        except Exception as exc:
+            raise carry_cost(exc, sum(held["usage"]["cost"] for held in turns))
+        retries += retried
         turns.append(turn)
         if not turn["tool_calls"]:
             return {"turns": turns, "decisive": {"type": "text"}, "served": served,
-                    "served_ids": served_ids}
+                    "served_ids": served_ids, "retries": retries}
         messages.append(assistant_message(turn))
         for call in turn["tool_calls"]:
             if call["name"] not in TOOL_SCHEMAS:
-                # A name no tool has (a mangled `Bogen`) is answered the way a
-                # harness answers it, and the model goes on; it acted on nothing.
+                # A name no tool has is answered the way a harness answers it,
+                # and the model goes on; it acted on nothing.
                 result = "Error: no tool named %r; the tools are: %s" % (
                     call["name"], ", ".join(offered))
                 messages.append({"role": "tool", "tool_call_id": call["id"],
                                  "content": result})
                 continue
-            result, consequential = repo.serve(call)
+            try:
+                result, consequential = repo.serve(call)
+            except Exception as exc:
+                raise carry_cost(exc, sum(held["usage"]["cost"] for held in turns))
             if consequential:
-                return {"turns": turns, "decisive": {"type": "call", "call": call},
-                        "served": served, "served_ids": served_ids}
+                decisive = {"type": "call", "call": call}
+                if call["name"] == "Bash":
+                    # Named no recording verb, so it ended the episode by what it
+                    # changed in the copy.
+                    decisive["changed"] = not mutating(str(arguments(call).get("command", "")))
+                return {"turns": turns, "decisive": decisive,
+                        "served": served, "served_ids": served_ids, "retries": retries}
             served.append({"name": call["name"], "arguments": call["arguments"]})
             served_ids.append(call["id"])
             messages.append({"role": "tool", "tool_call_id": call["id"],
                              "content": result})
     return {"turns": turns, "decisive": {"type": "none"}, "served": served,
-            "served_ids": served_ids}
+            "served_ids": served_ids, "retries": retries}

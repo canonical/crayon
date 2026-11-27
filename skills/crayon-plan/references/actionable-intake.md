@@ -5,7 +5,7 @@ Load this file at workflow step 4 (Confirm the Diataxis direction).
 crayon drafts the two **actionable** Diataxis directions — **tutorial** and
 **how-to** — by *doing*: the draft is produced from a recorded walk of the
 procedure, not extracted from artefacts. This is the single shared intake for
-both directions (D-08); it holds the tutorial-vs-how-to distinction the intake
+both directions; it holds the tutorial-vs-how-to distinction the intake
 confirms and the plan-stage outline framing, then routes to crayon-write (evidence-walk branch).
 
 ## The two actionable directions

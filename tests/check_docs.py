@@ -1,6 +1,6 @@
-"""Documentation-accuracy gate: the observables, one release check, one delegation.
+"""Documentation-accuracy gate: the observables, release checks, one delegation.
 
-Everything else this phase ships can be true on the day it lands and quietly
+Everything else the repository ships can be true on the day it lands and quietly
 false a month later — a verb renamed, a reason added, a file moved. This is the
 one artefact that goes red when that happens, and it goes red naming what it
 compared.
@@ -11,7 +11,7 @@ What it claims, and nothing wider:
    document of the documented set (``docs/internals.md`` today), are exactly
    the subcommands the tool registers. The oracle is ``crayon --help``'s own
    subcommand list, never a list kept here, so a wrong document cannot be made
-   green by editing this file (T-18-30).
+   green by editing this file.
 2. **Reasons** — the ``REASONS`` region, carried by exactly one document of the
    documented set (``docs/internals.md`` today), is ONE compact table, one
    row per exit code with that code's reasons listed in its last cell; the
@@ -25,41 +25,41 @@ What it claims, and nothing wider:
 4. **Links** — every in-repo markdown link in the documented set resolves to a
    path that exists, and every ``#anchor`` to a heading in the target file.
 5. **Release record** — ``CHANGELOG.md``'s topmost ``## [x.y.z]`` section
-   carries an ISO date and none of ``RELEASE_PLACEHOLDERS``. A file with no
-   versioned heading scanned nothing and is a ``2``, never a clean run, so an
-   unfilled release-time slot cannot ship green (REL-02, CI-03).
+   carries an ISO date and none of ``RELEASE_PLACEHOLDERS``. The ``[0.2.0]``
+   section, wherever it sits, carries each actual-delivery fact in
+   ``RELEASE_020_REQUIRED_FACTS`` and none of the abandoned-plan claims in
+   ``RELEASE_020_FORBIDDEN_CLAIMS``. A file with no versioned heading scanned
+   nothing and is a ``2``, never a clean run.
 6. **Traces** — ``tests/check_traces.py``'s ``main()`` is called and folded into
    the tally. There is exactly one trace-table parser in this repository and it
-   is not here (17 D-09).
+   is not here.
 7. **Skills first** — the reader-facing documents in ``SKILLS_FIRST_DOCS`` name
    no ``crayon <verb>`` outside a ``## Under the hood`` section. The verbs are
    ``crayon --help``'s, the same oracle as observable 1. The reader drives crayon
    through the skills; the tool's commands belong to the pages that say they
    are looking underneath.
 
-What it does **not** claim: nothing here judges prose. A section can be wrong,
-stale or misleading in every word and this gate stays green, because it compares
-the named observables and only those. Observable 7 reads prose lines, but only
-for one literal shape. The release record is no exception:
-it asserts that the section is dated and does not announce its own
-incompleteness, and nothing about whether what it says is true. There is deliberately no general
+What it does **not** claim: this is not a general prose judge. A section can be
+wrong, stale or misleading outside the named observables and this gate stays
+green. Observable 7 reads prose lines for one literal shape; the release record
+reads only the dated heading, placeholder markers and the bounded 0.2.0
+delivery facts below. There is deliberately no general
 "every module constant must have a doc row" rule and nothing walks the tool's
 namespace: the tool's own step-count backstop constant has no contract row
 behind it by design — section 5.2 caps the step plan in bytes and names no count
-cap — so a general rule would report it forever and be silenced forever
-(``.planning/WINDOWS.md`` entry 17). This file does not know that constant
+cap — so a general rule would report it forever and be silenced forever. This file does not know that constant
 exists.
 
 Nothing outside the repository is opened, fetched or resolved: a link bearing a
 scheme is skipped by construction, so an outage somewhere else can never turn
-this gate red (D-11, T-18-31).
+this gate red.
 
 The file is deliberately **not** named with a ``test_`` prefix. A ``test_*.py``
 in ``tests/`` is pulled into the unittest namespace and into
 ``test_every_test_module_in_tests_is_in_the_gate``, and this is a checker with
 its own suite (``tests/test_check_docs.py``), not a suite.
 
-Mirrors :mod:`check_traces` / ``scripts/planning_lint.py`` / ``scripts/skill_lint.py``:
+Mirrors :mod:`check_traces` / ``scripts/skill_lint.py``:
 one :func:`main` with a ``0`` clean / ``1`` violation / ``2`` scanned-nothing
 contract. Each observable carries its **own** ``2`` arm: a single shared counter
 would let a reshaped verbs table ride to green on the links that did parse.
@@ -145,21 +145,50 @@ UNDER_THE_HOOD_HEADING = "## Under the hood"
 #: The literal markers that mean a release-time slot was never filled. Their
 #: presence in the TOPMOST released section is a violation and never a vacuous
 #: pass: the section was found and read, and what it says is that it is
-#: incomplete. The first is the fragment 18 CR-02 found live in the tree
+#: incomplete. The first is a fragment once found live in the tree
 #: (``#### Release-time evidence — the one placeholder left`` closed with it),
-#: the second is the reserved-slot wording plan 18-04 introduced when it wrote
-#: the section, and the last two are the generic debt markers — a released
-#: section is the one place in this repository where either is never a note to
-#: self but a gap in the record the tag is cut against.
+#: the second is the reserved-slot wording the section was first written with,
+#: and the last two are the generic debt markers — a released section is the
+#: one place in this repository where either is never a note to self but a gap
+#: in the published release record.
 #:
 #: Matched as substrings against the section body only. A marker in
 #: ``## [Unreleased]`` or in an older release below the topmost one is not a
-#: finding: this observable is about the section the tag is cut against.
+#: finding: this observable is about the topmost released section.
 RELEASE_PLACEHOLDERS = (
     "it is **not** filled",
     "PLACEHOLDER, not final",
     "TBD",
     "TODO",
+)
+
+#: The facts that distinguish the 0.2.0 tree that was delivered from the
+#: reviewed PR/merge/tag process that had been planned. These are deliberately
+#: literal and local: the checker pins the repository's historical record and
+#: never contacts GitHub.
+RELEASE_020_REQUIRED_FACTS = (
+    "The record was finalized on 2026-09-18.",
+    "The 0.2.0 product tree reached `main` by force-push on 2026-10-01.",
+    "No reviewed release pull request or merge produced that state.",
+    "No `v0.2.0` tag was created.",
+    "No GitHub Release was published.",
+    "GitHub Actions run `37534038841` at `edec520` is green.",
+    "CI is not a required status check on the default branch.",
+)
+
+#: Exact fragments from the superseded future-tense release story. A general
+#: wording lint would be guesswork; these are the known false claims this
+#: reconciliation removes and must not silently reintroduce.
+RELEASE_020_FORBIDDEN_CLAIMS = (
+    "every entry below is true at the tag",
+    "`v0.2.0` is the only tag on main's line",
+    (
+        "The merge commit, the run identifier and the tag are recorded in "
+        "this section at the tag"
+    ),
+    "The release branch is therefore re-carved",
+    "The pull request, the review, the merge and the tag are still ahead",
+    "It is merged as a merge commit",
 )
 
 #: A released heading — ``## [x.y.z]`` with an optional ``- YYYY-MM-DD`` suffix.
@@ -525,7 +554,7 @@ def _compare_compat(report, side, documented, expected):
             # String equality, never a version parse: contract section 5.10 says
             # the two numbers are compared as literal strings, and a skill that
             # reads `0.2` where the tool says `0.2.0` stops. A check that
-            # normalised them would pass a tree the runtime refuses (T-18-33).
+            # normalised them would pass a tree the runtime refuses.
             report.violation(
                 "compatibility",
                 "`%s` reads `%s` in %s and `%s` in the tool"
@@ -576,7 +605,7 @@ def _check_one_link(root, relative, source, target, report):
     if not inside:
         # Reported, never opened for writing: this file is read-only by
         # construction, so a traversal in a document is a finding here rather
-        # than a reach outside the tree (T-18-32).
+        # than a reach outside the tree.
         report.violation(
             observable,
             "`%s` in %s leaves the repository" % (target, relative),
@@ -622,7 +651,7 @@ def check_links(root, documents, report):
             if "://" in target or target.startswith("mailto:"):
                 # Out of scope by construction: nothing outside this repository
                 # is opened or reached, so an outage elsewhere cannot turn this
-                # gate red (D-11, T-18-31).
+                # gate red.
                 continue
             resolved += 1
             _check_one_link(root, relative, source, target, report)
@@ -682,15 +711,31 @@ def check_skills_first(root, documents, report):
     report.ok(observable, len(scanned), "reader-facing documents")
 
 
-def check_release_record(changelog, report):
-    """REL-02 / CI-03: the released section is dated and carries no unfilled slot.
+def _section_body(changelog, heading):
+    """The body under ``heading``, to the next ``## `` heading or the end.
 
-    The topmost ``## [x.y.z]`` heading is the section the tag is cut against and
-    the one a reader diffs the tag against. Two things are asserted about it and
-    nothing wider: that it carries a date, and that no marker in
-    :data:`RELEASE_PLACEHOLDERS` survives in its body. Nothing here reads the
-    section's prose — an entry can be wrong in every word and this stays green,
-    exactly as the four table observables do.
+    The same line-wise idiom ``heading_section`` uses, so an older release
+    below and ``[Unreleased]`` above are both outside the slice, while ``###``
+    and ``####`` subsections stay inside it.
+    """
+    body_lines = []
+    for line in changelog[heading.end() :].splitlines():
+        if _SECTION_RE.match(line):
+            break
+        body_lines.append(line)
+    return "\n".join(body_lines)
+
+
+def check_release_record(changelog, report):
+    """The released section is dated and historically bounded.
+
+    The topmost ``## [x.y.z]`` heading is the latest published release record:
+    it must carry a date, and its section no marker in
+    :data:`RELEASE_PLACEHOLDERS`. The ``[0.2.0]`` section, found by version
+    wherever it sits, has one additional bounded check: its body must retain
+    the actual delivery facts and must not restore the exact abandoned-plan
+    claims, so cutting a later release above it does not switch the pins off.
+    A changelog with no ``[0.2.0]`` section skips that check.
 
     A changelog with no versioned heading at all is a ``2``, never a ``0``: an
     absent, empty or unreleased-only file has no released section, so reporting
@@ -715,15 +760,7 @@ def check_release_record(changelog, report):
             [heading.group(0).strip()],
         )
         fired = True
-    # The section body, to the next `## ` heading or the end of the file — the
-    # same line-wise idiom `heading_section` uses, so an older release below and
-    # `[Unreleased]` above are both outside the slice.
-    body_lines = []
-    for line in changelog[heading.end() :].splitlines():
-        if _SECTION_RE.match(line):
-            break
-        body_lines.append(line)
-    body = "\n".join(body_lines)
+    body = _section_body(changelog, heading)
     for marker in RELEASE_PLACEHOLDERS:
         if marker in body:
             report.violation(
@@ -735,12 +772,37 @@ def check_release_record(changelog, report):
                 [marker],
             )
             fired = True
+    release_020 = next((h for h in headings if h.group(1) == "0.2.0"), None)
+    if release_020 is not None:
+        prose = " ".join(_section_body(changelog, release_020).split())
+        for fact in RELEASE_020_REQUIRED_FACTS:
+            if fact not in prose:
+                report.violation(
+                    observable,
+                    "the 0.2.0 section omits an actual-delivery fact",
+                    "required",
+                    [fact],
+                    "found",
+                    ["absent"],
+                )
+                fired = True
+        for claim in RELEASE_020_FORBIDDEN_CLAIMS:
+            if claim in prose:
+                report.violation(
+                    observable,
+                    "the 0.2.0 section restores a superseded release claim",
+                    "forbidden",
+                    [claim],
+                    "found",
+                    [claim],
+                )
+                fired = True
     if not fired:
         report.ok(observable, 1, "released section")
 
 
 def check_traces(root, report):
-    """Delegate the trace table to its one parser (17 D-09).
+    """Delegate the trace table to its one parser.
 
     ``tests/check_traces.py`` reads the trace table and this file does not, so
     there is exactly one reader of that table in the repository and a change to

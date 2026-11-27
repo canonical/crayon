@@ -5,6 +5,8 @@
     {
       "id": "B-01",
       "skill": "crayon-review",
+      "protects": "S-04",
+      "critical": false,
       "ask": "cfg",
       "max_turns": 3,
       "sandbox": "drafted",
@@ -82,6 +84,8 @@
     {
       "id": "B-02",
       "skill": "crayon-onboard",
+      "protects": "S-04",
+      "critical": false,
       "ask": "",
       "max_turns": 3,
       "sandbox": "context_empty",
@@ -139,6 +143,8 @@
     {
       "id": "B-03",
       "skill": "crayon-review",
+      "protects": "S-01",
+      "critical": true,
       "ask": "cfg",
       "sandbox": "drafted",
       "why": "stop rule: a contract other than 1 stops the session before show",
@@ -146,7 +152,7 @@
         {
           "cmd": "crayon version --json",
           "exit": 0,
-          "output": "{\"tool\": \"0.2.0\", \"contract\": 2}"
+          "output": "{\"tool\": \"0.3.0\", \"contract\": 2}"
         }
       ],
       "assert": [
@@ -182,14 +188,16 @@
     {
       "id": "B-04",
       "skill": "crayon-plan",
+      "protects": "S-01",
+      "critical": true,
       "ask": "cfg",
       "sandbox": "declared",
-      "why": "stop rule: a tool older than min_tool 0.2.0 stops the session",
+      "why": "stop rule: a tool older than min_tool 0.3.0 stops the session",
       "history": [
         {
           "cmd": "crayon version --json",
           "exit": 0,
-          "output": "{\"tool\": \"0.1.9\", \"contract\": 1}"
+          "output": "{\"tool\": \"0.2.0\", \"contract\": 1}"
         }
       ],
       "assert": [
@@ -200,12 +208,12 @@
         },
         {
           "kind": "text_re",
-          "re": "0\\.1\\.9|0\\.2\\.0"
+          "re": "0\\.2\\.0|0\\.3\\.0"
         }
       ],
       "oracle": [
         {
-          "content": "crayon 0.1.9 is older than the 0.2.0 this skill needs, so I have to stop. Upgrade crayon and invoke /crayon-plan again."
+          "content": "crayon 0.2.0 is older than the 0.3.0 this skill needs, so I have to stop. Upgrade crayon and invoke /crayon-plan again."
         }
       ],
       "foil": [

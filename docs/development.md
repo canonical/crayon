@@ -15,20 +15,22 @@ venv, no dependency, no third-party test runner. One verb per transition over a 
 JSONL ledger. Five portable Agent Skills under `skills/` are the human-facing surface; two
 stdlib-only lint utilities under `scripts/` and a validation kit under `validation/` are the
 apparatus around it. Nothing in the product tree imports anything outside the standard library,
-and the unit suite asserts it.
+and the unit suite asserts it. The model evals under `validation/evals/` are not the product: they
+run in their own environment, built with uv, and with promptfoo ([[evals]]).
 
 ## The gate
 
 Every command below must be green before a commit lands. The list is pinned three ways: the
 `GATE_COMMANDS` tuple in `tests/test_crayon_unit.py` must equal it string for string, every
 command must appear in `AGENTS.md` and in this page, and every `run:` body in
-`.github/workflows/ci.yml` must be one of them.
+`.github/workflows/ci.yml` must be one of them, bar the four the suite's `CI_EXTRA` names with
+their reasons: the `shellcheck` command and the check of its version, and the `evals` job's
+installs of ripgrep and uv, which the runner image does not ship.
 
 ```bash
 python3 -m unittest tests.test_crayon_unit       # the unit suite
 python3 tests/test_crayon_unit.py                # the SAME suite, script form
 python3 -m unittest tests.test_skill_text        # the skill-text contracts
-python3 -m unittest tests.test_planning_lint     # the anonymization lint's own tests
 python3 -m unittest tests.test_check_docs        # the docs-accuracy checker's own tests
 bash tests/test_crayon_lifecycle.sh              # the lifecycle / recovery suite
 bash tests/test_crayon_acceptance.sh             # the acceptance suite
@@ -37,15 +39,15 @@ bash validation/fixtures.sh                      # the validation kit's four cor
 python3 scripts/skill_lint.py                    # the SKILL.md frontmatter gate
 python3 tests/check_traces.py                    # the trace-table checker
 python3 tests/check_docs.py                      # the docs-accuracy checker
-python3 scripts/planning_lint.py                 # the anonymization gate over .planning/
-python3 tests/size_guard.py                      # VERB-09's line budget, reported and enforced
+python3 tests/size_guard.py                      # the line budget, reported and enforced
 python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
 python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
-python3 -m unittest tests.test_evals             # the model-eval kit's offline self-tests
+uv run --project validation/evals python -m unittest tests.test_evals  # the evals' self-tests
 ```
 
 Set `GIT_CONFIG_GLOBAL=/dev/null` for anything that shells out to git, so a developer's global
-identity or hooks can never mask a missing step in a fixture. Alongside the gate, and pinned to
+identity or hooks can never mask a missing step in a fixture; `tests/lib.sh` sets it, and
+`GIT_CONFIG_SYSTEM`, itself when it loads, so no bash suite depends on the caller. Alongside the gate, and pinned to
 CI the same way, the shell files are kept clean with:
 
 ```bash
@@ -78,11 +80,17 @@ truncated under the other reports `OK` either way. Beyond the tool's own units i
 of the repository's self-pins: the gate tuple, the tree block in `AGENTS.md` (pinned against
 the real `docs/`, `scripts/`, `tests/` and `validation/` in both directions), the CI mirror,
 the line budget's two thresholds, the Python 3.9 hazard scan and the no-dependency assertion.
+It counts the tests it defines, with the `ast` module, and fails unless it loads exactly that
+many, under either runner.
 
 **`tests/test_skill_text.py`** — the skill-text contracts: the routing table authored once in
 `skills/README.md` between its sentinels is byte-identical in every skill's
-`references/routing.md`; every reason and every `next` token has exactly one row; the manual
-install lines in [[install]] create the directory they copy into.
+`references/routing.md`; every reason and every `next` token has exactly one row; the
+author-rules block, the three rules authored once in `skills/README.md` between the
+`author-rules` sentinels, is carried byte for byte in the plan, write and review SKILL.md
+bodies (S-15); the plain-words block, authored once in `skills/README.md` between the
+`plain-words` sentinels, is carried byte for byte in all five SKILL.md bodies (S-20); the
+manual install lines in [[install]] create the directory they copy into.
 
 **`tests/test_crayon_lifecycle.sh`** — the N-series: lifecycle walks, negative paths, recovery
 situations and the contract's trace table, each test driving the real executable in a hermetic
@@ -93,14 +101,22 @@ intent from the v1 bash layer, the tests that cannot live in the N file, and A-3
 verbs driven end to end through the executable.
 
 Both bash suites source `tests/lib.sh`, the one definition site for the temp-repo fixture, the
-assertion set, the hook fixtures, the vacuous-test guard and the TAP runner. Never add a second
-copy of any of those.
+assertion set, the hook fixtures, the step-evidence helpers (`last_plan_seq`, `record_step` and
+`skip_step`), the vacuous-test guard and the TAP runner; `validation/evals/fixtures/states.sh`
+sources the same file. Never add a second copy of any of those. A bash suite that discovers no
+tests exits `2`, like every other checker.
+
+Every skip, in any suite, is reported by name, and every skip must be listed with its reason in
+`tests/skips.json`: a test skips through `skip_test <key>` in bash or `listed_skip` in the unit
+suite, and an unlisted key fails. A skip a runner cannot avoid, such as a test that needs a
+newer Python than the one running or a check that root can read any file, is listed; a skip
+that would hide a missing tool is not.
 
 **`tests/install_smoke.sh`** — the only test that reaches `crayon` through `PATH` rather than the
 in-tree file. It extracts the fenced shell between the `INSTALL:BEGIN` / `INSTALL:END` markers in
 [[install]] byte for byte, runs it from a temporary `HOME` in a temporary
-repository, then drives one unit to a written page and one refusal from that vantage point. It
-is what keeps the documented install from rotting.
+repository, then drives one unit through a written page, a review accept, `show` and `summary`,
+and one refusal, from that vantage point. It is what keeps the documented install from rotting.
 
 **`validation/fixtures.sh`** — V-01 … V-04: a bypassed signoff gate, a tampered ledger line, an
 unsteered redraft and an unresolved pending request, each reached from a valid unit built by the
@@ -113,6 +129,19 @@ enforced transition gates from audit-only findings and self-reported provenance.
 confines ledger reads to that root, but local Git history, model names and reviewer identity
 are not independently authenticated. A `FLAG [report]` for declared gaps or a source changed
 since signoff is informational; inspect the gating checks and exit code before claiming a pass.
+
+`validation/triage/` reads the triage records a repository keeps once its owner runs
+`git config crayon.collect true`; `crayon-plan` hands every triage advice to `crayon triage
+record`, which writes nothing while the setting is off. `measure.py` reports how often the advice
+matched what the authors then did, from `crayon triage export --json`. `build_dataset.py` turns
+the labelled records into a fine-tuning dataset split by time, and refuses below 300 of them.
+Measure first: a model is worth training only if the advice is often wrong and the records are
+there. The unit suite tests both scripts.
+
+`validation/closeout-docpr-3008.md` consolidates the slim-cycle disposition,
+the release delivery that actually occurred, the landed hardening evidence and
+the known limitations. Its Jira snapshot is dated: read any non-terminal item
+as a stop condition, not as evidence that the portfolio has already closed.
 
 **`validation/runmeta.sh`** records a dogfood leg's before/after Sphinx builds and provenance
 in the candidate repository. Before an external harness reads a candidate, check its repository
@@ -133,14 +162,27 @@ revisions in the unit or context provenance and disclose what the local-file com
 cannot cover.
 
 **`tests/test_evals.py`** — the offline half of the model evals under `validation/evals/`. The
-evals measure a model driving the skills, not the tool: every model gets the same skill text
-through the same neutral loop, and OpenRouter serves each one. Paid runs are started by hand
-with `OPENROUTER_API_KEY` set, and never run in the gate or in CI. What this module holds the
-kit to is everything that needs no model:
-- the transport's request shape, retries, cache and spend cap, against a fake opener;
+evals answer whether an author can rely on crayon, with the model they use, to keep them in
+control and keep the record true; paid runs are started by hand with `OPENROUTER_API_KEY` set,
+and never run in the gate or in CI. What this module holds the kit to is everything that needs no
+model:
+- the transport's request shape and retries, and the spend caps' reservations, against a fake
+  opener;
+- the episode rule on real copies: a call ends the episode when it changes the copy's files or
+  git index, or names a recording verb; the host and workshop runners; the digest;
 - every assertion kind, against hand-built turns;
-- every case file, against its own known-good reply;
+- every case file: its known-good reply passes, its known-bad reply fails, every oracle passes
+  every assertion of every other case in its conversation, and quoted tool output sits in a
+  fenced block;
+- the promptfoo layer: the configuration, the provider and the assertion;
+- the decisions: when a result may decide, support, the ship comparison against its baseline,
+  and the supported-models table in [[evals]];
+- traceability: every case names the rule it protects, every rule a model can break has a case,
+  the held-out split spans every case file, and every failing case has a disposition;
 - the rule that no prompt or kit file names an agent harness.
+
+It runs in the kit's environment: `uv run --project validation/evals python -m unittest
+tests.test_evals`.
 
 [[evals]] explains what the evals measure and how to read their results;
 `validation/evals/README.md` says how to run a lane, where results land and how to add a case.
@@ -157,16 +199,14 @@ documents outside a `## Under the hood` section; the changelog's topmost release
 must be dated and carry no placeholder. It calls `check_traces.py` itself.
 
 **`tests/check_traces.py`** — every row of the contract's trace table and every Mechanisms row
-that names a suite file must have a test whose function name carries the row's id. It says a
-test exists, and nothing about what the test asserts.
+must have a test whose function name carries the row's id, in the suite file a Mechanisms row
+names, and each such test must assert something. It reads that a test checks, not what it
+checks: whether an assertion is the right one stays a reviewer's call.
 
 **`scripts/skill_lint.py`** — agentskills.io frontmatter invariants for each `SKILL.md`: the
 name matches the directory, the description parses, the compatibility numbers are the contract's
 as literal strings, and only `crayon-write` may hold a write-capable tool. The single-writer rule
 is fail-closed.
-
-**`scripts/planning_lint.py`** — no unscrubbed prior-art identity in `.planning/`. A missing
-planning tree is a clean scan; on a release branch it checks nothing and says so.
 
 **`scripts/wiki_lint.py`** — the shape of the `docs/` wiki and its entry point `AGENTS.md`:
 every bracketed link resolves, every page is reachable from `AGENTS.md`, slugs are unique, pages
@@ -175,7 +215,7 @@ notation appears nowhere outside the wiki, and every `docs/<slug>.md` path cited
 exists. The live tree is its fixture; `tests/test_wiki_lint.py` mutates a two-page tree once
 per check.
 
-**`tests/size_guard.py`** — VERB-09's line budget over `crayon`, a review trigger rather than a
+**`tests/size_guard.py`** — the line budget over `crayon`, a review trigger rather than a
 design goal. Above the reporting threshold it reports and stays green; at the failing threshold
 it fails. It loads both thresholds and the comparison out of the unit suite, so the CI job and
 the local guard are the same code.
@@ -189,6 +229,8 @@ the local guard are the same code.
 | `AGENTS.md`'s tree block | the real `docs/`, `scripts/`, `tests/`, `validation/` | the unit suite |
 | The routing table | each skill's `references/routing.md` | `test_skill_text.py` |
 | The three stance references | `crayon-fetch`'s copies of `crayon-onboard`'s | `test_skill_text.py` |
+| The author-rules block | the plan, write and review `SKILL.md` bodies | `test_skill_text.py` |
+| The plain-words block | all five `SKILL.md` bodies | `test_skill_text.py` |
 | The five context artefact names | `docs/context.md`, the plan and onboard skills | the unit suite |
 | The verb rows in `docs/internals.md` | `crayon --help` | `check_docs.py` |
 | Reader-facing pages name skills, not tool commands | `crayon --help` | `check_docs.py` |
@@ -203,11 +245,15 @@ never make a pin pass by loosening it.
 
 ## CI
 
-Eight independent jobs in `.github/workflows/ci.yml`, no `needs:` edge between any two, so every
+Nine independent jobs in `.github/workflows/ci.yml`, no `needs:` edge between any two, so every
 verdict lands on the checks list at once. Each job body is the literal local command, so a red
 check reproduces with one paste. First-party actions only, pinned to commit SHAs. The unit
 matrix runs 3.9 / 3.12 / 3.13 from the runner's tool cache; `tests/run_matrix.sh` is the local
-equivalent, fetching interpreters with `uv` as a fetcher only — it never installs a package.
+equivalent, fetching interpreters with `uv` as a fetcher only. Every other job that runs Python
+runs it on 3.9, the oldest interpreter the tool supports, never on the image's own. The `evals`
+job runs the eval suite on Python 3.12 with Node 22, after installing ripgrep, which the
+episode's Grep tool runs, and uv. The `shellcheck` job first checks that the image still ships
+the version [[shellcheck]] names.
 
 ## Driving the verbs by hand
 

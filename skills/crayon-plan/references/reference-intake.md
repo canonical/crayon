@@ -37,5 +37,7 @@ Confirm the TA's unit fits this shape before declaring. If the reader's real nee
 | **how-to** | task-oriented — steps to reach a goal | crayon-write (evidence-walk branch) |
 | **explanation** | understanding-oriented — background and rationale | crayon-write |
 
-A TA-stated direction is honored verbatim; propose one only when the TA supplied
-none, and surface a stated-vs-evidence contradiction once for the TA to decide.
+A TA-stated direction is honored verbatim. When the TA supplied none, ask for it as
+an open question, and give your view only when the TA asks for it, stated as
+evidence and never as a marked option. Surface a stated-vs-evidence contradiction
+once for the TA to decide.

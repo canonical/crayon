@@ -55,7 +55,7 @@ crayon-fetch (declared sources, occasional) ─┴─> .crayon/context/ ─> cra
   and recorded via `crayon draft`.
 
 - **crayon-review** — surfaces the drafted unit for human review through two modes
-  (record / review with five-dimension findings), then records the verdict via
+  (record / review with six-dimension findings), then records the verdict via
   `crayon review`. Accept seals the basis; fix and redraft record the note as
   steering. Never edits the draft.
 
@@ -79,13 +79,108 @@ Transcribed from `docs/contract.md` §6. No skill may invoke a flag that is not 
 | `context stage <name> --body-file -\|F [--source]…` | repo-level; tool-owned staging | — |
 | `context record [--model --model-origin] [--note]` | repo-level; one commit, no unit | — (manifest) |
 | `context show [--json]` | read-only | — |
-| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json]`, `version [--json]` | read-only | — |
+| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json] [--verbose]`, `version [--json]` | read-only | — |
 
 Every transition emits one local git commit with `Crayon-Unit:` / `Crayon-Phase:`
 trailers and explicit pathspecs (never a directory, never the whole repo). The one
 repo-level transition, `context record`, commits the same way with `Crayon-Phase:
 context-recorded` and no `Crayon-Unit:` — the context belongs to the repository, not
 to a unit. The tool never pushes, opens PRs, builds, or publishes.
+
+## Author rules
+
+Three rules bind every question the plan, write and review skills put to the author.
+They are authored here, once, between the two sentinel comments, and carried byte for
+byte in those three `SKILL.md` bodies, directly after `</opening>`, because the loading
+model never loads this README — `tests/test_skill_text.py` (S-15) asserts the copies.
+The onboarding and fetch skills do not carry them: their `context record --note` is the
+agent's own summary of the scope it walked, not a note the author wrote. Their one
+judgment question, the priorities question each report ends on, states the no-marker
+rule in that step instead. When you change a rule, change it here and
+re-copy the block, sentinel lines included.
+
+<!-- author-rules:begin -->
+<author_rules>
+These three rules hold at every question this skill puts to the author.
+
+- **The author's words, verbatim.** A note recorded with `--note`, `--note-file -` or
+  `--notes` is exactly what the author typed beyond the verdict, the yes or the no that
+  answered the question: that answer alone is not part of the note, so "Fix." then
+  "Say …" records the second reply, and "Accept. The table …" records "The table …".
+  The words beyond it, given across several turns, are joined in order, one reply per
+  line. No spelling fix, no rephrasing, and no text offered for them to approve, such
+  as "I'll use: …". When their words are unclear, ask them; never rewrite them. With
+  nothing of theirs to record, omit the flag.
+  On the command line their words go inside single quotes, each `'` in them written
+  as `'\''`, and never inside double quotes: there a backtick runs a command and a `$`
+  expands, so the record would hold words they never typed. Type them inside the
+  single quotes as they wrote them, backticks and `$` included: nothing in them is
+  escaped, dropped or wrapped in `$(…)`, because inside single quotes nothing runs or
+  expands. Through `--note-file -`, the same single-quoted words are piped in with
+  `printf '%s'`, which adds nothing.
+- **No marked option on a judgment question.** Audience, intent, step choices, the
+  verdict and restore-or-amend are the author's judgment. No option of those questions
+  carries "(Recommended)", "(default)", "suggested", a star or any other marker, and
+  their order implies nothing. This rule wins over any harness's own convention of
+  marking a recommended option. A mechanical choice, such as an id, a path or a title,
+  may keep a marked default.
+- **An explicit go.** A signoff or an accept runs only on an explicit go: an
+  affirmative ("yes", "go", "sign it") to a question that named that act. For an
+  accept, the go is the verdict itself, or a yes to "Keep accept?". "Looks good" about
+  an outline is not a go, and neither is "yes, but …": handle the change, then ask
+  again.
+</author_rules>
+<!-- author-rules:end -->
+
+## Plain words
+
+One rule binds what the author reads from all five skills. It is authored here, once,
+between the two sentinel comments, and carried byte for byte in all five `SKILL.md`
+bodies, because the loading model never loads this README: directly after the author
+rules in the plan, write and review skills, and directly after `</opening>` in the
+onboarding and fetch skills. `tests/test_skill_text.py` (S-20) asserts the copies. It is
+separate from the author rules, which bind three skills. When you change it, change it
+here and re-copy the block, sentinel lines included.
+
+<!-- plain-words:begin -->
+<plain_words>
+What the author reads from this skill is in plain words. The record's own words stay in
+`--json`, in the ledger and on every command line, and never reach your prose.
+
+- **Accepted, the pages as accepted, request N.** Say "accepted" where the record says
+  sealed, "the pages as accepted" where it says basis, and "request 7" where it says
+  seq 7 for a request. Give no other record entry a number, neither "event 7" nor
+  "ledger line 7": say what is already recorded and name its commit. These record
+  words stay out of your own prose altogether, not even as an English idiom: say
+  "on what grounds", not "on what basis". They stay out in every form and every place
+  you write: seal, seals and sealed are all "accept", since an accept is recorded,
+  never sealed; and an option's label or description, or a refusal or a `--json`
+  value retold in a sentence, is prose too, so `"state": "sealed"` is "accepted" and
+  `already_accepted` is "already accepted".
+- **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
+  a sha256, a digest, and a verify or check count never appear in what you say;
+  name a commit by its id, never as a hash. A page whose bytes the record cites is
+  "current"; say so, never that a digest matches. Quote the tallies:
+  the walk tally and the findings tally are the tool's and the rubric's own lines.
+- **The success line, verbatim.** Echo each verb's success response line exactly as the
+  tool printed it; it is already plain. These rules cover what you say around it.
+- **Refusals in plain words, commands exact.** Tell the author in plain words what a
+  refusal means, for example "request 4 is still open". A command you run or show keeps
+  its real flags and values, in a code span. Tool output you show verbatim goes in a
+  fenced code block, never inside a sentence. That covers what a step or a routing row
+  says to show, and any other line you quote beyond the success line, such as a
+  diagnostic a verb prints.
+- **Read it back before you send.** Before every message to the author, read your
+  prose again: everything outside code spans and fenced blocks, option labels and
+  descriptions included. Look for seal, seals, sealed, basis, seq, seqs, plan hash,
+  hash, hashes, sha256, digest, digests, and "event" or "ledger line" before a number,
+  in any case and inside a compound such as "hash-chained". Rewrite each one you find:
+  "accepted", "the pages as accepted", "request 2", "current", "the record cannot be
+  edited", or the commit's id. A qualifier you retell from `--json`, such as "edited
+  since the signoff at seq 2", is retold the same way: "edited since the signoff at
+  request 2".
+</plain_words>
+<!-- plain-words:end -->
 
 ## Routing
 
@@ -94,11 +189,11 @@ single-line JSON refusal carrying `error` and `next`. A skill never decides wher
 loop goes — it reads the token or the reason and acts on the row below.
 
 This table is authored **here, once**, between the two sentinel comments, and
-mirrored byte-identically into each skill's `references/routing.md` (D-13). The
+mirrored byte-identically into each skill's `references/routing.md`. The
 mirrors are what actually ship, because the loading model auto-loads each skill
 directory but never this file. When you change a row, change it here and re-copy the
-block between the sentinels — `tests/test_skill_text.py` (S-03) asserts the three
-copies are equal.
+block between the sentinels — `tests/test_skill_text.py` (S-03) asserts each of the
+five mirrors equals it.
 
 The first block is one row per reason in `docs/contract.md` §5.7's reason table, in
 that table's order; the second is one row per `next` token in §5.5's order. A row
@@ -110,19 +205,19 @@ precondition — the preconditions live in §5.7 and nowhere else.
 |---|---|---|
 | `no_signoff` | The unit carries no current signoff, so nothing may be recorded against it. Read the plan back to the author, get an explicit go-ahead, and record the gate act. | `crayon signoff <id>` |
 | `plan_stale` | The plan moved after the signoff that authorised it. Read the current plan back to the author and re-sign on their explicit go-ahead. | `crayon signoff <id>`, or `crayon unit edit <id> [flags] --re-sign` |
-| `page_drift` | A basis page on disk no longer holds the bytes crayon recorded. Name the paths from the refusal's `detail` and record them onto the record before anything else. | `crayon edits <id> --note "…"` |
-| `target_exists` | A signed target already holds bytes crayon never recorded. Same answer as drift — adopt the file as the basis rather than drafting over it unseen. | `crayon edits <id> --note "…"` |
-| `target_missing` | An accept was asked for while a basis page is absent or unlisted. Record the author's restoration request; the next draft restores the page. | `crayon steer <id> --note "…"` |
+| `page_drift` | A page on disk no longer holds the bytes crayon recorded for it. Name the paths from the refusal's `detail` and record them onto the record before anything else. | `crayon edits <id> --note "…"` |
+| `target_exists` | A signed target already holds bytes crayon never recorded. Same answer as drift — adopt the file as the page on record rather than drafting over it unseen. | `crayon edits <id> --note "…"` |
+| `target_missing` | An accept was asked for while an accepted page is absent or unlisted. Record the author's restoration request; the next draft restores the page. | `crayon steer <id> --note "…"` |
 | `generation_stale` | The plan was amended after the last generation, so that draft no longer answers the current plan. Draft again — walk the steps first if the unit is actionable. | `crayon draft <id> <staging file\|dir>` |
-| `unapplied_steering` | Accept was asked for with steering still pending; `detail` lists the seqs. Put each one to the reviewer and re-run accept resolving or withdrawing every seq. | `crayon review <id> --verdict accept --note "…" --resolves a,b [--withdraw <seq> "<reason>"]…` |
+| `unapplied_steering` | Accept was asked for with requests still pending, and `detail` lists their numbers. Put each one to the reviewer as "request <n>", with its note, and re-run accept resolving or withdrawing every one of them. | `crayon review <id> --verdict accept [--note "…"] --resolves a,b [--withdraw <seq> "<reason>"]…` |
 | `unsteered` | A second generation was asked for with no steering between it and the last one. Record what the author wants changed, or re-run the draft stating why it is unsteered. | `crayon steer <id> --note "…"` then `crayon draft`, or `crayon draft <id> <staging file\|dir> --unsteered-reason "…"` |
 | `no_generation` | A verdict was asked for on a unit that has no draft yet. Draft first. | `crayon draft <id> <staging file\|dir>` |
 | `target_claimed` | Name the holding unit from the refusal's `detail`, tell the author the target is still listed in that unit's current signoff, and offer to release it. Retire only on an explicit yes — it is another unit's record. Then retry the declaration unchanged. | `crayon unit retire <holder> --note "…"`, then re-run the refused command |
 | `retired` | The unit is retired and every mutating verb refuses on it. STOP — a retired unit is never reopened; offer a fresh declaration for the same target instead. | `crayon unit new <new-id> …` |
 | `bad_target` | The target, identifier or context artefact name breaks the input rules; the refusal names the offending value. Read it back to the author and re-run with a corrected value — a docs-relative `.md` or `.rst` path for a target, one of the five context artefact names for `context stage`. | re-run the refused command with the corrected value |
-| `bad_write_path` | A write destination resolved outside the repo. STOP and report the path from `detail` verbatim — this is a repo-layout problem, not something to retry. | none — report and stop |
+| `bad_write_path` | A write destination resolved outside the repo. STOP and report the path from `detail` verbatim, in a code block — this is a repo-layout problem, not something to retry. | none — report and stop |
 | `bad_draft_path` | The staging path is not inside the unit's own draft directory, or a directory does not hold exactly the signed targets. Re-stage and re-run. | `crayon draft <id> .crayon/staging/<id>/draft/…` |
-| `bad_resolution` | `--resolves` / `--withdraw` named a seq that is not pending, repeated one, crossed the two sets, or left a withdrawal without a reason. Read the pending seqs back and re-run accept with a corrected set. | `crayon review <id> --verdict accept --note "…" --resolves a,b [--withdraw <seq> "<reason>"]…` |
+| `bad_resolution` | `--resolves` / `--withdraw` named a request number that is not pending, repeated one, crossed the two sets, or left a withdrawal without a reason. Read the pending requests back to the reviewer as "request <n>" and re-run accept with a corrected set. | `crayon review <id> --verdict accept [--note "…"] --resolves a,b [--withdraw <seq> "<reason>"]…` |
 | `unit_invalid` | `unit.md` is not the declared shape; the refusal names the line and the flag that owns that field. Fix the field through that flag, never by hand-editing around the tool. | `crayon unit edit <id> [flags] [--body-file -]` |
 | `unit_exists` | That id is already declared. Show the existing unit and continue on it, or agree a new id with the author. | `crayon show <id>` |
 | `unit_not_found` | No unit with that id exists. Ask the author for the right id rather than guessing, or declare it. | `crayon show <id>` on the corrected id, or `crayon unit new <id> …` |
@@ -131,41 +226,41 @@ precondition — the preconditions live in §5.7 and nowhere else.
 | `note_required` | The note was empty, carried a carriage return, or exceeded the cap. Ask the author for the note again and re-run the same verb with it. | re-run the refused command with `--note "…"` or `--note-file -` |
 | `git_identity_missing` | git has no author identity, so no commit can be made. STOP and tell the author to configure their own git identity — the skill never sets it for them. | none — report and stop |
 | `not_a_repo` | The working directory is not inside a git repository. STOP and say so; crayon records into the repo it is run from. | none — report and stop |
-| `legacy_unit` | The unit is a v1.x record this tool does not read. STOP and show the archive hint from the refusal verbatim; declare a fresh unit if the author wants the page redone. | `crayon unit new <new-id> …` |
-| `identical_draft` | Nothing changed — every signed target already holds the staging bytes. Report the existing seq and commit from the payload and act on the `next` it carries. | act on the payload's `next` |
-| `already_signed` | The plan is already signed at that hash. Report the existing seq and commit from the payload and act on the `next` it carries. | act on the payload's `next` |
-| `already_accepted` | The unit is already accepted on this basis with no history since. Never record a second accept — report the existing seq and commit. | act on the payload's `next` |
-| `already_recorded` | This step evidence is already on the record, field for field. Report the existing seq and commit and move to the next step. | `crayon step <id> <next-step-id> --steps-seq N --evidence-file F --output-file F` |
-| `already_retired` | The unit was already retired. Report the existing seq and commit; there is nothing further to record on it. | none — report and stop |
-| `no_edits` | No basis file changed and nothing is adoptable, so there is nothing to record. Say so and act on the `next` the payload carries. | act on the payload's `next` |
+| `legacy_unit` | The unit is a v1.x record this tool does not read. STOP and show the archive hint from the refusal verbatim, in a code block; declare a fresh unit if the author wants the page redone. | `crayon unit new <new-id> …` |
+| `identical_draft` | Nothing changed — every signed target already holds the staging bytes. Say that nothing was recorded and give the commit from the payload, naming no record number; act on the `next` it carries. | act on the payload's `next` |
+| `already_signed` | The plan is already signed as it stands. Say so and give the commit from the payload, naming no record number; act on the `next` it carries. | act on the payload's `next` |
+| `already_accepted` | The unit is already accepted on these pages, with nothing recorded since. Never record a second accept — say it is already accepted and give the commit from the payload, naming no record number. | act on the payload's `next` |
+| `already_recorded` | This step evidence is already on the record, field for field. Say so and give the commit from the payload, naming no record number, then move to the next step. | `crayon step <id> <next-step-id> --steps-seq N --evidence-file F --output-file F` |
+| `already_retired` | The unit was already retired. Say so and give the commit from the payload, naming no record number; there is nothing further to record on it. | none — report and stop |
+| `no_edits` | No recorded page changed and nothing is adoptable, so there is nothing to record. Say so and act on the `next` the payload carries. | act on the payload's `next` |
 | `noop_unchanged` | The edit left the frontmatter and the body unchanged, or every staged context artefact already holds its recorded bytes (the staged copies are discarded). Say so and act on the `next` the payload carries. | act on the payload's `next` |
 | `nothing_to_resume` | There is no tail and no pending batch — the record is whole. Say so and act on the `next` the payload carries. | act on the payload's `next` |
 | `steps_unresolved` | An actionable unit was drafted with steps still unresolved; the refusal lists them. Run each one and record its evidence before drafting. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` |
 | `steps_missing` | The unit is actionable and has no step plan at all. Agree the steps with the author, record the plan, then walk it. | `crayon plan-steps <id> --steps-file -` |
-| `evidence_stale` | The plan this evidence names was **superseded** by a later `plan-steps`; the refusal gives both seqs. The evidence is not wrong, it answers an instruction that has moved — re-run the command and record it against the current seq. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` |
-| `evidence_incomplete` | The evidence JSON is missing a required field, or a `pass` / `fail` / `deviated` step arrived without `--output-file`. Re-run the command capturing its output to a file and record that file — never type a digest. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` |
+| `evidence_stale` | The plan this evidence names was **superseded** by a later `plan-steps`; the refusal names both step plans. The evidence is not wrong, it answers an instruction that has moved — re-run the command and record it against the current one. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` |
+| `evidence_incomplete` | The evidence JSON is missing a required field, or a `pass` / `fail` / `deviated` step arrived without `--output-file`. Re-run the command capturing its output to a file and record that file — never type a checksum yourself. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` |
 | `evidence_mismatch` | The evidence JSON's `mode` is not the `mode` the plan declares for this step; the refusal names both. Record the step in the declared mode, or re-plan the step if the mode itself was wrong. Re-running the command unchanged cannot clear this — the mode is a field of the evidence, not of the run. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` with the declared `mode`, or `crayon plan-steps <id> --steps-file -` |
 | `busy` | Another crayon run holds the staging lock. STOP, wait for it to finish, then re-run the same command unchanged. | re-run the refused command unchanged |
 | `git_busy` | A git process is mid-write in this repo. STOP, wait for it to finish, then re-run the same command unchanged. | re-run the refused command unchanged |
-| `ledger_corrupt` | The record does not verify. STOP and show the author the full verify report; never hand-edit the ledger. | `crayon verify <id>` |
+| `ledger_corrupt` | The record does not verify. STOP and show the author the full verify report, verbatim, in a code block; never hand-edit the ledger. | `crayon verify <id> --verbose` |
 | `ledger_version_unsupported` | The record declares a contract number this tool does not implement. STOP and report both numbers from the refusal; never hand-edit the ledger. | `crayon version --json` |
 | `unit_id_mismatch` | The record's header names a different unit than the directory holding it. STOP and report both ids; never hand-edit the ledger. | none — report and stop |
 | `uncommitted_tail` | An interrupted run left uncommitted lines. Show the author what a resume would do; with `unexpected` files, use the `resume_ambiguous` row. Otherwise complete it. | `crayon resume <id> --dry-run`, then `crayon resume <id>` only with no `unexpected` files |
-| `ledger_diverged` | The committed prefix was rewritten in git history. STOP and show the git recipe from the refusal verbatim. | none — report and stop |
-| `resume_ambiguous` | Files on disk differ from what the interrupted run intended; the printed per-file diff shows each one. Show that stdout verbatim and offer the author exactly two choices — discard the on-disk bytes, or keep them as a recorded reviewer edit. Recording a new reviewer edit is available **only when the batch's last event is a generation or a reviewer edit that is not itself an adoption, a file is `unexpected`, and every unexpected file's current bytes are still on disk**: this refusal is raised on any batch whose placed files were rewritten, including the `signoff`, `unit edit`, `plan-steps`, `step`, `review`, `edits` and `unit retire` batches that write `unit.md`, and on those `--adopt` refuses `adopt_unsupported`. When recording a new adoption, a deleted file also refuses `adopt_unsupported`: there are no current bytes to adopt. Offer the discard alone there. A batch whose last event is already an adoption (`hook: true`) has a different keep path: `crayon resume <id> --adopt` retains the on-disk bytes while completing the existing batch; it appends no event and records no note. `crayon resume <id> --overwrite` restores that adoption's saved bytes instead. Bare `crayon resume <id>` is available only with no `unexpected` files. After completion, follow the emitted route: if the bytes still differ from the recorded adoption, `record_edits` calls for `crayon edits <id> --note "…"`; a hook may have restored them during the commit. Both choices retry the transition, so remove what is refusing the transition before running either one. | `crayon resume <id> --overwrite`; only when the batch ends in a generation or reviewer edit that is not itself an adoption and every unexpected file's rewritten bytes are still on disk, `crayon resume <id> --adopt --note "…"`; for an already-adopted batch, `crayon resume <id> --adopt` retains bytes without another event or note |
-| `recovery_unsupported` | Show the printed findings verbatim, then branch on `detail`. **`detail: commit_rejected` and `detail: stage_rejected`** — the batch IS appended to the record and the files ARE placed; the transition failed twice. Show the printed git output: that is what is blocking it, and removing it then resuming once more is the escape that always works. The two details name different causes and must not be read aloud as the same one: on `commit_rejected` git ran the commit and something refused it, so the answer is the repository's commit hooks; on `stage_rejected` the commit was never attempted and no hook ran, so it is `git status` and the index — an unstageable pathspec, an index that will not lock, a read-only `.git`. `--adopt` is the escape ONLY when the hook REWROTE the placed bytes of a generation or a reviewer edit that is not itself an adoption and every unexpected file's current bytes are still on disk; deleted files also refuse `adopt_unsupported` (use `--overwrite` after removing any remaining blocker); for an already-adopted batch, use the `resume_ambiguous` row to choose retained or saved bytes; on other ineligible batches it refuses `adopt_unsupported`, and with the bytes unchanged it is a plain resume that will be refused again. Never offer it without that condition. **Every other detail** — `no_material`, `material_invalid`, `event_invalid`, `tail_unknown` — is stage a's, and there nothing was written: offer no recipe of your own, restore nothing from HEAD, and never commit the tail. | on `commit_rejected` or `stage_rejected`, remove what is refusing the transition then `crayon resume <id>` only with no `unexpected` files (otherwise use the `resume_ambiguous` row); only when a hook rewrote a generation's or a reviewer edit's placed bytes, that edit is not itself an adoption, and every unexpected file's current bytes are still on disk, `crayon resume <id> --adopt --note "…"`; on every other detail, none — report and stop |
+| `ledger_diverged` | The committed prefix was rewritten in git history. STOP and show the git recipe from the refusal verbatim, in a code block. | none — report and stop |
+| `resume_ambiguous` | Files on disk differ from what the interrupted run intended; the printed per-file diff shows each one. Show that stdout verbatim, in a code block, and offer the author exactly two choices — discard the on-disk bytes, or keep them as a recorded reviewer edit. Recording a new reviewer edit is available **only when the batch's last event is a generation or a reviewer edit that is not itself an adoption, a file is `unexpected`, and every unexpected file's current bytes are still on disk**: this refusal is raised on any batch whose placed files were rewritten, including the `signoff`, `unit edit`, `plan-steps`, `step`, `review`, `edits` and `unit retire` batches that write `unit.md`, and on those `--adopt` refuses `adopt_unsupported`. When recording a new adoption, a deleted file also refuses `adopt_unsupported`: there are no current bytes to adopt. Offer the discard alone there. A batch whose last event is already an adoption (`hook: true`) has a different keep path: `crayon resume <id> --adopt` retains the on-disk bytes while completing the existing batch; it appends no event and records no note. `crayon resume <id> --overwrite` restores that adoption's saved bytes instead. Bare `crayon resume <id>` is available only with no `unexpected` files. After completion, follow the emitted route: if the bytes still differ from the recorded adoption, `record_edits` calls for `crayon edits <id> --note "…"`; a hook may have restored them during the commit. Both choices retry the transition, so remove what is refusing the transition before running either one. | `crayon resume <id> --overwrite`; only when the batch ends in a generation or reviewer edit that is not itself an adoption and every unexpected file's rewritten bytes are still on disk, `crayon resume <id> --adopt --note "…"`; for an already-adopted batch, `crayon resume <id> --adopt` retains bytes without another event or note |
+| `recovery_unsupported` | Show the printed findings verbatim, in a code block, then branch on `detail`. **`detail: commit_rejected` and `detail: stage_rejected`** — the batch IS appended to the record and the files ARE placed; the transition failed twice. Show the printed git output: that is what is blocking it, and removing it then resuming once more is the escape that always works. The two details name different causes and must not be read aloud as the same one: on `commit_rejected` git ran the commit and something refused it, so the answer is the repository's commit hooks; on `stage_rejected` the commit was never attempted and no hook ran, so it is `git status` and the index — an unstageable pathspec, an index that will not lock, a read-only `.git`. `--adopt` is the escape ONLY when the hook REWROTE the placed bytes of a generation or a reviewer edit that is not itself an adoption and every unexpected file's current bytes are still on disk; deleted files also refuse `adopt_unsupported` (use `--overwrite` after removing any remaining blocker); for an already-adopted batch, use the `resume_ambiguous` row to choose retained or saved bytes; on other ineligible batches it refuses `adopt_unsupported`, and with the bytes unchanged it is a plain resume that will be refused again. Never offer it without that condition. **Every other detail** — `no_material`, `material_invalid`, `event_invalid`, `tail_unknown` — is stage a's, and there nothing was written: offer no recipe of your own, restore nothing from HEAD, and never commit the tail. | on `commit_rejected` or `stage_rejected`, remove what is refusing the transition then `crayon resume <id>` only with no `unexpected` files (otherwise use the `resume_ambiguous` row); only when a hook rewrote a generation's or a reviewer edit's placed bytes, that edit is not itself an adoption, and every unexpected file's current bytes are still on disk, `crayon resume <id> --adopt --note "…"`; on every other detail, none — report and stop |
 | `adopt_unsupported` | The tool raises this from **two** places and `detail` says which. **`detail: the batch's last event is a <kind>`** — `--adopt` was asked for on a batch that is neither a generation nor a reviewer edit, so there is no generation to restate; the flag is offerable only when the last event is one of those two, is not itself an adoption, and every unexpected file's rewritten bytes are still on disk. **`detail: <path> is not on disk and has no current bytes to adopt`** — the batch ends in a generation or a reviewer edit, but the path the hook was expected to rewrite is gone (a "generated files must not be committed" hook deletes its target), so there are no current bytes to make durable. Offer to restore the intended bytes with `--overwrite`. If something is still refusing the transition, remove what is refusing the transition first. The hint reports `transition_attempts` as a historical count, not evidence of a current blocker; removing a hook does not reset it. Both raise sites retain the overwrite remedy at every count. | once nothing is refusing the transition, `crayon resume <id> --overwrite` |
-| `internal_error` | crayon itself fell over below the verb. This is a defect in the tool, not a diagnosis of the author's record: nothing here has established that anything is wrong with the ledger or the pages. Report the refusal's `detail` verbatim — it names the exception — and re-run the same command unchanged. Hand-edit nothing, and run no recovery verb; `show` is read-only and is the route for that reason. | `crayon show <id>`, then re-run the refused command unchanged |
+| `internal_error` | crayon itself fell over below the verb. This is a defect in the tool, not a diagnosis of the author's record: nothing here has established that anything is wrong with the ledger or the pages. Report the refusal's `detail` verbatim, in a code block — it names the exception — and re-run the same command unchanged. Hand-edit nothing, and run no recovery verb; `show` is read-only and is the route for that reason. | `crayon show <id>`, then re-run the refused command unchanged |
 | `resume` | An interrupted run is waiting. Show the author what a resume would do, then complete it — **unless the refusal carrying this token was `recovery_unsupported` with `detail: commit_rejected` or `detail: stage_rejected`**, in which case a plain resume is the command that just refused; act on that reason's row instead, and note that the `--adopt` it names is conditional: a deleted file refuses `adopt_unsupported`. Both details carry this token and both re-offer the command that produced them; they differ only in what is blocking the transition — a commit hook on `commit_rejected`, the index on `stage_rejected`. | `crayon resume <id> --dry-run`, then `crayon resume <id>` only with no `unexpected` files (otherwise use the `resume_ambiguous` row); on `commit_rejected` or `stage_rejected`, remove what is refusing the transition first, and use `crayon resume <id> --adopt --note "…"` only when a hook rewrote a generation's or a reviewer edit's placed bytes, that edit is not itself an adoption, and every unexpected file's current bytes are still on disk |
 | `retired` | The unit is retired. STOP — say so and offer a fresh declaration for the same target. | `crayon unit new <new-id> …` |
 | `sign_off` | Read the plan back to the author and record the gate act on their explicit go-ahead. | `crayon signoff <id>` |
 | `re_sign` | The plan moved after its signoff. Read the current plan back and re-sign on the author's explicit go-ahead. | `crayon signoff <id>`, or `crayon unit edit <id> [flags] --re-sign` |
-| `record_edits` | Basis bytes on disk are not the recorded ones. Name the paths and record them before drafting or reviewing. | `crayon edits <id> --note "…"` |
-| `walk` | The unit is actionable with unresolved steps. Run each step, capture its output to a file, and record the evidence the tool hashes. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` |
+| `record_edits` | Pages on disk are not the bytes crayon recorded. Name the paths and record them before drafting or reviewing. | `crayon edits <id> --note "…"` |
+| `walk` | The unit is actionable with unresolved steps. Run each step, capture its output to a file, and record the evidence; the tool checks it itself. | `crayon step <id> <step-id> --steps-seq N --evidence-file F --output-file F` |
 | `draft` | Author the page, stage it under the unit's own draft directory, and record it. | `crayon draft <id> <staging file\|dir>` |
-| `publish` | The unit is accepted and its pages are current. STOP — crayon stops here; the author owns the PR, the build and the publish. | none — report and stop |
+| `publish` | The unit is accepted and its pages are current. STOP — crayon stops here; what happens to the pages next is the author's. | none — report and stop |
 | `steer` | Record the author's request on the record before drafting again. | `crayon steer <id> --note "…"` |
-| `review` | A generation or a reviewer edit is the tip. Surface it for review and record the verdict the reviewer gives. | `crayon review <id> --verdict accept\|fix\|redraft --note "…"` |
+| `review` | A generation or a reviewer edit is the tip. Surface it for review and record the verdict the reviewer gives. | `crayon review <id> --verdict accept [--note "…"]`, or `crayon review <id> --verdict fix\|redraft --note "…"` |
 | `record` | Context artefacts are staged and not yet recorded. Record them — one commit, no unit — and echo the tool's line. | `crayon context record [--model … --model-origin …] [--note "…"]` |
 | `onboard` | No context is recorded yet: at least one of `doc-style.md`, `glossary.md`, `structure.md` is absent. STOP and offer the author the bootstrap choice — supply the files, run `/crayon-onboard`, or ground this intake ephemerally; never author `.crayon/context/` yourself. | none — route to `/crayon-onboard` (a skill), or continue on the author's choice |
 | `plan` | The context artefacts are recorded and current. STOP — context is done; the next act is a unit declaration. | none — route to `/crayon-plan` (a skill) |
@@ -193,15 +288,15 @@ to be readable at runtime.
 | Number | Value |
 |---|---|
 | `contract` | `1` |
-| `min_tool` | `0.2.0` |
+| `min_tool` | `0.3.0` |
 
 Every skill declares both in its frontmatter as `metadata.crayon_contract: 1` and
-`metadata.crayon_min_tool: "0.2.0"`, and opens by reading `crayon version --json`, which
+`metadata.crayon_min_tool: "0.3.0"`, and opens by reading `crayon version --json`, which
 answers `{"tool","contract"}`. The two numbers are compared as **literal strings** —
 never parsed or rounded as versions.
 
 A skill stops for exactly two reasons: the tool answers anything other than
-`contract 1`, or its `tool` version is older than `min_tool 0.2.0` (`0.1.9` is older). Anything else is a
+`contract 1`, or its `tool` version is older than `min_tool 0.3.0` (`0.2.0` is older). Anything else is a
 routing row above, not a stop.
 
 ## Hooks

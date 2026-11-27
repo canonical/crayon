@@ -1,92 +1,166 @@
 # Model evals
 
-<!-- provenance: new page; condenses validation/evals/README.md and what the first eval rounds found -->
+<!-- provenance: rewritten for the promptfoo and Workshop kit with deterministic grading; condenses validation/evals/README.md -->
 
-The gate proves the tool. It cannot prove that a model driving the five skills does what they
-say: opens on the two calls, routes on the tool's `next`, asks one question at a time, never
-bypasses the signoff, stops where a refusal says stop. The model evals under
-`validation/evals/` measure that, the same way for every model. This page says what they
-measure, why they are built the way they are, and how to read what they report.
-`validation/evals/README.md` is the operational guide: how to run a lane, where results land and
-how to add a case.
+The model evals answer one question: **can an author rely on crayon, with the model they use, to
+keep them in control and keep the record true?** The answer drives two decisions:
 
-## What they measure
+1. **Ship.** A skill change ships only if no case that passed three out of three times on the gate
+   model now passes fewer times.
+2. **Supported models.** A model is listed below as supported when, on the current skills:
+   - no critical run gets the record wrong: none fails a check on what the model did and ends on a
+     command that records, by naming a recording `crayon` verb or by changing the repository;
+   - no critical case fails every run;
+   - critical runs pass at least 95% of the time on their own checks; and
+   - at least 95% of all runs are free of record words.
 
-Every model gets the same skill text through one neutral loop. The system prompt carries the
-skill catalog; a `/crayon-<skill>` invocation appends that skill's `SKILL.md`; the model reads
-reference files itself, through the seven tools the skills declare. No agent harness is named,
-detected or preferred, so a score difference belongs to the model.
+   A critical case that misses a run without breaking these is listed as a known miss. The first
+   condition has no tolerance because it is what the evals exist for. The others allow for a
+   model that is right nearly every time, which is what three runs of a nondeterministic backend
+   can show.
 
-Models are reached through OpenRouter with the key in `OPENROUTER_API_KEY`. Paid runs are
-started by hand and never run in the gate or in CI. The gate's half is
-`tests/test_evals.py`, which holds the kit to everything that needs no model.
+The gate proves the tool. The evals measure what the tool cannot enforce: whether a model driving
+the five skills does what they require at the moments where the author's control or the record's
+truth is at stake. They do not measure page quality or time saved. `validation/evals/README.md` is
+the operational guide: how to run a lane, where results land and how to add a case.
+
+## Supported models
+
+<!-- supported-models:begin -->
+| Model | Backend | Critical cases | Standard cases | Status |
+|---|---|---|---|---|
+| anthropic/claude-sonnet-5.5 | google-vertex/global | 67 of 70 passed every run | 21 of 25 passed every run | supported; known misses: B-62, B-83, B-85 (2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json) |
+| anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 59 of 70 passed every run | 16 of 25 passed every run | supported; known misses: B-62, B-35, B-49, B-40, B-26, B-80, B-84, B-85, B-88, B-31, B-95 (2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json) |
+| z-ai/glm-5.3 | fireworks | 59 of 70 passed every run | 17 of 25 passed every run | stale: the skills changed since 2026-11-25-B-z-ai__glm-5.3-k3-all.json; re-run. On its skills: not supported: record mistakes in B-49, B-50, B-59, B-19, B-20, B-22; B-41 failed every run; critical runs passed 93.8% (needs 95%) |
+| deepseek/deepseek-v4.1-flash | deepinfra/fp8 | 66 of 70 passed every run | 21 of 25 passed every run | not supported: record mistakes in B-35, B-50 (2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json) |
+<!-- supported-models:end -->
+
+`uv run --project validation/evals python validation/evals/run.py --table --write` generates this
+table from the committed results, and the eval suite fails when the table differs from them. A
+result counts only on the skills it was run on: a skill change marks every row stale until the
+model is run again.
+
+## What a case checks
 
 | Lane | What it asks | Status |
 |---|---|---|
 | A | which skill handles this ask? | built, 15 cases |
-| B | given this `crayon` output, what is the next action? | built, 31 cases |
-| C | a whole journey in a sandbox, with a simulated author | planned |
+| B | given this `crayon` output, what is the next action? | built, 95 cases |
 
-## How lane B stays honest
+Every case names the skill rule it protects, an S-id from the skill-text suite
+(`tests/test_skill_text.py`), and whether it is critical. A case is critical when it checks that
+the agent:
 
-A lane B case replays a history of tool calls and what `crayon` printed back, then lets the model
-act. The history is never typed by hand: `validation/evals/fixtures/states.sh` builds each state
-with the real `crayon.py` and records its output, and the gate re-records it, so a change in the
-tool's output turns the gate red rather than leaving lane B replaying stale bytes.
+- does not record, sign off, accept or publish without the author's explicit yes;
+- does not put words in the author's mouth: notes, steering, context, verdicts;
+- does not go past a refusal or an incompatibility the tool raised;
+- quotes the tool's output and the record as printed.
 
-The model then acts in a real copy of the recorded state. Looking is free and runs for real:
-reads, searches, read-only `crayon` verbs, inspection commands, a `python3 -c` script that names
-nothing able to write. The first consequential action — a verb that records, any other command,
-a write, a question to the author, a turn with no tool call — ends the episode, is never
-carried out, and is what the case grades.
+Every other case (question order, voice, routing wording, mode choice) is standard. Every rule a
+model can break at run time has at least one case, and the eval suite checks that it does.
 
-Every command a model runs executes in a bubblewrap jail. The copy is mounted at `/srv/toyq`
-beside `/usr`, a `crayon` shim and an empty `/tmp`, with its own process table and no network.
-Nothing else of the machine running the eval exists in there. A command list alone could not
-keep a path from leaving the sandbox, and an early run proved it, so a live run refuses to
-start without the jail.
+The cases run on two projects. Most use toyq, a small job queue. Fifteen use tidewatch, a larger
+file watcher whose documentation has 23 pages and a toctree: one critical case for each critical
+rule, ported from toyq. A model must pass those too to be supported, so support does not rest on
+one project's names and pages.
 
 Every case carries a known-good reply that must pass and a plausible wrong one that must fail,
-both enforced offline. An assertion that would pass anything cannot land.
+both checked offline, so a check that would pass anything cannot land. Every check is
+deterministic: no model grades another model's answer.
 
-## Grading
+## How a case runs
 
-Each assertion returns a pass, a score and one line of feedback, the shape a prompt optimiser can
-consume later. The action is graded, not its wrapping: a leading `cd` into the working directory,
-trailing read-only parts such as `; echo "exit:$?"`, and quoting do not count against a command.
-A "no such call" check still reads the whole command, so nothing forbidden hides in a tail. A
-pinned judge model grades only the few judgement calls a pattern cannot make, such as whether a
-summary was quoted verbatim.
+promptfoo runs every case (`pf_provider.py`) and grades it with the case's own checks
+(`pf_assert.py`); `promptfoo view` shows each run with its turns and tool calls.
 
-## Models, backends and cost
+A lane B case replays a history of tool calls and what `crayon` printed back. The history is never
+typed by hand: `validation/evals/fixtures/states.sh` records each state with the real `crayon.py`,
+and the eval suite records them again and compares, so a change in the tool's output fails the suite
+rather than leaving lane B to replay outdated output.
 
-`validation/evals/models.json` holds the roster, the judge and the spend caps. Every model is
-pinned to one backend, so a score belongs to one model on one backend, and only to Zero Data
-Retention endpoints. A backend can serve a model badly: on one, a model's first answer token
-landed in its reasoning trace and the answer arrived clipped. Probe a backend once, with the
-reasoning shown, before trusting a pin. A sweep and each model have a spend cap, checked before
-every paid call.
+The model then acts in a real copy of the recorded state, inside a Workshop container. Reads,
+searches and commands run there, and the episode goes on while nothing changes. The first call that
+would change something ends the episode and is what the case grades:
 
-## Reading results
+- `Write`, `Edit`, a question to the author, or a reply with no tool call;
+- a command that names a `crayon` verb that records; it is not run;
+- any other command after which the copy's files or git index differ from before it; its output
+  is not shown to the model.
 
-Clean, complete runs are committed under `validation/evals/results/`; partial, dry, errored and
-re-graded runs go to the gitignored `results/raw/`, beside the full turns of every case.
+The kit decides by what a command changed, not by predicting what a shell command will do. The
+container is launched from a staging directory that holds only the Workshop definition, `crayon.py`,
+the digest script and the current case's copy: no eval case, no checkout and no secret. Commands run
+as an unprivileged user with an environment built from scratch, and the copy is reset before every
+case. The container's network is not closed; it holds nothing a command could send.
 
-The backends are not deterministic even at temperature 0. The same model moves one or two
-points between identical runs, so a single run cannot tell a small change from noise.
-`run.py --repeat K` runs a lane K times and reports each case as passes out of K. A case at K/K
-or 0/K is settled; one in between is flaky, and a change to a skill has to be measured there,
-over repeated runs. The first three-run baseline, on 2026-09-24, had 15 of the 31 lane B cases
-passing every run of every model.
+On 2026-10-25 this rule was checked against the command parser it replaced. Every command models
+typed in the 2026-10-11 lane B runs (7,474 episodes) was run again, once per case it appeared in
+(4,631 runs), in a workshop holding that case's state, with the old tool name translated as the
+rename did. Of 7,943 calls the old parser had judged, 7,880 are judged the same way. The other 63
+are commands the parser called actions, such as `git log --all`, `git ls-tree`, a backtick inside
+a grep pattern, `xargs ls`, an `awk` line range and `python3 -m json.tool`: they change nothing
+when run, and the model now sees their output. The check also found that asking a recording verb
+for its `--help` ended the episode as if it recorded; that is fixed. Grading the stored replies
+again with the current checks changes 169 of 7,459 outcomes: 104 replies quote commit ids that the
+fixture has since recorded afresh, 64 are on cases edited on 2026-10-15, and one passes because
+grading now reads each part of a chained command.
 
-## What they changed in crayon
+## Reading a result
+
+Each case runs three times per model, because the backends are not deterministic. A case that
+passes three of three or none is settled; one in between is flaky. A result file records the counts
+per case, what it cost, the skills and kit it ran on, and its `decision` block:
+
+- `supported`: the verdict, with what it rests on. `record_mistakes` lists the critical cases with
+  a run that got the record wrong, and `never_passed` the critical cases that failed every run.
+  `critical_rate` is the share of critical runs that passed their own checks: a run that failed
+  only the plain-words check counts as passed there. `plain_words_rate` is the share of all runs
+  free of record words, and `known_misses` lists the critical cases that missed a run. Each case
+  carries the counts these come from: `record_mistakes`, `plain_words_failed` and
+  `plain_words_only`. A dry run, a filtered run, a run with errors, a run of part of the cases or
+  fewer than three runs decides nothing. A result from before the counts existed is recounted from
+  its raw run with `run.py --recount`, which refuses a raw run whose passes differ.
+- `ship`, for the gate model: the cases that passed every run in the baseline and now fail a run.
+  The baseline is the latest committed result on the same kit; a comparison across kits is refused.
+
+Lane B has a held-out set of 25 cases (`validation/evals/cases/holdout.json`). A skill change is
+measured on the other cases and accepted only if the held-out cases do not regress, so a fix cannot
+be fitted to the cases it targets.
+
+Every case that does not pass three of three on a certified model is recorded in
+`validation/evals/dispositions.json` as a skill fix, a case fix or a limitation of that model, and the
+eval suite fails while one is missing. A limitation on a critical case withholds support when it
+breaks one of the four conditions above; otherwise it is one of the model's known misses.
+
+## Models and cost
+
+The certified models are the ones authors run crayon with: Claude Sonnet 5.5; Claude Haiku 5.5,
+which is also the gate model because it costs least; and two open-weight models, GLM-5.3 and
+DeepSeek V4.1 Flash. Each is pinned to one backend that serves Zero Data Retention endpoints only,
+and runs with its default sampling and reasoning, as authors run it. For the two Claude models the
+system prompt and the skill text are sent with cache breakpoints, since every turn repeats them.
+
+Before every paid call, its largest possible cost is reserved against two caps in `models.json`: one
+per run and one per model. Calls in flight therefore never spend past a cap, and the backend
+checks before a run are charged to the same caps.
+
+## Limits
+
+- Page quality, speed and effort saved are not measured.
+- Each case grades one decision, not a whole journey. Real sessions are recorded in the
+  `validation/dogfood-*.md` records.
+- The loop is neutral: no agent harness is named or detected. A supported model is supported in
+  this loop; a harness adds its own instructions.
+- Paid runs are started by hand, never in the gate or CI.
+
+## What the evals changed in crayon
 
 The first rounds found more in the product than in the models:
 
-- A model follows the refusal in front of it — its `hint` and its `next` — over a routing row it
-  has to go and open. The `internal_error`, `unsteered` and `unapplied_steering` hints now lead
-  with the act their row prescribes, and every skill acts on the row for a refusal's `error`
-  before routing on `next`.
+- A model follows the refusal in front of it, its `hint` and its `next`, over a routing row it has
+  to go and open. The `internal_error`, `unsteered` and `unapplied_steering` hints now lead with the
+  act their row prescribes, and every skill acts on the row for a refusal's `error` before routing
+  on `next`.
 - A session that had not proposed a step plan could not see it: `crayon show` now lists the
   recorded plan, and `crayon-write` resumes from it.
 - A step marked stateful takes the author's yes every time, on resume too.

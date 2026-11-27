@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
-# run_matrix.sh — the local 3.9 / 3.12 / 3.13 interpreter matrix (D-12, TEST-03).
+# run_matrix.sh — the local 3.9 / 3.12 / 3.13 interpreter matrix.
 #
 # Usage: bash tests/run_matrix.sh   (run from the repository root)
 #
-# D-12's boundary, stated once and enforced by a grep gate in this plan's
-# verification: **uv is the interpreter FETCHER and nothing else.** It downloads
-# CPython builds; it never installs a Python PACKAGE. The tool and both Python
-# suites are stdlib-only (AGENTS.md forbids a dependency), `--no-project` keeps
-# uv from reading or creating any project environment, and no `uv pip` / `uv add`
-# / `pip install` appears anywhere in this file. Phase 18's CI uses
+# The boundary, stated once: **uv is the interpreter FETCHER and nothing
+# else.** It downloads CPython builds; it never installs a Python PACKAGE. The
+# tool and both Python suites are stdlib-only (AGENTS.md forbids a dependency),
+# `--no-project` keeps uv from reading or creating any project environment, and
+# no `uv pip` / `uv add` / `pip install` appears anywhere in this file. CI uses
 # `actions/setup-python` for the same matrix; this script is the local proof.
 #
 # An interpreter already present on the machine is REUSED — `uv python install`
 # is idempotent and re-downloads nothing — so the 3.12 leg normally runs on the
 # system interpreter with no network at all.
 #
-# Exit codes follow the project's 0/1/2 lint contract (scripts/planning_lint.py):
+# Exit codes follow the project's 0/1/2 lint contract:
 #   0  every interpreter that ran reported OK
 #   1  at least one interpreter ran and failed
 #   2  NO interpreter ran — a matrix that ran nothing is a vacuous pass, and
@@ -40,7 +39,7 @@ skipped=0
 cd "$REPO_ROOT" || exit 2
 
 if ! command -v uv >/dev/null 2>&1; then
-    echo "matrix: ERROR - uv is not on PATH; it is the interpreter fetcher (D-12)" >&2
+    echo "matrix: ERROR - uv is not on PATH; it is the interpreter fetcher" >&2
     echo "matrix: 0 interpreters ran, 0 failed, 0 skipped"
     exit 2
 fi

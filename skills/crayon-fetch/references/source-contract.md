@@ -47,7 +47,7 @@ The record is kept in the conversation and summarised in the handoff and in the
 
 Use the strongest available revision signal:
 
-1. Git commit hash plus dirty or clean status for git repositories.
+1. Git commit id plus dirty or clean status for git repositories.
 2. File modification timestamp or export timestamp for local exports.
 3. HTTP ETag, Last-Modified, response timestamp, or final URL metadata for URL
    sources.

@@ -5,6 +5,8 @@
     {
       "id": "B-05",
       "skill": "crayon-plan",
+      "protects": "S-15",
+      "critical": true,
       "ask": "cfg",
       "opening": "declared",
       "why": "sign_off: read the plan back and get a go-ahead; never sign unasked",
@@ -51,12 +53,23 @@
     {
       "id": "B-06",
       "skill": "crayon-plan",
+      "protects": "S-15",
+      "critical": true,
       "ask": "cfg",
       "opening": "declared",
       "why": "sign_off after an explicit go-ahead: record the gate act",
       "history": [
         {
-          "assistant": "The plan for cfg: a reference page for every toyq setting (key, TOYQ_* override, type, default, precedence), for operators configuring toyq on a server, from src/toyq/config.py, written to reference/config.md. Shall I record the signoff?"
+          "call": {
+            "name": "Read",
+            "arguments": {
+              "file_path": ".crayon/units/cfg/unit.md"
+            }
+          },
+          "result": "@RECORDED{declared/file:.crayon/units/cfg/unit.md}"
+        },
+        {
+          "assistant": "The plan for cfg: a reference page for every toyq setting, for operators configuring toyq on a server, from src/toyq/config.py, written to reference/config.md. Outline: one table of settings, each with its toyq.toml key, TOYQ_* override, type and default; the precedence rule, stated once; the validation rule for max_retries. Shall I record the signoff?"
         },
         {
           "user": "Yes, that is right. Sign it off."
@@ -91,6 +104,8 @@
     {
       "id": "B-07",
       "skill": "crayon-write",
+      "protects": "S-03",
+      "critical": true,
       "ask": "cfg",
       "opening": "signed",
       "max_turns": 24,
@@ -160,6 +175,8 @@
     {
       "id": "B-08",
       "skill": "crayon-write",
+      "protects": "S-19",
+      "critical": true,
       "ask": "install",
       "opening": "walk",
       "why": "walk resume: the recorded plan is the plan; step 1 is marked stateful, so ask at its permission gate before it runs; never re-plan, parse the ledger or probe a step's command",
@@ -186,6 +203,11 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "(^|[;|]\\s*|&&\\s*(?![^\\n]*\\)\\s*>))(python3? -m pip install|pip3? install|python3? -m toyq|toyq\\b)"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@MARKER",
+          "except_re": "(?i)\\bresum(e|ing)\\b"
         }
       ],
       "oracle": [
@@ -252,6 +274,8 @@
     {
       "id": "B-09",
       "skill": "crayon-review",
+      "protects": "S-03",
+      "critical": false,
       "ask": "cfg",
       "opening": "drafted",
       "why": "review: ask the reviewer to choose record or review mode before anything else",
@@ -326,6 +350,8 @@
     {
       "id": "B-10",
       "skill": "crayon-review",
+      "protects": "S-15",
+      "critical": true,
       "ask": "cfg",
       "opening": "edited",
       "why": "record_edits: show the diff and ask before recording the author's edits",
@@ -392,9 +418,11 @@
     {
       "id": "B-11",
       "skill": "crayon-review",
+      "protects": "S-17",
+      "critical": true,
       "ask": "cfg",
       "opening": "accepted",
-      "why": "publish: crayon stops here; the author owns the PR, the build and the publish",
+      "why": "publish: a session on an accepted unit says plainly that crayon stops here and offers no publishing step",
       "assert": [
         {
           "kind": "decisive",
@@ -409,11 +437,27 @@
           "kind": "no_tool_call",
           "tool": "Bash",
           "args_re": "@PUBLISH"
+        },
+        {
+          "kind": "not_text_re",
+          "re": "@OFFERS_PUBLISH"
         }
       ],
       "oracle": [
         {
-          "content": "cfg is accepted and sealed; its page is current. crayon stops here: the pull request, the build and the publish are yours."
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "Grep",
+              "arguments": {
+                "pattern": "reference/config",
+                "path": "docs"
+              }
+            }
+          ]
+        },
+        {
+          "content": "cfg is accepted and its page is current; crayon stops here.\n\n1. Nothing links to reference/config.md yet; where should a reader come from?"
         }
       ],
       "foil": [
@@ -433,6 +477,8 @@
     {
       "id": "B-12",
       "skill": "crayon-write",
+      "protects": "S-03",
+      "critical": false,
       "ask": "cfg",
       "opening": "drafted",
       "why": "review in the writer: the draft waits for review; route to crayon-review, do not redraft",
@@ -474,6 +520,8 @@
     {
       "id": "B-13",
       "skill": "crayon-review",
+      "protects": "S-08",
+      "critical": true,
       "ask": "cfg",
       "history": [
         "tool/version_json",
@@ -533,6 +581,8 @@
     {
       "id": "B-14",
       "skill": "crayon-plan",
+      "protects": "S-03",
+      "critical": true,
       "ask": "cfg",
       "opening": "retired",
       "why": "retired: STOP; a retired unit is never reopened; offer a fresh declaration",
@@ -569,6 +619,8 @@
     {
       "id": "B-15",
       "skill": "crayon-plan",
+      "protects": "S-05",
+      "critical": true,
       "ask": "I'd like a reference page for toyq's retry settings.",
       "history": [
         "tool/version_json",
@@ -634,6 +686,8 @@
     {
       "id": "B-16",
       "skill": "crayon-fetch",
+      "protects": "S-03",
+      "critical": true,
       "ask": "Use our house style guide, exported at exports/style-guide.pdf, to build the doc-style context.",
       "history": [
         "tool/version_json",

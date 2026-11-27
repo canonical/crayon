@@ -4,7 +4,7 @@ description: Builds or refreshes the repository-level documentation context that
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 metadata:
   crayon_contract: 1
-  crayon_min_tool: "0.2.0"
+  crayon_min_tool: "0.3.0"
 ---
 <objective>
 Build or refresh the three repository-level context artefacts that later ground
@@ -35,8 +35,8 @@ crayon context show --json           # what is present, staged, drifted; the rou
 ```
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
-`tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+`tool` older than `min_tool` `0.3.0`. Both numbers are compared as literal strings —
+never parsed or rounded as versions. `0.2.0` is older than `0.3.0`: stop, say which
 number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 
@@ -54,6 +54,46 @@ after it. The `hint` is a reminder, never the whole route.
 the context record it makes is `.crayon/context/manifest.json`, which the tool writes
 and nothing else ever edits. Nothing in this skill opens any record in an editor.
 </opening>
+
+<!-- plain-words:begin -->
+<plain_words>
+What the author reads from this skill is in plain words. The record's own words stay in
+`--json`, in the ledger and on every command line, and never reach your prose.
+
+- **Accepted, the pages as accepted, request N.** Say "accepted" where the record says
+  sealed, "the pages as accepted" where it says basis, and "request 7" where it says
+  seq 7 for a request. Give no other record entry a number, neither "event 7" nor
+  "ledger line 7": say what is already recorded and name its commit. These record
+  words stay out of your own prose altogether, not even as an English idiom: say
+  "on what grounds", not "on what basis". They stay out in every form and every place
+  you write: seal, seals and sealed are all "accept", since an accept is recorded,
+  never sealed; and an option's label or description, or a refusal or a `--json`
+  value retold in a sentence, is prose too, so `"state": "sealed"` is "accepted" and
+  `already_accepted` is "already accepted".
+- **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
+  a sha256, a digest, and a verify or check count never appear in what you say;
+  name a commit by its id, never as a hash. A page whose bytes the record cites is
+  "current"; say so, never that a digest matches. Quote the tallies:
+  the walk tally and the findings tally are the tool's and the rubric's own lines.
+- **The success line, verbatim.** Echo each verb's success response line exactly as the
+  tool printed it; it is already plain. These rules cover what you say around it.
+- **Refusals in plain words, commands exact.** Tell the author in plain words what a
+  refusal means, for example "request 4 is still open". A command you run or show keeps
+  its real flags and values, in a code span. Tool output you show verbatim goes in a
+  fenced code block, never inside a sentence. That covers what a step or a routing row
+  says to show, and any other line you quote beyond the success line, such as a
+  diagnostic a verb prints.
+- **Read it back before you send.** Before every message to the author, read your
+  prose again: everything outside code spans and fenced blocks, option labels and
+  descriptions included. Look for seal, seals, sealed, basis, seq, seqs, plan hash,
+  hash, hashes, sha256, digest, digests, and "event" or "ledger line" before a number,
+  in any case and inside a compound such as "hash-chained". Rewrite each one you find:
+  "accepted", "the pages as accepted", "request 2", "current", "the record cannot be
+  edited", or the commit's id. A qualifier you retell from `--json`, such as "edited
+  since the signoff at seq 2", is retold the same way: "edited since the signoff at
+  request 2".
+</plain_words>
+<!-- plain-words:end -->
 
 <hard_gate>
 Do NOT write `.crayon/context/*.md` or `.crayon/context/manifest.json` yourself, and
@@ -81,7 +121,8 @@ fourth file can be smuggled into `.crayon/context/` through this skill.
 5. Author the three artefacts, loading the matching stance reference for each, and
    hand each one to the tool with `crayon context stage <name> --body-file -`.
 6. Record the set with `crayon context record --model … --model-origin … --note "…"`.
-7. Report which artefacts landed and the gap count, and route the author on `next`.
+7. Report which artefacts landed and the gap count, end on the priorities question,
+   and once the author answers, route to `/crayon-plan` with their first pick.
 </quick_start>
 
 <pipeline>
@@ -201,7 +242,8 @@ fix that and re-run; nothing was promoted.
 </step_5>
 
 <step_6 name="Report and route">
-Present a single summary block:
+Present a single summary block, as plain text rather than a code block, ending on
+one question about the author's priorities:
 
 ```
 ## crayon-onboard
@@ -211,8 +253,28 @@ Present a single summary block:
 - Structure: .crayon/context/structure.md (<n> coverage gaps)
 - Recorded: <the tool's response line, verbatim>
 
-Next: /crayon-plan — the context now grounds unit declarations.
+Which three gaps would your readers miss first?
 ```
+
+That question is for three gaps or more. With one or two, ask
+`Which of these would your readers miss first?`; with none, ask
+`What would your readers miss most?`. Only their first pick is used.
+
+Ask nothing else in the report, and give it no route line yet: which gaps matter
+most is the author's judgment, not something the walk can settle. So the question is
+plain text, not options in a question tool, and no gap is marked as recommended,
+suggested or a default, whatever a harness's own convention: the order of the gaps
+implies nothing. Nothing is recorded from the answer; `crayon context record` has
+already run. Once the author answers, the route line names their first pick in their
+own words:
+
+```
+Next: /crayon-plan — start with <their first pick>
+```
+
+Their first pick is the first item in their reply, in the words they used for it,
+whatever the walk called that gap. If they name none, the route line is
+`Next: /crayon-plan`, with no pick: never pick one for them.
 
 Do not push or build — the tool's commit seam already recorded the transition.
 </step_6>
@@ -270,6 +332,8 @@ one), and act on the routing row for `next`.
 - Tag every code-versus-docs coverage gap `[CODE↔DOCS GAP]` (or `[SDLC]` for a
   forge-discussion trigger) with a named citation.
 - Echo each verb's own response line verbatim.
+- End the report on the priorities question, and route to `/crayon-plan` only after
+  the author answers, naming their first pick in their own words, or none.
 </must>
 <must_not>
 - Never write `.crayon/context/*.md` or `manifest.json` yourself, or hand a file to
@@ -283,6 +347,7 @@ one), and act on the routing row for `next`.
 - Never declare, draft, review, push or build — those belong to the other skills and
   to the author.
 - Never re-derive state or invent a next step; the tool emits `next`.
+- Never choose the author's priorities or first unit for them.
 </must_not>
 </constraints>
 
@@ -292,5 +357,8 @@ one), and act on the routing row for `next`.
 - [ ] Every observation and gap was grounded in prose or code actually read.
 - [ ] Each artefact reached the tool through `crayon context stage … --body-file -`.
 - [ ] `crayon context record` exited 0, or 3 on an unchanged set, and its line was quoted.
-- [ ] The term count and gap count were reported, and the author was routed on `next`.
+- [ ] The term count and gap count were reported, and the report ended on the
+      priorities question.
+- [ ] The route line to `/crayon-plan` named the author's first pick in their own
+      words, or none when they named none.
 </success_criteria>

@@ -1,4 +1,4 @@
-Load this file at workflow step 4 (Perform the findings review).
+Load this file at workflow step 5 (Perform the findings review).
 
 # Findings review rubric
 
@@ -25,7 +25,7 @@ to a file.
 Run every deterministic check first, so judgment is spent only where a machine
 cannot decide — anything mechanically decidable belongs in this layer, and the
 judgment dimensions never re-derive it. Cheap read-only greps over the drafted
-page(s), within Read/Bash/Glob/Grep only (no build — D-13, no writes):
+page(s), within Read/Bash/Glob/Grep only (no build, no writes):
 
 - **Changelog-framing tells:** `previously`, `now supports`, `starting with`,
   `can now`, `new in` — candidate writing-approach findings.
@@ -43,7 +43,7 @@ the findings tally.
 
 ## Dimension 0 — the objective check (assessed first)
 
-Before the four dimensions, ask the one question the unit exists to answer: **does
+Before the five dimensions, ask the one question the unit exists to answer: **does
 this draft satisfy the unit's reader problem and every `## Outline / acceptance`
 item?** This is the objective check — it measures the draft against the job it was
 declared to do, not against its own internal polish.
@@ -52,11 +52,11 @@ An objective-check failure is **must-fix by definition** — the severity floor.
 the draft does not solve the reader problem it was declared for, or leaves an
 outline/acceptance item unmet (and unrecorded as a `gap`), that finding is pinned
 to the existing `[must-fix]` priority and may **never** be downgraded to
-`[should-fix]` or `[nit]`, however small the surface edit looks. (This is the
-round-3 finding-G floor: the exact inconsistency a unit existed to remove, still
+`[should-fix]` or `[nit]`, however small the surface edit looks. (The case the
+floor exists for: the exact inconsistency a unit existed to remove, still
 present in the draft, is a `[must-fix]` objective-check failure — never a `[nit]`.)
 The floor reuses the existing `[must-fix]` tag; it introduces no fourth priority
-and no bracketed run-status token, so the collision guard (D-03) below still holds.
+and no bracketed run-status token, so the collision guard below still holds.
 
 For a **multi-target unit**, the objective check includes the `structure-fit`
 **Cross-page consistency (multi-file units only)** check below — which quotes the
@@ -75,7 +75,7 @@ Does every touched page read as if written fresh to its correct end-state, or
 does it carry the sediment of its own history? This dimension is **always on**:
 it may never be skipped or marked not assessed (it needs only the draft), it
 runs in the scoped re-review as well as the full pass (over the touched
-sections), and it is assessed before the four generalized dimensions — scaled to
+sections), and it is assessed before the five generalized dimensions — scaled to
 the surface: a bounded fix gets a quick hunt over the touched text; a fresh page
 gets a line-by-line pass. Hunt adversarially — on a large or brand-new page,
 assume the defects ARE present and go looking; return `(none)` only after
@@ -110,10 +110,10 @@ factual misstatement is graded there.
 that silently *lost* working content the steering never ordered removed is a
 completeness finding, graded there — hunt for it on every re-draft.
 
-## The four review dimensions
+## The five review dimensions
 
-Default to assessing all four (writing-approach above is always on and cannot
-be deselected). Any of the four may be marked **not assessed** with a stated
+Default to assessing all five (writing-approach above is always on and cannot
+be deselected). Any of the five may be marked **not assessed** with a stated
 reason — source-fidelity is `(not assessed — <reason>)`, never guessed, when
 the declared sources are unreadable or absent: fabricating source behaviour is
 the one unforgivable reviewer move.
@@ -174,6 +174,34 @@ Two mandatory checks inside this dimension:
   reference file) but did not surface is the highest-value completeness flag —
   the grounding existed and the page still omitted it.
 
+The author's leave-out notes narrow the plan's inventory: a member the notes leave
+out is not owed by the coverage-vs-outline check, and the focus dimension flags it if
+the page carries it. A later recorded request outranks the intake notes: what it asks
+for is owed again, and focus does not flag it.
+
+### focus
+
+Focus is the mirror of completeness. Completeness asks what is absent that the
+reader needs; focus asks what is present that the reader does not need. Read the
+author's intake notes first — `crayon summary <id>` lists them under author
+decisions — for anything the author said the page can leave out.
+
+Two mandatory checks inside this dimension:
+
+- **Over-inclusion.** Material the reader's problem does not call for: a
+  digression, an inventory the outline did not promise, background the audience
+  already has. Anything the author said to leave out is `[must-fix]`, and the finding
+  names what the notes left out, for example `F-2 [must-fix] the page documents
+  delivery_timeout, which the intake notes leave out (reference/webhooks.md:9)` (completeness
+  settles how the notes stand against the inventory and a later request); other
+  over-inclusion is `[should-fix]` or `[nit]`.
+- **Complete but disconnected.** Every outline item is present, but the sections
+  do not build toward the reader's problem. Read the page against the intake's
+  answer about where the reader arrives from or what they do right after. A page
+  that does not meet the reader there, or does not hand them their next step, is
+  disconnected: `[should-fix]`, or `[nit]` when the gap is cosmetic. Whether other
+  pages link to this one is the closure's question, not a finding.
+
 ### structure-fit
 
 Grade the page against its **declared Diátaxis type** (from the `intent` field in
@@ -211,8 +239,13 @@ Then, for either type, check **format hygiene, judged per the page's own format*
   required blank lines, no MyST fences (```` ``` ````/`:::`) anywhere — they
   render as literal text.
 
-This is Diátaxis conformance + format well-formedness, **not** a house style
-guide (crayon has no STYLE_GUIDE this cycle).
+This is Diátaxis conformance, section shape and format well-formedness, **not** a
+voice review: voice is writing-approach's and clarity's question.
+
+**Sibling shape.** Compare the page's section shape and ordering with its series
+siblings or, when it has no series, with the nearest existing page of the same
+Diátaxis type. A divergence that neither the intake notes nor the recorded
+steering explains is `[should-fix]`.
 
 Two mandatory checks inside this dimension:
 
@@ -249,10 +282,13 @@ machinery.
 
 ## Verification discipline (before any finding is reported)
 
-Only verified findings reach the report — never intermediate hypotheses. Every
-finding carries its `F-N` id, its page path and line, and the verbatim offending
-quote. For **absence-based** findings ("not supported", "not in source",
-"missing from the page") the bar is higher:
+A finding reaches the report once you have checked it as far as the sources allow,
+never as an intermediate hypothesis. When it still rests on an absence or an
+inference, it says so inside the finding, in the first person: "I found no source for
+…", "I inferred … from …". A verified finding carries no hedge, and the review never
+adds a section of doubts or a general caveat. Every finding carries its `F-N` id, its
+page path and line, and the verbatim offending quote. For **absence-based** findings
+("not supported", "not in source", "missing from the page") the bar is higher:
 
 - **At least two search strategies, recorded in the finding** — e.g. the exact
   symbol AND a concept/synonym grep; an entrypoint trace AND a test search. One
@@ -277,8 +313,8 @@ never by impression:
 
 | Priority | Trigger |
 |----------|---------|
-| `[must-fix]` | A claim ungrounded in or contradicting the declared sources; an instruction or path that fails the reader (broken include/link, wrong syntax); an outline/acceptance item unmet and unrecorded (the dimension 0 floor); a code-dump surfacing implementation source (source-fidelity); a category violation that defeats the page as its **declared Diátaxis type** (for a reference unit, tutorial/how-to drift; for an actionable unit, a failure of the tutorial/how-to conformance shape — never reference-only drift); or a writing-approach finding escalated as a source-fidelity co-finding. |
-| `[should-fix]` | A material completeness gap; wrong register for a reference; a terminology contradiction; a structural inconsistency that impairs (but does not break) the page; a writing-approach failure mode with no factual misstatement. |
+| `[must-fix]` | A claim ungrounded in or contradicting the declared sources; an instruction or path that fails the reader (broken include/link, wrong syntax); an outline/acceptance item unmet and unrecorded (the dimension 0 floor); a code-dump surfacing implementation source (source-fidelity); a category violation that defeats the page as its **declared Diátaxis type** (for a reference unit, tutorial/how-to drift; for an actionable unit, a failure of the tutorial/how-to conformance shape — never reference-only drift); a writing-approach finding escalated as a source-fidelity co-finding; or material the author's intake notes said to leave out (focus). |
+| `[should-fix]` | A material completeness gap; wrong register for a reference; a terminology contradiction; a structural inconsistency that impairs (but does not break) the page; a writing-approach failure mode with no factual misstatement; over-inclusion the reader's problem does not need, or a complete page with no thread to the reader's problem (focus). |
 | `[nit]` | Wording, ordering, or optional polish with no reader-facing consequence. |
 
 A candidate matching no row is a `[nit]` at most — or not a finding.
@@ -298,14 +334,20 @@ progress word describes *the script operation's outcome*.
 Present the findings grouped by dimension. One line per finding: the `F-N` id,
 the priority tag, `(pre-pass)` when the deterministic pre-pass produced it, the
 observation quoting the offending draft text with its page and line, then `→`
-and a concrete suggested action. Number in presentation order — the ids exist so
-the verdict note can say "apply F-2 and F-5" instead of restating the findings.
+and a concrete suggested action. Number in presentation order. The ids are for
+this conversation only; they do not reach the next drafting session, so a note
+that cites one is restated with the author (SKILL.md step 6).
 A clean dimension shows `(none)`; a skipped one shows
-`(not assessed — <reason>)`. The block is presented in the conversation and is
-**never written to a file** — only the reviewer's resulting verdict is recorded,
-via `crayon review <id> --verdict <accept|fix|redraft> --note "…"` (a fix/redraft
-verdict's note lands in the steering stream automatically, so a finding phrased as
-a steering correction is directly actionable).
+`(not assessed — <reason>)`. The block always has all six dimension headings, `### focus`
+included, each with its findings or `(none)`, and it ends with the tally line in exactly
+the form below, total first: `Findings: 4 total — 1 must-fix, 2 should-fix, 1 nit.`, and
+`Findings: 0 total — 0 must-fix, 0 should-fix, 0 nit.` for a clean review. The block is
+presented in the conversation and is **never written to a file** — only the reviewer's
+resulting verdict is recorded, via `crayon review <id> --verdict <accept|fix|redraft>`,
+with the reviewer's own words as `--note "…"`: required for fix and redraft, and present
+on an accept only when the reviewer gave words beyond the verdict (a fix/redraft
+verdict's note lands in the steering stream automatically, so it is exactly what the
+next draft reads).
 
 ```
 ## crayon-review — findings: <unit-id>
@@ -322,6 +364,9 @@ a steering correction is directly actionable).
 ### completeness
 - F-4 [should-fix] <observation> → <action>
 
+### focus
+- (none)
+
 ### structure-fit
 - (none)
 
@@ -330,19 +375,21 @@ a steering correction is directly actionable).
 
 Findings: N total — X must-fix, Y should-fix, Z nit.
 Dismissed pre-pass candidates: <M, each with its one-line reason — or (none)>
-Recommended verdict: <accept | fix | redraft> — <one clause tying it to the tally>
 
-Next: accept (the publishing commit is yours) · record fix/redraft — the draft-stage skill applies the note
+What's your verdict, and is there anything you want on the record with it?
 ```
 
-The recommended verdict is the family smart-defaults rule applied to the tally:
+**The lean, held until the author answers.** The lean is the tally read one way:
 any `[must-fix]` → **fix** (or **redraft** when the must-fixes are pervasive
-rather than bounded); `[should-fix]` only → genuinely the reviewer's call,
-present both; clean → **accept**. Self-check before presenting: the
-recommendation must agree with the tally line above it (dismissed pre-pass
-candidates are not in the tally); if it does not, re-derive it. The verdict
-remains the reviewer's — the recommendation is a labeled default, never a
-decision.
+rather than bounded); `[should-fix]` only → no lean, genuinely the reviewer's call;
+clean → **accept**. It is never shown before the reviewer answers the verdict
+question, unless they ask what the tally suggests. After they answer, a verdict
+that matches the lean, or any verdict on a tally with no lean, is recorded without
+comment; a verdict that differs gets the lean with its one-clause reason and one
+`Keep <verdict>?`, whose answer is final (SKILL.md step 6). Self-check before
+showing it: the lean must agree with the tally line above it (dismissed pre-pass
+candidates are not in the tally); if it does not, re-derive it. The verdict is
+the reviewer's.
 
 There are exactly TWO next steps: accept, or a recorded fix/redraft verdict that
 routes to the draft-stage skill. "Make the edit yourself" is not one of them — an

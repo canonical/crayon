@@ -4,7 +4,7 @@ description: Guides a Technical Author through declaring one documentation unit 
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 metadata:
   crayon_contract: 1
-  crayon_min_tool: "0.2.0"
+  crayon_min_tool: "0.3.0"
 ---
 <objective>
 Guide the TA through declaring one documentation unit via one-question-at-a-time
@@ -28,8 +28,8 @@ crayon show "$UNIT_ID" --json        # the derived state, and the routed `next`
 ```
 
 Stop on exactly two answers from the first call: a `contract` that is not `1`, or a
-`tool` older than `min_tool` `0.2.0`. Both numbers are compared as literal strings —
-never parsed or rounded as versions. `0.1.9` is older than `0.2.0`: stop, say which
+`tool` older than `min_tool` `0.3.0`. Both numbers are compared as literal strings —
+never parsed or rounded as versions. `0.2.0` is older than `0.3.0`: stop, say which
 number stopped you, and run nothing else. Any other answer means the pairing is
 supported; continue.
 
@@ -51,6 +51,79 @@ every line's `prev` is the digest of the previous line's bytes, so editing any l
 invalidates every line after it. Nothing in this skill ever opens it in an editor —
 not to fix a typo, not to append a note, not to correct a field.
 </opening>
+
+<!-- author-rules:begin -->
+<author_rules>
+These three rules hold at every question this skill puts to the author.
+
+- **The author's words, verbatim.** A note recorded with `--note`, `--note-file -` or
+  `--notes` is exactly what the author typed beyond the verdict, the yes or the no that
+  answered the question: that answer alone is not part of the note, so "Fix." then
+  "Say …" records the second reply, and "Accept. The table …" records "The table …".
+  The words beyond it, given across several turns, are joined in order, one reply per
+  line. No spelling fix, no rephrasing, and no text offered for them to approve, such
+  as "I'll use: …". When their words are unclear, ask them; never rewrite them. With
+  nothing of theirs to record, omit the flag.
+  On the command line their words go inside single quotes, each `'` in them written
+  as `'\''`, and never inside double quotes: there a backtick runs a command and a `$`
+  expands, so the record would hold words they never typed. Type them inside the
+  single quotes as they wrote them, backticks and `$` included: nothing in them is
+  escaped, dropped or wrapped in `$(…)`, because inside single quotes nothing runs or
+  expands. Through `--note-file -`, the same single-quoted words are piped in with
+  `printf '%s'`, which adds nothing.
+- **No marked option on a judgment question.** Audience, intent, step choices, the
+  verdict and restore-or-amend are the author's judgment. No option of those questions
+  carries "(Recommended)", "(default)", "suggested", a star or any other marker, and
+  their order implies nothing. This rule wins over any harness's own convention of
+  marking a recommended option. A mechanical choice, such as an id, a path or a title,
+  may keep a marked default.
+- **An explicit go.** A signoff or an accept runs only on an explicit go: an
+  affirmative ("yes", "go", "sign it") to a question that named that act. For an
+  accept, the go is the verdict itself, or a yes to "Keep accept?". "Looks good" about
+  an outline is not a go, and neither is "yes, but …": handle the change, then ask
+  again.
+</author_rules>
+<!-- author-rules:end -->
+
+<!-- plain-words:begin -->
+<plain_words>
+What the author reads from this skill is in plain words. The record's own words stay in
+`--json`, in the ledger and on every command line, and never reach your prose.
+
+- **Accepted, the pages as accepted, request N.** Say "accepted" where the record says
+  sealed, "the pages as accepted" where it says basis, and "request 7" where it says
+  seq 7 for a request. Give no other record entry a number, neither "event 7" nor
+  "ledger line 7": say what is already recorded and name its commit. These record
+  words stay out of your own prose altogether, not even as an English idiom: say
+  "on what grounds", not "on what basis". They stay out in every form and every place
+  you write: seal, seals and sealed are all "accept", since an accept is recorded,
+  never sealed; and an option's label or description, or a refusal or a `--json`
+  value retold in a sentence, is prose too, so `"state": "sealed"` is "accepted" and
+  `already_accepted` is "already accepted".
+- **No hashes, digests or verify counts.** A `plan_hash` or a file or record hash,
+  a sha256, a digest, and a verify or check count never appear in what you say;
+  name a commit by its id, never as a hash. A page whose bytes the record cites is
+  "current"; say so, never that a digest matches. Quote the tallies:
+  the walk tally and the findings tally are the tool's and the rubric's own lines.
+- **The success line, verbatim.** Echo each verb's success response line exactly as the
+  tool printed it; it is already plain. These rules cover what you say around it.
+- **Refusals in plain words, commands exact.** Tell the author in plain words what a
+  refusal means, for example "request 4 is still open". A command you run or show keeps
+  its real flags and values, in a code span. Tool output you show verbatim goes in a
+  fenced code block, never inside a sentence. That covers what a step or a routing row
+  says to show, and any other line you quote beyond the success line, such as a
+  diagnostic a verb prints.
+- **Read it back before you send.** Before every message to the author, read your
+  prose again: everything outside code spans and fenced blocks, option labels and
+  descriptions included. Look for seal, seals, sealed, basis, seq, seqs, plan hash,
+  hash, hashes, sha256, digest, digests, and "event" or "ledger line" before a number,
+  in any case and inside a compound such as "hash-chained". Rewrite each one you find:
+  "accepted", "the pages as accepted", "request 2", "current", "the record cannot be
+  edited", or the commit's id. A qualifier you retell from `--json`, such as "edited
+  since the signoff at seq 2", is retold the same way: "edited since the signoff at
+  request 2".
+</plain_words>
+<!-- plain-words:end -->
 
 <hard_gate>
 Do NOT invoke crayon-write, write any documentation, or take any drafting action
@@ -78,7 +151,8 @@ bypass it, and you never need to: every refusal names the verb that clears it.
    feature the TA points at.
 4. Open the Socratic intake with the Why. Ask exactly one question per turn.
 5. Draw out the judgment fields first (reader's problem, then audience), then collect
-   the mechanical fields directly (unit id, title, source paths, target placement).
+   the mechanical fields directly (unit id, title, source paths, target placement),
+   then ask the arrival-or-next question and what the page can leave out.
 6. Confirm the Diataxis direction and route on it (step 4).
 7. Take ONE confirmation for the whole ceremony, then record it (step 6) and route.
 </quick_start>
@@ -138,8 +212,13 @@ Do not start the dialogue until you have looked at what they want to document.
 docs?" — do the same grounding, then deliver a **Triage Recommendation** and STOP:
 what the change touches; which existing pages are affected; the unit you *would*
 declare (id, target, sources, Diataxis type, route) if the TA says go; or "no
-documentation change needed" and why. No intake, no ceremony, no signoff — only an
-explicit "declare it" starts the Socratic intake.
+documentation change needed" and why. With the recommendation, hand the advice to
+the tool: `crayon triage record --base <the commit before the change> --head <its
+last commit> --needs-docs yes|no`, plus `--page`, `--type` and `--unit-id` for the
+unit you would declare, and `--note '<the advice's reason, one sentence>'`. The tool
+keeps it only when the repository turned collection on, and says which; never ask
+the TA to turn it on. No intake, no ceremony, no signoff — only an explicit "declare
+it" starts the Socratic intake.
 </step_1>
 
 <step_2 name="Draw out the Why and audience">
@@ -154,8 +233,35 @@ reader?"**
 
 Then, once the problem is clear, draw out who the page is for (the audience). Keep
 questions open-ended, not leading; probe when an answer is vague; do not record
-anything yet. When the TA is stuck, offer ONE evidence-grounded recommendation they
-can react to.
+anything yet. Give your view of the audience only when the TA asks for it, stated as
+evidence — what the siblings or the change show — and never as a marked option. A
+vague answer gets a narrower probe, not a proposal.
+
+When the brief or an answer already states the reader's problem, do not ask the
+problem question: start with the next field it leaves open. A view you give ends that
+turn with the question it informs.
+
+Every intake asks at least two open questions. One of two fixed questions is always
+among them, written exactly as:
+
+- **"What is the reader doing just before they land here?"**
+- **"What do they do right after?"**
+
+Ask one of the two, never both: once the TA has answered one, the next question is
+the leave-out question below. Ask whichever the brief and the answers so far leave
+thinnest; when they leave both equally thin or equally full, ask the first. When the
+brief already fills every field — the reader's problem, the audience, the direction,
+the id, the title, the target, the sources and the outline — this question is still
+asked, before recording anything. Its answer is recorded in the TA's words (step 6).
+
+The second fixed question is asked in every intake, after the arrival-or-next question
+and before anything is recorded, even when the brief fills every field. It is written
+exactly as:
+
+- **"What can this page leave out?"**
+
+Its answer is recorded in the TA's words (step 6), and a "nothing" answer records
+nothing for it.
 </step_2>
 
 <step_3 name="Propose the mechanical fields; ask only for what you cannot infer">
@@ -191,9 +297,11 @@ Settle the unit's Diataxis direction, then route on it:
 - **explanation** → run the intent walk (Socratic "5 whys" that draws out recorded
   intent), then declare `intent: explanation` and route to crayon-write.
 
-A TA-stated direction is honored verbatim; propose one only when the TA supplied none.
-If the intake evidence contradicts a stated type, surface that tension once, in one
-line, and let the TA decide.
+A TA-stated direction is honored verbatim. When the TA supplied none, ask for it as an
+open question, and give your view only when the TA asks for it, stated as evidence and
+never as a marked option, and end that turn with the question it informs, so the choice
+stays theirs. If the intake evidence contradicts a stated type, surface
+that tension once, in one line, and let the TA decide.
 </step_4>
 
 <step_5 name="Shape a reader-facing outline">
@@ -211,9 +319,12 @@ outcome-framed, and **never a step list**. Enumerating steps is crayon-write's j
 
 <step_6 name="One confirmation, then record the declaration and the gate act">
 **J1 — batch the whole ceremony behind ONE confirmation.** Read back the settled
-plan in a single block — id, title, intent, audience, targets, sources, outline —
-and ask once: "record this and sign it off?" Do not confirm the fields one at a time,
-and do not ask again between the two verbs below.
+plan in a single block — id, title, intent, audience, targets, sources, outline, and
+the notes as they will be recorded — and ask once: "record this and sign it off?" Do
+not confirm the fields one at a time, and do not ask again between the two verbs
+below. Only an explicit yes to that question is the go: "looks good" about the
+outline is not a go, and "yes, but …" means make the change, read the plan back, and
+ask again.
 
 **Record the declaration.** Compose the frontmatter fields as flags and pipe the
 approved body on stdin. This is the only path `unit.md` has to disk: the skill holds
@@ -229,14 +340,28 @@ printf '%s\n' "$APPROVED_BODY" | crayon unit new "$UNIT_ID" \
   --target "$TARGET" \
   --also-target "$EXTRA_TARGET" \
   --source "$SOURCE" \
-  --notes "$NOTES" \
+  --notes '<their words>' \
   --body-file -
 ```
 
-`--also-target` and `--source` repeat, once per additional page or source; omit
-`--notes` when there are none. The tool writes `unit.md` in its own frontmatter
-shape, so never compose the frontmatter block yourself — pass the fields as flags
-and let the tool render them.
+`--also-target` and `--source` repeat, once per additional page or source. `--notes` is
+the TA's own words given in answer to an open question during the intake — at least
+their answers to step 2's arrival-or-next question and to the leave-out question —
+verbatim, replies joined in order, one per line; give `--notes` once, because a second
+`--notes` replaces the first. Between two replies type a real line break inside the
+single quotes, never `\n`, which single quotes keep as two characters:
+
+```bash
+--notes 'They arrive from the install guide.
+Leave out the plugin API; it has its own page.'
+```
+
+A "nothing" answer to the leave-out question records nothing for it: no "Nothing.", no
+"Leave out: nothing", and no label of yours before either reply. Settled terms and the
+outline go into the body, which the TA approves; the skill writes no note of its own.
+Omit `--notes` only when the TA gave no such words. The tool writes `unit.md` in its own
+frontmatter shape, so never compose the frontmatter block yourself — pass the fields as
+flags and let the tool render them.
 
 **Record the gate act.**
 
@@ -294,8 +419,8 @@ back to drafting. Say that plainly rather than presenting it as an error.
 <step_8 name="J7 — the target is claimed by another unit">
 `target_claimed` (exit 1) means another unit that is not retired still lists this
 target in its current signoff. The refusal's own JSON line already names the holding
-unit and the command that releases it — echo the `detail` and `hint` verbatim rather
-than paraphrasing them.
+unit and the command that releases it — show the `detail` and `hint` verbatim, in a
+code block, rather than paraphrasing them.
 
 Then tell the TA what the refusal means — the target is still spoken for by that
 unit's record — and offer to release it. Retire only on an explicit yes: it is
@@ -303,7 +428,7 @@ another unit's record, and retiring it is a recorded act on that unit, not
 housekeeping on this one.
 
 ```bash
-crayon unit retire "$HOLDING_UNIT" --note "<why the TA is releasing this target>"
+crayon unit retire "$HOLDING_UNIT" --note '<why they are releasing this target>'
 ```
 
 Then retry the refused declaration unchanged. If the TA says no, agree a different
@@ -328,20 +453,25 @@ and one new target adopts the existing page only, and the first draft writes bot
 signs off. crayon-write drafts, after signoff.
 
 **Triage ask ("does this need docs?"):** the step 1 triage fork — ground, deliver
-the Triage Recommendation, STOP.
+the Triage Recommendation, hand it to `crayon triage record`, STOP.
 
-**Vague answer:** probe once with a narrower follow-up. If still vague, offer ONE
-evidence-grounded recommendation.
+**Vague answer:** narrow the probe — one concrete case, or an either/or in the TA's own
+words — at most twice. A vague answer gets a narrower probe, not a proposal. After two
+narrowing probes, say plainly that the answer is still open, and ask whether they want
+your view on it; give your view only when the TA asks for it.
 
 **Jump-ahead TA:** bank everything they gave and continue only for what is genuinely
-open. Never re-ask what they already answered.
+open. Never re-ask what they already answered. One of step 2's two arrival-or-next
+questions is always open, and so is the question of what the page can leave out, so a
+brief that answers everything still gets those two questions, one per turn, before
+anything is recorded.
 
 **`unit_exists` (exit 2):** that id is already declared. Show it with
 `crayon show <id>` and continue on it, or agree a new id with the TA.
 
-**`already_signed` (exit 3):** the plan is already signed at that hash. Nothing is
-wrong — report the existing seq and commit from the payload and act on the `next` it
-carries.
+**`already_signed` (exit 3):** the plan is already signed as it stands. Nothing is
+wrong — say so, give the commit from the payload, naming no record number, and act on
+the `next` it carries.
 
 **`unit_invalid` (exit 2):** the recorded plan is not the declared shape. The refusal
 names the offending line AND the flag that owns that field. Fix it through that flag
@@ -370,6 +500,9 @@ one), and act on the routing row for `next`.
   nothing from a dynamic crawl.
 - Ask exactly one question per turn during the Socratic intake.
 - Draw out the judgment fields (reader problem, audience) before recording anything.
+- Ask at least two open questions before recording anything — one of step 2's two
+  arrival-or-next questions, then what the page can leave out — even when the brief
+  fills every field.
 - Propose every field the repo can answer; ask only for what it cannot.
 - Batch the declaration ceremony behind ONE confirmation.
 - Ground the target placement in the docs tree (siblings, toctree slots); the
@@ -384,7 +517,8 @@ one), and act on the routing row for `next`.
 - Echo each verb's own response line verbatim.
 </must>
 <must_not>
-- Never override a TA-stated Diataxis direction — propose only when absent.
+- Never override a TA-stated Diataxis direction, and give a view on a direction or an
+  audience only when the TA asks for it — as evidence, never as a marked option.
 - Never record agent-invented intent as the TA's own — the recorded note reflects
   only the TA's actual answers.
 - Never invoke crayon-write before `crayon signoff` exits 0.
@@ -407,6 +541,8 @@ one), and act on the routing row for `next`.
 - [ ] When the context was missing, the TA was offered the bootstrap choice once, and
       any dynamic crawl persisted nothing.
 - [ ] The intake ran one question at a time, drawing out intent and audience first.
+- [ ] The intake asked at least two open questions before anything was recorded,
+      including what the page can leave out, even when the brief filled every field.
 - [ ] Every derivable field was proposed, not asked.
 - [ ] The whole ceremony was confirmed once.
 - [ ] `crayon unit new … --body-file -` recorded the plan and `crayon signoff` exited 0.

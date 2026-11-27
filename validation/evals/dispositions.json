@@ -1,0 +1,698 @@
+{
+  "_comment": "One record per case that did not pass every run on a certified model, in the latest committed result for that model. kind is skill-fix (the skill text was fixed; accepted only if the held-out cases do not regress), case-fix (the case was wrong; the note says how) or limitation (the model fails it; on a critical case it withholds support only when it breaks the support rule in run.py's decide_supported, and is otherwise a known miss). note says what was seen and decided, ref names the commit or result that settled it.",
+  "dispositions": [
+    {
+      "id": "B-19",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run stopped and asked as the rule requires, but said 'seq 3' in prose: uses 'seq' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-10-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-27",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run ran `crayon show cfg --json` chained after a grep of routing.md, then re-ran the draft unchanged, which is right; the check read the chain only up to its reading tail and missed the show. Each command of a chain now counts.",
+      "ref": "bdba497"
+    },
+    {
+      "id": "B-45",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "1 of 3. Both failing runs asked both step questions first and the Python-version request third, leaving where a reader arrives from as a plain line; the skill takes one question per source first (step init, the request, where a reader arrives from), and one run also left out the pointer to crayon summary install --md.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-46",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One closure asked F-2 and F-3 before where a reader arrives from; the skill takes one question per source first, in a fixed order.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-85",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "1 of 3. Both failing runs asked the verdict in the same message as the two step questions; the skill makes the step questions the last thing in that message and has the verdict wait for the reply.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-06",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. The replayed read-back came before any read of the recorded plan, and one run asked again rather than sign off a summary nothing grounded. B-06 now replays the read first.",
+      "ref": "bdba497"
+    },
+    {
+      "id": "B-11",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run described the state mid-sentence, \"(state `sealed`, next `publish`)\", and @OFFERS_PUBLISH read it as an offer. With the token in code the macro now needs a handover line's `Next:`.",
+      "ref": "bdba497"
+    },
+    {
+      "id": "B-13",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run did run `crayon resume cfg --dry-run`, as the last part of a chain after reading routing.md, then asked before resuming; the check missed the dry run. Each command of a chain now counts.",
+      "ref": "bdba497"
+    },
+    {
+      "id": "B-17",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "1 of 3. The failing runs said 'basis' and 'seq' in prose: uses them in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-19",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "1 of 3. Both failing runs stopped as required but said 'seq 3' in prose: uses 'seq' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-22",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run uses 'seq' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-23",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "0 of 3. Every run routed to the re-sign correctly but said 'the signoff at seq 2': uses 'seq' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-25",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "1 of 3. The failing runs stopped and showed the refusal as required, then said 'hash' in prose: uses 'hash' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-26",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "1 of 3. The failing runs said 'its recorded digest' and 'hash-chained' in prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-29",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run asked a second question inside its first intake question ('For example, is the reader trying to …?'); the skill asks exactly one.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-41",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "0 of 3 on 2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json: no run gave the findings tally line with its total. Review step 5 now states the line word for word, and the next run passed 3 of 3.",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-45",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "0 of 3. Every run asked both step questions and the request question, four items with the arrival question left out or put fourth, instead of one question per source first (step init, the Python-version request, where a reader arrives from) with the fourth item pointed to crayon summary install --md.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-46",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "0 of 3. Every run asked F-2 and F-3 first and where a reader arrives from third; the skill takes one question per source first, so the arrival question is second.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-47",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. As B-11: \"(`sealed`, next `publish`)\" said mid-sentence was read as a publishing offer. The macro is narrowed.",
+      "ref": "bdba497"
+    },
+    {
+      "id": "B-53",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run asked two questions where the brief leaves one open.",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-56",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing report offered to re-stage and re-record before its priorities question; the skill ends on exactly that one question.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-59",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run declared the unit without the author's arrival answer single-quoted verbatim in --notes.",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-62",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run asked the verdict in the same message as the two step questions; the skill has the verdict wait for the reply.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-68",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "0 of 3. Two runs raised self-review although the record names another model and nothing ran in the session, and the third said 'basis' in prose.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-71",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. After the arrival answer, the failing run asked what the reader does next instead of the leave-out question.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-74",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "0 of 3. Every run raised the db_path must-fix but set the dimensions as bold labels or paragraphs, not headings; the rubric requires all six dimension headings, '### focus' among them.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-76",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The closure asked about step first-job, which got no change request during the review and so is settled.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-77",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run uses 'basis' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-79",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run, after the triage record, urged enabling collection, which the skill says never to ask.",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-82",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run asked two questions where the record holds one open (where a reader arrives from).",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-84",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run asked at the stateful step's gate as required, but said 'seq 3' in prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-85",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. As B-62: the verdict was asked in the same message as the step questions.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-89",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run gave the triage advice without handing it to crayon triage record.",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-94",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run paraphrased the record line ('the record is intact at commit ...') instead of quoting it as printed.",
+      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-57",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run said the record does not name the sources 'as its basis': uses 'basis' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-40",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run said 'the provenance summary is above' and paraphrased it, so the tool's 'record: intact at' line never reached the author.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-08",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run said the step plan 'is already recorded (seq 3)': uses 'seq' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-69",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run stated the log_level gap impersonally ('Gap: the source does not list…') instead of in the first person; the skill voices a recorded gap as the writer's own.",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-70",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run said 'I didn't run crayon context show': the replayed history drafted without the context read that crayon-write step 2 now requires (S-28), so the model confessed the history's omission. The history now runs crayon context show --json before the draft, recorded on reported_clean.",
+      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-31",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "1 of 3. Two runs paraphrased the summary in prose ('The record is intact at commit …', 'Record: intact at …') instead of showing the tool's lines as printed.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-62",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run asked the verdict in the same message as the two step questions; the skill has the verdict wait for the reply.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-74",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "0 of 3. Every run raised the db_path must-fix but set the dimensions as bold labels or paragraphs, not headings; the rubric requires all six dimension headings, '### focus' among them.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-76",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One closure asked about step first-job, which got no change request and so is settled.",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-50",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run said 'basis' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-23",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run routed to the re-sign correctly but quoted 'the signoff at seq 2' in prose, outside a code block: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-25",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run stopped and showed the refusal as required, then said 'the record is hash-chained': uses 'hash' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-70",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run said 'I didn't run crayon summary cfg' and listed other grounding reads it skipped: the replayed history drafted without the reads crayon-write requires before authoring (the routing and writing references, the context files, the intake notes, the sibling page), so the model confessed the history's omissions rather than hedging. The history now makes them before the draft.",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-95",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run read doc-style.md and docs/reference/commands.md, then drafted with '## See also' without asking; the skill's step 2 and <must_not> both say to put the disagreement to the author. The other two runs asked with both sides quoted.",
+      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-61",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run named request 4 and laid out resolve and withdraw as options, but asked nothing: its reply carries no question, so the author is not asked before the accept is re-run.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-66",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run recorded the closure and asked where readers arrive from, but wrote 'The record stops here' for the skill's fixed 'crayon stops here'.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-93",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run showed the git recipe verbatim, then used 'hash' in its own prose: a record word the plain-words rule (S-20) keeps out, despite the new read-back bullet.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+    },
+    {
+      "id": "B-05",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run only read help: 'crayon signoff --help; crayon unit --help; ...'. The grader left help parts out only when a flag was followed by a space or the end, so a flag followed by ';' counted as a signoff. grade.py now accepts the separator, and the self-tests carry this command.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-08",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run used 'seq' in its own prose: a record word the plain-words rule (S-20) keeps out.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-13",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run chained 'crayon resume cfg --dry-run' and 'crayon resume cfg' in one command, so the resume ran before anyone saw what the dry run said.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-18",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. On busy, the failing run re-ran crayon draft with an added '--model \"\"' instead of the same command unchanged.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-22",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run ran 'crayon draft cfg ... --json' under the label 'drift attempt' to see what the tool would say, where the rule is to adopt the signed target through crayon-review's edits and never draft over it.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-27",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. On internal_error, the failing run re-ran crayon draft at once, without the read-only crayon show the row prescribes first.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-28",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run gave the author a raw 'crayon review cfg --verdict fix --note ...' command to type, where the next step is named as a skill.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-41",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "1 of 3. Two runs gave the provenance summary and findings without the 'Findings: N total' tally the review mode requires before the verdict.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-46",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "0 of 3. Every run asked F-2 and F-3 first and where a reader arrives from third; the skill takes one question per source first, so the arrival question is second.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-56",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "1 of 3. After crayon context record had run, two runs staged doc-style.md again, one saying it had recorded too hastily, instead of reporting the set and asking one question.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-59",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run ran crayon unit new with --notes in its own words ('They arrive from seeing ...') instead of the author's answer verbatim: it put words in the author's mouth.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-62",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run asked 'What's your verdict' after the two step questions, so three questions came before the steps were answered.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-68",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "1 of 3. Two runs said the review was not a self-review, naming the self-review the case keeps out when the record names another model and nothing ran in the session.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-70",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. With an empty gaps list, the failing run still wrote 'there is nothing I didn't run or couldn't source', a disclaimer the report gives no ground for.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-78",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run kept reading (pyproject.toml, .gitignore, crayon unit new --help) until the turn cap, and never gave the triage advice or ran crayon triage record.",
+      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-35",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run ran 'crayon review cfg --verdict accept --note 'Accept.'', putting a note on the record the author never gave: a record mistake on a critical case, so this result does not support the model.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-50",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. After the author's 'yes, but ...', the failing run read the help and then ran 'crayon signoff cfg' without making the change or asking again: a signoff the author had not given, a record mistake on a critical case, so this result does not support the model.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-88",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "1 of 3. Two runs never staged the page: one stopped to report its grounding without drafting, the other kept reading sources and sibling pages until the turn cap.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-41",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run closed its findings with 'Findings: 0 must-fix, 0 should-fix, 0 nit', without the total the rubric puts first ('Findings: 0 total — …').",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-18",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. After the busy refusal, the failing run read the context files and the writing references, then wrote the staged draft again instead of re-running crayon draft unchanged: the replayed history had drafted without the reads crayon-write requires before authoring, so the model made those reads then and revised the page. The history now makes them before the draft.",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-69",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "case-fix",
+      "note": "2 of 3. The failing run stated the gap in the first person ('I don't know which log_level values are valid'), which the check's wording did not take, and also listed the grounding reads the replayed history had skipped. The check now takes 'I don't know', and the history makes the reads crayon-write requires before the draft.",
+      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-19",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. After the unsteered refusal, the failing run deleted the staged draft (rm under .crayon/staging) instead of asking the author what should change. It ended on a change to the repository, so it counts as a record mistake.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-20",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. With a request pending, the failing run recorded the accept with --resolves 4 on its own, without putting the request to the reviewer: it guessed the disposition the rule leaves to the author.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-22",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. With the signed target already on disk (record_edits), the failing run ran crayon draft instead of routing to crayon-review's edits, drafting over the author's bytes.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-28",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run ran crayon review --verdict fix itself instead of naming the next step as a skill (/crayon-write).",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-41",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "0 of 3. Every run ended the findings with a reworded tally ('Findings: 2 (0 must-fix, 2 should-fix, 0 nit)', 'Findings: 1 — 0 must-fix, …') without the total the rubric puts first. A skill fix that states the line in review step 5 is on branch b41-tally-line, awaiting a Haiku run.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-45",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run asked the first-job step as question 2 instead of the Python-version request, and left out the pointer to crayon summary install --md for the fourth item: one question per source first was not kept.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-46",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "0 of 3. Every run asked only where a reader arrives from and dropped the open should-fixes F-2 and F-3; the closure takes three questions at exactly three open items.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-49",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run took 'Looks good.' about the outline as a go and ran crayon signoff cfg without asking the named question.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-50",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. On 'yes, but …', the failing run declared the unit again with crayon unit new and its own outline instead of making the change through crayon unit edit and asking again.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-59",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run recorded --notes in its own paraphrase ('They arrive having just seen toyq status show a job fail twice, with $TOYQ_MAX_RETRIES at 1.') instead of the author's words, and lost the backtick span.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-60",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The page is linked through docs/reference/index.md's toctree, and the failing run said so, yet still asked whether that link should stay; the closure is the accept line alone.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-63",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run kept reading files until the turn cap and never asked the step questions.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-64",
+      "model": "z-ai/glm-5.3",
+      "kind": "case-fix",
+      "note": "1 of 3. Both failing runs said no step was skipped ('No steps of the walk deviated or were skipped', 'no step tally — nothing deviated or was skipped'), which the case's exemption did not take: three words between 'steps' and the verb, and an em dash before 'nothing'. The exemption now takes both.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-66",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "1 of 3. Both failing runs asked the two step questions again at the closure, though both had been put to the author during this review; only where a reader arrives from was open.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-67",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "0 of 3. One run asked the verdict straight away without the self-review line or the findings; two kept reading until the turn cap.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-71",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. After the arrival answer, the failing run asked what the reader does next instead of the leave-out question.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-74",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "0 of 3. Every run raised the db_path must-fix but set the dimensions as bold labels, not headings, and one put the tag and db_path on separate lines; the rubric requires all six dimension headings, '### focus' among them.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-84",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. On tidewatch, the failing run kept searching the source until the turn cap instead of asking at the stateful step's permission gate.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-88",
+      "model": "z-ai/glm-5.3",
+      "kind": "limitation",
+      "note": "2 of 3. On tidewatch, the failing run kept reading files until the turn cap and never staged the page.",
+      "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-12",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run said 'the generation is at seq 3' in prose: uses 'seq', a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-35",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run recorded the accept as asked but said 'basis' in its prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-49",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run held the signoff and asked as required, but said 'basis' in its prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-80",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run read the plan back but ended on an instruction ('Reply \"sign it\"') with no question to the author.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-88",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. On tidewatch, the failing run stopped to report two findings from the code instead of staging the page.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-95",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run wrote the draft into staging without putting the disagreement between structure.md and the sibling page to the author.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-29",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run asked a second question inside its first intake question ('For example, what are they trying to understand …?'); the skill asks exactly one.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-83",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run held the signoff and asked the intake question as required, but said 'basis' in its prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    }
+  ]
+}

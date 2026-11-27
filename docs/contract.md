@@ -18,21 +18,22 @@ simplest adequate mechanism; how we know it helped.*
 
 | Mechanism | Failure / journey protected | What the author experiences | Simplest adequate mechanism | Signal (how we know it helped) |
 |---|---|---|---|---|
-| JSONL ledger, canonical lines, chain | audit defects 1, 2 (refused, not supported, since `357c513`), 5, 7 | a tamper-evident record that survives compaction; a corrupted line refuses loudly instead of silently deriving the wrong state | `json.dumps` sort_keys + sha256 of previous line | N-01/02/05 |
-| Derived state, one ordered routing table, `show`/`summary` | audit defect 6; Aug 31 | one `Next:` token after every verb, and a state that can never desync from the record because nothing is stored | one pure `derive()` | U-05 · U-08 — J5; `summary --md` as PR text |
-| Explicit-pathspec commits, 4 trailers | audit defect 4 | an unrelated in-`docs/` edit is never swept into the tool's commit | argv lists | N-04 |
-| Containment for every write destination | audit defect 3 (string-checked since `357c513`; `realpath` closes the symlink and `docs/docs/` cases) | a target that escapes the docs root is refused before anything is written | one `contained()` | N-03, N-24 |
-| Signoff/plan-hash/stale/amended gates | AC5; v1.1 | no substantial draft lands without a recorded signoff, and editing the plan after signing invalidates it rather than passing silently | sha256(unit.md); `gen.signoff_seq == so.seq` | A-08/09, N-19 |
-| Unsteered refusal | AC5 | re-drafting without recording what changed is refused, not quietly repeated | seq comparison over H | N-09 |
-| Pending requests closed by recorded, disjoint dispositions | round-2 f.1, round-3 f.8 | accept names which requests it satisfies and which it withdraws; nothing is closed by silence | `resolves`/`withdraws` on accept | N-20/21/25/32 |
-| Drift over basis paths + `edits` (complete set; brownfield adoption) | a reviewer's hand-edit case; committed edit; existing page; target change | a hand edit is adopted into the record rather than overwritten, and an existing page is adopted rather than clobbered | disk digests vs basis paths | N-10, N-26, N-33/34 |
-| Step evidence, tool-computed; conservative reuse | audit §5.1 | a tutorial or how-to step counts as resolved only with captured bytes and a real exit code; reuse carries forward only along an unchanged prefix | `--steps-seq`; `--keep-evidence --note` | N-18, N-27 |
-| Manifest write protocol; two-pass `resume`; bounded `--adopt`; honest limit | J6; partial writes; hooks; lost material | a crash or a rewriting hook never loses the author's work; recovery either completes or stops and says exactly what it cannot do | pending/{before,after,manifest}; classify then write | N-13…N-17, N-28…N-31, N-35…N-38 |
-| Repo-wide lock | concurrent invocations | a second invocation refuses with `busy` instead of interleaving two transitions | `fcntl.flock` | N-16 |
+| JSONL ledger, canonical lines, chain | audit defects 1, 2 (refused, not supported, since `357c513`), 5, 7 | a tamper-evident record that survives compaction; a corrupted line refuses loudly instead of silently deriving the wrong state | `json.dumps` sort_keys + sha256 of previous line | A-21 (`tests/test_crayon_acceptance.sh`), A-29; U-01, U-02 in the unit suite |
+| Derived state, one ordered routing table, `show`/`summary` | audit defect 6; Aug 31 | one `Next:` token after every verb, and a state that can never desync from the record because nothing is stored | one pure `derive()` | N-20 (`tests/test_crayon_lifecycle.sh`) and every Trace table row; U-05 to U-08 in the unit suite — J5; `summary --md` as PR text |
+| Explicit-pathspec commits, 4 trailers | audit defect 4 | an unrelated in-`docs/` edit is never swept into the tool's commit | argv lists | A-30 (`tests/test_crayon_acceptance.sh`), A-29 |
+| Containment for every write destination | audit defect 3 (string-checked since `357c513`; `realpath` closes the symlink and `docs/docs/` cases) | a target that escapes the docs root is refused before anything is written | one `contained()` | A-06 (`tests/test_crayon_acceptance.sh`), A-11, A-31, A-33 |
+| Signoff/plan-hash/stale/amended gates | AC5; v1.1 | no substantial draft lands without a recorded signoff, and editing the plan after signing invalidates it rather than passing silently | sha256(unit.md); `gen.signoff_seq == so.seq` | A-08 (`tests/test_crayon_acceptance.sh`), A-09, N-19 |
+| Unsteered refusal | AC5 | re-drafting without recording what changed is refused, not quietly repeated | seq comparison over H | N-09 (`tests/test_crayon_lifecycle.sh`) |
+| Pending requests closed by recorded, disjoint dispositions | round-2 f.1, round-3 f.8 | accept names which requests it satisfies and which it withdraws; nothing is closed by silence | `resolves`/`withdraws` on accept | N-20 (`tests/test_crayon_lifecycle.sh`), N-21, N-32 |
+| Drift over basis paths + `edits` (complete set; brownfield adoption) | a reviewer's hand-edit case; committed edit; existing page; target change | a hand edit is adopted into the record rather than overwritten, and an existing page is adopted rather than clobbered | disk digests vs basis paths | N-10 (`tests/test_crayon_lifecycle.sh`), N-26, N-33/34 |
+| Step evidence, tool-computed; conservative reuse | audit §5.1 | a tutorial or how-to step counts as resolved only with captured bytes and a real exit code; reuse carries forward only along an unchanged prefix | `--steps-seq`; `--keep-evidence --note` | N-18 (`tests/test_crayon_lifecycle.sh`), N-27 |
+| Manifest write protocol; two-pass `resume`; bounded `--adopt`; honest limit | J6; partial writes; hooks; lost material | a crash or a rewriting hook never loses the author's work; recovery either completes or stops and says exactly what it cannot do | pending/{before,after,manifest}; classify then write | N-13 (`tests/test_crayon_lifecycle.sh`)…N-17, N-28…N-31, N-35…N-38 |
+| Repo-wide lock | concurrent invocations | a second invocation refuses with `busy` instead of interleaving two transitions | `fcntl.flock` | N-16 (`tests/test_crayon_lifecycle.sh`) |
 | `verify` (read-only) | N1; scorer oracle | one read-only command answers "is this unit's record internally valid" without changing anything | V1–V19 | V-01…V-04 (`validation/fixtures.sh`) |
 | `retire` | abandoned unit blocks a target | an abandoned unit's target can be claimed again, by one recorded act | one event | N-40 (`tests/test_crayon_lifecycle.sh`) — J7 |
 | `context record` (repo-level) | house style, vocabulary and structure reach the skills only as loose files nobody recorded | the context artefacts a skill drafted land in `.crayon/context/` through the tool, digested and committed, so `crayon-plan` grounds itself in a record rather than in whatever is on disk | a fixed set of five names; one manifest; one commit with no unit | N-47 (`tests/test_crayon_lifecycle.sh`) |
-| `contract` + `min_tool` | skills drift from tool | a skill paired with an incompatible tool stops with a version message instead of misbehaving | two numbers | A-37 (`tests/install_smoke.sh`) — install smoke |
+| `triage record` (repo-level, opt-in) | nobody knows how often crayon's triage advice matches what the authors then did | with `crayon.collect` on, each advice is kept, chained and committed, so `triage export` can set it beside the unit it led to and `validation/triage/measure.py` can say how often it was right | off by default; references only, never a diff; one commit with no unit | N-48 (`tests/test_crayon_lifecycle.sh`) |
+| `contract` + `min_tool` | skills drift from tool | a skill paired with an incompatible tool stops with a version message instead of misbehaving | two numbers | S-01 (`tests/test_skill_text.py`); A-37, the install smoke |
 
 **Closure rule:** a rule is specified only when each trace in §5.11 follows from the *same*
 precondition, routing and recovery rules an implementation executes, and each trace has a test id.
@@ -61,6 +62,7 @@ present, never produced, no behaviour.
 | `.crayon/context/<name>`, `<name>` one of the five context artefacts (§5.6) | tool on `context record`; TA by hand | as stated | `context show`: `drifted` (bytes differ from the manifest), `unrecorded` (present, never recorded) — reported, never refused |
 | `.crayon/context/manifest.json` | tool only (`context record`) | nobody | `context show` and `context record` read it; a damaged one refuses 2 `bad_target` |
 | `.crayon/staging/_context/{<name>,<name>.sources.json}` | tool (`context stage`) | — | gitignored, transient; cleared by `context record` |
+| `.crayon/triage/log.jsonl` | tool only (`triage record`, when `git config crayon.collect` is `true`) | nobody | `triage export` reads it; chained as a ledger is (§5.2), and a damaged line refuses 6 `ledger_corrupt` |
 
 **Guarantee (single wording):** the ledger lets `verify` check that each recorded transition was
 valid against the events before it, and lets `show` compare recorded digests with current bytes.
@@ -115,6 +117,16 @@ ledger; its commit is subject `crayon: context recorded`, body = collapsed note 
 trailers `Crayon-Phase: context-recorded`, `Crayon-Head: <16 hex>` and, when a model is claimed,
 `Crayon-Model` — no `Crayon-Unit`, no `Crayon-Seq`, because the context belongs to the repository
 and not to a unit (§5.1). Pathspecs are the promoted artefacts and the manifest, explicitly.
+
+`triage record` is the other repo-level transition, and it writes only when the repository's
+`crayon.collect` git setting is `true`; otherwise it writes nothing and says so. It writes no
+event and touches no unit ledger: it appends one line to `.crayon/triage/log.jsonl`, chained as
+§5.2 chains a ledger (`seq`, `prev`) and carrying `at`, `actor`, `tool_version`, `contract`,
+`commit` (HEAD before), `base` and `head` (full commit ids), `paths` (what `git diff --name-only
+base head` lists), `needs_docs`, `pages`, `type`, `unit` and `note`. Its commit is subject
+`crayon: triage recorded`, body = collapsed note ≤ 400 chars, trailers `Crayon-Phase:
+triage-recorded` and `Crayon-Head`, and its one pathspec is the log. The line holds references
+only: never a diff or a page's text.
 
 ## 5.4 Derivation
 
@@ -222,6 +234,8 @@ crayon, when the author has it, and their absence is not a missing context.
 | `--output-file` (`step`) | `realpath` inside `.crayon/staging/<id>/scratch/`; anything else → 2 `bad_write_path`. Not merely "inside the repository": up to 4096 bytes of it are excerpted **verbatim** into the committed ledger and the excerpt is control-character-stripped, never credential-stripped, so an in-repo `.env.local` or `.git/config` would be published by the next transition. `.crayon/staging/<id>/` and `.crayon/staging/<id>/scratch/` are `islink`-checked by name FIRST: `realpath` resolves both operands, so a containment test anchored on a symlinked directory resolves through the link and passes for every target |
 | `unit.md` | the exact subset below |
 | context artefact name | one of `doc-style.md`, `glossary.md`, `structure.md`, `code-to-docs-map.md`, `doc-gaps.md`; anything else → 2 `bad_target` |
+| `--base` / `--head` (`triage record`) | a revision naming a commit, not starting with `-`; recorded as the full commit id; else 2 `bad_target` |
+| `--page` (`triage record`, repeatable), `--unit-id`, `--note` | the target, unit id and note rules above; `--type` one of the four intents |
 | context body (`context stage --body-file`) | UTF-8, non-empty; recorded byte for byte, never re-encoded |
 | context source (`context stage --source`, repeatable) | one line, non-empty, ≤ 1024 bytes, ≤ 500 per artefact; a locator the skill declares (a path, a URL, a tool-result id), recorded verbatim and never digested — the tool cannot see behind a URL |
 
@@ -271,6 +285,7 @@ only**; the routing table is a rendering of them.
 | `resume` | exempt from `retired`; see §5.8 | `nothing_to_resume` (no tail, no pending — also the result of calling `resume` again after a successful completion) | — |
 | `context stage` | artefact name (2 `bad_target`) · body · sources | — | — |
 | `context record` | at least one artefact staged (2 `bad_target`) | `noop_unchanged`: HEAD already holds every staged artefact's bytes at its published path — disk alone is never consulted, so a record whose commit was refused is retried, not no-op'd; the staged copies are discarded | — |
+| `triage record` | `crayon.collect` is `true`, else exit 0 with `recorded: false` and nothing written, before stage a · `base` to `head` changes at least one path (2 `bad_target`) | — | — |
 
 Reason table:
 
@@ -325,9 +340,9 @@ Reason table:
 | `adopt_unsupported` | 6 |
 | `internal_error` | 6 |
 
-`bad_target`, `bad_write_path`, `bad_draft_path` and `bad_resolution` are the `bad_*` family
-rev8 names (§5.6, §5.11 T23, §8.1). Every non-zero exit prints one JSON line
-`{"error","unit","detail","hint","next"}` on stderr (`--json`: stdout).
+`bad_target`, `bad_write_path`, `bad_draft_path` and `bad_resolution` are the `bad_*` family (§5.6,
+§5.11 T23). Every non-zero exit prints one JSON line `{"error","unit","detail","hint","next"}` on
+stderr (`--json`: stdout).
 
 ## 5.8 Write protocol and resume
 
@@ -502,17 +517,17 @@ only; a state-affecting new kind requires contract 2. History policy: squash mer
 `history_squashed`; cherry-pick without the ledger line → `ledger_diverged`; later maintenance
 edits → `drifted`, never FAIL.
 
-This section is contract as of `contract-v1`; the code that implements it lands in phase 17.
+This section is contract as of `contract-v1`; `crayon verify` implements it.
 
 ## 5.10 Compatibility
 
 | Number | Value |
 |---|---|
 | `contract` | `1` |
-| `min_tool` | `0.2.0` |
+| `min_tool` | `0.3.0` |
 
 `contract: 1` in every event; `metadata.crayon_contract: 1` and `metadata.crayon_min_tool:
-"0.2.0"` in every SKILL.md; `crayon version --json` → `{"tool","contract"}`; a skill stops only on
+"0.3.0"` in every SKILL.md; `crayon version --json` → `{"tool","contract"}`; a skill stops only on
 contract mismatch or a tool older than `min_tool`. Contract 2 = rename/removal, enum change,
 state-affecting kind, canonicalization change; no in-place migration. Legacy units: 2
 `legacy_unit`, archive hint.
@@ -538,7 +553,7 @@ recovery verb, for a defect in crayon. The exit code does not move: 6 is the rec
 code and the arm already used it.
 
 That reading reverses an earlier one, and both are recorded here rather than only the one that
-won. The phase-16 round-5 fix report classified this same row as "a contract-v2 change" and
+won. An earlier review classified this same row as "a contract-v2 change" and
 deferred it on that basis. Under the stricter reading the row belongs in contract 2, with
 `min_tool` and three SKILL.md metadata values moving beside it and every existing ledger's header
 event refusing 6 `ledger_version_unsupported` on every verb until its unit is archived — a
@@ -556,6 +571,12 @@ does not know the verbs, which `crayon --help` and `tests/check_docs.py` make vi
 than silent. The two numbers above are unchanged, and so are every SKILL.md's
 `metadata.crayon_contract` and `metadata.crayon_min_tool`.
 
+**Revision (triage verbs).** §6 gains `triage record` and `triage export`; §5.1 gains the triage
+log's row, §5.3 its transition, §5.6 its inputs and §5.7 its preconditions. The addition is
+additive under `contract: 1` by the same reading as the context verbs: no event kind, enum
+member, reason or unit-ledger field changes, and a repository that never sets `crayon.collect`
+gets no file and no commit from it.
+
 **Revision (step plan in `show`).** `show` and `summary --json` gain the recorded step plan
 beside the step tally: `steps.plan` lists each step of the current `steps-planned` event with
 its `id`, `text`, `mode`, `stateful`, `status` (the answering verdict, or `unresolved`) and
@@ -569,6 +590,56 @@ the `steer` command alone, and `unapplied_steering`'s leads with putting each pe
 the reviewer before the `--resolves` / `--withdraw` flags that record the answers. Both changes are additive under `contract: 1` by the reading
 above: no event kind, reason or enum member changes, the ledger bytes are untouched, and the
 two numbers above and every SKILL.md's metadata stay as they are.
+
+**Revision (plain record surfaces).** The lines an author reads now say what happened in plain
+words. For a human, the `publish` token's `Next:` line reads `Next: yours — crayon stops here`,
+while `--json`'s `next`, `route()` and every routing row keep `publish`. The success lines of
+the accept, `signoff`, `unit edit --re-sign`, `edits` and `resume`, and the human forms of
+`show`, `summary` and default `verify`, name pages, requests and record entries rather than
+seqs, digests, the plan hash, the basis or the sealed state: human `show` prints
+`state: accepted` for a `sealed` unit and one `request <n>` row per request, and `summary`
+opens with the author's decisions and a plain provenance line. Accept's `--json` gains
+`files`, `resolves` and `withdraws`, copied from the recorded event. `verify` gains
+`--verbose`, which prints the V1–V19 report with its counts exactly as `verify` printed it
+before; default `verify` now prints one outcome line, then each check that needs a look under
+a plain label. When default `verify` finds damage, the `ledger_corrupt` refusal that follows
+gives, in its `hint`, each failing check's V id beside the label the report printed; its
+`error`, `detail` and `next`, exit 6, and the refusal after `--verbose` or `--json` are
+unchanged. `--json` wins over `--verbose` and is unchanged, and §6 shows the flag.
+`show --json` and `summary --json` gain `handover`, always present, with three members:
+`steps`, the current plan's deviated and skipped steps; `judged`, the requests the latest
+accept resolved with no generation and no reviewer edit recorded between the request and that
+accept, so the reviewer judged them against a page that had not changed since they were made;
+and `withdrawn`, the requests that accept withdrew, each with its reason. `summary --json`
+gains `author_notes`, entries `{seq, origin, note, request}` in recording order: the notes the
+record says the author wrote, from intake, steering, review, withdrawals and reviewer edits.
+The record cannot prove who typed a note, and the list claims no more than the record does.
+`show --json`'s `state`, `qualifier`, `requests` and `diff`, and `summary --json`'s
+`provenance`, keep their values, so only the human renders change their wording. These
+changes are additive under `contract: 1` by the reading above: no event kind, reason or enum
+member changes, the ledger bytes are untouched, and the two numbers above and every SKILL.md's
+metadata stay as they are.
+
+**Revision (min_tool 0.3.0).** This is the revision that moves `min_tool`; every revision above
+kept it. The routing table's `ledger_corrupt` row prescribes `crayon verify <id> --verbose`, the
+flag the revision above added, and a 0.2.0 tool rejects it, so a skill paired with a 0.2.0 tool
+would route its author to a command that tool refuses. `min_tool` and the tool's version
+therefore move to `0.3.0` together, and every SKILL.md's `metadata.crayon_min_tool` with them: a
+skill now stops on a 0.2.0 tool as a tool older than `min_tool`. The contract stays `1`. No
+event kind, enum member, reason or ledger field changes, and a ledger written before this
+revision reads exactly as it did.
+
+**Revision (readings).** Three places where this text read differently from the tool are
+recorded here as readings; the contract stays `1` and the tool's behaviour does not change.
+The success lines of the accept, `signoff`, `unit edit --re-sign`, `edits` and `resume` that
+the plain-record-surfaces revision rewords change for a human only: their `--json` `message`
+keeps its contract-1 wording, `plan_hash`, `file(s) sealed` and the seq range included.
+§6's `review` row shows `--note|--note-file -` unbracketed, but the accept's note is optional:
+`note_required` refuses only a fix or a redraft without one, as §5.7's reason table and the
+tool say, and the skills' `accept [--note "…"]` reads §6 that way. §6's read-only row now
+brackets `verify`'s `--json` and `--verbose` apart rather than as alternatives, since both
+flags are accepted together and `--json` wins, as the plain-record-surfaces revision says. No
+event kind, enum member, reason or ledger field changes.
 
 ## 6 Verb table
 
@@ -588,7 +659,9 @@ two numbers above and every SKILL.md's metadata stay as they are.
 | `context stage <name> --body-file -\|F [--source]…` | repo-level; tool-owned staging | — |
 | `context record [--model --model-origin] [--note]` | repo-level; one commit, no unit | — (manifest) |
 | `context show [--json]` | read-only | — |
-| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json]`, `version [--json]` | read-only | — |
+| `triage record --base --head --needs-docs yes\|no [--page]… [--type] [--unit-id] --note` | repo-level; writes only when `crayon.collect` is `true`; one commit, no unit | — (triage log) |
+| `triage export [--json]` | read-only: each record beside the unit it led to and a label | — |
+| `show <id> [--json\|--diff]`, `summary <id> [--json\|--md]`, `verify <id> [--json] [--verbose]`, `version [--json]` | read-only | — |
 
 ## 5.11 Traces
 
@@ -652,6 +725,10 @@ Normative; each is a test; outcomes follow from §5.4–5.8.
 | T35b | `context stage profile.md`; a stray file in `_context/` at record time | 2 `bad_target` naming the five artefacts; 2 `bad_target` naming the stray file; nothing promoted |
 | T35c | record → stage the same bytes → record; then stage one changed artefact → record | 3 `noop_unchanged` with the last commit, staged copies discarded; then one commit promoting the changed artefact while the manifest keeps every other published row |
 | T36 | recorded artefact hand-edited on disk → `context show`; `context record` with nothing staged | `drifted` named, exit 0, nothing refused; 2 `bad_target` (nothing staged), `next` per context routing |
+| T37 | `triage record` with `crayon.collect` unset | exit 0, "collection is off", `recorded: false`; no file, no commit |
+| T37b | `crayon.collect true`; two `triage record` calls | one commit each, subject `crayon: triage recorded`, the one pathspec `.crayon/triage/log.jsonl`, trailers `Crayon-Phase`/`Crayon-Head` and no `Crayon-Unit`; seq 0 then 1, the second's `prev` the first line's sha256; `paths` as git lists them |
+| T37c | `triage record` over an unchanged range, an unknown revision, an absolute page | 2 `bad_target` each; no file, no commit |
+| T38 | a `yes` record naming a unit id that is then accepted; a `no` record with no unit | `triage export`: the first labelled needed (`accepted unit`, matched by the unit id); the second unlabelled within 30 days and labelled not needed after |
 | T34b | drafted unit, author deletes a current target, asks to accept without explaining | accept 1 `target_missing`; the skill explains that the signed plan still lists the target and asks restore-or-amend; no `steering` event is recorded until the author answers; "amend" → `--re-sign` without the target (old page reported as orphan, kept) → `generation_stale`, the old generation cannot be accepted → draft → review |
 
 ## Trace table
@@ -660,17 +737,16 @@ One row per trace in §5.11, in §5.11's order; traces whose outcomes compare eq
 source order, so the table is stable across regenerations. The governing-rule cell names the
 section the outcome follows from — this is the closure rule of §"Mechanisms" made checkable.
 
-Test ids are reserved from rev8's own series (A-01…A-35, N-01…N-41, U-01…U-10, S-01…S-09,
-V-01…V-04); ids beyond a series' rev8 range are the next free id in that series. At
-`contract-v1` this table was phase 17's work list and no trace test had been written yet; phase
-17 cleared a mark as each test landed, and plan 17-11 cleared the last of them. Every row below
-now names a test FUNCTION that exists, which `tests/check_traces.py` re-proves by grepping the
-suites for a function whose name carries the id. That is the whole of the claim: the checker does
-not read the function's body, so it cannot re-prove that the outcome this row states is the
-outcome that test asserts. A row can therefore be "cleared" while its clause is unexercised in the
-shape that matters, or unimplemented — WR-12, which CR-01 (T16) and WR-05 (T29) were both
-instances of. Keeping a row honest is the reviewer's job at the point the test is written or
-moved. No cell is ever blank.
+Test ids come from five series whose original ranges are A-01…A-35, N-01…N-41, U-01…U-10, S-01…S-09
+and V-01…V-04; an id beyond a series' original range is the next free id in that series. At
+`contract-v1` no trace test had been written yet, and each row carried a mark that was cleared as
+its test landed; the last mark has been cleared. Every row below now names a test FUNCTION that
+exists, which `tests/check_traces.py` re-proves by grepping the suites for a function whose name
+carries the id. That is the whole of the claim: the checker does not read the function's body, so it
+cannot re-prove that the outcome this row states is the outcome that test asserts. A row can
+therefore be "cleared" while its clause is unexercised in the shape that matters, or unimplemented;
+T16 and T29 were both once in that state. Keeping a row honest is the reviewer's job at the point
+the test is written or moved. No cell is ever blank.
 
 | T# | Governing rule (§) | Test id |
 |---|---|---|
@@ -731,5 +807,9 @@ moved. No cell is ever blank.
 | T35b | §5.6 (context artefact name) | N-47 |
 | T35c | §5.7 d (`noop_unchanged` against HEAD) · §5.1 (partial re-stage keeps the set) | N-47 |
 | T36 | §5.1 (`drifted`, reported never refused) · §5.5 C1–C3 | N-47 |
+| T37 | §5.7 c (`crayon.collect` off: nothing written) | N-48 |
+| T37b | §5.3 (repo-level commit) · §5.1 (the triage log, chained) | N-48 |
+| T37c | §5.6 (`--base`/`--head`, `--page`) · §5.7 c (a range that changes a path) | N-48 |
+| T38 | §6 (`triage export`, read-only) | N-48 |
 
 Related: [[architecture]], [[hooks]], [[compatibility]].

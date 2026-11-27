@@ -48,7 +48,7 @@ import sys
 
 # --- constants --------------------------------------------------------------
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 CONTRACT = 1
 DOCS_ROOT = "docs"
 
@@ -100,7 +100,7 @@ EVIDENCE_KEYS = ("verdict", "exit_code", "mode", "command", "reason")
 
 # The contract caps the step plan in BYTES (5.2) and names no count cap. This
 # is the tool's own backstop against a pathological entry count inside that
-# byte budget (T-17-22); it is deliberately not presented as a contract cap.
+# byte budget; it is deliberately not presented as a contract cap.
 MAX_STEPS = 500
 _UNIT_REQUIRED_KEYS = ("title", "intent", "audience", "targets")
 _UNIT_LIST_KEYS = ("targets", "sources")
@@ -151,7 +151,7 @@ EXITS = {
 
 # ONE table: every reason in ``docs/contract.md``'s reason table mapped to its
 # exit code, in the contract's own order so a row-for-row diff stays stable.
-# This is phase 18's ``check_docs.py`` observable — a key added here that is not
+# ``check_docs.py`` reads this table — a key added here that is not
 # in the contract, or a contract row missing here, is a defect in one of the two
 # and U-07 fails until they agree.
 REASONS = {
@@ -236,7 +236,7 @@ class Refusal(Exception):
         self.hint = hint
         self.next_token = next_token
         self.extra = dict(extra or {})
-        # Contract 5.8's honest-limit block (D-08) travels WITH the refusal
+        # Contract 5.8's honest-limit block travels WITH the refusal
         # rather than being printed where it is built, for the same reason the
         # refusal itself does: `main` is the one place that knows whether
         # `--json` moved the refusal to stdout. Empty for every other reason.
@@ -265,15 +265,36 @@ def refuse(reason, unit="", detail="", hint="", next_token="", as_json=False, ex
     return REASONS[reason]
 
 
-# VERB-04: the ONE separator between response segments. It is not an em dash
+# The ONE separator between response segments. It is not an em dash
 # on purpose — an em dash already appears INSIDE segments (the git diagnostic's
 # `committed <sha> — crayon: <subject>`, a state qualifier), so reusing it would
 # make the segment boundary unfindable by anything but a human.
 SEGMENT = " \u00b7 "
 
+# The human words for a routing token. Only `publish` is
+# mapped, because a bare `Next: publish` reads as if crayon had a publish step;
+# the author's handover is what follows. Every other token, `retired` included,
+# prints as itself. HUMAN render only: `route()`, `--json`'s `next`, a
+# refusal's `next` and the routing mirrors keep the token byte for byte.
+HUMAN_NEXT = {"publish": "yours — crayon stops here"}
 
-def respond(segments, next_token, as_json=False, payload=None):
-    """Print the rev8 §3.3 one-line success response on stdout.
+# The human word for a derived state. Only `sealed` is mapped: the
+# author reads `accepted`, which is what they did. HUMAN render only: `show
+# --json`'s `state`, `derive()`, `route()` and every gate keep `sealed`.
+HUMAN_STATE = {"sealed": "accepted"}
+
+
+def next_line(token):
+    """The human ``Next:`` segment for a routed token.
+
+    Read by ``respond()``'s human branch and ``show``'s human tail, and nowhere
+    else; a token with no mapping prints as itself.
+    """
+    return "Next: %s" % HUMAN_NEXT.get(token, token)
+
+
+def respond(segments, next_token, as_json=False, payload=None, json_segments=None):
+    """Print the one-line success response on stdout.
 
     ONE line, fixed segment order: what changed · where · what remains ·
     ``Next: <token>``. ``segments`` is the list of content segments; the
@@ -283,19 +304,33 @@ def respond(segments, next_token, as_json=False, payload=None):
     a verb with nothing remaining is expected to pass an explicit remainder
     segment rather than omit it into ambiguity.
 
+    For humans the routing segment is rendered through :func:`next_line`, so
+    ``publish`` reads as the plain handover, and that handover doubles as the
+    "what remains" segment (an accept says what it accepted and hands
+    over). ``--json`` keeps the token itself, and a ``payload`` adds keys but
+    never shadows ``ok``, ``message`` or ``next``.
+
+    ``json_segments``, when given, is what ``--json``'s ``message`` is built
+    from instead of ``segments``: it keeps a pre-existing ``message`` byte-stable
+    when a verb's human wording changes (contract 1). Plain words reach
+    the human line only, as :func:`next_line` does for the token.
+
     Git diagnostics and hook warnings go to stderr, so this line stays exactly
     one line and stays machine-readable.
     """
+    if as_json and json_segments is not None:
+        segments = json_segments
     if isinstance(segments, str):
         segments = [segments]
-    parts = [segment for segment in segments if segment]
-    message = SEGMENT.join(parts)
+    message = SEGMENT.join(segment for segment in segments if segment)
     if as_json:
         body = {"ok": True, "message": message, "next": next_token}
-        body.update(payload or {})
+        body.update(
+            (key, value) for key, value in (payload or {}).items() if key not in body
+        )
         sys.stdout.write(json.dumps(body, ensure_ascii=False) + "\n")
     else:
-        sys.stdout.write(message + SEGMENT + "Next: %s\n" % next_token)
+        sys.stdout.write(message + SEGMENT + next_line(next_token) + "\n")
     sys.stdout.flush()
     return EXITS["success"]
 
@@ -317,8 +352,8 @@ def sha256_bytes(data):
 def sha256_file(path):
     """Digest a file: ``None`` when missing, ``""`` when zero-byte, else sha256.
 
-    The three-valued result is the vocabulary ``read_fs()`` hands to ``derive()``
-    (D-19): absence and emptiness are distinct facts the contract reasons about
+    The three-valued result is the vocabulary ``read_fs()`` hands to ``derive()``:
+    absence and emptiness are distinct facts the contract reasons about
     (a zero-byte target is not an adopted page).
     """
     try:
@@ -332,14 +367,14 @@ def sha256_file(path):
 
 
 def test_hooks_enabled():
-    """Are the D-15 fixture hooks armed? (``CRAYON_TEST_HOOKS=1``.)
+    """Are the fixture hooks armed? (``CRAYON_TEST_HOOKS=1``.)
 
     ``CRAYON_NOW`` and ``CRAYON_CRASH_AT`` are fixture-only by intent but were
     always live in the shipped executable. A provenance tool whose committed
     audit record takes its timestamps from an environment variable — and which
     can be told to abort between the append and the commit — should require the
     caller to say so out loud, once, rather than reading a stray variable in a
-    developer's shell (WR-07). The suites set it in their repo fixtures.
+    developer's shell. The suites set it in their repo fixtures.
     """
     return os.environ.get("CRAYON_TEST_HOOKS") == "1"
 
@@ -347,7 +382,7 @@ def test_hooks_enabled():
 def utc_now():
     """The event's informational ``at``.
 
-    ``CRAYON_NOW`` overrides it verbatim (D-15) so a fixture's ledger bytes — and
+    ``CRAYON_NOW`` overrides it verbatim so a fixture's ledger bytes — and
     therefore every ``prev`` digest — are reproducible. It is read ONLY under
     ``CRAYON_TEST_HOOKS=1``, so it is inert in the shipped executable rather than
     merely inert by convention.
@@ -425,7 +460,7 @@ def step_text_hash(text):
 
 
 def scrub_excerpt(raw):
-    """``(sha256 of the raw bytes, the committed excerpt)`` — D-02, LEDG-06.
+    """``(sha256 of the raw bytes, the committed excerpt)``.
 
     Captured output is NOT author free text: :func:`clean_text` refuses a
     carriage return, so a progress bar or a CRLF line ending would be turned
@@ -446,7 +481,7 @@ def scrub_excerpt(raw):
 
     The only claim this function makes is that control characters are stripped.
     It does not remove credentials and does not inspect the payload for them;
-    D-02 weighed credential-shape removal for v2.0 and decided against it, so
+    credential-shape removal was weighed for v2.0 and rejected, so
     whatever the command printed is what reaches the ledger.
     """
     digest = sha256_bytes(raw)
@@ -477,7 +512,7 @@ def validate_unit_id(unit):
 
     The reason table names no dedicated code for a malformed identifier, so the
     ``bad_*`` input family's ``bad_target`` carries it; inventing a code would
-    put a key in ``REASONS`` that the contract does not have (GATE-04).
+    put a key in ``REASONS`` that the contract does not have.
     """
     if not isinstance(unit, str) or not _UNIT_ID_RE.match(unit):
         raise Refusal(
@@ -504,7 +539,7 @@ def validate_step_id(step_id, unit=""):
 def validate_note(text, unit="", field="note", cap=MAX_NOTE_BYTES):
     """Contract 5.6's note/reason rule, as ONE stage-b entry point.
 
-    ``clean_text`` (plan 16-02) is gate-free input hygiene: it raises a plain
+    ``clean_text`` is gate-free input hygiene: it raises a plain
     ``ValueError`` and selects neither a reason nor an exit code. This wrapper
     is the single place that choice is made, so every free-text field refuses
     identically and no call site invents its own mapping.
@@ -512,8 +547,7 @@ def validate_note(text, unit="", field="note", cap=MAX_NOTE_BYTES):
     The reason table names no ``bad_note``, so the note family's own code —
     ``note_required`` — carries "this note is unusable" and the detail says
     exactly why. Inventing a code would put a key in ``REASONS`` the contract
-    does not have, which U-07 and phase 18's ``check_docs.py`` both read as
-    drift (16-03's rule, applied again).
+    does not have, which U-07 and ``check_docs.py`` both read as drift.
     """
     if not isinstance(text, str):
         text = ""
@@ -639,7 +673,7 @@ def validate_target(target, unit=""):
 
 
 def validate_source(source, unit=""):
-    """A ``sources:`` entry is a repo-relative POSIX path (WR-01).
+    """A ``sources:`` entry is a repo-relative POSIX path.
 
     The contract states no source rule, so this is not its rule being enforced:
     it is the containment mechanism reaching the one READ path that RECORDS what
@@ -728,7 +762,7 @@ class UnitInvalid(Exception):
     Carries the structured payload only: ``line`` (1-based, counted from the
     file's first line), ``key``, and the ``flag`` that fixes it. Mapping this to
     exit 2 and a one-line JSON refusal is gate code and waits for the
-    ``contract-v1`` tag (D-06).
+    ``contract-v1`` tag.
     """
 
     def __init__(self, detail, line, key=None, flag=None):
@@ -893,8 +927,8 @@ def render_unit_md(frontmatter, body=""):
 def _assert_no_floats(value, path="$"):
     """Raise when any ``float`` appears anywhere in ``value``.
 
-    ``allow_nan=False`` bans only nan and inf; a *finite* float still serializes
-    (RESEARCH P-6), and float repr is platform-sensitive, so one would break byte
+    ``allow_nan=False`` bans only nan and inf; a *finite* float still serializes,
+    and float repr is platform-sensitive, so one would break byte
     stability and with it every ``prev`` digest in the chain.
     """
     if isinstance(value, float):
@@ -939,22 +973,29 @@ def verify_chain(lines):
         try:
             event = json.loads(line)
         except ValueError as exc:
-            problems.append("line %d: not valid JSON (%s)" % (number, exc))
+            problems.append(said("line %d: not valid JSON (%s)", number, exc))
             previous = line
             continue
         if not isinstance(event, dict):
-            problems.append("line %d: not a JSON object" % number)
+            problems.append(said("line %d: not a JSON object", number))
             previous = line
             continue
         if event.get("seq") != index:
             problems.append(
-                "line %d: seq is %r, expected %d" % (number, event.get("seq"), index)
+                said("line %d: seq is %r, expected %d", number, event.get("seq"), index)
             )
         expected = None if previous is None else chain_prev(previous)
-        if event.get("prev") != expected:
+        prev = event.get("prev")
+        if prev != expected:
+            # The two digests are the tool's text, so the plain render may
+            # shorten them; any other value a forged `prev` holds is shown as is.
             problems.append(
-                "line %d: prev is %r, expected %r"
-                % (number, event.get("prev"), expected)
+                said(
+                    "line %d: prev is %r, expected %r",
+                    number,
+                    ToolText(prev) if isinstance(prev, str) else prev,
+                    ToolText(expected) if isinstance(expected, str) else expected,
+                )
             )
         previous = line
     return problems
@@ -967,7 +1008,7 @@ def ledger_label(path):
     (``os.path.relpath(path, root)`` in :func:`classify_stage_a`); the two
     raised from :func:`read_events` embedded the ABSOLUTE path, leaking the
     caller's filesystem layout into a diagnostic a skill is invited to paste
-    into an issue or a commit message (WR-10).
+    into an issue or a commit message.
 
     Derived from the path's own shape rather than from a ``repo`` argument
     threaded through eight call sites: a ledger always lives at
@@ -989,15 +1030,15 @@ def undecodable_ledger(path, unit=""):
     :func:`_read_text` and, through them, every verb — and a second opinion
     about the same fault is how it came to have three different answers.
 
-    WR-04 widened the three helpers that read AUTHOR input and stopped there.
-    The readers of the RECORD still opened with ``encoding="utf-8"`` and caught
-    nothing, so the identical fault on the identical codec escaped as a bare
+    An earlier fix widened the three helpers that read AUTHOR input and stopped
+    there. The readers of the RECORD still opened with ``encoding="utf-8"`` and
+    caught nothing, so the identical fault on the identical codec escaped as a bare
     ``UnicodeDecodeError`` into ``main``'s generic ``ValueError`` arm and came
     back as ``bad_target`` (2, "bad input" — the code a skill reads as "I
     mistyped an argument") with the decoder's message in ``detail`` and an
     EMPTY ``hint``. The truth is that the hash-chained record of truth is
     unreadable, whose contract reason is ``ledger_corrupt`` (6) with
-    ``next: resume`` (WR-09).
+    ``next: resume``.
     """
     relative = ledger_label(path)
     return Refusal(
@@ -1013,7 +1054,7 @@ def undecodable_ledger(path, unit=""):
 def unreadable_ledger(path, unit=""):
     """The one ``ledger_corrupt`` for a ledger path that is not a readable file.
 
-    WR-20: WR-09 turned on the principle "absent and undecodable are NOT the
+    An earlier fix turned on the principle "absent and undecodable are NOT the
     same answer" and left the THIRD case split between the two readers of the
     same file. :func:`_read_text` mapped ``IsADirectoryError``/
     ``NotADirectoryError`` to ``""`` -- *absent*, derive state from nothing,
@@ -1047,8 +1088,8 @@ def read_events(path, unit=""):
     refuses loudly instead of silently deriving the wrong state"). A bare
     ``ValueError`` used to escape here and be converted by ``main`` into
     ``bad_target``/2 with a JSON-decoder message in ``detail`` — "bad input" for
-    a damaged record — and it is what made WR-04's silent claim-policy bypass
-    possible to write by accident (WR-10).
+    a damaged record — and it is what made a silent claim-policy bypass
+    possible to write by accident.
     """
     try:
         with open(path, "r", encoding="utf-8") as handle:
@@ -1108,11 +1149,11 @@ def ledger_path(repo, unit):
 
 # --- derive + routing -------------------------------------------------------
 # Routing (`route()`) is a rendering of the per-verb preconditions and waits for
-# the `contract-v1` tag (D-06). Only the derivation half lives here.
+# the `contract-v1` tag. Only the derivation half lives here.
 
 
 def contained_page(repo, unit, path):
-    """The absolute path of a RECORDED docs page, or a refusal (CR-04, CR-05).
+    """The absolute path of a RECORDED docs page, or a refusal.
 
     Every WRITE path runs ``validate_target`` -- which refuses ``..`` segments,
     absolute paths and backslashes -- and ``contained()``: ``guard_targets``,
@@ -1141,7 +1182,7 @@ def contained_page(repo, unit, path):
     root = os.fspath(repo)
     docs_root = os.path.join(root, DOCS_ROOT)
     if not contained(root, docs_root):
-        # CR-05: `guard_targets`' companion check (dogen:2711), restated for the
+        # `guard_targets`' companion check (dogen:2711), restated for the
         # READ surface. Containing a recorded page WITHIN `docs` is tautological
         # when `docs` itself is a symlink out of the repository: a git tree can
         # carry `docs` as mode 120000, so the same untrusted branch that carries
@@ -1151,7 +1192,7 @@ def contained_page(repo, unit, path):
         # `bad_write_path` (2), not `ledger_corrupt` (6): this is a fact about
         # the WORKING TREE, not about the record, and it is the very reason code
         # and wording the write surface already gives this exact condition. It
-        # also keeps CR-06's cascade shut -- `find_claim` may fall through a
+        # also keeps a cascade shut -- `find_claim` may fall through a
         # disk-shaped refusal, and must not turn one repo-wide layout fault into
         # "unit <sibling>'s record is damaged".
         raise Refusal(
@@ -1160,9 +1201,9 @@ def contained_page(repo, unit, path):
             detail="the docs root resolves outside the repository",
             hint="%s/ must be a real directory inside the repository" % DOCS_ROOT,
             # No `next`, exactly as `guard_targets` raises it: no verb can undo
-            # a symlinked docs root, and naming one would be the closed loop
-            # CR-06 is filed for ("the recovery the hint names refuses
-            # identically"). The hint is the whole instruction.
+            # a symlinked docs root, and naming one would be a closed loop (the
+            # recovery the hint names would refuse identically). The hint is
+            # the whole instruction.
         )
     if not isinstance(path, str) or not path:
         raise Refusal(
@@ -1174,7 +1215,7 @@ def contained_page(repo, unit, path):
             next_token="resume",
         )
     full = os.path.join(docs_root, path)
-    # CR-06: the record-shaped fault and the disk-shaped one are DIFFERENT
+    # The record-shaped fault and the disk-shaped one are DIFFERENT
     # conditions and they are distinguishable with one lexical test. Answering
     # both with `contained()` -- which resolves the leaf with `realpath`, so it
     # answers a question about the file on disk -- reported a working-tree
@@ -1208,9 +1249,9 @@ def contained_page(repo, unit, path):
             % (DOCS_ROOT, path, DOCS_ROOT),
             hint="replace the link with a real file under %s/, or drop the "
             "target from the signoff" % DOCS_ROOT,
-            # No `next`, for CR-06's own reason: `show` on this unit reaches
+            # No `next`, for the same reason: `show` on this unit reaches
             # this same snapshot and refuses identically, so naming it would be
-            # the closed loop the finding is about. The fix is in the working
+            # a closed loop. The fix is in the working
             # tree, and the hint is the whole instruction.
         )
     return full
@@ -1221,7 +1262,7 @@ def read_fs(repo, unit, basis_paths=(), targets=()):
 
     Returns exactly ``{"unit_md_sha": sha256 of the whole unit.md or None,
     "paths": {docs-relative path: sha256 | None (missing) | "" (zero-byte)}}``
-    covering every basis path and every signed target, and nothing else (D-19).
+    covering every basis path and every signed target, and nothing else.
 
     ``.git/index.lock`` is deliberately absent: that is a stage-a liveness probe
     which must be read immediately before the git call rather than once per
@@ -1236,7 +1277,7 @@ def read_fs(repo, unit, basis_paths=(), targets=()):
     unit_md = os.path.join(root, ".crayon", "units", unit, "unit.md")
     paths = {}
     for path in list(basis_paths) + list(targets):
-        # CR-04 / CR-05: the snapshot is where a recorded path first becomes a
+        # The snapshot is where a recorded path first becomes a
         # filesystem access, so it is where the shape and the containment are
         # checked -- once, for every verb, before a single byte is digested.
         full = contained_page(repo, unit, path)
@@ -1292,7 +1333,7 @@ def _basis_pairs(basis):
 
 
 def _is_seq(value):
-    """A ledger ``seq``: an integer that is NOT a ``bool`` (phase-16 IN-06).
+    """A ledger ``seq``: an integer that is NOT a ``bool``.
 
     ``isinstance(True, int)`` is true in Python, so a hand-repaired, forged or
     future-tool-written record spelling ``"resolves": [true]`` had ``True``
@@ -1320,7 +1361,7 @@ def pending_requests(events, floor):
         if event.get("kind") != "review" or event.get("verdict") != "accept":
             continue
         accept_seq = event.get("seq")
-        # CR-04: `verify_chain` checks `seq` contiguity and `prev` digests and
+        # `verify_chain` checks `seq` contiguity and `prev` digests and
         # NOTHING beneath them, so `resolves[]` and `withdraws[].seq` arrive
         # exactly as a hand-repaired, forged or future-tool-written record
         # spells them. Comparing an `int` with a `None` raised a TypeError that
@@ -1344,10 +1385,36 @@ def pending_requests(events, floor):
     return pending
 
 
+def unknown_kind_notes(events):
+    """``derive``'s notes: one :func:`said` warning naming every unknown kind.
+
+    A helper of its own so the structural guard walks it, as it walks every
+    check detail: a note reaches :func:`plain_detail` too.
+    """
+    unknown_kinds = []
+    unknown_count = 0
+    for event in events:
+        kind = event.get("kind")
+        if kind not in KNOWN_KINDS:
+            unknown_count += 1
+            if kind not in unknown_kinds:
+                unknown_kinds.append(kind)
+    if not unknown_kinds:
+        return []
+    return [
+        said(
+            "ignored %d event(s) of unknown kind (%s) — derivation uses the "
+            "known kinds only",
+            unknown_count,
+            ", ".join(repr(k) for k in unknown_kinds),
+        )
+    ]
+
+
 def derive(events, fs, staging=None, uncommitted_tail=False, pending_stray=False):
     """Compute contract 5.4's whole state from the ledger and one fs snapshot.
 
-    Pure and zero-I/O (D-19): no file is read, no subprocess is run and no
+    Pure and zero-I/O: no file is read, no subprocess is run and no
     environment variable is consulted — ``fs`` is the only channel from the
     filesystem. Nothing computed here is ever stored, so state cannot desync:
     there is no ``progress``, no ``sealed`` and no cached ``next`` on disk.
@@ -1362,31 +1429,17 @@ def derive(events, fs, staging=None, uncommitted_tail=False, pending_stray=False
     caller (:func:`unit_state`) supplies it. Every key ``route()`` reads is
     produced here; a key it reads that nothing writes reads ``None`` in
     production, which is how row 1 became unreachable and rows 6/7/9 could never
-    route to ``draft`` (WR-02).
+    route to ``draft``.
 
     ``pending_stray`` is the same arrangement for the one situation that is NOT
-    a row of the contract's table (WR-03): stage a refuses it on every verb, so
+    a row of the contract's table: stage a refuses it on every verb, so
     routing anywhere but ``resume`` sends the author to a verb that refuses
     identically. Supplied by :func:`stray_pending_material` for the same purity
     reason.
     """
     ordered = list(events)
     paths = fs.get("paths") or {}
-
-    unknown_kinds = []
-    unknown_count = 0
-    for event in ordered:
-        kind = event.get("kind")
-        if kind not in KNOWN_KINDS:
-            unknown_count += 1
-            if kind not in unknown_kinds:
-                unknown_kinds.append(kind)
-    warnings = []
-    if unknown_kinds:
-        warnings.append(
-            "ignored %d event(s) of unknown kind (%s) — derivation uses the "
-            "known kinds only" % (unknown_count, ", ".join(repr(k) for k in unknown_kinds))
-        )
+    warnings = unknown_kind_notes(ordered)
 
     so = _last_of(ordered, "signoff")
     gen = _last_of(ordered, "generation")
@@ -1500,7 +1553,7 @@ def derive(events, fs, staging=None, uncommitted_tail=False, pending_stray=False
     # Contract 5.5's rows 6/7/9 qualifier, and 5.4's first sentence: a
     # `step-recorded` resolves the step it names in the plan's `steps_seq`. A
     # non-actionable unit has no steps to resolve, so it is resolved; an
-    # actionable unit with no plan at all is not (D-18 refuses it at
+    # actionable unit with no plan at all is not (it is refused at
     # `steps_missing`, and `walk` is the honest route).
     plan_event = _last_of(ordered, "steps-planned")
     if intent not in ACTIONABLE_INTENTS:
@@ -1577,11 +1630,11 @@ def route(state):
     if state.get("pending_stray"):
         # NOT a contract row: `pending_stray` is a fact about this build, in
         # which stage a refuses every verb on it and `resume` is the only thing
-        # that could ever clear it (WR-03). It sits beside row 1 because it
+        # that could ever clear it. It sits beside row 1 because it
         # means the same thing — the record needs recovery before any verb can
         # proceed — and routing it anywhere else names a verb that refuses
-        # identically. Phase 17 implements `resume` and this becomes row 1's
-        # second half rather than an exception to the table.
+        # identically. With `resume` implemented, this is row 1's second half
+        # rather than an exception to the table.
         return "resume"
     if state.get("retired"):
         return "retired"  # 2
@@ -1612,7 +1665,7 @@ def route(state):
 
 #: git's messages are parsed in exactly one place (``guard_ignored_paths``), so
 #: that one call pins the language. Without it the refusal's text is whatever
-#: the author's LC_MESSAGES happens to be (WR-01).
+#: the author's LC_MESSAGES happens to be.
 IPC_LOCALE = {"LC_ALL": "C", "LANGUAGE": ""}
 
 
@@ -1748,13 +1801,13 @@ def acquire_lock(repo, unit=""):
     :func:`guard_crayon_root` runs FIRST, before the ``makedirs``: the lock is the
     earliest thing every mutating verb writes, so a ``.crayon/staging`` symlink
     would otherwise put the repository's own write mutex outside the repository
-    before any later guard got a turn (CR-02).
+    before any later guard got a turn.
 
     The lock file is then guarded BY NAME, because :data:`CRAYON_ROOTS` names
     three *directories* and ``os.open`` follows symlinks: a link at
     ``.crayon/staging/lock`` itself cleared every directory check and still
     created the repository's write mutex at an arbitrary absolute path, on the
-    exit-0 success path, with no diagnostic (CR-03). ``O_NOFOLLOW`` closes the
+    exit-0 success path, with no diagnostic. ``O_NOFOLLOW`` closes the
     window between the ``islink`` check and the open, so a link introduced in
     between cannot win the race either.
     """
@@ -1771,13 +1824,13 @@ def acquire_lock(repo, unit=""):
     try:
         fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o644)
     except OSError as bad:
-        # WR-15: only these three errnos mean "the path is not a real file" --
+        # Only these three errnos mean "the path is not a real file" --
         # ELOOP is O_NOFOLLOW refusing a symlink, EISDIR and ENOTDIR are the
-        # other two shapes CR-03 is about. A blanket `except OSError` here
-        # answered permissions, a read-only filesystem, ENOSPC and EMFILE with
-        # the same sentence, INVENTING a cause that is false -- and strictly
-        # worse than what `main`'s OSError backstop already said. That is the
-        # defect WR-01 and WR-12 were filed for, one function over.
+        # other two shapes of a lock path that is not a real file. A blanket
+        # `except OSError` here answered permissions, a read-only filesystem,
+        # ENOSPC and EMFILE with the same sentence, INVENTING a cause that is
+        # false -- and strictly worse than what `main`'s OSError backstop
+        # already said.
         if bad.errno in (errno.ELOOP, errno.EISDIR, errno.ENOTDIR):
             raise Refusal(
                 "bad_write_path",
@@ -1787,7 +1840,7 @@ def acquire_lock(repo, unit=""):
                 hint=".crayon/staging/lock must be a real file inside the repository",
             )
         raise  # main's OSError arm names the real fault, errno and all
-    # IN-01 (phase 16): the guard above reads "not a symlink", but both it and
+    # The guard above reads "not a symlink", but both it and
     # the docstring MEAN "a real file". `O_NOFOLLOW` rejects only ELOOP, EISDIR
     # and ENOTDIR, so a FIFO, a socket or a device node planted at the lock path
     # opened cleanly and `flock` "succeeded" on an object the six steps' mutual
@@ -1806,20 +1859,18 @@ def acquire_lock(repo, unit=""):
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError as bad:
         os.close(fd)
-        # WR-21: the WR-15 fix narrowed the `os.open` arm eleven lines above and
-        # stopped short of this one. "Another crayon invocation holds the lock"
-        # is true of EWOULDBLOCK/EAGAIN (and EACCES, which some platforms return
-        # for a contended lock) and of nothing else. ENOLCK -- an NFS or overlay
-        # mount with no lock manager -- EBADF, EINTR and EINVAL got the same
-        # sentence, which sends a skill into a wait-and-retry loop against a
-        # condition that will never clear. A cause crayon cannot identify is one
-        # it may not invent.
+        # Narrowed like the `os.open` arm above. "Another crayon invocation
+        # holds the lock" is true of EWOULDBLOCK/EAGAIN (and EACCES, which some
+        # platforms return for a contended lock) and of nothing else. ENOLCK --
+        # an NFS or overlay mount with no lock manager -- EBADF, EINTR and
+        # EINVAL got the same sentence, which sends a skill into a
+        # wait-and-retry loop against a condition that will never clear. A
+        # cause crayon cannot identify is one it may not invent.
         if bad.errno in (errno.EWOULDBLOCK, errno.EAGAIN, errno.EACCES):
             raise Refusal(
                 "busy",
-                # WR-10: `unit` is right there in the signature and this raiser
-                # omitted it, so the single most likely refusal a second
-                # concurrent skill sees could not name what it had just refused.
+                # `unit` is named: this is the single most likely refusal a
+                # second concurrent skill sees, and it must say what it refused.
                 unit=unit,
                 detail="another crayon invocation holds .crayon/staging/lock",
                 hint="wait for it to finish and retry",
@@ -1881,7 +1932,7 @@ def git_busy_guard(repo, unit=""):
 
 
 def crash_point(name):
-    """Fixture-only interruption at a named write-protocol point (D-15).
+    """Fixture-only interruption at a named write-protocol point.
 
     Six names: ``manifest`` (a durable manifest, nothing appended), ``append``,
     ``place:<n>``, ``commit``, ``cleanup``, and ``adopt`` (the durable adopt
@@ -1890,7 +1941,7 @@ def crash_point(name):
     ``os._exit`` — not ``sys.exit`` — because it skips ``finally`` blocks, atexit
     handlers and buffer flushing, which is what an interruption actually does.
     Armed only under ``CRAYON_TEST_HOOKS=1``; unset ``CRAYON_CRASH_AT`` makes it a
-    no-op on every path even then (WR-07).
+    no-op on every path even then.
     """
     if test_hooks_enabled() and os.environ.get("CRAYON_CRASH_AT") == name:
         os._exit(137)
@@ -2052,7 +2103,7 @@ def progress_path(repo, unit):
 def read_progress(repo, unit):
     """``{"placed": [paths], "transition_attempts": n}``, defaulting to "nothing yet".
 
-    WR-03: the counter was ``commit_attempts`` and counted three different
+    The counter was ``commit_attempts`` and counted three different
     things — ``git add`` failures, commit refusals, and interrupted runs, since
     it is persisted BEFORE either git call, so a kill between the write and the
     commit consumes one. Its name asserted "a commit was attempted and
@@ -2067,7 +2118,7 @@ def read_progress(repo, unit):
     pre-existing behaviour, and a progress file is an optimisation over the
     recovery material, never a substitute for it.
 
-    WR-03: ``OSError`` whole, not a hand-listed three of its subclasses. A
+    ``OSError`` whole, not a hand-listed three of its subclasses. A
     ``PermissionError`` used to escape into ``classify_manifest_files`` and out
     through ``main``'s ``OSError`` arm as 2 ``bad_target`` — on the read-only
     verbs too, so an unreadable HINT FILE turned ``show``, ``summary`` and
@@ -2265,7 +2316,7 @@ def _read_text(path, unit=""):
     Absent and undecodable are NOT the same answer: ``""`` for a file that
     exists but cannot be decoded makes stage a believe the ledger is empty and
     derive state from nothing, which is the silent wrong answer the whole
-    ``ledger_corrupt`` row exists to prevent (WR-09).
+    ``ledger_corrupt`` row exists to prevent.
     """
     try:
         with open(path, "r", encoding="utf-8") as handle:
@@ -2273,7 +2324,7 @@ def _read_text(path, unit=""):
     except FileNotFoundError:
         return ""
     except (IsADirectoryError, NotADirectoryError):
-        # WR-20: the two readers of this file now give the SAME answer here.
+        # The two readers of this file give the SAME answer here.
         raise unreadable_ledger(path, unit)
     except UnicodeDecodeError:
         raise undecodable_ledger(path, unit)
@@ -2319,12 +2370,12 @@ def _is_batch_prefix(tail, partial, events):
 
 
 
-# --- contract 5.8's honest limit (D-08) --------------------------------------
+# --- contract 5.8's honest limit ---------------------------------------------
 
 #: The safety boundary, printed verbatim on every `recovery_unsupported`. It is
 #: a constant rather than a formatted sentence because it is the same promise in
 #: every situation, and because a boundary composed per branch is a boundary a
-#: future branch can forget to state (T-17-26).
+#: future branch can forget to state.
 SAFETY_BOUNDARY = (
     "the unit directory and every file whose bytes cannot be attributed are preserved",
     "nothing is restored from committed history, because committed history is not "
@@ -2341,7 +2392,7 @@ def safe_relative(name):
     manifest it judged incomplete, and the tail's own events — so the rule is
     stated once here and applied at both. A path that is absolute or climbs out
     of the repository is dropped rather than reported: reporting it would mean
-    reading bytes the record has no business naming (T-17-24).
+    reading bytes the record has no business naming.
     """
     if not isinstance(name, str) or not name:
         return None
@@ -2466,7 +2517,7 @@ def findings_steps(repo, unit, facts, paths):
     Each of the three the contract names is gated on its own evidence, and the
     gate is the whole point: a step printed without it is a recipe the tool
     cannot back, and the failure mode is an author destroying uncommitted work
-    on the tool's advice (T-17-27). Where no step is derivable the section is
+    on the tool's advice. Where no step is derivable the section is
     the single terminal line the contract fixes.
 
     Deliberately absent: any instruction to restore a path from committed
@@ -2506,7 +2557,7 @@ def findings_lines(repo, unit, facts, paths):
     An empty section prints its heading and no rows. That is the point of a
     FIXED block rather than a composed one — a missing section reads as
     "nothing to report", and 5.8's whole claim is that the tool says what it
-    actually found (T-17-26).
+    actually found.
     """
     seqs = facts.get("seqs") or []
     lines = ["uncommitted tail:"]
@@ -2532,7 +2583,7 @@ def findings(repo, unit, facts):
     ``--json`` document — contract 5.7 moves the refusal ITSELF to stdout — or
     need a second opinion about a flag stage a never sees. Either way the block
     still reaches stdout before the refusal's one stderr line, which is the
-    property GATE-04 and the acceptance harness actually assert.
+    property the one-stderr-line rule and the acceptance harness assert.
     """
     paths = findings_paths(repo, unit, facts)
     return findings_lines(repo, unit, facts, paths), {"paths": paths}
@@ -2542,8 +2593,8 @@ def classify_stage_a(repo, unit, write_mode=True, report_only=False):
     """Stage a: the lock's siblings — chain, committed prefix, tail and ``pending/``.
 
     Implements contract 5.8's situation table verbatim and runs BEFORE input
-    validation, so a `busy` or a recovery refusal always beats a bad-input one
-    (GATE-01 order). Harmless ``pending/`` states are deleted and the verb
+    validation, so a `busy` or a recovery refusal always beats a bad-input one.
+    Harmless ``pending/`` states are deleted and the verb
     proceeds; everything else raises, having written nothing.
 
     **Write boundary:** ``write_mode=False`` classifies identically and deletes
@@ -2557,7 +2608,7 @@ def classify_stage_a(repo, unit, write_mode=True, report_only=False):
     to resolve, so wiring that verb through the ordinary front door made
     ``crayon resume <id>`` refuse with the hint ``crayon resume <id>``. It is a
     third MODE, not a second classifier: the table, its order and its messages
-    are stated once, and `verify` reuses it in plan 17-09 to report V1–V4 on a
+    are stated once, and `verify` reuses it to report V1–V4 on a
     unit whose tail is uncommitted rather than refusing before any check runs.
 
     The record carries the §5.8 situation name, the reason/detail/hint the
@@ -2616,8 +2667,8 @@ def classify_stage_a(repo, unit, write_mode=True, report_only=False):
     # refused, never half-read. There is no in-place migration — the legacy
     # file is not read, not converted and not deleted. A directory holding
     # BOTH is a JSONL unit and the legacy file is ignored in silence: the five
-    # bash scripts still write `ledger.md` beside it through phase 16 (D-13),
-    # so coexistence is the normal state, not a defect.
+    # legacy bash scripts wrote `ledger.md` beside it, so coexistence is the
+    # normal state, not a defect.
     legacy = os.path.join(os.path.dirname(path), "ledger.md")
     if os.path.exists(legacy) and not os.path.exists(path):
         return answer(
@@ -2662,7 +2713,7 @@ def classify_stage_a(repo, unit, write_mode=True, report_only=False):
                 "editing the ledger" % recorded,
                 "show",
             )
-        # WR-03: contract 5.10 says a legacy or future-contract record must not
+        # Contract 5.10 says a legacy or future-contract record must not
         # be half-read, and `ledger_version_unsupported` sat in the reason table
         # with no raiser. Only the read-only `verify` noticed (V1), so a `v: 2`
         # ledger was parsed, derived from, and APPENDED TO by a contract-1 tool
@@ -2788,7 +2839,7 @@ def classify_stage_a(repo, unit, write_mode=True, report_only=False):
 
     situation = pending_situation(manifest, complete, committed_lines)
     if situation == PENDING_STRAY:
-        # WR-05: NOT a row of contract 5.8's situation table. Some but not all
+        # NOT a row of contract 5.8's situation table. Some but not all
         # of the manifest's events are in the ledger and none of them is
         # uncommitted, so the material is the only evidence of what a
         # half-applied batch intended — and deleting it silently in write mode
@@ -2797,13 +2848,12 @@ def classify_stage_a(repo, unit, write_mode=True, report_only=False):
         # mode by the same rule, so the refusal is raised before the write
         # boundary and `show` reports it rather than a would-delete line.
         #
-        # WR-03: preserving the material is right; leaving the author with no
+        # Preserving the material is right; leaving the author with no
         # way out is not. Every verb refuses here, and the routed token used to
         # be `review` — a verb that refuses identically, so the author was
         # routed in a circle. The hint names the one escape this build has, and
         # routing answers `resume` (see :func:`stray_pending_material`), which
-        # since plan 17-06 is a real verb that reports the §5.8 honest limit
-        # here rather than the transitional stub refusal.
+        # is a real verb that reports the §5.8 honest limit here.
         return answer(
             PENDING_STRAY,
             "recovery_unsupported",
@@ -2815,7 +2865,7 @@ def classify_stage_a(repo, unit, write_mode=True, report_only=False):
         )
     if write_mode and not report_only:
         # Silent on purpose: the invocation may still refuse at stage b or c,
-        # and GATE-04 allows a non-zero exit exactly one line on stderr and
+        # and a non-zero exit is allowed exactly one line on stderr and
         # nothing else. Routine recovery housekeeping is not that line. The
         # dry-run path below is where the classification is reportable output.
         cleanup_pending(repo, unit)
@@ -2830,13 +2880,13 @@ def classify_stage_a(repo, unit, write_mode=True, report_only=False):
 
 
 def stage_a_guard(repo, unit):
-    """Contract 5.7 stage a for a mutating verb, stated once (VERB-09).
+    """Contract 5.7 stage a for a mutating verb, stated once (the line budget).
 
     Ten verbs opened with a byte-identical copy of these two calls. The order
     is load-bearing and is the reason they stay two functions: an index lock
     another process holds makes every classification below it provisional, so
     ``git_busy`` is asked first — and ``resume`` asks it WITHOUT the raising
-    classification that follows here (Pitfall 6).
+    classification that follows here.
     """
     git_busy_guard(repo, unit)
     classify_stage_a(repo, unit)
@@ -2867,7 +2917,7 @@ PENDING_STRAY = "pending_stray"
 def pending_situation(manifest, complete, committed_lines):
     """Contract 5.8's situation table for a ``pending/`` with no uncommitted tail.
 
-    Stated ONCE (WR-03): ``classify_stage_a`` decides whether to refuse, and
+    Stated ONCE: ``classify_stage_a`` decides whether to refuse, and
     :func:`stray_pending_material` decides where to route, and a second opinion
     about the same fact would let the refusal and the routed token disagree —
     which is exactly how the author ended up in a circle.
@@ -2883,7 +2933,7 @@ def pending_situation(manifest, complete, committed_lines):
 
 
 def stray_pending_material(repo, unit):
-    """Is this unit in the terminal ``pending_stray`` state? (WR-03)
+    """Is this unit in the terminal ``pending_stray`` state?
 
     Asked separately from ``classify_stage_a`` for the same reason
     :func:`uncommitted_ledger_tail` is: ``derive()`` is pure, so the one I/O
@@ -2891,7 +2941,7 @@ def stray_pending_material(repo, unit):
     routed ``next`` fell to row 10 and said ``review`` — a verb that refuses
     with the very same refusal, which made the state a loop.
 
-    Since plan 17-06 the routed ``resume`` reaches a real verb, which reports
+    The routed ``resume`` reaches a real verb, which reports
     this row through the §5.8 honest limit instead of the transitional stub
     refusal. The circle is closed at both ends now: the token names a verb that
     answers, and the answer names the manual escape.
@@ -2958,7 +3008,7 @@ def chain_lines(events):
 #: Contract 5.6's write-destination row, in repo-relative form: the record
 #: (``.crayon/units/``) and the pending/evidence material (``.crayon/staging/``)
 #: are named explicitly, not just their parent. Checking only ``.crayon`` left
-#: the two children reachable through a link of their own (CR-02).
+#: the two children reachable through a link of their own.
 CRAYON_ROOTS = (
     ".crayon",
     os.path.join(".crayon", "staging"),
@@ -3006,7 +3056,7 @@ def guard_write_paths(repo, unit, files):
     pathspec, which is what makes a late refusal a durable escape rather than a
     refusal (the transition would already be unrecoverable).
 
-    ``files`` is every destination, the ledger included (WR-02). The second
+    ``files`` is every destination, the ledger included. The second
     element of each tuple is the intended bytes and is ignored here, which is
     what lets the ledger — appended, not placed — be passed as ``(path, None)``.
     """
@@ -3034,14 +3084,14 @@ def guard_write_paths(repo, unit, files):
 
 
 def guard_placeable_paths(repo, unit, files):
-    """Refuse before step 1 what the FILESYSTEM would refuse at step 3 (CR-01).
+    """Refuse before step 1 what the FILESYSTEM would refuse at step 3.
 
     ``guard_ignored_paths`` asks git's opinion of the pathspecs; this asks the
     filesystem's opinion of the same destinations, and the two are independent.
     ``place_files`` runs at step 3 — AFTER the append at step 2 — so every
     ``OSError`` ``publish_atomic``'s ``makedirs``/``open`` can raise arrives once
     the ledger has already been mutated: the unit is left with an uncommitted
-    tail that only ``resume`` (a D-16 stub in this build) could clear, and the
+    tail that only ``resume`` could clear, and the
     backstop reports it as ``bad_target``/2, the one exit code a skill reads as
     "I mistyped an argument, nothing happened".
 
@@ -3093,11 +3143,11 @@ def guard_placeable_paths(repo, unit, files):
             )
 
 
-#: git's own UI lines on stderr, which are never paths it named (WR-16).
+#: git's own UI lines on stderr, which are never paths it named.
 _GIT_UI_PREFIXES = ("hint:", "warning:", "error:", "fatal:")
 
 #: How many offenders the detail names before it states a count instead. Five
-#: keeps the single stderr line readable; the count keeps it honest (WR-16).
+#: keeps the single stderr line readable; the count keeps it honest.
 _GIT_DETAIL_OFFENDERS = 5
 
 
@@ -3106,13 +3156,13 @@ def _git_add_detail(stderr):
 
     The stderr scrape this replaced invented an offender from arbitrary stderr,
     so the hint came back as ``git check-ignore -v fatal: pathspec ... is beyond
-    a symbolic link`` — not a command anyone could run (WR-01). Taking only the
+    a symbolic link`` — not a command anyone could run. Taking only the
     verbatim FIRST line over-corrected: for the ignore case git's first line is
     the constant header ("The following paths are ignored by one of your
     .gitignore files:") and the offenders are on the lines AFTER it, so with
     more than one destination the author was told nothing about which one was
     ignored — and the detail became a constant string for every ignore refusal
-    in the tool (WR-12).
+    in the tool.
 
     So: git's first line verbatim, plus the lines between it and its ``hint:``
     advice, reported AS GIT'S OWN OUTPUT rather than as an invented "offender".
@@ -3124,20 +3174,20 @@ def _git_add_detail(stderr):
     lines = [line.strip() for line in (stderr or "").splitlines() if line.strip()]
     if not lines:
         return "git add failed"
-    # WR-16, half one: the positional read ("lines[0] is the header, the rest
+    # The positional read ("lines[0] is the header, the rest
     # are paths") holds only while the ignore block is ALONE on stderr. git
     # appends its own diagnostics freely, and filtering `hint:` alone presented
     # `error:`/`fatal:`/`warning:` lines inside the parenthesised list as though
     # they were paths git had named. The prefix set is C-locale-stable because
-    # `guard_ignored_paths` pins IPC_LOCALE (phase-16 IN-03).
+    # `guard_ignored_paths` pins IPC_LOCALE.
     named = [line for line in lines[1:] if not line.startswith(_GIT_UI_PREFIXES)]
     if not named:
         return lines[0]
-    # WR-16, half two: `named[:3]` dropped the rest in silence, so an author
-    # with five ignored destinations fixed three, retried and was refused again
-    # -- WR-12's "told nothing about WHICH one", moved from none to the first
-    # three. An unbounded list is the worse answer (GATE-04 wants ONE stderr
-    # line), so the omission is STATED rather than hidden.
+    # A silent `named[:3]` dropped the rest, so an author with five ignored
+    # destinations fixed three, retried and was refused again -- "told nothing
+    # about WHICH one", moved from none to the first three. An unbounded list
+    # is the worse answer (a refusal gets ONE stderr line), so the omission is
+    # STATED rather than hidden.
     shown = named[:_GIT_DETAIL_OFFENDERS]
     if len(named) > len(shown):
         shown = shown + ["and %d more" % (len(named) - len(shown))]
@@ -3154,10 +3204,10 @@ def _relative_to(path, root):
 
 
 def guard_ignored_paths(repo, unit, pathspecs):
-    """Refuse before step 1 what ``git add`` would refuse after step 3 (WR-03).
+    """Refuse before step 1 what ``git add`` would refuse after step 3.
 
     The contract's write order (append+fsync -> place -> commit) makes every
-    failure at step 4 a tail for ``resume``, which this build stubs (D-16) — so
+    failure at step 4 a tail for ``resume`` — so
     a target under a gitignored directory, which is an ordinary repo layout and
     needs no crash fixture to reach, wedged the unit for EVERY verb, including
     the read-only ``show`` an author would use to see what happened. Contract
@@ -3173,7 +3223,7 @@ def guard_ignored_paths(repo, unit, pathspecs):
     ``check-ignore`` and refused by ``git add``. ``--ignore-missing`` is what
     lets a not-yet-placed destination be asked about at all.
 
-    A non-zero exit is NOT synonymous with "ignored" (WR-01). The probe used to
+    A non-zero exit is NOT synonymous with "ignored". The probe used to
     scrape stderr for "offenders" — every line that was not blank, not
     ``hint:``-prefixed and did not end in ``:`` — and present whatever it found
     as a path, which turned "pathspec is beyond a symbolic link" into a path and
@@ -3194,7 +3244,7 @@ def guard_ignored_paths(repo, unit, pathspecs):
     :func:`index_lock_present`'s docstring states outright). The exit code
     coincides, so nothing failed; a skill that branches on ``error`` — the field
     contract 5.7 makes the machine-readable one — was told crayon held its own
-    lock while the detail said the opposite (WR-11).
+    lock while the detail said the opposite.
     """
     proc = git(
         ["add", "--dry-run", "--ignore-missing", "--"] + list(pathspecs),
@@ -3224,14 +3274,14 @@ def seq_range(seqs):
 #: bytes, and current bytes for every unexpected file. Unchanged files take a
 #: plain resume; a batch already carrying one adoption does NOT — it is
 #: completed by a repeated `--adopt` or by `--overwrite`, and a bare `resume`
-#: refuses `resume_ambiguous` there. WR-03: the fourth condition
+#: refuses `resume_ambiguous` there. The fourth condition
 #: used to live only in this comment, so an author was offered `--adopt` on a
 #: batch whose last event was already an adoption and got a plain resume that
-#: recorded nothing and dropped their note. WR-01 (iteration 9): the sentence
+#: recorded nothing and dropped their note. The sentence
 #: below is interpolated into the very `resume_ambiguous` hint the routing
 #: tables tell the skills to relay verbatim, so calling the already-adopted
 #: case "a plain resume" contradicted the row the operator is routed by — and
-#: `test_wr02_already_adopted_batch_requires_an_explicit_choice` proves the
+#: `test_an_already_adopted_batch_requires_an_explicit_choice` proves the
 #: tool's own wording wrong: a bare resume there exits 6. S-13 checks
 #: inspectability and necessary wording, and now pins this clause against the
 #: rows; lifecycle tests exercise the choices against real pending batches.
@@ -3260,7 +3310,7 @@ def escape_hint(repo, unit, otherwise):
     caller's remedy at every count: removing a hook does not reset history,
     and plain resume can still require an explicit overwrite decision.
 
-    WR-02(a): the blocker-removal sentence is emitted at EVERY count, and only
+    The blocker-removal sentence is emitted at EVERY count, and only
     the history clause is conditional. Returning ``otherwise`` verbatim below
     two attempts meant the escape S-13 credited every calling site with was
     absent from the string the operator actually read, at the commonest count
@@ -3286,7 +3336,7 @@ def escape_hint(repo, unit, otherwise):
 
 
 def refuse_transition(repo, unit, attempts, step, stderr):
-    """Step 4's shared failure arm, for BOTH of its git calls (WR-02).
+    """Step 4's shared failure arm, for BOTH of its git calls.
 
     First failure on a batch: ``uncommitted_tail``, hinting ``crayon resume
     <id>``. One retry is a reasonable thing to offer, and a transient fault is
@@ -3298,8 +3348,8 @@ def refuse_transition(repo, unit, attempts, step, stderr):
     blocking the transition and names the way out.
 
     That way out is REMOVING what is refusing the transition, and both arms'
-    hints say so first. The two arms' hints are otherwise SEPARATE sentences
-    (WR-06), because they diagnose different faults and only one of them can
+    hints say so first. The two arms' hints are otherwise SEPARATE sentences,
+    because they diagnose different faults and only one of them can
     offer ``--adopt``.
 
     On ``git commit``: a hook ran, so ``--adopt`` is named second and WITH its
@@ -3307,7 +3357,7 @@ def refuse_transition(repo, unit, attempts, step, stderr):
     ``adopt_unsupported`` unless the batch's last event is a generation or a
     reviewer edit that is not itself an adoption, and degrades to a plain
     resume when nothing on disk classifies ``unexpected``. Offered unqualified
-    — as it was after the first CR-01 fix — the escape reproduces the very
+    — as it once was — the escape reproduces the very
     refusal it is routed from on every batch except the one shape
     ``hook_restored_draft`` models: a hook that REWROTE the placed bytes of a
     generation or a reviewer edit. A hint that names a command which cannot
@@ -3319,18 +3369,18 @@ def refuse_transition(repo, unit, attempts, step, stderr):
     failure instead.
 
     The function, counter, preamble and closer stay shared; only the diagnosis
-    and conditional escape differ. The two arms drifted once: CR-01(b) added
+    and conditional escape differ. The two arms drifted once: an earlier fix added
     the attempt counter to the commit arm only, on the reading that "a pre-commit hook is
     what rejects a batch, and it only ever runs here". ``git add`` also fails
     deterministically — an index that will not lock, a pathspec a ``.gitignore``
     change excluded after :func:`guard_ignored_paths` ran, a read-only ``.git``
-    — and there the unconditional hint reproduced its own refusal (WR-02).
+    — and there the unconditional hint reproduced its own refusal.
 
     Never returns.
     """
     detail = _first_line(stderr) or "no git output"
     if attempts > 1:
-        # WR-03: the two arms are not the same event and must not carry the
+        # The two arms are not the same event and must not carry the
         # same `detail`. `detail` is what the four routing mirrors and
         # `crayon-review/SKILL.md` step_10 branch on, and `commit_rejected` sent
         # every one of them to "only the commit was refused — inspect the
@@ -3407,13 +3457,13 @@ def write_tail(
     ``pathspecs`` is a LIST of per-file paths, never a directory and never the
     whole tree. During a recovery the working tree holds whatever the
     interruption left behind, and a sweeping add would commit it in the
-    author's name under this tool's trailers (T-17-31).
+    author's name under this tool's trailers.
 
     Returns the post-commit check's report, so both callers render the same
     hook warnings from the same facts.
     """
     written = place_files(repo, unit, entries if place is None else place)
-    # CR-01: step 3 is recorded BEFORE step 4 can fail, because the whole point
+    # Step 3 is recorded BEFORE step 4 can fail, because the whole point
     # of the record is to survive a failed commit. `classify_file` reads it to
     # tell "the interruption never got this far" from "this tool wrote the
     # intended bytes here and something else has since replaced them".
@@ -3424,7 +3474,7 @@ def write_tail(
 
     before_index = index_snapshot(repo)
 
-    # WR-02: counted BEFORE either git call, so an attempt that dies inside a
+    # Counted BEFORE either git call, so an attempt that dies inside a
     # hook is still an attempt — and so is one that dies in `git add`. The
     # earlier reading, that only a commit can be rejected because "a pre-commit
     # hook is what rejects a batch and it only ever runs here", is too narrow:
@@ -3432,9 +3482,9 @@ def write_tail(
     # index that will not lock, a pathspec a `.gitignore` change excluded after
     # `guard_ignored_paths` ran, a read-only `.git`), and in every one of them
     # the unconditional `crayon resume <id>` hint reproduces its own refusal —
-    # the closed loop CR-01(b) exists to break.
+    # the closed loop the counter exists to break.
     #
-    # WR-03: which is why it is `transition_attempts` and not `commit_attempts`.
+    # That is why it is `transition_attempts` and not `commit_attempts`.
     # Counted here it covers the add failure, the commit refusal AND the run
     # that dies between the two, so the old name asserted of every increment
     # something that is true of only one. The refusal's own text says "failed to
@@ -3488,7 +3538,7 @@ def perform_write(repo, unit, phase, batch_lines, seqs, files, note, head, verdi
     because 2 precedes 3; a crash after it leaves a tail stage a can classify.
     """
     root = os.fspath(repo)
-    # WR-02: the ledger is the destination EVERY write appends to, and it used
+    # The ledger is the destination EVERY write appends to, and it used
     # to appear only as a pathspec — never in the set `contained()` sees. The
     # record of truth was the one write destination the containment function was
     # never shown; it survived on the side effect that `git add --dry-run`
@@ -3576,7 +3626,7 @@ def _first_line(text):
 def report_hook_changes(result, repo, existing_drift=None):
     """Warn about what a hook did, by name, and never undo any of it (5.8 step 5).
 
-    IN-01 (phase 17): ``repo`` is REQUIRED. It used to default to ``None``
+    ``repo`` is REQUIRED. It used to default to ``None``
     while ``digest_file(os.path.join(os.fspath(repo), path))`` ran for every
     path in ``existing_drift`` — and this code runs AFTER the commit, so a
     future caller passing drift without a repo would crash a transition that
@@ -3621,9 +3671,9 @@ def uncommitted_ledger_tail(repo, unit):
     """Is any of the unit's ledger on disk but not in HEAD? (contract 5.5 row 1)
 
     The same comparison ``classify_stage_a`` makes, asked separately so the
-    derived state can CARRY the fact. ``derive()`` is pure (D-19), so the one
+    derived state can CARRY the fact. ``derive()`` is pure, so the one
     I/O caller has to supply it — and without it ``route()``'s first row was
-    unreachable and a wedged unit routed a skill at ``review`` (WR-02).
+    unreachable and a wedged unit routed a skill at ``review``.
     """
     complete, partial, committed, _rel = ledger_split(repo, unit)
     return bool(complete[len(committed) :] or partial)
@@ -3657,7 +3707,7 @@ def next_token_for(repo, unit):
 
 
 def derivation_failure(error):
-    """One short phrase naming why a post-commit state derivation failed (CR-01).
+    """One short phrase naming why a post-commit state derivation failed.
 
     A `Refusal` carries the machine-readable `reason` the author will look up;
     anything else is a bug or an environment failure and only its type is
@@ -3670,7 +3720,7 @@ def derivation_failure(error):
 
 
 def unit_claims(repo, unit):
-    """A sibling's claim-relevant state, derived from its LEDGER alone (CR-06).
+    """A sibling's claim-relevant state, derived from its LEDGER alone.
 
     ``retired`` and ``targets`` are both read out of the ledger by ``derive()``;
     neither consults the filesystem snapshot. So a unit whose *page* crayon
@@ -3698,7 +3748,7 @@ def find_claim(repo, unit, targets):
         try:
             state = unit_state(repo, other)
         except Refusal as unreadable:
-            # WR-04: this used to be `except ValueError: continue`, and the only
+            # This used to be `except ValueError: continue`, and the only
             # ValueError that reached it was `json.loads` failing inside
             # `read_events` — exactly the corrupt or half-written sibling the
             # contract's first mechanism promises will refuse loudly. Swallowing
@@ -3707,8 +3757,8 @@ def find_claim(repo, unit, targets):
             # another live unit holds (contract 5.1). A record we cannot read is
             # a record whose claims we cannot rule out.
             #
-            # CR-06: that argument is about a record we cannot READ, and the
-            # CR-05 fix silently widened the input to "any page crayon declines
+            # That argument is about a record we cannot READ, and the
+            # `contained_page` check widened the input to "any page crayon declines
             # to digest", which is not the same set. `bad_write_path` from
             # `contained_page` means the signoff WAS read and only the page's
             # digest was withheld — the claim set is knowable, so fall through
@@ -3850,7 +3900,7 @@ def signoff_guard(state, unit):
 
 
 def actionable_guard(state, unit):
-    """Contract 5.7 c: a step walk belongs to an actionable unit (WR-04).
+    """Contract 5.7 c: a step walk belongs to an actionable unit.
 
     The third sibling of :func:`retired_guard` and :func:`signoff_guard`, and
     the raiser `not_actionable` never had. The reason sat in ``REASONS`` and in
@@ -3880,7 +3930,7 @@ def actionable_guard(state, unit):
 def guard_source_files(repo, sources, unit=""):
     """The FILESYSTEM half of the source rule, asked by every verb that reads it.
 
-    WR-17: the declaring verbs applied only the STRING rules
+    The declaring verbs once applied only the STRING rules
     (:func:`validate_source`) while the filesystem ones lived in
     :func:`sign_sources` alone, so ``unit new --source docs/absent.rst`` committed
     a plan ``signoff`` could never sign -- and `--source` REPLACES the list
@@ -3912,7 +3962,7 @@ def guard_source_files(repo, sources, unit=""):
             )
         # Checked BEFORE `git log`, because `git log -- <dir>` pins a directory
         # happily: recording that hash for a path nothing digested is an
-        # assertion of provenance for something never read (WR-13).
+        # assertion of provenance for something never read.
         if not os.path.isfile(full):
             raise Refusal(
                 "unit_invalid",
@@ -3936,7 +3986,7 @@ def sign_sources(repo, frontmatter, unit=""):
     key set by construction, which is the invariant V19 ("context digests vs
     signoff") wants, and ``commit: null`` means exactly one thing.
 
-    A source crayon cannot read REFUSES (WR-05, WR-13). It used to be recorded as
+    A source crayon cannot read REFUSES. It used to be recorded as
     ``{"path": …, "commit": None}`` with no digest and the loop simply
     ``continue``d, so the signoff succeeded with no indication that a declared
     source had never been read — and ``commit: null`` is already this record's
@@ -3945,8 +3995,8 @@ def sign_sources(repo, frontmatter, unit=""):
     Silently downgrading a PROVENANCE record is the failure mode the whole
     design is against.
 
-    WR-05's fix closed the out-of-repo STRING and stopped there, leaving the two
-    in-repo cases that reach this loop and read nothing (WR-13). A MISSING
+    An earlier fix closed the out-of-repo STRING and stopped there, leaving the
+    two in-repo cases that reach this loop and read nothing. A MISSING
     source signed as ``{"commit": null}`` with no digest — the same overloading,
     unchanged. A source naming a DIRECTORY was worse: ``git log`` pins a
     directory happily, so it recorded a real commit hash — an assertion of
@@ -3962,7 +4012,7 @@ def sign_sources(repo, frontmatter, unit=""):
         # The same string rules the declaring verbs apply — absolute, traversing
         # or backslashed — refused with the identical message.
         validate_source(path, unit)
-        # WR-17: the same two filesystem rules the declaring verbs now apply,
+        # The same two filesystem rules the declaring verbs apply,
         # asked again here because unit.md is hand-editable and a source can be
         # deleted between the declaration and the signature.
         guard_source_files(repo, [path], unit)
@@ -4030,7 +4080,7 @@ def read_body(spec, unit=""):
         except OSError as bad:
             # OSError, not the three-member tuple: a permission-denied or
             # full-disk read is "cannot be read" just as much as an absent one,
-            # and the narrow tuple let it escape main() as a traceback (CR-04).
+            # and the narrow tuple let it escape main() as a traceback.
             raise Refusal(
                 "unit_invalid",
                 unit=unit,
@@ -4043,7 +4093,7 @@ def read_body(spec, unit=""):
             # "this file cannot be read as text" sailed past the specific
             # refusal and landed in main's generic ValueError arm as
             # `bad_target` with an EMPTY hint, where contract 5.6 says a body
-            # deviation is `unit_invalid` with the flag that fixes it (WR-04).
+            # deviation is `unit_invalid` with the flag that fixes it.
             raise Refusal(
                 "unit_invalid",
                 unit=unit,
@@ -4092,7 +4142,7 @@ def read_note(args, unit=""):
                 % (spec, type(bad).__name__),
                 hint="pass an existing readable file, or - to read the note from stdin",
             )
-        except UnicodeDecodeError:  # a ValueError, not an OSError (WR-04)
+        except UnicodeDecodeError:  # a ValueError, not an OSError
             raise Refusal(
                 "note_required",
                 unit=unit,
@@ -4109,7 +4159,7 @@ def cmd_unit_new(args):
     repo = git_root()
     root = os.fspath(repo)
 
-    # acquire_lock() now guards this itself (CR-02), which is what covers the
+    # acquire_lock() now guards this itself, which is what covers the
     # other six mutating verbs; the explicit call is kept because this verb is
     # the one that CREATES .crayon/, and the refusal reads better from here.
     guard_crayon_root(repo, unit)
@@ -4204,7 +4254,7 @@ def cmd_unit_new(args):
         ]
         attributes = os.path.join(root, ".crayon", ".gitattributes")
         if not os.path.exists(attributes):
-            # LEDG-03: the chain hashes raw bytes, so git must never apply a
+            # The chain hashes raw bytes, so git must never apply a
             # text filter to a ledger. This pin is load-bearing, not cosmetic.
             files.append((os.path.join(".crayon", ".gitattributes"), b"*.jsonl -text\n"))
         result = perform_write(
@@ -4238,7 +4288,7 @@ def cmd_signoff(args):
     policy, exactly as the verb's row lists them; stage d is `already_signed`
     keyed on an unchanged ``plan_hash``. ``--force`` is deliberately absent:
     ``slim@357c513``'s ``dogen-signoff.sh --force`` wrote a second signoff row,
-    VERB-01 removes the flag, and the replacement is this no-op plus
+    so the flag is gone, and the replacement is this no-op plus
     ``unit edit --re-sign``.
     """
     as_json = bool(getattr(args, "json", False))
@@ -4255,7 +4305,7 @@ def cmd_signoff(args):
         text, frontmatter, _ = load_unit(repo, unit)
         targets = guard_targets(repo, unit, frontmatter["targets"])
         identity = git_identity(repo)
-        # GATE-06: the whole file, frontmatter and body together, so any byte a
+        # The whole file, frontmatter and body together, so any byte a
         # hand edit changes sets plan_stale.
         plan_hash = sha256_bytes(text.encode("utf-8"))
 
@@ -4344,13 +4394,22 @@ def cmd_signoff(args):
         report_hook_changes(result, repo)
 
         next_token = next_token_for(repo, unit)
+        # The ledger path is the "where"; the plan hash stays in
+        # the signoff event, where `verify` checks it, and off the human line.
         segments = [
+            "signed off %s" % unit,
+            os.path.relpath(ledger_path(repo, unit), os.fspath(repo)),
+            "%d target(s) frozen" % len(targets),
+            describe_orphans(so, targets),
+        ]
+        # `--json`'s message keeps its contract-1 wording.
+        json_segments = [
             "signed off %s" % unit,
             "plan_hash %s" % plan_hash[:12],
             "%d target(s) frozen" % len(targets),
             describe_orphans(so, targets),
         ]
-        return respond(segments, next_token, as_json)
+        return respond(segments, next_token, as_json, json_segments=json_segments)
 
 
 def signoff_event(repo, unit, seq, identity, head, frontmatter, targets, plan_hash, previous):
@@ -4553,7 +4612,7 @@ def cmd_unit_edit(args):
         if args.re_sign:
             segments = [
                 "re-signed %s" % unit,
-                "plan_hash %s" % plan_hash[:12],
+                os.path.relpath(ledger_path(repo, unit), root),
                 "%d target(s) frozen" % len(targets),
                 describe_orphans(so, targets),
             ]
@@ -4563,7 +4622,16 @@ def cmd_unit_edit(args):
                 os.path.relpath(unit_md_path(repo, unit), root),
                 "%d target(s) recorded, the signoff is now stale" % len(targets),
             ]
-        return respond(segments, next_token, as_json)
+        json_segments = None
+        if args.re_sign:
+            # `--json`'s message keeps its contract-1 wording.
+            json_segments = [
+                "re-signed %s" % unit,
+                "plan_hash %s" % plan_hash[:12],
+                "%d target(s) frozen" % len(targets),
+                describe_orphans(so, targets),
+            ]
+        return respond(segments, next_token, as_json, json_segments=json_segments)
 
 
 def cmd_steer(args):
@@ -4809,7 +4877,7 @@ def read_report(spec, unit=""):
         )
     except UnicodeDecodeError:
         # Before ValueError, which it subclasses: "not UTF-8" is a different
-        # thing to tell the author than "not valid JSON" (WR-04).
+        # thing to tell the author than "not valid JSON".
         raise Refusal(
             "bad_draft_path",
             unit=unit,
@@ -4884,7 +4952,7 @@ def step_resolves(event):
     ``pass`` + a digest, ``skipped`` + a reason, and ``deviated`` + exit 0 + a
     digest resolve; ``fail`` never resolves, at any exit code. The verdict alone
     is never the answer: a `pass` with no captured output is a claim with no
-    evidence behind it, which is the whole point of LEDG-06.
+    evidence behind it, which is the whole point of the captured-output digest.
     """
     verdict = event.get("verdict")
     if verdict == "pass":
@@ -4946,7 +5014,7 @@ def step_answers(events, plan):
     now is the latest word and must not be overridden by an older pass.
 
     Pure — events in, a mapping out, no filesystem — so ``derive()`` stays pure
-    (D-19) and the whole rule is driven from literal dicts in the unit suite.
+    and the whole rule is driven from literal dicts in the unit suite.
     """
     steps = plan.get("steps") or []
     ids = [step.get("id") for step in steps]
@@ -4967,7 +5035,7 @@ def step_answers(events, plan):
 
     current = plan
     reach = len(steps)
-    # A ledger is contributor input (CR-04): a forged or truncated `replaces`
+    # A ledger is contributor input: a forged or truncated `replaces`
     # must terminate the walk, never loop it.
     seen = {plan.get("seq")}
     while reach > 0 and current.get("reuse"):
@@ -5101,9 +5169,9 @@ def cmd_draft(args):
                 next_token=route(state),
             )
         if state["actionable"]:
-            # D-18: an actionable unit declares and signs off normally; there is
-            # no flag that treats one as reference. `plan-steps` and `step`
-            # arrive in phase 17 (D-16), so `walk` is the honest route.
+            # An actionable unit declares and signs off normally; there is
+            # no flag that treats one as reference, so `walk` is the honest
+            # route.
             if plan_event is None:
                 raise Refusal(
                     "steps_missing",
@@ -5125,7 +5193,7 @@ def cmd_draft(args):
                 )
 
         # --- d: no-op recognition ---------------------------------------------
-        # STATE-05: the condition set is READ, never re-derived. `derive`
+        # The condition set is READ, never re-derived. `derive`
         # computed all five from the single snapshot above, and the comparison
         # is against the destination files — so a missing destination, a
         # hook-rewritten one, or a brownfield basis with no generation can never
@@ -5143,7 +5211,7 @@ def cmd_draft(args):
             )
 
         # --- e: content gates --------------------------------------------------
-        # STATE-06: the steering gate applies only once a generation exists — a
+        # The steering gate applies only once a generation exists — a
         # first draft has nothing to have re-drafted. Defeating the no-op above
         # never waives it (T11b/T26e), and `--unsteered-reason` overrides THIS
         # generation and nothing else: it is not an H event, it never enters
@@ -5225,7 +5293,7 @@ def cmd_draft(args):
 
 
 def complete_basis_set(previous, targets, paths):
-    """VERB-05's **complete** basis set, computed from one ``read_fs`` snapshot.
+    """The **complete** basis set, computed from one ``read_fs`` snapshot.
 
     ``previous`` is the previous basis event's ``files[]`` (empty when there is
     none), ``targets`` the current signed targets in their signed order, and
@@ -5293,7 +5361,7 @@ def cmd_edits(args):
 
     The verb records; it never writes a page and never deletes one. Its only
     pathspec is the ledger, so `git add -- <a path that is not there>` cannot be
-    reached (RESEARCH P-5).
+    reached.
     """
     as_json = bool(getattr(args, "json", False))
     unit = args.unit
@@ -5378,19 +5446,26 @@ def cmd_edits(args):
         )
         report_hook_changes(result, repo)
 
+        orphans = describe_orphan_paths(
+            [entry["path"] for entry in files if entry["path"] not in state["targets"]]
+        )
+        # Every item both lists share is named first, so reordering
+        # a human segment cannot move a frozen `--json` byte.
+        changed = "recorded edits on %s" % unit
+        where = os.path.relpath(ledger_path(repo, unit), os.fspath(repo))
         segments = [
-            "recorded edits on %s" % unit,
-            os.path.relpath(ledger_path(repo, unit), os.fspath(repo)),
-            "%d file(s) in the basis" % len(files),
-            describe_orphan_paths(
-                [
-                    entry["path"]
-                    for entry in files
-                    if entry["path"] not in state["targets"]
-                ]
-            ),
+            changed,
+            where,
+            # Nothing has accepted these pages yet, so the line
+            # says they are recorded as they are, not that they are accepted.
+            "%d page(s) recorded as they are now" % len(files),
+            orphans,
         ]
-        return respond(segments, next_token_for(repo, unit), as_json)
+        # `--json`'s message keeps its contract-1 wording.
+        json_segments = [changed, where, "%d file(s) in the basis" % len(files), orphans]
+        return respond(
+            segments, next_token_for(repo, unit), as_json, json_segments=json_segments
+        )
 
 
 # --- review -----------------------------------------------------------------
@@ -5645,7 +5720,7 @@ def cmd_review(args):
                     detail="pending request(s) with no recorded disposition: %s"
                     % ", ".join(str(seq) for seq in outstanding),
                     hint="put each pending seq to the reviewer, then crayon review %s "
-                    '--verdict accept --note "…" with --resolves <seq> or --withdraw '
+                    '--verdict accept [--note "…"] with --resolves <seq> or --withdraw '
                     '<seq> "<reason>" for every one' % unit,
                     next_token=route(state),
                 )
@@ -5692,19 +5767,40 @@ def cmd_review(args):
         report_hook_changes(result, repo)
 
         if verdict == "accept":
+            # What was accepted, then the handover. The resolves and
+            # withdrawals are not counted here; they stay in `--json`, copied
+            # from the recorded event, so no decision is lost to plainer words.
+            token = next_token_for(repo, unit)
             segments = [
+                "reviewed %s: accept" % unit,
+                "accepted %s" % ", ".join(entry["path"] for entry in payload["files"]),
+                # Only the `publish` handover doubles as what remains.
+                "" if token == "publish" else "not handed over yet",
+            ]
+            # `--json`'s message keeps its contract-1 wording.
+            json_segments = [
                 "reviewed %s: accept" % unit,
                 "%d file(s) sealed" % len(payload["files"]),
                 "%d request(s) judged satisfied, %d withdrawn (a recorded judgment, "
                 "never proof that the bytes changed)"
                 % (len(resolves), len(withdrawals)),
             ]
-        else:
-            segments = [
-                "reviewed %s: %s" % (unit, verdict),
-                os.path.relpath(ledger_path(repo, unit), os.fspath(repo)),
-                "the request is recorded and pending",
-            ]
+            return respond(
+                segments,
+                token,
+                as_json,
+                json_segments=json_segments,
+                payload={
+                    "files": payload["files"],
+                    "resolves": payload["resolves"],
+                    "withdraws": payload["withdraws"],
+                },
+            )
+        segments = [
+            "reviewed %s: %s" % (unit, verdict),
+            os.path.relpath(ledger_path(repo, unit), os.fspath(repo)),
+            "the request is recorded and pending",
+        ]
         return respond(segments, next_token_for(repo, unit), as_json)
 
 
@@ -5762,7 +5858,7 @@ def unit_headline(events, state, unit):
 
 
 def state_qualifier(state):
-    """The qualifier VERB-02 prints whenever the state alone would mislead.
+    """The qualifier printed whenever the state alone would mislead.
 
     An accept that a later amendment or request has overtaken derives as
     `reviewed`, which on its own looks like any other review. The qualifier says
@@ -5777,6 +5873,31 @@ def state_qualifier(state):
         bits.append("plan amended at seq %s" % state["so_seq"])
     if state["plan_stale"]:
         bits.append("unit.md edited since the signoff at seq %s" % state["so_seq"])
+    count = len(state["pending"])
+    if count:
+        bits.append("%d request%s pending" % (count, "" if count == 1 else "s"))
+    return ", ".join(bits)
+
+
+def plain_state_qualifier(state, accepted_commit=None):
+    """``state_qualifier`` for the author: the same bits, in the same order, plainly.
+
+    Human ``show`` names no seq. The overtaken accept is named by the
+    commit its ``Crayon-Seq`` trailer is on, which the caller looks up with
+    :func:`find_seq_commit` (never the event's ``commit`` field, its parent);
+    with no such commit, after a squash, it was ``accepted earlier``. Pure:
+    ``show --json``'s ``qualifier`` stays :func:`state_qualifier`'s.
+    """
+    bits = []
+    rev = state["rev"]
+    if rev is not None and rev.get("verdict") == "accept" and state["state"] != "sealed":
+        bits.append(
+            "accepted in %s" % accepted_commit[:7] if accepted_commit else "accepted earlier"
+        )
+    if state["generation_stale"]:
+        bits.append("plan amended since the draft")
+    if state["plan_stale"]:
+        bits.append("unit.md edited since the signoff")
     count = len(state["pending"])
     if count:
         bits.append("%d request%s pending" % (count, "" if count == 1 else "s"))
@@ -5847,20 +5968,24 @@ def describe_paths(repo, state, paths):
     return rows
 
 
-def describe_requests(events, floor):
+def describe_requests(events, floor, recorded=False):
     """Recorded requests since the last generation, each with its disposition.
 
     `pending`, `resolved` or `withdrawn: <reason>`. `resolved` is the reviewer's
     recorded judgment that the request is satisfied and never a claim that a
     byte changed — which is why the disposition is reported beside the request
     rather than folded into a single "steering was applied" line.
+
+    The human renders take each note and reason as text, so a forged
+    non-string is rendered rather than a crash; ``recorded`` keeps them as the
+    ledger holds them, for ``--json``.
     """
     disposed = {}
     for event in events:
         if event.get("kind") != "review" or event.get("verdict") != "accept":
             continue
         accept_seq = event.get("seq")
-        # CR-04: the same shape `derive()`'s resolves/withdraws loop guards
+        # The same shape `derive()`'s resolves/withdraws loop guards
         # against, restated here because this is a SECOND reader of the same
         # two payload fields -- and the one `show` reaches. An entry that names
         # no event disposes of no event.
@@ -5875,7 +6000,7 @@ def describe_requests(events, floor):
             else:
                 seq, reason = entry, ""
             if _is_seq(seq) and accept_seq > seq and seq not in disposed:
-                disposed[seq] = ("withdrawn", reason)
+                disposed[seq] = ("withdrawn", reason if recorded else _as_text(reason))
     rows = []
     for event in events:
         if not _is_h_event(event) or event.get("kind") == "signoff":
@@ -5884,15 +6009,11 @@ def describe_requests(events, floor):
         if seq <= floor:
             continue
         disposition, reason = disposed.get(seq, ("pending", ""))
-        if event.get("kind") == "review":
-            origin = "review %s" % event.get("verdict")
-        else:
-            origin = "steering (%s)" % (event.get("origin") or "manual")
         rows.append(
             {
                 "seq": seq,
-                "origin": origin,
-                "note": event.get("note") or "",
+                "origin": _request_origin(event),
+                "note": _as_text(event.get("note")) if not recorded else event.get("note") or "",
                 "disposition": disposition,
                 "reason": reason,
             }
@@ -5900,10 +6021,243 @@ def describe_requests(events, floor):
     return rows
 
 
-def reviewer_edits_since(events, floor):
-    """Reviewer edits recorded after the last generation, with their notes."""
+def _request_origin(event):
+    """The plain origin of one recorded request: ``review fix``, ``steering (plan)``.
+
+    Stated once, because three read surfaces name a request's origin and must
+    name it the same way.
+    """
+    if event.get("kind") == "review":
+        return "review %s" % event.get("verdict")
+    return "steering (%s)" % (event.get("origin") or "manual")
+
+
+def _as_text(value):
+    """A payload value as text: ``None`` is ``""``, a non-string is ``str()``."""
+    if value is None:
+        return ""
+    return value if isinstance(value, str) else str(value)
+
+
+def handover_of(events):
+    """What the author left open or decided by judgment.
+
+    ``steps`` are the current plan's ``deviated`` and ``skipped`` steps, in plan
+    order, read through :func:`step_answers` so carried-forward evidence counts,
+    and populated from the moment such a step is recorded. ``judged`` are the
+    requests the latest accept resolved with no ``generation`` and no
+    ``reviewer-edit`` strictly between the request and that accept: no byte
+    answered them, only the reviewer's judgment. ``withdrawn`` are the requests
+    that accept withdrew, with the reason. A withdrawn request is never judged.
+
+    One rule applies to every seq read from a payload: a value that is
+    not a real integer seq, names no request, or sits at or after the accept is
+    ignored. Pure over ``events`` -- no filesystem -- so the payload it joins
+    describes one instant. Data only: turning an entry into a question for the
+    author is the skills' job.
+    """
+    steps = []
+    plan = _last_of(events, "steps-planned")
+    if plan is not None:
+        answers = step_answers(events, plan)
+        for step in plan.get("steps") or []:
+            event = answers.get(step.get("id")) or {}
+            if event.get("verdict") in ("deviated", "skipped"):
+                steps.append(
+                    {
+                        "id": _as_text(step.get("id")),
+                        "text": _as_text(step.get("text")),
+                        "verdict": event.get("verdict"),
+                        "reason": _as_text(event.get("reason")),
+                    }
+                )
+    accept = None
+    for event in events:
+        if (
+            event.get("kind") == "review"
+            and event.get("verdict") == "accept"
+            and _is_seq(event.get("seq"))
+        ):
+            accept = event
+    if accept is None:
+        return {"steps": steps, "judged": [], "withdrawn": []}
+    accept_seq = accept.get("seq")
+    requests = dict(
+        (event.get("seq"), event)
+        for event in events
+        if _is_h_event(event)
+        and event.get("kind") != "signoff"
+        and _is_seq(event.get("seq"))
+    )
+    changes = [
+        event.get("seq")
+        for event in events
+        if event.get("kind") in ("generation", "reviewer-edit")
+        and _is_seq(event.get("seq"))
+    ]
+    withdrawn = {}
+    for entry in accept.get("withdraws") or []:
+        if isinstance(entry, dict):
+            seq, reason = entry.get("seq"), entry.get("reason")
+        else:
+            seq, reason = entry, ""
+        if _is_seq(seq) and seq < accept_seq and seq in requests:
+            withdrawn.setdefault(seq, reason)
+    judged = set()
+    for seq in accept.get("resolves") or []:
+        if not (_is_seq(seq) and seq < accept_seq and seq in requests):
+            continue
+        if seq in withdrawn:
+            continue
+        if any(seq < change < accept_seq for change in changes):
+            continue
+        judged.add(seq)
+    return {
+        "steps": steps,
+        "judged": [
+            {
+                "seq": seq,
+                "origin": _request_origin(requests[seq]),
+                "note": _as_text(requests[seq].get("note")),
+            }
+            for seq in sorted(judged)
+        ],
+        "withdrawn": [
+            {
+                "seq": seq,
+                "origin": _request_origin(requests[seq]),
+                "note": _as_text(requests[seq].get("note")),
+                "reason": _as_text(withdrawn[seq]),
+            }
+            for seq in sorted(withdrawn)
+        ],
+    }
+
+
+def author_notes(events):
+    """Every note the author wrote over the unit's life, oldest first.
+
+    Each entry is ``{seq, origin, note, request}``. Only the event kinds the
+    author's own decisions write are read: each distinct intake ``notes`` value
+    (``unit-declared`` / ``unit-edited``, exact string equality), steering, a
+    review's fix, redraft or non-empty accept note, each accept's withdrawals
+    with their reasons, reviewer-edit notes and the retire note. A step's reason,
+    a generation's gaps and the model are the drafting agent's words, never the
+    author's. ``request`` is the request a note is about -- its own seq for a
+    request, the withdrawn seq for a withdrawal -- and ``None`` otherwise.
+
+    Sorted by seq; entries sharing one (an accept's note and its withdrawals)
+    keep payload order. Every seq is checked as in :func:`handover_of`. Pure
+    over ``events``.
+    """
+    rows = []
+    seen_intake = set()
+
+    def add(seq, origin, note, request=None):
+        rows.append(
+            {"seq": seq, "origin": origin, "note": _as_text(note), "request": request}
+        )
+
+    for event in events:
+        seq = event.get("seq")
+        if not _is_seq(seq):
+            continue
+        kind = event.get("kind")
+        if kind in ("unit-declared", "unit-edited"):
+            value = (event.get("frontmatter") or {}).get("notes")
+            if isinstance(value, str) and value and value not in seen_intake:
+                seen_intake.add(value)
+                add(seq, "intake", value)
+        elif _is_h_event(event) and kind != "signoff":
+            if event.get("note"):
+                add(seq, _request_origin(event), event.get("note"), seq)
+        elif kind == "review" and event.get("verdict") == "accept":
+            if event.get("note"):
+                add(seq, "review accept", event.get("note"))
+            for entry in event.get("withdraws") or []:
+                if isinstance(entry, dict):
+                    withdrawn, reason = entry.get("seq"), entry.get("reason")
+                else:
+                    withdrawn, reason = entry, ""
+                if _is_seq(withdrawn) and withdrawn < seq:
+                    add(seq, "withdrawal", reason, withdrawn)
+        elif kind in ("reviewer-edit", "retired"):
+            if event.get("note"):
+                add(seq, "reviewer edit" if kind == "reviewer-edit" else "retired",
+                    event.get("note"))
+    rows.sort(key=lambda row: row["seq"])
+    return rows
+
+
+#: The plain label of each ``author_notes`` origin, in the human renders
+#: of ``summary``. ``%s`` is the request the note is about. Human wording only,
+#: free to change; ``--json`` keeps the origin as recorded.
+NOTE_LABELS = {
+    "intake": "intake",
+    "steering (manual)": "request %s, steering",
+    "steering (plan)": "request %s, from the plan",
+    "review fix": "request %s, fix",
+    "review redraft": "request %s, redraft",
+    "review accept": "accepted",
+    "withdrawal": "request %s withdrawn",
+    "reviewer edit": "edited the pages",
+    "retired": "retired",
+}
+
+
+def note_label(entry):
+    """The plain label one ``author_notes`` entry is listed under.
+
+    The one definition site, shared by the text and ``--md`` renders. An origin
+    the table does not know can only come from a forged record; it is listed as
+    written, after its request when it names one, and never dropped.
+    """
+    origin = _as_text(entry.get("origin"))
+    request = entry.get("request")
+    template = NOTE_LABELS.get(origin)
+    if template is None:
+        if request is None:
+            return origin
+        return "request %s, %s" % (_as_text(request), origin)
+    if "%s" not in template:
+        return template
+    if request is None:
+        return origin
+    return template % _as_text(request)
+
+
+def open_items(handover):
+    """What is still open at handover, as plain statements.
+
+    One line per deviated or skipped step, then one per request the latest
+    accept judged with no page change since. Statements of what the record
+    holds, never a question to the author: phrasing one is the skills' job.
+    Withdrawals are the author's own decision and are listed with the notes.
+    """
+    handover = handover if isinstance(handover, dict) else {}
+    items = []
+    for step in handover.get("steps") or []:
+        phrase = "was skipped" if step.get("verdict") == "skipped" else "deviated"
+        item = "Step %s %s" % (_as_text(step.get("id")), phrase)
+        reason = _as_text(step.get("reason"))
+        items.append("%s: %s" % (item, reason) if reason else item)
+    for row in handover.get("judged") or []:
+        item = "Request %s was accepted without a page change" % _as_text(row.get("seq"))
+        note = _as_text(row.get("note"))
+        items.append("%s: %s" % (item, note) if note else item)
+    return items
+
+
+def reviewer_edits_since(events, floor, recorded=False):
+    """Reviewer edits recorded after the last generation, with their notes.
+
+    Each note as text for the human renders; ``recorded`` keeps the
+    ledger's value for ``--json``, as :func:`describe_requests` does.
+    """
     return [
-        {"seq": event.get("seq"), "note": event.get("note") or ""}
+        {"seq": event.get("seq"), "note": _as_text(event.get("note"))}
+        if not recorded
+        else {"seq": event.get("seq"), "note": event.get("note") or ""}
         for event in events
         if event.get("kind") == "reviewer-edit" and event.get("seq") > floor
     ]
@@ -6065,12 +6419,12 @@ def find_seq_commit(repo, unit, seq):
 def read_page_bytes(repo, path, unit):
     """The current bytes of a docs page, or ``b""`` when it is not there.
 
-    IN-05 (phase 16): ``unit`` has no default. This function raises through
+    ``unit`` has no default. This function raises through
     :func:`contained_page`, and a refusal that names ``""`` as its unit is a
     refusal no skill can route on — so forgetting the argument is a loud
     ``TypeError`` here rather than a quietly misattributed refusal there.
 
-    CR-05: it refuses an escaping path rather than returning ``b""``, so
+    It refuses an escaping path rather than returning ``b""``, so
     ``render_diff`` can never reach a file ``read_fs`` was not allowed to
     digest. The snapshot refuses first on every current caller, which is what
     makes this the second lock on the same door rather than the only one.
@@ -6082,7 +6436,7 @@ def read_page_bytes(repo, path, unit):
         return b""
 
 
-def render_diff(repo, unit, state, path):
+def render_diff(repo, unit, state, path, human=False):
     """``--diff``: a drifted path against the RECORDED basis bytes, or an honest no.
 
     When history rewriting has removed the commit the ``Crayon-Seq`` trailer
@@ -6090,6 +6444,10 @@ def render_diff(repo, unit, state, path):
     inverted and HEAD is not the same fact, so presenting either as the basis
     would be a guess in the record's own voice. The tool says so and shows the
     current content instead.
+
+    ``human`` is human ``show``'s: the recorded side is labelled
+    ``recorded:`` and the unavailable line names no basis. ``show --json
+    --diff`` leaves it false, so its ``diff`` values keep their bytes.
     """
     current = read_page_bytes(repo, path, unit)
     relative = os.path.join(DOCS_ROOT, path)
@@ -6097,8 +6455,9 @@ def render_diff(repo, unit, state, path):
     recorded = git_show_blob(repo, commit, relative) if commit else None
     if recorded is None:
         lines = [
-            "  the recorded basis bytes for %s are unavailable (the commit that "
-            "recorded them is not reachable); the current content follows" % path
+            "  the recorded %sbytes for %s are unavailable (the commit that "
+            "recorded them is not reachable); the current content follows"
+            % ("" if human else "basis ", path)
         ]
         return lines + [
             "  %s" % line for line in current.decode("utf-8", "replace").splitlines()
@@ -6108,7 +6467,7 @@ def render_diff(repo, unit, state, path):
         for line in difflib.unified_diff(
             recorded.decode("utf-8", "replace").splitlines(),
             current.decode("utf-8", "replace").splitlines(),
-            fromfile="basis:%s" % path,
+            fromfile="%s:%s" % ("recorded" if human else "basis", path),
             tofile="disk:%s" % path,
             lineterm="",
         )
@@ -6134,11 +6493,10 @@ def cmd_show(args):
     events, snapshot, state = read_only_unit(repo, unit)
 
     title, intent, _audience = unit_headline(events, state, unit)
-    qualifier = state_qualifier(state)
     rows = describe_paths(repo, state, snapshot["paths"])
     floor = state["gen_seq"] if state["gen_seq"] is not None else 0
-    requests = describe_requests(events, floor)
-    edits = reviewer_edits_since(events, floor)
+    requests = describe_requests(events, floor, recorded=as_json)
+    edits = reviewer_edits_since(events, floor, recorded=as_json)
     tally = step_tally(events)
     token = route(state)
 
@@ -6148,7 +6506,8 @@ def cmd_show(args):
             "title": title,
             "intent": intent,
             "state": state["state"],
-            "qualifier": qualifier,
+            # The seq-bearing qualifier is --json's alone.
+            "qualifier": state_qualifier(state),
             "paths": rows,
             "requests": requests,
             "reviewer_edits": edits,
@@ -6164,6 +6523,7 @@ def cmd_show(args):
                 "tip": state["tip_seq"],
             },
             "next": token,
+            "handover": handover_of(events),
         }
         if with_diff:
             payload["diff"] = dict(
@@ -6175,26 +6535,35 @@ def cmd_show(args):
         sys.stdout.flush()
         return EXITS["success"]
 
+    # The author's render. The overtaken accept's commit is looked up only
+    # when the qualifier names it, so a plain `show` walks git no more than before.
+    rev = state["rev"]
+    accepted_commit = None
+    overtaken = rev is not None and rev.get("verdict") == "accept"
+    if overtaken and state["state"] != "sealed" and _is_seq(rev.get("seq")):
+        accepted_commit = find_seq_commit(repo, unit, rev.get("seq"))
+    plain = plain_state_qualifier(state, accepted_commit)
     out = [title]
     if intent:
         out.append("intent: %s" % intent)
     out.append(
-        "state: %s%s" % (state["state"], " — %s" % qualifier if qualifier else "")
+        "state: %s%s"
+        % (HUMAN_STATE.get(state["state"], state["state"]), " — %s" % plain if plain else "")
     )
     if rows:
         out.append("paths:")
         for row in rows:
             out.append("  %s — %s" % (row["path"], row["status"]))
             if with_diff and row["status"].startswith("drifted"):
-                out.extend(render_diff(repo, unit, state, row["path"]))
+                out.extend(render_diff(repo, unit, state, row["path"], human=True))
     if requests:
         out.append("requests:")
         for row in requests:
             disposition = row["disposition"]
-            if disposition == "withdrawn":
+            if disposition == "withdrawn" and row["reason"]:
                 disposition = "withdrawn: %s" % collapse_note(row["reason"], 200)
             out.append(
-                "  seq %s — %s — %s: %s"
+                "  request %s — %s — %s: %s"
                 % (
                     row["seq"],
                     disposition,
@@ -6208,11 +6577,8 @@ def cmd_show(args):
     if edits:
         out.append("reviewer edits:")
         for entry in edits:
-            out.append(
-                "  edit at seq %s — %s"
-                % (entry["seq"], collapse_note(entry["note"], 200))
-            )
-    out.append("Next: %s" % token)
+            out.append("  - %s" % collapse_note(entry["note"], 200))
+    out.append(next_line(token))
     sys.stdout.write("\n".join(out) + "\n")
     sys.stdout.flush()
     return EXITS["success"]
@@ -6221,7 +6587,7 @@ def cmd_show(args):
 # --- verify (contract 5.9) --------------------------------------------------
 
 #: Contract 5.9 fixes the LEVEL of every check, and the level — not a judgment
-#: at the call site — is what the exit rule keys off (T-17-41). V1–V13 are
+#: at the call site — is what the exit rule keys off. V1–V13 are
 #: record integrity and are the only ones that can report a FAIL. V14 is a
 #: status. V15–V19 corroborate with git, which is tamper-EVIDENCE and never
 #: tamper-proofing, so the worst they can report is a warning: a maintenance
@@ -6248,6 +6614,202 @@ CHECK_LEVELS = {
     "V18": "warn",
     "V19": "warn",
 }
+
+#: Each check's plain label, the name the DEFAULT ``verify`` gives
+#: a check that needs a look. Keyed exactly like :data:`CHECK_LEVELS` — a unit
+#: test holds the two key sets equal — so a check has one label, defined here.
+#: Human wording only, free to change; ``--json`` and ``--verbose`` name
+#: checks by their V id.
+CHECK_LABELS = {
+    "V1": "the record's header",
+    "V2": "the record's lines",
+    "V3": "the record's order and chain",
+    "V4": "the record against the committed history",
+    "V5": "each draft and accept against the signed plan",
+    "V6": "each review against the draft it reviewed",
+    "V7": "the requests between drafts",
+    "V8": "the step evidence",
+    "V9": "the steps resolved before drafting",
+    "V10": "the requests settled at each accept",
+    "V11": "the recorded model",
+    "V12": "the reason for reusing step evidence",
+    "V13": "the pages each draft and edit recorded",
+    "V14": "the pages on disk",
+    "V15": "the commits for each recorded change",
+    "V16": "where each recorded change sits in git history",
+    "V17": "the git ignore settings",
+    "V18": "pages another unit also claims",
+    "V19": "the sources and context since the signoff",
+}
+
+
+class ToolText(str):
+    """An interpolated string the tool itself made: a seq list, a digest, a status.
+
+    :func:`said` reads it as part of the template, so :func:`plain_detail`
+    scans it with the tool's own words. A contributor value is never one.
+    """
+
+
+class Detail(str):
+    """A check's detail: exactly the formatted text, plus who wrote each part.
+
+    Its value is ``template % args``, so ``--json``, ``--verbose`` and every
+    refusal that quotes it print the same bytes they always did. ``pieces`` is
+    a tuple of ``(text, tool)`` pairs recording which characters the tool wrote
+    (``tool`` true) and which are values it was given. Only
+    :func:`plain_detail` reads ``pieces``. Without ``pieces`` the whole text is
+    the tool's, which is also how ``copy`` and ``pickle`` rebuild one before
+    restoring its recorded pieces.
+    """
+
+    def __new__(cls, text, pieces=None):
+        self = super().__new__(cls, text)
+        self.pieces = ((text, True),) if pieces is None else tuple(pieces)
+        return self
+
+
+#: One ``%%``, one printf conversion with no mapping key and no ``*``, or any
+#: other ``%``, which :func:`said` refuses as ``%`` would.
+_SAID_SPEC = re.compile(r"%%|%[#0 +-]*\d*(?:\.\d+)?[hlL]?[diouxXeEfFgGcrsa]|%")
+
+
+def _said_add(pieces, text, tool):
+    """Append one piece, merging it into the last when both are the same kind."""
+    if not text:
+        return
+    if pieces and pieces[-1][1] == tool:
+        pieces[-1] = (pieces[-1][0] + text, tool)
+    else:
+        pieces.append((text, tool))
+
+
+def said(template, *args):
+    """``template % args`` as a :class:`Detail` that knows its tool text.
+
+    The template's own text is the tool's. A :class:`Detail` under ``%s`` is
+    spliced with its pieces, a :class:`ToolText` is the tool's, and every other
+    argument is a value, printed by its conversion and never rewritten. Too few
+    or too many arguments raise ``TypeError``, as ``%`` does. A ``%`` it does
+    not recognise raises what ``template % args`` raises; a form ``%`` accepts
+    but this cannot attribute (``*``, a mapping key) raises ``TypeError``.
+    """
+    pieces, rest, at = [], list(args), 0
+    for match in _SAID_SPEC.finditer(template):
+        _said_add(pieces, template[at:match.start()], True)
+        at = match.end()
+        spec = match.group(0)
+        if spec == "%%":
+            _said_add(pieces, "%", True)
+            continue
+        if spec == "%":
+            template % tuple(args)
+            raise TypeError("said cannot attribute the %% at index %d" % match.start())
+        if not rest:
+            raise TypeError("not enough arguments for format string")
+        arg = rest.pop(0)
+        if spec == "%s" and isinstance(arg, Detail):
+            for text, tool in arg.pieces:
+                _said_add(pieces, text, tool)
+        else:
+            _said_add(pieces, spec % (arg,), isinstance(arg, ToolText))
+    if rest:
+        raise TypeError("not all arguments converted during string formatting")
+    _said_add(pieces, template[at:], True)
+    return Detail("".join(text for text, _ in pieces), pieces)
+
+
+def said_join(separator, items):
+    """``separator.join(items)`` as a :class:`Detail`, over :class:`Detail` items only.
+
+    A plain ``str`` raises ``TypeError`` rather than being taken for the tool's
+    words: a literal is wrapped as ``Detail(text)`` by its caller.
+    """
+    pieces = []
+    for index, item in enumerate(items):
+        if not isinstance(item, Detail):
+            raise TypeError("said_join takes Detail items, not %s" % type(item).__name__)
+        if index:
+            _said_add(pieces, separator, True)
+        for text, tool in item.pieces:
+            _said_add(pieces, text, tool)
+    return Detail("".join(text for text, _ in pieces), pieces)
+
+
+#: The human render of a check's DETAIL, and nothing else.
+#: An ordered rule table over the tool's OWN wording, and it only ever sees
+#: that: :func:`plain_detail` applies it to a :class:`Detail`'s tool pieces (the
+#: templates, :class:`ToolText`) or to a literal ``str`` whole, so every
+#: interpolated contributor value — a page path, a unit or step id, a quoted
+#: ledger value — passes through as written. ``--json``'s
+#: ``checks[].detail`` and the ``--verbose`` rows print the detail as recorded
+#: and never come through here.
+_PLAIN_WORD = r"(?<![\w/.-])%s(?![\w/.-])"
+PLAIN_DETAIL_WORDS = (
+    # 1. the reason-token prefixes V15, V16 and V19 carry (the JSON keeps them)
+    (re.compile(r"\b(?:history_squashed|ledger_diverged|plan_stale): "), ""),
+    # 2. a seq an accept resolves or withdraws is a request; several, as the
+    # V10 templates emit them (`seq(s) 2, 3`), requests; one keeps request(s)
+    (re.compile(r"\b(resolves|withdraws) seq\(s\) (\d+(?:, \d+)+)\b"), r"\1 requests \2"),
+    (re.compile(r"\b(resolves|withdraws) seq\b"), r"\1 request"),
+    # 3.
+    (re.compile(r"\bin seq order\b"), "in record order"),
+    # 4.
+    (re.compile(r"\b(?:its|their) seq\b"), "that point"),
+    # 5. V3's chain finding
+    (re.compile(r"\bseq is\b"), "entry number is"),
+    # 6. a list of seqs
+    (re.compile(r"\bseq (\d+(?:, \d+)+)\b"), r"entries \1"),
+    # 7. every other seq, lowercase and whole-word (`Crayon-Seq`, `steps_seq` stay)
+    (re.compile(r"\bseq\(s\)"), "entries"),
+    (re.compile(_PLAIN_WORD % "seq"), "entry"),
+    # 8.
+    (re.compile(_PLAIN_WORD % "generations"), "drafts"),
+    (re.compile(_PLAIN_WORD % "generation"), "draft"),
+    # 9. V8 and V12
+    (re.compile(r"\bsteps-planned\b"), "step plan"),
+    (
+        re.compile(r"\bcarries reuse:true with no reuse_note\b"),
+        "reuses step evidence with no reason given",
+    ),
+    # 10.
+    (re.compile(_PLAIN_WORD % "seals"), "accepts"),
+    (re.compile(_PLAIN_WORD % "sealed"), "accepted"),
+    # 11. the only two phrases a non-ok detail uses; no blanket `basis` rule,
+    # because a page path may contain the word
+    (re.compile(r"\bbasis path\(s\)"), "recorded page(s)"),
+    (re.compile(r"\bthe basis\b"), "the recorded pages"),
+    # 12. human lines drop the hash
+    (re.compile(r"\ba plan_hash\b"), "a plan"),
+    (re.compile(r"\ba text_hash\b"), "a step text"),
+    (re.compile(r"\bplan_hash\b"), "plan"),
+    # 13. a digest or a long sha keeps the seven characters of a short sha
+    (re.compile(r"[0-9a-f]{12,}"), lambda match: match.group(0)[:7]),
+)
+
+
+def _plain_words(text):
+    """``text`` with :data:`PLAIN_DETAIL_WORDS` applied in order."""
+    for pattern, replacement in PLAIN_DETAIL_WORDS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+def plain_detail(text):
+    """A check's ``detail`` as the default ``verify`` prints it.
+
+    The rules see only the tool's own words: a :class:`Detail`'s tool pieces,
+    or a literal ``str`` whole. Every value a :class:`Detail` was given passes
+    through as written. Only :func:`verify_plain_lines` calls it:
+    ``--json`` and ``--verbose`` print the detail as recorded, so the reviewer's
+    report and the machine's object stay byte-unchanged.
+    """
+    if not isinstance(text, Detail):
+        return _plain_words(text)
+    return "".join(
+        _plain_words(piece) if tool else piece for piece, tool in text.pieces
+    )
+
 
 #: Contract 5.3's ``step-recorded`` payload, required half. V8 reads it.
 STEP_RECORD_KEYS = (
@@ -6284,14 +6846,14 @@ def _finding(vid, problems, clean):
         return check_record(vid, True, clean)
     detail = problems[0]
     if len(problems) > 1:
-        detail += " (and %d more)" % (len(problems) - 1)
+        detail = said_join("", [detail, said(" (and %d more)", len(problems) - 1)])
     return check_record(vid, False, detail)
 
 
 def _seq_of(event):
     """An event's ``seq`` as an int, or ``-1``.
 
-    A ledger is contributor input (CR-04): every comparison below runs against
+    A ledger is contributor input: every comparison below runs against
     whatever a forged, hand-repaired or future-tool-written record spells, and
     an ``int`` against a ``None`` is a ``TypeError`` that would escape as an
     exit-1 gate refusal. An unusable seq sorts before every real one, which is
@@ -6302,8 +6864,12 @@ def _seq_of(event):
 
 
 def _seq_list(seqs):
-    """``"3, 4, 5"`` — a seq list in one voice, for details that name several."""
-    return ", ".join(str(seq) for seq in seqs)
+    """``"3, 4, 5"`` — a seq list in one voice, for details that name several.
+
+    :class:`ToolText`, because the tool wrote it: :func:`plain_detail` reads it
+    with the template, so ``seq 3, 4`` still reads ``entries 3, 4``.
+    """
+    return ToolText(", ".join(str(seq) for seq in seqs))
 
 
 def lenient_events(lines):
@@ -6346,15 +6912,21 @@ def verify_integrity(unit, lines, committed, partial=""):
         header = parsed[0] if isinstance(parsed[0], dict) else None
         if header is None:
             rows.append(
-                check_record("V1", False, "line 1 is not a JSON object, so there is no header")
+                check_record(
+                    "V1",
+                    False,
+                    said("line 1 is not a JSON object, so there is no header"),
+                )
             )
         elif header.get("kind") != "ledger" or header.get("seq") != 0:
             rows.append(
                 check_record(
                     "V1",
                     False,
-                    "the first event is %r at seq %r, not the ledger header"
-                    % (header.get("kind"), header.get("seq")),
+                    said(
+                        "the first event is %r at seq %r, not the ledger header",
+                        header.get("kind"), header.get("seq"),
+                    ),
                 )
             )
         elif header.get("v") != CONTRACT:
@@ -6362,8 +6934,10 @@ def verify_integrity(unit, lines, committed, partial=""):
                 check_record(
                     "V1",
                     False,
-                    "ledger version %r is not supported; this tool reads v%d"
-                    % (header.get("v"), CONTRACT),
+                    said(
+                        "ledger version %r is not supported; this tool reads v%d",
+                        header.get("v"), CONTRACT,
+                    ),
                 )
             )
         elif header.get("unit") != unit:
@@ -6371,12 +6945,22 @@ def verify_integrity(unit, lines, committed, partial=""):
                 check_record(
                     "V1",
                     False,
-                    "the header records unit %r, not %r" % (header.get("unit"), unit),
+                    said(
+                        "the header records unit %r, not %r", header.get("unit"), unit
+                    ),
                 )
             )
         else:
             rows.append(
-                check_record("V1", True, "the header is a v%d ledger event for %r at seq 0" % (CONTRACT, unit))
+                check_record(
+                    "V1",
+                    True,
+                    said(
+                        "the header is a v%d ledger event for %r at seq 0",
+                        CONTRACT,
+                        unit,
+                    ),
+                )
             )
 
     # V2 — every line parses, re-serializes canonically and sits within the caps
@@ -6386,23 +6970,27 @@ def verify_integrity(unit, lines, committed, partial=""):
         size = byte_len(line)
         if size > MAX_LINE_BYTES:
             problems.append(
-                "line %d is %d bytes; the cap is %d" % (number, size, MAX_LINE_BYTES)
+                said("line %d is %d bytes; the cap is %d", number, size, MAX_LINE_BYTES)
             )
             continue
         event = parsed[index]
         if event is None:
-            problems.append("line %d is not valid JSON" % number)
+            problems.append(said("line %d is not valid JSON", number))
             continue
         try:
             canonical = canonical_line(event)
         except (ValueError, Refusal):
-            problems.append("line %d does not re-serialize canonically" % number)
+            problems.append(said("line %d does not re-serialize canonically", number))
             continue
         if canonical != line:
             problems.append(
-                "line %d is not the canonical serialization of its own event" % number
+                said(
+                    "line %d is not the canonical serialization of its own event",
+                    number,
+                )
             )
-    clean = "%d line(s) parse, re-serialize canonically and sit within the %d-byte cap" % (
+    clean = said(
+        "%d line(s) parse, re-serialize canonically and sit within the %d-byte cap",
         len(lines),
         MAX_LINE_BYTES,
     )
@@ -6410,20 +6998,24 @@ def verify_integrity(unit, lines, committed, partial=""):
         # A truncated FINAL line is contract 5.8's `uncommitted_tail`, whose
         # answer is `resume` — not `ledger_corrupt`. Failing V2 on it would exit
         # 6 with the wrong reason on exactly the unit this verb was widened to
-        # report on (RESEARCH Pitfall 7), so it is named and not counted.
-        clean += SEGMENT + "a truncated final line is present; crayon resume %s" % unit
+        # report on, so it is named and not counted.
+        tail = said("a truncated final line is present; crayon resume %s", unit)
+        clean = said_join(SEGMENT, [clean, tail])
     rows.append(_finding("V2", problems, clean))
 
     # V3 — seq contiguity and the prev chain, over `verify_chain`'s findings.
-    # Phase 16 changed that function from a boolean to a findings list FOR this
+    # That function returns a findings list, not a boolean, FOR this
     # consumer; re-walking the same bytes here would be a second opinion.
     chain = verify_chain(lines)
     rows.append(
         _finding(
             "V3",
             chain,
-            "seq is contiguous from 0 over %d line(s) and every prev matches the "
-            "previous line's bytes" % len(lines),
+            said(
+                "seq is contiguous from 0 over %d line(s) and every prev matches the "
+                "previous line's bytes",
+                len(lines),
+            ),
         )
     )
 
@@ -6449,8 +7041,11 @@ def verify_integrity(unit, lines, committed, partial=""):
             check_record(
                 "V4",
                 False,
-                "the committed prefix no longer matches HEAD's copy; line %d differs"
-                % differs,
+                said(
+                    "the committed prefix no longer matches HEAD's copy; line %d "
+                    "differs",
+                    differs,
+                ),
             )
         )
     else:
@@ -6458,7 +7053,10 @@ def verify_integrity(unit, lines, committed, partial=""):
             check_record(
                 "V4",
                 True,
-                "the first %d line(s) are byte-identical to HEAD's copy" % len(committed),
+                said(
+                    "the first %d line(s) are byte-identical to HEAD's copy",
+                    len(committed),
+                ),
             )
         )
     return rows
@@ -6516,17 +7114,23 @@ def verify_derivation(events):
         so = current(signoffs, _seq_of(gen))
         if so is None:
             problems.append(
-                "the generation at seq %s has no signoff before it" % _seq_of(gen)
+                said("the generation at seq %s has no signoff before it", _seq_of(gen))
             )
         elif gen.get("signoff_seq") != so.get("seq"):
             problems.append(
-                "the generation at seq %s cites signoff %r; the signoff current at "
-                "its seq is %r" % (_seq_of(gen), gen.get("signoff_seq"), so.get("seq"))
+                said(
+                    "the generation at seq %s cites signoff %r; the signoff current at "
+                    "its seq is %r",
+                    _seq_of(gen), gen.get("signoff_seq"), so.get("seq"),
+                )
             )
         elif gen.get("plan_hash") != so.get("plan_hash"):
             problems.append(
-                "the generation at seq %s records a plan_hash its signoff at seq %r "
-                "does not" % (_seq_of(gen), so.get("seq"))
+                said(
+                    "the generation at seq %s records a plan_hash its signoff at "
+                    "seq %r does not",
+                    _seq_of(gen), so.get("seq"),
+                )
             )
     for rev in accepts:
         gen = next(
@@ -6535,14 +7139,17 @@ def verify_derivation(events):
         so = current(signoffs, _seq_of(rev))
         if gen is None:
             problems.append(
-                "the accept at seq %s names generation %r, which is not in the record"
-                % (_seq_of(rev), rev.get("generation_seq"))
+                said(
+                    "the accept at seq %s names generation %r, which is not in the "
+                    "record",
+                    _seq_of(rev), rev.get("generation_seq"),
+                )
             )
         elif so is None or gen.get("signoff_seq") != so.get("seq"):
             problems.append(
-                "the accept at seq %s seals a generation citing signoff %r; the "
-                "signoff current at the accept is %r"
-                % (
+                said(
+                    "the accept at seq %s seals a generation citing signoff %r; the "
+                    "signoff current at the accept is %r",
                     _seq_of(rev),
                     gen.get("signoff_seq"),
                     so.get("seq") if so is not None else None,
@@ -6553,8 +7160,10 @@ def verify_derivation(events):
         _finding(
             "V5",
             problems,
-            "%d generation(s) and accept(s) cite the signoff current at their seq"
-            % total
+            said(
+                "%d generation(s) and accept(s) cite the signoff current at their seq",
+                total,
+            )
             if total
             else "no generation and no accept to check",
         )
@@ -6567,17 +7176,22 @@ def verify_derivation(events):
         expected = last_gen.get("seq") if last_gen is not None else None
         if rev.get("generation_seq") != expected:
             problems.append(
-                "the review at seq %s cites generation %r; the last generation at "
-                "its seq is %r" % (_seq_of(rev), rev.get("generation_seq"), expected)
+                said(
+                    "the review at seq %s cites generation %r; the last generation at "
+                    "its seq is %r",
+                    _seq_of(rev), rev.get("generation_seq"), expected,
+                )
             )
     for edit in edits:
         last_gen = current(generations, _seq_of(edit))
         expected = last_gen.get("seq") if last_gen is not None else None
         if edit.get("generation_seq") != expected:
             problems.append(
-                "the reviewer edit at seq %s cites generation %r; the last "
-                "generation at its seq is %r (null iff none existed)"
-                % (_seq_of(edit), edit.get("generation_seq"), expected)
+                said(
+                    "the reviewer edit at seq %s cites generation %r; the last "
+                    "generation at its seq is %r (null iff none existed)",
+                    _seq_of(edit), edit.get("generation_seq"), expected,
+                )
             )
     for rev in accepts:
         basis = _later(
@@ -6585,16 +7199,21 @@ def verify_derivation(events):
         )
         if _basis_pairs(rev) != _basis_pairs(basis):
             problems.append(
-                "the accept at seq %s seals files that are not the basis at seq %r"
-                % (_seq_of(rev), basis.get("seq") if basis is not None else None)
+                said(
+                    "the accept at seq %s seals files that are not the basis at seq %r",
+                    _seq_of(rev), basis.get("seq") if basis is not None else None,
+                )
             )
     total = len(reviews) + len(edits)
     rows.append(
         _finding(
             "V6",
             problems,
-            "%d review(s) and reviewer edit(s) cite the basis they were made against"
-            % total
+            said(
+                "%d review(s) and reviewer edit(s) cite the basis they were made "
+                "against",
+                total,
+            )
             if total
             else "no review and no reviewer edit to check",
         )
@@ -6611,15 +7230,21 @@ def verify_derivation(events):
         if gen.get("unsteered") is True and gen.get("unsteered_reason"):
             continue
         problems.append(
-            "the generation at seq %s follows the one at seq %s with no intervening "
-            "steering, review fix or redraft and no unsteered reason" % (high, low)
+            said(
+                "the generation at seq %s follows the one at seq %s with no "
+                "intervening steering, review fix or redraft and no unsteered reason",
+                high, low,
+            )
         )
     rows.append(
         _finding(
             "V7",
             problems,
-            "%d consecutive generation pair(s) are separated by an H event or "
-            "declared unsteered" % max(len(generations) - 1, 0)
+            said(
+                "%d consecutive generation pair(s) are separated by an H event or "
+                "declared unsteered",
+                max(len(generations) - 1, 0),
+            )
             if len(generations) > 1
             else "fewer than two generations, so no pair to check",
         )
@@ -6631,8 +7256,11 @@ def verify_derivation(events):
         plan = plans_by_seq.get(rec.get("steps_seq"))
         if plan is None:
             problems.append(
-                "the step record at seq %s names steps-planned %r, which is not in "
-                "the record" % (_seq_of(rec), rec.get("steps_seq"))
+                said(
+                    "the step record at seq %s names steps-planned %r, which is not in "
+                    "the record",
+                    _seq_of(rec), rec.get("steps_seq"),
+                )
             )
             continue
         step = next(
@@ -6645,44 +7273,59 @@ def verify_derivation(events):
         )
         if step is None:
             problems.append(
-                "the step record at seq %s names step %r, which the plan at seq %r "
-                "does not carry"
-                % (_seq_of(rec), rec.get("step_id"), plan.get("seq"))
+                said(
+                    "the step record at seq %s names step %r, which the plan at seq %r "
+                    "does not carry",
+                    _seq_of(rec), rec.get("step_id"), plan.get("seq"),
+                )
             )
             continue
         if rec.get("text_hash") != step.get("text_hash"):
             problems.append(
-                "the step record at seq %s records a text_hash the plan's step %r "
-                "does not" % (_seq_of(rec), rec.get("step_id"))
+                said(
+                    "the step record at seq %s records a text_hash the plan's step %r "
+                    "does not",
+                    _seq_of(rec), rec.get("step_id"),
+                )
             )
-        # WR-02: the same divergence `cmd_step` now refuses at record time,
+        # The same divergence `cmd_step` now refuses at record time,
         # reported over records written before that gate existed. `mode` is
         # half of contract 5.4's reuse prefix key, so a record that contradicts
         # its plan makes the carry-forward walk reason over a mode the evidence
         # denies.
         if rec.get("mode") != step.get("mode"):
             problems.append(
-                "the step record at seq %s claims mode %r; the plan's step %r "
-                "declares %r"
-                % (_seq_of(rec), rec.get("mode"), rec.get("step_id"), step.get("mode"))
+                said(
+                    "the step record at seq %s claims mode %r; the plan's step %r "
+                    "declares %r",
+                    _seq_of(rec), rec.get("mode"), rec.get("step_id"), step.get("mode"),
+                )
             )
         missing = [key for key in STEP_RECORD_KEYS if key not in rec]
         if missing:
             problems.append(
-                "the step record at seq %s is missing %s"
-                % (_seq_of(rec), ", ".join(missing))
+                said(
+                    "the step record at seq %s is missing %s",
+                    _seq_of(rec), ", ".join(missing),
+                )
             )
         elif step_reason_required(rec) and not rec.get("reason"):
             problems.append(
-                "the step record at seq %s is a %r at exit %r and carries no reason"
-                % (_seq_of(rec), rec.get("verdict"), rec.get("exit_code"))
+                said(
+                    "the step record at seq %s is a %r at exit %r and carries no "
+                    "reason",
+                    _seq_of(rec), rec.get("verdict"), rec.get("exit_code"),
+                )
             )
     rows.append(
         _finding(
             "V8",
             problems,
-            "%d step record(s) match their plan's hash and mode and carry 5.3's "
-            "fields" % len(records)
+            said(
+                "%d step record(s) match their plan's hash and mode and carry 5.3's "
+                "fields",
+                len(records),
+            )
             if records
             else "no step record to check",
         )
@@ -6699,21 +7342,29 @@ def verify_derivation(events):
         plan = plans_by_seq.get(gen.get("steps_seq")) or current(plans, _seq_of(gen))
         if plan is None:
             problems.append(
-                "the actionable generation at seq %s names no step plan" % _seq_of(gen)
+                said(
+                    "the actionable generation at seq %s names no step plan",
+                    _seq_of(gen),
+                )
             )
             continue
         outstanding = unresolved_steps(before(_seq_of(gen)), plan)
         if outstanding:
             problems.append(
-                "the actionable generation at seq %s was recorded with step(s) %s "
-                "unresolved" % (_seq_of(gen), ", ".join(str(s) for s in outstanding))
+                said(
+                    "the actionable generation at seq %s was recorded with step(s) %s "
+                    "unresolved",
+                    _seq_of(gen), ", ".join(str(s) for s in outstanding),
+                )
             )
     rows.append(
         _finding(
             "V9",
             problems,
-            "%d actionable generation(s) had every step resolved at their seq"
-            % actionable
+            said(
+                "%d actionable generation(s) had every step resolved at their seq",
+                actionable,
+            )
             if actionable
             else "no actionable generation to check",
         )
@@ -6737,36 +7388,48 @@ def verify_derivation(events):
         seq = _seq_of(rev)
         if pending - (resolves | withdraws):
             problems.append(
-                "the accept at seq %s leaves request(s) %s with no disposition"
-                % (seq, _seq_list(sorted(pending - (resolves | withdraws))))
+                said(
+                    "the accept at seq %s leaves request(s) %s with no disposition",
+                    seq, _seq_list(sorted(pending - (resolves | withdraws))),
+                )
             )
         if resolves - pending:
             problems.append(
-                "the accept at seq %s resolves seq(s) %s, which were not pending"
-                % (seq, _seq_list(sorted(resolves - pending)))
+                said(
+                    "the accept at seq %s resolves seq(s) %s, which were not pending",
+                    seq, _seq_list(sorted(resolves - pending)),
+                )
             )
         if withdraws - pending:
             problems.append(
-                "the accept at seq %s withdraws seq(s) %s, which were not pending"
-                % (seq, _seq_list(sorted(withdraws - pending)))
+                said(
+                    "the accept at seq %s withdraws seq(s) %s, which were not pending",
+                    seq, _seq_list(sorted(withdraws - pending)),
+                )
             )
         if resolves & withdraws:
             problems.append(
-                "the accept at seq %s both resolves and withdraws seq(s) %s"
-                % (seq, _seq_list(sorted(resolves & withdraws)))
+                said(
+                    "the accept at seq %s both resolves and withdraws seq(s) %s",
+                    seq, _seq_list(sorted(resolves & withdraws)),
+                )
             )
         for entry in entries:
             if not entry.get("reason"):
                 problems.append(
-                    "the accept at seq %s withdraws seq %r with no reason"
-                    % (seq, entry.get("seq"))
+                    said(
+                        "the accept at seq %s withdraws seq %r with no reason",
+                        seq, entry.get("seq"),
+                    )
                 )
     rows.append(
         _finding(
             "V10",
             problems,
-            "%d accept(s) dispose of exactly the requests pending at their seq"
-            % len(accepts)
+            said(
+                "%d accept(s) dispose of exactly the requests pending at their seq",
+                len(accepts),
+            )
             if accepts
             else "no accept to check",
         )
@@ -6779,13 +7442,16 @@ def verify_derivation(events):
             validate_model(gen.get("model"), gen.get("model_origin"))
         except Refusal as inconsistent:
             problems.append(
-                "the generation at seq %s: %s" % (_seq_of(gen), inconsistent.detail)
+                said("the generation at seq %s: %s", _seq_of(gen), inconsistent.detail)
             )
     rows.append(
         _finding(
             "V11",
             problems,
-            "%d generation(s) record a model consistent with its origin" % len(generations)
+            said(
+                "%d generation(s) record a model consistent with its origin",
+                len(generations),
+            )
             if generations
             else "no generation to check",
         )
@@ -6793,7 +7459,10 @@ def verify_derivation(events):
 
     # V12 — a reuse plan states why it reuses
     problems = [
-        "the step plan at seq %s carries reuse:true with no reuse_note" % _seq_of(plan)
+        said(
+            "the step plan at seq %s carries reuse:true with no reuse_note",
+            _seq_of(plan),
+        )
         for plan in plans
         if plan.get("reuse") and not plan.get("reuse_note")
     ]
@@ -6801,7 +7470,7 @@ def verify_derivation(events):
         _finding(
             "V12",
             problems,
-            "%d step plan(s) carry a reuse_note wherever they reuse" % len(plans)
+            said("%d step plan(s) carry a reuse_note wherever they reuse", len(plans))
             if plans
             else "no step plan to check",
         )
@@ -6815,8 +7484,11 @@ def verify_derivation(events):
         files = sorted(path for path, _ in _basis_pairs(gen))
         if files != targets:
             problems.append(
-                "the generation at seq %s records files %s; the signoff current at "
-                "its seq targets %s" % (_seq_of(gen), files, targets)
+                said(
+                    "the generation at seq %s records files %s; the signoff current at "
+                    "its seq targets %s",
+                    _seq_of(gen), files, targets,
+                )
             )
     for edit in edits:
         previous = _later(
@@ -6834,16 +7506,21 @@ def verify_derivation(events):
         dropped = sorted(kept - set(path for path, _ in _basis_pairs(edit)))
         if dropped:
             problems.append(
-                "the reviewer edit at seq %s drops still-signed basis path(s) %s"
-                % (_seq_of(edit), ", ".join(dropped))
+                said(
+                    "the reviewer edit at seq %s drops still-signed basis path(s) %s",
+                    _seq_of(edit), ", ".join(dropped),
+                )
             )
     total = len(generations) + len(edits)
     rows.append(
         _finding(
             "V13",
             problems,
-            "%d generation(s) and reviewer edit(s) record the files their signoff "
-            "targets" % total
+            said(
+                "%d generation(s) and reviewer edit(s) record the files their signoff "
+                "targets",
+                total,
+            )
             if total
             else "no generation and no reviewer edit to check",
         )
@@ -6876,7 +7553,9 @@ def verify_currency(repo, state, paths):
         for row in rows
         if row["status"] in ("missing", "new") or row["status"].startswith("drifted")
     ]
-    detail = SEGMENT.join("%s: %s" % (row["path"], row["status"]) for row in rows)
+    detail = said_join(
+        SEGMENT, [said("%s: %s", row["path"], ToolText(row["status"])) for row in rows]
+    )
     return [check_record("V14", not unsettled, detail)]
 
 
@@ -6924,12 +7603,39 @@ def verify_report_lines(head, checks, notes=()):
     return out
 
 
+def verify_plain_lines(checks, notes=()):
+    """The DEFAULT report: one outcome line, then what needs a look.
+
+    The outcome comes from :func:`verify_summary`'s ``failed`` and ``warn``,
+    the same counts the exit rule reads, so a FAIL can never read as intact.
+    Every warned or failed check follows in V order as its plain
+    label and its detail, then every note; nothing is dropped to make the
+    answer shorter. Each detail and note passes through :func:`plain_detail`;
+    no V id, status token or count is printed — those are
+    ``--verbose``'s and ``--json``'s.
+    """
+    counts = verify_summary(checks, notes)
+    if counts["failed"]:
+        out = ["The record is damaged:"]
+    elif counts["warn"]:
+        out = ["The record is intact; these need a look:"]
+    else:
+        out = ["The record is intact."]
+    out += [
+        "  %s: %s" % (CHECK_LABELS[row["id"]], plain_detail(row["detail"]))
+        for row in checks
+        if row["status"] != "ok"
+    ]
+    out += ["  %s" % plain_detail(note) for note in notes]
+    return out
+
+
 def verify_corroboration(repo, unit, events, state, committed):
     """V15–V19 — what git can corroborate, at the levels contract 5.9 fixes.
 
     None of the five can report a FAIL, and that is the point rather than an
     oversight: git history is rewritable, so it is tamper-EVIDENCE and never
-    tamper-proofing (T-17-40). A maintenance edit or a squash merge reported as
+    tamper-proofing. A maintenance edit or a squash merge reported as
     a failure trains the reader to ignore the one signal — a record-integrity
     FAIL — that means the record is actually broken.
 
@@ -6957,20 +7663,28 @@ def verify_corroboration(repo, unit, events, state, committed):
     problems = []
     if missing:
         problems.append(
-            "history_squashed: the ledger line(s) at seq %s are committed and no "
-            "commit carries their Crayon-Seq trailer" % _seq_list(missing)
+            said(
+                "history_squashed: the ledger line(s) at seq %s are committed and no "
+                "commit carries their Crayon-Seq trailer",
+                _seq_list(missing),
+            )
         )
     if out_of_order:
         problems.append(
-            "history_squashed: the trailer commits for seq %s do not appear in seq "
-            "order in this history" % _seq_list(out_of_order)
+            said(
+                "history_squashed: the trailer commits for seq %s do not appear in "
+                "seq order in this history",
+                _seq_list(out_of_order),
+            )
         )
     rows.append(
         _finding(
             "V15",
             problems,
-            "%d committed seq(s) have their Crayon-Seq trailer commit, in order"
-            % committed
+            said(
+                "%d committed seq(s) have their Crayon-Seq trailer commit, in order",
+                committed,
+            )
             if committed
             else "no committed event to corroborate",
         )
@@ -7003,11 +7717,14 @@ def verify_corroboration(repo, unit, events, state, committed):
             checked += 1
             if not ancestry[commit]:
                 problems.append(
-                    "ledger_diverged: the commit recorded at seq %s (%s) is not an "
-                    "ancestor of HEAD" % (_seq_of(event), commit[:7])
+                    said(
+                        "ledger_diverged: the commit recorded at seq %s (%s) is not "
+                        "an ancestor of HEAD",
+                        _seq_of(event), commit[:7],
+                    )
                 )
         clean = (
-            "%d recorded commit(s) are ancestors of HEAD" % checked
+            said("%d recorded commit(s) are ancestors of HEAD", checked)
             if checked
             else "no event records a commit to place in this history"
         )
@@ -7017,7 +7734,7 @@ def verify_corroboration(repo, unit, events, state, committed):
     # that pins the ledger's text handling. Both asked of GIT, through the
     # locale-pinned wrapper, rather than read out of the two files by hand: a
     # second parser of .gitignore/.gitattributes is a second opinion about
-    # patterns git already owns (WR-01's argument, applied to the read surface).
+    # patterns git already owns.
     staging = os.path.join(".crayon", "staging")
     ignored = git(
         ["check-ignore", "-q", "--", os.path.join(staging, "lock")],
@@ -7029,17 +7746,20 @@ def verify_corroboration(repo, unit, events, state, committed):
     pinned = attribute.returncode == 0 and attribute.stdout.strip().endswith(": unset")
     problems = []
     if ignored.returncode != 0:
-        problems.append("%s/ is not gitignored" % staging)
+        problems.append(said("%s/ is not gitignored", staging))
     if not pinned:
         problems.append(
-            "%s is not pinned -text; contract 5.2 puts `*.jsonl -text` in "
-            ".crayon/.gitattributes" % relative
+            said(
+                "%s is not pinned -text; contract 5.2 puts `*.jsonl -text` in "
+                ".crayon/.gitattributes",
+                relative,
+            )
         )
     rows.append(
         _finding(
             "V17",
-            [SEGMENT.join(problems)] if problems else [],
-            "%s/ is gitignored and the ledger is pinned -text" % staging,
+            [said_join(SEGMENT, problems)] if problems else [],
+            said("%s/ is gitignored and the ledger is pinned -text", staging),
         )
     )
 
@@ -7067,13 +7787,13 @@ def verify_corroboration(repo, unit, events, state, committed):
             shared = sorted(mine.intersection(sibling["targets"]))
             if shared:
                 problems.append(
-                    "%s and %s both claim %s" % (unit, other, ", ".join(shared))
+                    said("%s and %s both claim %s", unit, other, ", ".join(shared))
                 )
     rows.append(
         _finding(
             "V18",
             problems,
-            "no other live unit claims any of %s's %d target(s)" % (unit, len(mine))
+            said("no other live unit claims any of %s's %d target(s)", unit, len(mine))
             if mine
             else "no signed target to claim",
         )
@@ -7092,18 +7812,27 @@ def verify_corroboration(repo, unit, events, state, committed):
             digest = digest_file(full) if contained(root, full) else None
             if digest is None:
                 problems.append(
-                    "the source %s recorded at the signoff cannot be read now" % path
+                    said(
+                        "the source %s recorded at the signoff cannot be read now",
+                        path,
+                    )
                 )
             elif digest != context[path]:
-                problems.append("the source %s has changed since the signoff" % path)
+                problems.append(
+                    said("the source %s has changed since the signoff", path)
+                )
         if state.get("plan_stale"):
             problems.append(
-                "plan_stale: unit.md has changed since the signoff at seq %s"
-                % state.get("so_seq")
+                said(
+                    "plan_stale: unit.md has changed since the signoff at seq %s",
+                    state.get("so_seq"),
+                )
             )
         clean = (
-            "%d recorded context digest(s) still match and the plan is current"
-            % len(context)
+            said(
+                "%d recorded context digest(s) still match and the plan is current",
+                len(context),
+            )
         )
     rows.append(_finding("V19", problems, clean))
     return rows
@@ -7116,20 +7845,20 @@ def run_verify(repo, unit, events, snapshot, state, split=None):
     come in; nothing here re-derives routing or state. That is what keeps the
     record's story single-valued — a verifier that recomputes what the tool
     computes can disagree with the tool the author is actually driving, which is
-    also why phase 19's scorer keeps its independent oracle to four checks.
+    also why ``validation/score.py`` keeps its independent oracle to four checks.
 
     Two reuses are load-bearing rather than incidental:
 
-    * V2 and V3 consume :func:`verify_chain`'s findings list. Phase 16 changed
-      that function from returning a boolean to returning findings FOR this
-      consumer; re-walking the same bytes here would be a second opinion.
+    * V2 and V3 consume :func:`verify_chain`'s findings list. That function
+      returns findings, not a boolean, FOR this consumer; re-walking the same
+      bytes here would be a second opinion.
     * V14 renders through :func:`describe_paths`, and with it
       :func:`drift_status` — the same four status words ``show``'s text and
       ``summary``'s golden already pin.
 
     Every check runs and reports, vacuous or not: a check with nothing to
     examine says so rather than falling silent. Silence and success are
-    indistinguishable to a reader, and this report exists to be read (T-17-39).
+    indistinguishable to a reader, and this report exists to be read.
     """
     complete, partial, committed, _relative = (
         split if split is not None else ledger_split(repo, unit)
@@ -7151,8 +7880,8 @@ def md_value(text):
     Non-strings are rendered rather than refused — this is a report, and the
     reader is better served by seeing what the record holds than by a crash on
     the read-only verb. ``.crayon/`` is committed and the chain is an unkeyed
-    sha256, so a forged ``note`` really is contributor input: before WR-01
-    ``md_cell`` reached ``str.replace`` on it directly and raised
+    sha256, so a forged ``note`` really is contributor input: ``md_cell`` once
+    reached ``str.replace`` on it directly and raised
     ``AttributeError`` out of :func:`summary_markdown` into ``main``'s
     catch-all, reporting ``ledger_corrupt`` (6) — "the record could not be
     derived" — for a record that derives perfectly well.
@@ -7169,7 +7898,7 @@ def md_bound(text, limit=400):
 
     :func:`collapse_note` caps too, but only as part of flattening to one line.
     A table cell is the one position whose contract REQUIRES the newlines
-    (T-16-39: they become ``<br>`` and the table keeps its column count), so it
+    (they become ``<br>`` and the table keeps its column count), so it
     needs the cap without the flattening.
     """
     if len(text) > limit:
@@ -7185,20 +7914,20 @@ def md_cell(text, limit=400):
     the round-trip claim is only true if nothing quietly edits them. A table
     cell is the one place those characters would break the document's own
     structure, so here a pipe is escaped and a newline becomes a ``<br>``. The
-    characters stay visible; the table keeps its column count (T-16-39).
+    characters stay visible; the table keeps its column count.
 
     ``&``/``<``/``>`` are escaped for the reason :func:`md_text` states — this
     document is pasted into a pull request and Markdown renders raw HTML — and
     the two rules are independent, so the cell keeps its ``<br>`` AND loses its
-    live elements (CR-03). The order is load-bearing: the HTML escaping runs
+    live elements. The order is load-bearing: the HTML escaping runs
     first, so the ``<br>`` this function emits afterwards is a real break rather
     than the text ``&lt;br&gt;``. Steering notes and withdrawal reasons land in
     this position, and they are the most common contributor-controlled strings
     in the whole report.
 
-    WR-01: the position also takes :func:`md_value` and :func:`md_bound`, which
-    is what its two siblings get from :func:`md_flat`. CR-03 added the HTML
-    escaping here and left both out, so the ONE render whose threat model is "a
+    The position also takes :func:`md_value` and :func:`md_bound`, which is
+    what its two siblings get from :func:`md_flat`. The HTML escaping was once
+    added here without both, so the ONE render whose threat model is "a
     reviewer pastes this into a PR" was the UNCAPPED one — a legitimate 60 KiB
     steering note, well inside ``MAX_NOTE_BYTES``, produced a 60 KiB
     ``summary --md`` against a 388-byte ``summary``, exactly inverting the
@@ -7218,7 +7947,7 @@ def md_cell(text, limit=400):
 
 
 def md_flat(text, limit=400):
-    """One capped line — a value can never open a block of its own (WR-11).
+    """One capped line — a value can never open a block of its own.
 
     The ONE property every contributor-controlled value needs before it is
     interpolated into ``summary --md``: no newline, so a forged note cannot
@@ -7246,13 +7975,31 @@ def md_text(text, limit=400):
     whose ``<br>`` is deliberate and whose contract is the table's column count
     — it does the same HTML escaping, for the same reason, before emitting that
     ``<br>``.
+
+    A value that opens with a block marker (``#``, ``+``, ``*``,
+    ``-``, ``1.``, ``1)``) would be a heading or a list inside its list item, so
+    the marker is backslash-escaped. ``>`` is already ``&gt;``, which opens no
+    quote.
     """
-    return (
+    return _MD_LEAD.sub(
+        _md_lead,
         md_flat(text, limit)
         .replace("&", "&amp;")
         .replace("<", "&lt;")
-        .replace(">", "&gt;")
+        .replace(">", "&gt;"),
     )
+
+
+#: A leading block marker: one that a space or the end follows.
+_MD_LEAD = re.compile(r"^(?:#+|[+*\-]+|\d+[.)])(?=\s|$)")
+
+
+def _md_lead(match):
+    """``\\#`` / ``\\-`` before a marker, ``1\\.`` inside an ordered one."""
+    lead = match.group(0)
+    if lead[0].isdigit():
+        return lead[:-1] + "\\" + lead[-1]
+    return "\\" + lead
 
 
 def md_code(text, limit=400):
@@ -7273,7 +8020,7 @@ def sphinx_result(repo):
     Reported, never produced: crayon does not build, and the RUN file is written
     by whoever ran Sphinx. With no such file the section is simply absent.
 
-    WR-11: the RUN file is UNTRACKED, unvalidated working-tree input, and its
+    The RUN file is UNTRACKED, unvalidated working-tree input, and its
     ``sphinx`` value was ``%s``-formatted into the document whatever it was —
     a dict, a list, or a megabyte of text. Only a non-empty string is reported,
     and only its first 120 collapsed characters: a result this tool did not
@@ -7304,19 +8051,24 @@ def sphinx_result(repo):
     return ""
 
 
-def provenance_line(repo, unit, state, checks):
+def short_head(repo):
+    """HEAD's seven-character sha, or ``no commit``: the record line's anchor."""
+    return git(["rev-parse", "--short=7", "HEAD"], repo).stdout.strip() or "no commit"
+
+
+def provenance_line(repo, unit, state, checks, head=None):
     """`record: … · page: …` — two halves, each claiming only what was checked.
 
     The record half is `verify`'s OWN verdict over `checks`, computed by
     :func:`run_verify` in this same invocation, over the same snapshot and the
-    same derivation. Through phase 16 it said the verifier had not run, because
-    V1–V19 were phase-17 work (T-16-37, broken window 9); now it quotes the
-    verdict, the short head sha and the counts, and a failing record names the
-    ids that failed. The page half compares the recorded basis digests with the
-    bytes on disk — the one thing the record settles on its own — and it stays
-    separate because the two answer different questions.
+    same derivation. It quotes the verdict, the short head sha and the counts,
+    and a failing record names the ids that failed. The page half compares the
+    recorded basis digests with the bytes on disk — the one thing the record
+    settles on its own — and it stays separate because the two answer
+    different questions. ``head`` is the
+    caller's :func:`short_head` when it already read one.
     """
-    head = git(["rev-parse", "--short=7", "HEAD"], repo).stdout.strip() or "no commit"
+    head = head or short_head(repo)
     counts = verify_summary(checks, state.get("warnings") or [])
     record = "verify %s at %s (%d checks, %d warn, %d fail%s)" % (
         counts["verdict"],
@@ -7326,30 +8078,85 @@ def provenance_line(repo, unit, state, checks):
         counts["fail"],
         (": " + ", ".join(counts["failed"])) if counts["failed"] else "",
     )
-    if state["basis"] is None:
-        page = "no basis recorded"
-    elif state["page_missing"]:
-        page = "missing"
-    elif state["page_drift"]:
-        commit = find_seq_commit(repo, unit, state["basis_seq"])
-        sha = (commit or state["basis"].get("commit") or "")[:7] or "unknown"
-        page = "drifted since %s" % sha
-    else:
-        page = "current"
+    page = _provenance_page(repo, unit, state, False)
     return "record: %s · page: %s" % (record, page)
 
 
-def summary_data(repo, unit, events, snapshot, state):
-    """Everything §3.3 says `summary` reports, gathered once and rendered thrice.
+def _provenance_page(repo, unit, state, plain):
+    """The page half both provenance lines share: the basis against the disk.
+
+    ``plain`` only changes the words for a unit with no page yet and for a drift
+    whose recording commit is not found: the plain line says ``drifted since an
+    earlier commit`` rather than name the recording's parent, where
+    the counted line keeps its contract-1 fallback. ``missing``, ``drifted since
+    <sha7>`` and ``current`` read the same in both lines.
+    """
+    if state["basis"] is None:
+        return "no page recorded yet" if plain else "no basis recorded"
+    if state["page_missing"]:
+        return "missing"
+    if state["page_drift"]:
+        commit = find_seq_commit(repo, unit, state["basis_seq"])
+        if plain and not commit:
+            return "drifted since an earlier commit"
+        sha = (commit or state["basis"].get("commit") or "")[:7] or "unknown"
+        return "drifted since %s" % sha
+    return "current"
+
+
+def plain_provenance_line(repo, unit, state, checks, head=None):
+    """The human provenance line of ``summary`` and ``summary --md``.
+
+    The same checks as :func:`provenance_line`, over the same snapshot, said
+    plainly: ``intact at <sha7>``, ``intact at <sha7>; needs a look: <labels>``
+    or ``damaged at <sha7>: <labels>``. Checks are named by
+    :data:`CHECK_LABELS`, never by their V id or a count. A damaged record says
+    so and names what failed: plain words never hide a failure.
+    Human only, so not a ``--json`` key: ``summary --json``'s ``provenance``
+    keeps the counts the review skill's reference documents. ``head`` is the
+    caller's :func:`short_head`, so ``summary`` reads HEAD once.
+    """
+    head = head or short_head(repo)
+    notes = state.get("warnings") or []
+    counts = verify_summary(checks, notes)
+    if counts["failed"]:
+        record = "damaged at %s: %s" % (
+            head,
+            ", ".join(CHECK_LABELS.get(vid, vid) for vid in counts["failed"]),
+        )
+    elif counts["warn"]:
+        labels = [
+            CHECK_LABELS.get(row["id"], row["id"])
+            for row in checks
+            if row["status"] == "warn"
+        ]
+        if notes:
+            labels.append("events of an unknown kind")
+        record = "intact at %s; needs a look: %s" % (head, ", ".join(labels))
+    else:
+        record = "intact at %s" % head
+    return "record: %s · page: %s" % (record, _provenance_page(repo, unit, state, True))
+
+
+def summary_data(
+    repo, unit, events, snapshot, state, checks=None, recorded=True, head=None
+):
+    """Everything `summary` reports, gathered once and rendered thrice.
 
     ``snapshot`` is the caller's own ``read_fs`` result, threaded through rather
     than re-taken: the provenance half runs :func:`run_verify` over it, so the
     record's verdict and the page's status describe ONE instant. A second
     snapshot here would let `summary` report a page as current and drifted in
-    the same breath.
+    the same breath. ``checks`` is that run's result when the caller already
+    has it, so the JSON ``provenance`` (counts, for the review skill) and the
+    human :func:`plain_provenance_line` describe the same checks.
+    ``recorded`` keeps request and reviewer-edit notes as the ledger holds them,
+    for ``--json``; the human renders pass ``False`` and read them as text.
+    ``head`` is the caller's :func:`short_head`, shared with the human line.
     """
     title, intent, audience = unit_headline(events, state, unit)
-    checks = run_verify(repo, unit, events, snapshot, state)
+    if checks is None:
+        checks = run_verify(repo, unit, events, snapshot, state)
     gen = state["gen"]
     floor = state["gen_seq"] if state["gen_seq"] is not None else 0
     gaps = list((gen or {}).get("gaps") or [])
@@ -7362,16 +8169,18 @@ def summary_data(repo, unit, events, snapshot, state):
         "intent": intent,
         "audience": audience,
         "files": [path for path, _ in _basis_pairs(state["basis"])],
-        "requests": describe_requests(events, floor),
-        "reviewer_edits": reviewer_edits_since(events, floor),
+        "requests": describe_requests(events, floor, recorded),
+        "reviewer_edits": reviewer_edits_since(events, floor, recorded),
         "gaps": gaps,
         "steps": step_tally(events),
         "sphinx": sphinx_result(repo),
         "model": (gen or {}).get("model") or "",
         "model_origin": (gen or {}).get("model_origin") or "",
-        "provenance": provenance_line(repo, unit, state, checks),
+        "provenance": provenance_line(repo, unit, state, checks, head),
         "state": state["state"],
         "next": route(state),
+        "author_notes": author_notes(events),
+        "handover": handover_of(events),
     }
 
 
@@ -7380,24 +8189,51 @@ def _disposition_text(row, verbatim):
     if row["disposition"] != "withdrawn":
         return row["disposition"]
     reason = row["reason"] if verbatim else collapse_note(row["reason"], 200)
-    return "withdrawn: %s" % reason
+    return "withdrawn: %s" % reason if reason else "withdrawn"
 
 
-def summary_text(data):
-    """The plain report: one section per §3.3 heading, empty ones omitted."""
+def _author_decisions(data):
+    """The intent, audience, notes and open items "Author decisions" lists."""
+    notes = [
+        (note_label(entry), _as_text(entry.get("note")))
+        for entry in data.get("author_notes") or []
+    ]
+    return data["intent"], data["audience"], notes, open_items(data.get("handover"))
+
+
+def summary_text(data, record):
+    """The plain report: one section per heading, empty ones omitted.
+
+    "Author decisions" comes first: the author's judgment is read before
+    the file list. Each sub-block appears only when it has items. ``record`` is
+    :func:`plain_provenance_line`'s, printed where the JSON keeps its counted
+    ``provenance``.
+    """
     out = [data["title"]]
+    intent, audience, notes, items = _author_decisions(data)
+    if intent or audience or notes or items:
+        out.append("author decisions:")
+        if intent:
+            out.append("  intent: %s" % intent)
+        if audience:
+            out.append("  audience: %s" % audience)
+        if notes:
+            out.append("  notes:")
+            out += [
+                "    %s: %s" % (label, collapse_note(note, 200)) if note else "    " + label
+                for label, note in notes
+            ]
+        if items:
+            out.append("  still open at handover:")
+            out += ["    %s" % collapse_note(item, 200) for item in items]
     if data["files"]:
         out.append("files changed:")
         out += ["  %s" % path for path in data["files"]]
-    if data["intent"]:
-        out.append("intent: %s" % data["intent"])
-    if data["audience"]:
-        out.append("audience: %s" % data["audience"])
     if data["requests"]:
         out.append("recorded requests:")
         for row in data["requests"]:
             out.append(
-                "  seq %s — %s — %s: %s"
+                "  request %s — %s — %s: %s"
                 % (
                     row["seq"],
                     _disposition_text(row, False),
@@ -7408,9 +8244,7 @@ def summary_text(data):
     if data["reviewer_edits"]:
         out.append("reviewer edits:")
         for entry in data["reviewer_edits"]:
-            out.append(
-                "  seq %s — %s" % (entry["seq"], collapse_note(entry["note"], 200))
-            )
+            out.append("  - %s" % collapse_note(_as_text(entry["note"]), 200))
     if data["gaps"]:
         out.append("known gaps:")
         out += ["  - %s" % collapse_note(gap, 200) for gap in data["gaps"]]
@@ -7420,18 +8254,18 @@ def summary_text(data):
         out.append("sphinx: %s" % data["sphinx"])
     if data["model"]:
         out.append("model: %s (%s)" % (data["model"], data["model_origin"]))
-    out.append(data["provenance"])
+    out.append(record)
     return "\n".join(out) + "\n"
 
 
-def summary_markdown(data):
+def summary_markdown(data, record):
     """The paste-ready PR text: the same sections, as Markdown.
 
-    WR-11: every contributor-controlled value goes through an escaper chosen
+    Every contributor-controlled value goes through an escaper chosen
     for its position — :func:`md_cell` in a table cell, :func:`md_code` inside
     a code span, :func:`md_text` everywhere else. EVERY value, with no
     exceptions left to remember: the rule is checkable by reading the function
-    only if reading it finds no bare interpolation (WR-13). It used to be only the first
+    only if reading it finds no bare interpolation. It used to be only the first
     of the three, so a forged title, audience, reviewer-edit note, known gap or
     Sphinx result was emitted verbatim into text a reviewer pastes into a PR.
 
@@ -7439,31 +8273,44 @@ def summary_markdown(data):
     "pick the one for the position" a rule rather than three rules: the
     non-string guard and the cap from :func:`md_value` / :func:`md_bound`, and
     no live HTML. They differ only in what the position additionally forbids —
-    a newline, a backtick, a pipe. WR-01: ``md_cell`` carried the HTML rule
-    alone for one iteration, which made the table position the one place a
+    a newline, a backtick, a pipe. ``md_cell`` once carried the HTML rule
+    alone, which made the table position the one place a
     value could still be unbounded or crash the render.
     The characters stay VISIBLE, which is the same rule ``md_cell`` follows:
     what is removed is the value's ability to forge the document's structure,
     never the reader's ability to see what the record holds. The plain
     (:func:`summary_text`) render is unescaped on purpose — it is terminal
     output, not a document.
+
+    ``record`` is :func:`plain_provenance_line`'s human line; ``summary
+    --json``'s ``provenance`` keeps the counts.
     """
     out = ["# %s" % md_text(data["title"])]
+    intent, audience, notes, items = _author_decisions(data)
+    if intent or audience or notes or items:
+        out += ["", "## Author decisions", ""]
+        if intent:
+            out.append("- **Intent:** %s" % md_text(intent))
+        if audience:
+            out.append("- **Audience:** %s" % md_text(audience))
+        if notes:
+            out += ["", "### The author's notes", ""]
+            out += [
+                "- %s" % md_text("%s: %s" % (label, note) if note else label)
+                for label, note in notes
+            ]
+        if items:
+            out += ["", "### Still open at handover", ""]
+            out += ["- %s" % md_text(item) for item in items]
     if data["files"]:
         out += ["", "## Files changed", ""]
         out += ["- `%s`" % md_code(path) for path in data["files"]]
-    if data["intent"] or data["audience"]:
-        out += ["", "## Intent and audience", ""]
-        if data["intent"]:
-            out.append("- **Intent:** %s" % md_text(data["intent"]))
-        if data["audience"]:
-            out.append("- **Audience:** %s" % md_text(data["audience"]))
     if data["requests"]:
         out += [
             "",
             "## Recorded requests",
             "",
-            "| seq | disposition | request |",
+            "| request | disposition | note |",
             "| --- | --- | --- |",
         ]
         for row in data["requests"]:
@@ -7477,10 +8324,7 @@ def summary_markdown(data):
             )
     if data["reviewer_edits"]:
         out += ["", "## Reviewer edits", ""]
-        for index, entry in enumerate(data["reviewer_edits"]):
-            if index:
-                out.append("")
-            out.append("**seq %s** — %s" % (entry["seq"], md_text(entry["note"])))
+        out += ["- %s" % md_text(entry["note"]) for entry in data["reviewer_edits"]]
     if data["gaps"]:
         out += ["", "## Known gaps", ""]
         out += ["- %s" % md_text(gap) for gap in data["gaps"]]
@@ -7501,18 +8345,18 @@ def summary_markdown(data):
             "`%s` (origin: `%s`)"
             % (md_code(data["model"]), md_code(data["model_origin"])),
         ]
-    # WR-13: the last raw interpolation. It is tool-derived today — `git
-    # rev-parse` output, verify counts, check ids — but `state["basis"]`'s
-    # `commit` is a LEDGER value and therefore forgeable, and WR-11's rule is
+    # The last raw interpolation. It is tool-derived today — `git
+    # rev-parse` output, check labels — but `state["basis"]`'s
+    # `commit` is a LEDGER value and therefore forgeable, and the rule is
     # "every contributor-controlled value goes through an escaper chosen for
     # its position". One exception means the next reader cannot verify the rule
     # by reading the function, which is the whole point of stating it that way.
-    out += ["", "## Provenance", "", md_text(data["provenance"])]
+    out += ["", "## Provenance", "", md_text(record)]
     return "\n".join(out) + "\n"
 
 
 def cmd_summary(args):
-    """``summary`` — the §3.3 report, and with ``--md`` the paste-ready PR text.
+    """``summary`` — the unit's report, and with ``--md`` the paste-ready PR text.
 
     Over the same single ``read_fs()`` + ``derive()`` + ``route()`` as ``show``
     and under the same read-only write boundary — the snapshot is threaded into
@@ -7522,21 +8366,28 @@ def cmd_summary(args):
 
     The report says a request was **recorded** and then **disposed**; it never
     says steering was applied, because `resolves` is the reviewer's judgment and
-    not proof that any byte changed (T-16-36).
+    not proof that any byte changed.
     """
     as_json = bool(getattr(args, "json", False))
     as_md = bool(getattr(args, "md", False))
     unit = args.unit
     repo = git_root()
     events, snapshot, state = read_only_unit(repo, unit)
-    data = summary_data(repo, unit, events, snapshot, state)
+    checks = run_verify(repo, unit, events, snapshot, state)
+    # One HEAD read for both provenance lines.
+    head = short_head(repo)
+    data = summary_data(
+        repo, unit, events, snapshot, state, checks, recorded=as_json, head=head
+    )
 
     if as_json:
         sys.stdout.write(json.dumps(data, ensure_ascii=False) + "\n")
-    elif as_md:
-        sys.stdout.write(summary_markdown(data))
     else:
-        sys.stdout.write(summary_text(data))
+        record = plain_provenance_line(repo, unit, state, checks, head)
+        if as_md:
+            sys.stdout.write(summary_markdown(data, record))
+        else:
+            sys.stdout.write(summary_text(data, record))
     sys.stdout.flush()
     return EXITS["success"]
 
@@ -7551,7 +8402,7 @@ def cmd_version(args):
     """``version`` — the compatibility handshake every skill opens with (5.10).
 
     ``--json`` emits EXACTLY ``{"tool", "contract"}``. A third key would be an
-    unannounced contract change: phase 17's skills read this object to decide
+    unannounced contract change: the skills read this object to decide
     whether to run at all, and they stop on two INDEPENDENT conditions — a
     `contract` that is not equal to theirs, or a `tool` older than their
     `min_tool`. Neither number is derived from the other.
@@ -7662,8 +8513,9 @@ def read_sidecar(spec, flag, unit, shape):
     """The UTF-8 text of an agent-authored JSON side-car; ``-`` is stdin.
 
     Unreadable or not-UTF-8 is stage-b bad input (2) and carries ``bad_target``
-    per 16-03's rule; what the bytes MEAN is the caller's question. Shared by
-    ``--steps-file`` and ``--evidence-file`` so the two cannot drift.
+    (no reason code is invented for it); what the bytes MEAN is the caller's
+    question. Shared by ``--steps-file`` and ``--evidence-file`` so the two
+    cannot drift.
     """
     try:
         if spec == "-":
@@ -7687,16 +8539,16 @@ def read_sidecar(spec, flag, unit, shape):
 
 
 def read_steps_file(spec, unit=""):
-    """``--steps-file F|-`` into the validated step list (D-01, contract 5.6).
+    """``--steps-file F|-`` into the validated step list (contract 5.6).
 
     The plan is a JSON array of objects carrying exactly ``id``, ``text``,
     ``mode`` and ``stateful``; the tool adds ``text_hash``. There is no markdown
-    parser and the plan is never mirrored into ``unit.md`` — D-01 forbids that
-    by name, because a second copy of the plan re-opens the ``plan_stale``
-    friction the frontmatter hash exists to make rare.
+    parser and the plan is never mirrored into ``unit.md``, because a second
+    copy of the plan re-opens the ``plan_stale`` friction the frontmatter hash
+    exists to make rare.
 
-    Every shape, id and vocabulary fault refuses ``bad_target`` (2), which is
-    16-03's rule: the reason table names no code for "this input is malformed",
+    Every shape, id and vocabulary fault refuses ``bad_target`` (2), because
+    the reason table names no code for "this input is malformed",
     so the ``bad_*`` family's own code carries it and no key is invented. The
     one exception is unusable free text, which the note family already owns.
     """
@@ -7723,7 +8575,7 @@ def read_steps_file(spec, unit=""):
             hint="the step plan is %s" % STEPS_SHAPE,
         )
     if not parsed:
-        # STATE-03 probe 3: the contract does not pin this case, and the tool
+        # The contract does not pin this case, and the tool
         # decides it here. A plan with no steps can never resolve and would
         # route an actionable unit to `walk` for ever; refusing it says so at
         # the moment it could still be fixed.
@@ -7902,7 +8754,7 @@ def cmd_plan_steps(args):
 
 
 def evidence_path(repo, unit, steps_seq, step_id):
-    """The tool's own copy of a step's captured output (D-04).
+    """The tool's own copy of a step's captured output.
 
     ``.crayon/staging/<id>/scratch/evidence/<steps_seq>-<step_id>.out``. The seq
     is in the name because the same step id is re-run against a later plan and
@@ -7986,7 +8838,7 @@ def read_evidence_file(spec, unit=""):
             "(the author ran it)",
         )
     # `command` is recorded as data: the tool never runs it, and every git call
-    # it makes is an argv list with no shell (T-17-23).
+    # it makes is an argv list with no shell.
     command = payload.get("command")
     command = validate_note(str(command), unit, "command") if command is not None else ""
     reason = payload.get("reason")
@@ -8024,7 +8876,7 @@ def cmd_step(args):
     Stage e is `evidence_stale`, then `evidence_incomplete`, then
     `evidence_mismatch`.
 
-    The third exclusion is WR-02's and is the same defect as the other two one
+    The third exclusion is the same defect as the other two one
     field along: ``mode`` is not in the no-op tuple and is not compared, so an
     identical capture resubmitted under the wrong mode matched field for field
     and was refused ``already_recorded`` — "already on the record, field for
@@ -8032,13 +8884,13 @@ def cmd_step(args):
 
     Two properties the verb exists for. The digest is taken over the tool's OWN
     copy under ``.crayon/staging/``, written with ``publish_atomic``, so a later
-    mutation of the caller's source cannot change what was recorded (T-17-21).
+    mutation of the caller's source cannot change what was recorded.
     And the source path is checked against ``.crayon/staging/<id>/scratch/``
     BEFORE it is opened, so ``--output-file /etc/shadow`` — and
     ``--output-file .env.local`` or ``--output-file .git/config``, which the
-    repository-wide check this replaced let straight through (CR-03) — is
+    repository-wide check this replaced let straight through — is
     refused with nothing read and nothing written rather than having its first
-    4 KiB committed (T-17-18).
+    4 KiB committed.
 
     The narrow scope is the honest one, because of what happens next:
     :func:`scrub_excerpt` copies up to ``MAX_EXCERPT`` bytes VERBATIM into the
@@ -8102,7 +8954,7 @@ def cmd_step(args):
             # BEFORE the open: a path pointing at an arbitrary file would
             # otherwise have its first 4 KiB committed into the ledger.
             guard_crayon_root(repo, unit)
-            # WR-01: `guard_crayon_root` names `.crayon`, `.crayon/staging` and
+            # `guard_crayon_root` names `.crayon`, `.crayon/staging` and
             # `.crayon/units` — one level short of the two directories THIS
             # check resolves through. `contained` resolves BOTH operands with
             # `realpath`, so a symlinked `<staging>/<id>` or
@@ -8160,11 +9012,11 @@ def cmd_step(args):
         # never a pathspec, so producing it here changes nothing a refusal would
         # have to undo.
         #
-        # WR-04: the digest stays here; the REFUSAL for a missing capture moved
+        # The digest stays here; the REFUSAL for a missing capture moved
         # down into stage e, where 5.7 puts it — after `evidence_stale`. Raised
         # here it reported `evidence_incomplete` for a superseded `--steps-seq`
         # where the contract says `evidence_stale`, and the two share exit 4 so
-        # nothing noticed. D-03: `skipped` is the one verdict that needs no
+        # nothing noticed. `skipped` is the one verdict that needs no
         # bytes; its reason carries the why, and the digest of zero bytes says
         # plainly that nothing was captured rather than leaving the field
         # absent.
@@ -8182,7 +9034,7 @@ def cmd_step(args):
         # --- d: no-op recognition ---------------------------------------------
         # Contract 5.7 d defines the no-op on the tuple `(steps_seq, step_id,
         # verdict, exit_code, output_sha256, reason)` with NO recency
-        # qualifier. WR-01: this loop used to `break` at the first
+        # qualifier. This loop used to `break` at the first
         # `step-recorded` it reached whatever step that event named, so in a
         # multi-step walk a re-run of an EARLIER step saw a later step's record,
         # failed the comparison, and appended a duplicate event and a duplicate
@@ -8197,18 +9049,18 @@ def cmd_step(args):
         # `already_recorded` for evidence the tool is telling the caller to
         # re-run.
         #
-        # WR-05: `current_plan` is never None here — stage b already refused
+        # `current_plan` is never None here — stage b already refused
         # `bad_target` unless `--steps-seq` names a `steps-planned` event of
         # this unit, so at least one exists. The disjunct that tested for it
         # was dead.
         #
-        # WR-04: an incomplete submission is never a no-op either. With the
+        # An incomplete submission is never a no-op either. With the
         # `evidence_incomplete` raise moved to stage e, a non-`skipped` verdict
         # with no `--output-file` reaches d carrying the digest of zero bytes,
         # and a step genuinely recorded from an EMPTY capture would match it —
         # reporting `already_recorded` for evidence the caller never supplied.
         #
-        # WR-02 (iteration 3): the THIRD e-gate, and the same shape as the two
+        # The THIRD e-gate, and the same shape as the two
         # above. `mode` is not in 5.7's no-op tuple, and it is not on the two
         # sides of the comparison either, so a resubmission of the SAME capture
         # under a divergent `mode` matches field for field and d answers
@@ -8219,7 +9071,7 @@ def cmd_step(args):
         current_plan = _last_of(events, "steps-planned")
         # `planned_step` is never None here: stage b raises `step_unknown`
         # above unless the plan at `--steps-seq` names this step. A guard for it
-        # would be the dead disjunct WR-05 removed from this same block.
+        # would be dead, like the `current_plan` disjunct noted above.
         mode_diverges = evidence["mode"] != planned_step.get("mode")
         if (
             not missing_capture
@@ -8279,7 +9131,7 @@ def cmd_step(args):
                 "--output-file, or record the step as skipped with a reason",
             )
 
-        # WR-02: `read_evidence_file` checks that `mode` is one of the two the
+        # `read_evidence_file` checks that `mode` is one of the two the
         # contract names and stops there, so the record could claim a `ta`
         # execution for a step the plan declares `agent` — while `text_hash` is
         # taken from the PLAN, which made the event internally consistent and
@@ -8348,8 +9200,8 @@ def cmd_step(args):
 def report(lines, as_json):
     """Write a multi-line report to STDOUT, or nothing at all under ``--json``.
 
-    Two rules in one place. The diagnostic helper is stderr-only and GATE-04
-    allows a non-zero exit exactly one line there, so every report this file
+    Two rules in one place. The diagnostic helper is stderr-only and a
+    non-zero exit is allowed exactly one line there, so every report this file
     prints goes to stdout — and under ``--json`` contract 5.7 moves the refusal
     ITSELF to stdout, where a text block before it would leave the caller
     parsing a document that is not JSON. The structured half of each report
@@ -8437,7 +9289,7 @@ def basis_path(repo, unit, path):
     The manifest records `docs/reference/a.rst`; a basis event records
     `reference/a.rst`. `cmd_generate` builds the manifest by joining
     ``DOCS_ROOT`` onto each signed target, so this is that join inverted —
-    and the only place `resume --adopt` crosses between the two (CR-01).
+    and the only place `resume --adopt` crosses between the two.
 
     A manifest entry outside ``docs/`` — the `unit.md` of an interrupted
     ``unit edit --re-sign`` — has no basis form at all. `resume_adopt`'s first
@@ -8508,7 +9360,7 @@ def resume_adopt(repo, unit, found, rows, args):
     its parent directory both.
 
     This is an EDIT, never a review. A formatter is not a reviewer and no
-    verdict is recorded (T-17-33).
+    verdict is recorded.
 
     Returns the classification pass 2 continues with — the caller's own,
     unchanged, when this is a plain resume.
@@ -8540,9 +9392,9 @@ def resume_adopt(repo, unit, found, rows, args):
     # A repeated adopt after a crash between (ii) and (iii) finds its own line
     # already in the batch. Behave as a plain resume: a duplicate would record
     # one human decision twice in a record whose whole value is that each line
-    # is one decision (T-17-32).
+    # is one decision.
     if last.get("kind") == "reviewer-edit" and last.get("hook") is True:
-        # WR-03: say so. This arm records NO event, so a `--note` handed to it
+        # Say so. This arm records NO event, so a `--note` handed to it
         # is dropped — and the batch already satisfies all three published
         # conditions, so the author reasonably believed the words they wrote
         # were about to become the reviewer edit's note. `read_note` cannot
@@ -8569,7 +9421,7 @@ def resume_adopt(repo, unit, found, rows, args):
     if not adopted:
         return found, rows  # contract 5.8: a plain resume
 
-    # WR-09: BELOW both early returns, not above them. Contract 5.8 ends with
+    # BELOW both early returns, not above them. Contract 5.8 ends with
     # "`--adopt` with zero `unexpected` files is a plain resume", and a plain
     # resume has no reviewer edit to write a note onto — but `read_note` ran
     # first and refused `note_required` (2) for a run that was going to record
@@ -8593,7 +9445,7 @@ def resume_adopt(repo, unit, found, rows, args):
             next_token="resume",
         )
 
-    # CR-01: cross into the basis vocabulary HERE, before step (i), so a batch
+    # Cross into the basis vocabulary HERE, before step (i), so a batch
     # with no basis form refuses without leaving stray copies in adopt/.
     basis_paths = {
         entry["path"]: basis_path(repo, unit, entry["path"]) for entry in entries
@@ -8621,7 +9473,7 @@ def resume_adopt(repo, unit, found, rows, args):
             # the changed path would shrink the basis to whatever a formatter
             # happened to touch.
             #
-            # CR-01: in the BASIS vocabulary, which is not the manifest's. A
+            # In the BASIS vocabulary, which is not the manifest's. A
             # manifest entry names a repo-relative path (`docs/reference/a.rst`
             # — `perform_write` joins it onto the repo root); every basis event
             # names a docs-root-relative target (`reference/a.rst`), which is
@@ -8650,7 +9502,7 @@ def resume_adopt(repo, unit, found, rows, args):
     )
     crash_point("manifest")
 
-    # Pitfall 8 / T-17-30: RE-READ through the single reader that rejects an
+    # RE-READ through the single reader that rejects an
     # absolute path or a parent-directory segment. Adopt is the only code path
     # that writes a manifest from existing data, so skipping the re-read would
     # bypass that check exactly where a mangled entry would then be PLACED.
@@ -8672,7 +9524,7 @@ def resume_adopt(repo, unit, found, rows, args):
 
 
 def batch_drift(rows, state):
-    """The drifted paths THIS BATCH touched (phase-17 IN-04).
+    """The drifted paths THIS BATCH touched.
 
     The resume drift notice's condition and its wording have to describe the
     same thing. The condition was ``state["page_drift"]`` — any drifted basis
@@ -8727,7 +9579,7 @@ def resume_pass_two(repo, unit, found, rows, as_json):
 
     # Exactly the paths the manifest names, plus the ledger this batch is
     # appended to. Never a directory and never the working tree: a recovery
-    # runs with whatever the interruption left lying around (T-17-31).
+    # runs with whatever the interruption left lying around.
     pathspecs = [entry["path"] for entry in entries] + [relative_ledger]
     destinations = [(name, None) for name in pathspecs]
     guard_write_paths(repo, unit, destinations)
@@ -8781,7 +9633,7 @@ def resume_pass_two(repo, unit, found, rows, as_json):
             for row in rows if row["class"] == "unexpected"
         },
     )
-    # CR-01: this derivation runs AFTER `write_tail` has committed, so it must
+    # This derivation runs AFTER `write_tail` has committed, so it must
     # never be able to unmake the transition. `unit_state` -> `read_fs` ->
     # `contained_page` raises `Refusal` by design (`bad_write_path` on a `docs`
     # that no longer resolves inside the repository, `ledger_corrupt` on a
@@ -8795,15 +9647,14 @@ def resume_pass_two(repo, unit, found, rows, as_json):
     # `next_token_for`'s (fall back to `show`), except that here the failure is
     # SAID rather than silently swallowed: the author needs to know why the
     # route degraded, and the repository is in a state that needs their hands.
-    # WR-04: ONE list, printed to stderr and carried in the `--json` document
+    # ONE list, printed to stderr and carried in the `--json` document
     # both. These notices used to exist as structured data only on the refusal
     # path (`refusal.extra["notices"]`), so contract 5.8's "an unused note is
     # reported after success, or in the refusal's structured `notices` field if
     # completion fails" read as parity and was not: on success the three
     # skills, which consume `--json`, got no machine-readable signal that the
-    # note their author had just written was discarded. That is the iteration-7
-    # WR-03 failure — "the only signal was silence" — re-opened for the machine
-    # surface.
+    # note their author had just written was discarded. That is the "only
+    # signal was silence" failure, re-opened for the machine surface.
     notices = []
     try:
         state = unit_state(repo, unit)
@@ -8824,16 +9675,16 @@ def resume_pass_two(repo, unit, found, rows, as_json):
         )
     for notice in notices:
         diagnostic(notice)
-    segments = [
-        "resumed %s" % unit,
-        "seq %s" % result["seq_range"],
-        git(["rev-parse", "--short", "HEAD"], repo).stdout.strip(),
-        "%d file(s) placed" % len(place),
-    ]
+    short_head = git(["rev-parse", "--short", "HEAD"], repo).stdout.strip()
+    placed = "%d file(s) placed" % len(place)
+    segments = ["resumed %s" % unit, "completed the interrupted write", short_head, placed]
+    # `--json`'s message keeps its contract-1 wording.
+    json_segments = ["resumed %s" % unit, "seq %s" % result["seq_range"], short_head, placed]
     return respond(
         segments,
         route(state) if state is not None else "show",
         as_json,
+        json_segments=json_segments,
         payload={"notices": notices} if notices else None,
     )
 
@@ -8859,12 +9710,12 @@ def cmd_resume(args):
         git_busy_guard(repo, unit)
         # Report mode, never the raising one: the two rows stage a raises for
         # are precisely the two this verb exists to resolve, and the first of
-        # them raises with the hint `crayon resume <id>` (RESEARCH Pitfall 6).
+        # them raises with the hint `crayon resume <id>`.
         found = classify_stage_a(repo, unit, report_only=True)
         validate_unit_id(unit)
         found_guard(repo, unit, os.path.exists(ledger_path(repo, unit)))
 
-        # WR-09, the mirror of the check above: argparse puts `--note` outside
+        # The mirror of the check above: argparse puts `--note` outside
         # the `--overwrite`/`--adopt` mutually exclusive group, so
         # `resume <id> --note "…"` parsed fine and the note was discarded
         # without a word. A note is the record of a decision; a note with no
@@ -8876,10 +9727,8 @@ def cmd_resume(args):
                 unit=unit,
                 detail="--note records the reviewer edit --adopt writes; this "
                 "run records no edit, so the note has nothing to attach to",
-                # CR-02 (iteration 4): the third place the tool names
-                # `--adopt`, found by walking the offer sites rather than the
-                # ones a review reproduced. Unqualified it routes a mistyped
-                # flag straight into `adopt_unsupported`.
+                # The third place the tool names `--adopt`. Unqualified it
+                # routes a mistyped flag straight into `adopt_unsupported`.
                 hint='crayon resume %s --adopt --note "…" keeps the bytes on '
                 "disk; drop --note to resume without one — %s"
                 % (unit, ADOPT_PRECONDITION),
@@ -8933,8 +9782,25 @@ def cmd_resume(args):
 
         listed = [{"path": r["path"], "class": r["class"]} for r in rows]
         if args.dry_run:
-            segments = ["resumable %s" % unit, found["detail"], "%d file(s)" % len(rows)]
-            return respond(segments, "resume", as_json, payload={"files": listed})
+            # The count in words; the seq range stays in the
+            # `uncommitted_tail` refusal that shares `found["detail"]`.
+            # The shared items are named, as in `resume_pass_two`.
+            what = "resumable %s" % unit
+            counted = "%d file(s)" % len(rows)
+            segments = [
+                what,
+                "%d uncommitted event(s) from an interrupted write" % len(found["seqs"]),
+                counted,
+            ]
+            # `--json`'s message keeps its contract-1 wording.
+            json_segments = [what, found["detail"], counted]
+            return respond(
+                segments,
+                "resume",
+                as_json,
+                json_segments=json_segments,
+                payload={"files": listed},
+            )
 
         # A crash before contract 5.8's step (ii) leaves the adopt copies behind
         # with the OLD manifest still authoritative. They are stray: the next
@@ -8947,16 +9813,15 @@ def cmd_resume(args):
         # --- the decision (contract 5.8) --------------------------------------
         unexpected = [r for r in rows if r["class"] == "unexpected"]
         if unexpected and not (args.overwrite or args.adopt):
-            # WR-01 (iteration 9): WHICH two choices this batch has is not one
+            # WHICH two choices this batch has is not one
             # sentence. `resume_adopt` reads the same last event and takes a
             # different arm when it is already an adoption — no new reviewer
             # edit is written there, so `--note` is dropped, and `--overwrite`
             # restores the bytes that adoption saved rather than "discarding"
             # anything the author put on disk. Offering `--note '<why>'` on
-            # that batch is the iteration-7 WR-03 defect said out loud by the
-            # tool: the docs were corrected and this hint was not. Two raise
-            # sites rather than one branched string, so each hint stays a
-            # single contiguous literal that the S-13 walk reads whole.
+            # that batch would invite a note the tool then drops in silence.
+            # Two raise sites rather than one branched string, so each hint
+            # stays a single contiguous literal that the S-13 walk reads whole.
             last_event = json.loads(found["manifest"]["events"][-1])
             unexpected_files = [f for f in listed if f["class"] == "unexpected"]
             detail = (
@@ -8993,7 +9858,7 @@ def cmd_resume(args):
                 "resume_ambiguous",
                 unit=unit,
                 detail=detail,
-                # CR-02: `resume_adopt`'s precondition applies here
+                # `resume_adopt`'s precondition applies here
                 # identically — this refusal is raised on ANY batch whose placed
                 # files were rewritten, including the `signoff`, `unit edit`,
                 # `plan-steps`, `step`, `review`, `edits` and `unit retire`
@@ -9033,22 +9898,31 @@ def cmd_verify(args):
     Built on ``cmd_show``'s dual-render shape, with one deliberate difference in
     the preamble: the readers' :func:`read_only_unit` refuses at exit 6 on a
     unit with an uncommitted tail or damaged recovery material, and those are
-    precisely the units whose V1–V4 results the author needs (RESEARCH Pitfall
-    7). So stage a runs in the REPORT mode plan 17-06 added — the same table,
-    the same order, the same messages, returned instead of raised.
+    precisely the units whose V1–V4 results the author needs. So stage a runs
+    in the REPORT mode — the same table, the same order, the same messages,
+    returned instead of raised.
 
     The report is written and FLUSHED before any refusal, because a refusal is
     exactly one JSON line on stderr and that count is a harness assertion.
 
-    D-05's exit rule: any FAIL among V1–V13 raises the EXISTING
+    The exit rule: any FAIL among V1–V13 raises the EXISTING
     ``ledger_corrupt`` refusal, naming the failing ids, with ``next: show``.
     No new reason key is introduced — contract 5.7's reason table has no verify
-    row, U-07 asserts the tool's keys equal that table exactly, and phase 18's
-    docs check reads the same equality. Choosing between existing codes rather
-    than adding one is the discipline three phase-16 plans already applied.
-    WARN and INFO alone exit 0, with the full report still on stdout.
+    row, U-07 asserts the tool's keys equal that table exactly, and
+    ``check_docs.py`` reads the same equality. Choosing between existing codes
+    rather than adding one is the discipline the rest of this file applies.
+    WARN and INFO alone exit 0, with the report still on stdout.
+
+    Three renders of the one ``checks`` list: ``--json`` is the
+    machine's object and wins over ``--verbose``; ``--verbose`` is the
+    full V1–V19 report with its counts, byte for byte what it always was; the
+    default is :func:`verify_plain_lines`, the plain answer for the author.
+    The exit rule reads the same ``counts`` under all three. The default
+    render's refusal hint names each failing id with its plain label, so the
+    refusal and the report share one vocabulary.
     """
     as_json = bool(getattr(args, "json", False))
+    verbose = bool(getattr(args, "verbose", False))
     unit = args.unit
     repo = git_root()
     classify_stage_a(repo, unit, report_only=True)
@@ -9071,24 +9945,31 @@ def cmd_verify(args):
             "warnings": notes,
         }
         sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
-    else:
+    elif verbose:
         sys.stdout.write("\n".join(verify_report_lines(head, checks, notes)) + "\n")
+    else:
+        sys.stdout.write("\n".join(verify_plain_lines(checks, notes)) + "\n")
     sys.stdout.flush()
 
     if counts["failed"]:
+        hint = "the report above names each failing check"
+        if not (as_json or verbose):
+            hint += ": " + ", ".join(
+                "%s (%s)" % (vid, CHECK_LABELS[vid]) for vid in counts["failed"]
+            )
         raise Refusal(
             "ledger_corrupt",
             unit=unit,
             detail="record integrity failed: %s" % ", ".join(counts["failed"]),
-            hint="the report above names each failing check; %s is damaged and "
-            "nothing may be appended" % ledger_label(ledger_path(repo, unit)),
+            hint="%s; %s is damaged and nothing may be appended"
+            % (hint, ledger_label(ledger_path(repo, unit))),
             next_token="show",
         )
     return EXITS["success"]
 
 
 class _Parser(argparse.ArgumentParser):
-    """An argparse parser whose usage errors keep GATE-04's one-JSON-line rule."""
+    """An argparse parser whose usage errors keep the one-JSON-line refusal rule."""
 
     def error(self, message):
         raise Refusal(
@@ -9596,21 +10477,257 @@ def cmd_context_show(args):
     return respond(segments, next_token, as_json, state)
 
 
+# --- triage: the opt-in record of documentation-triage advice ---------------
+#
+# crayon-plan's triage section answers "does this change need documentation?"
+# with advice and stops. With the repository's ``crayon.collect`` git setting
+# true, ``triage record`` keeps that advice, hash-chained and committed, so that
+# ``triage export`` can later set it beside what the authors did: the unit they
+# declared, signed off and accepted for the change, or none. The records are
+# references only (a commit range, the changed paths, pages, a type, a note),
+# never the diff itself.
+
+TRIAGE_DIR = os.path.join(".crayon", "triage")
+TRIAGE_LOG = "log.jsonl"
+TRIAGE_PHASE = "triage-recorded"
+#: How long after a triage record a unit for the same paths still counts as the
+#: change's outcome, and how long a record waits before "no unit" labels it.
+TRIAGE_WINDOW_DAYS = 30
+
+
+def collection_on(repo):
+    """Is the triage mode on: ``git config crayon.collect`` reads ``true``?"""
+    done = git(["config", "--get", "crayon.collect"], repo)
+    return done.returncode == 0 and done.stdout.strip().lower() == "true"
+
+
+def resolve_commit(repo, rev, field):
+    """``rev`` as a full commit id, or ``bad_target``."""
+    if not isinstance(rev, str) or not rev or rev.startswith("-"):
+        raise Refusal("bad_target", detail="%s %r is not a revision" % (field, rev),
+                      hint="pass a commit, branch or tag, for example main or HEAD~3")
+    done = git(["rev-parse", "--verify", "--quiet", rev + "^{commit}"], repo)
+    if done.returncode != 0:
+        raise Refusal("bad_target", detail="%s %r names no commit" % (field, rev),
+                      hint="pass a commit, branch or tag that exists in this repository")
+    return done.stdout.strip()
+
+
+def triage_log_path(repo):
+    return os.path.join(os.fspath(repo), TRIAGE_DIR, TRIAGE_LOG)
+
+
+def cmd_triage_record(args):
+    """``triage record`` — keep one triage advice, when the repository turned collection on.
+
+    Off (the default), it writes nothing and says so: the skill always calls it,
+    so the tool, not the model, decides whether anything is kept. On, stages a
+    to f in a repo-level verb's shape: **a** lock; **b** the revisions, the
+    advice and the note; **c** a range that changed at least one path; **f**
+    append one line to ``.crayon/triage/log.jsonl`` and commit it alone.
+    """
+    as_json = bool(getattr(args, "json", False))
+    repo = git_root()
+    if not collection_on(repo):
+        return respond(
+            ["triage not recorded: collection is off for this repository",
+             "git config crayon.collect true turns it on"],
+            context_next(repo), as_json, payload={"recorded": False})
+    with unit_lock(repo):
+        git_busy_guard(repo)
+        base = resolve_commit(repo, args.base, "--base")
+        head = resolve_commit(repo, args.head, "--head")
+        pages = [validate_target(page) for page in (args.page or [])]
+        unit = validate_unit_id(args.unit_id) if args.unit_id else None
+        note = validate_note(args.note)
+        identity = git_identity(repo)
+        changed = git(["diff", "--name-only", "-z", base, head], repo)
+        paths = sorted(name for name in changed.stdout.split("\0") if name)
+        if changed.returncode != 0 or not paths:
+            raise Refusal("bad_target",
+                          detail="no path changed between %s and %s" % (base[:7], head[:7]),
+                          hint="pass the commit before the change as --base and its last "
+                               "commit as --head",
+                          next_token=context_next(repo))
+        path = triage_log_path(repo)
+        lines = []
+        if os.path.exists(path):
+            lines = [raw for _, raw in read_events(path)]
+        event = {
+            "seq": len(lines),
+            "prev": chain_prev(lines[-1]) if lines else None,
+            "at": utc_now(),
+            "actor": identity,
+            "tool_version": __version__,
+            "contract": CONTRACT,
+            "commit": git_head(repo),
+            "base": base,
+            "head": head,
+            "paths": paths,
+            "needs_docs": args.needs_docs == "yes",
+            "pages": pages,
+            "type": args.type,
+            "unit": unit,
+            "note": note,
+        }
+        text = "".join(line + "\n" for line in lines) + canonical_line(event) + "\n"
+        relative = os.path.join(TRIAGE_DIR, TRIAGE_LOG)
+        files = [(relative, text.encode("utf-8"))]
+        guard_write_paths(repo, "", files)
+        guard_placeable_paths(repo, "", files)
+        guard_ignored_paths(repo, "", [relative])
+        before_index = index_snapshot(repo)
+        publish_atomic(os.path.join(os.fspath(repo), relative), files[0][1])
+        added = git_add(repo, [relative])
+        if added.returncode != 0:
+            raise Refusal("bad_write_path",
+                          detail="git add refused the triage record: %s"
+                          % (added.stderr.strip().splitlines() or ["(no message)"])[0],
+                          hint="fix what git reports, then record the triage again",
+                          next_token=context_next(repo))
+        committed = git_commit(
+            repo, "crayon: triage recorded", collapse_note(note),
+            [("Crayon-Phase", TRIAGE_PHASE), ("Crayon-Head", (event["commit"] or "0" * 40)[:16])],
+            [relative])
+        if committed.returncode != 0:
+            raise Refusal("bad_write_path",
+                          detail="git commit refused the triage record: %s"
+                          % (committed.stderr.strip().splitlines() or ["(no message)"])[0],
+                          hint="fix what git reports, then record the triage again",
+                          next_token=context_next(repo))
+        diagnostic("git: committed %s — crayon: triage recorded"
+                   % git(["rev-parse", "--short", "HEAD"], repo).stdout.strip())
+        changed_files, extra = post_commit_check(
+            repo, [{"path": relative, "after_sha": sha256_bytes(files[0][1])}], [relative],
+            before_index)
+        report_hook_changes({"changed": changed_files, "extra": extra}, repo)
+    return respond(
+        ["recorded triage %d: %s" % (event["seq"], "needs documentation" if event["needs_docs"]
+                                     else "no documentation change"),
+         "%d changed path(s)" % len(paths), relative],
+        context_next(repo), as_json, payload={"recorded": True, "seq": event["seq"]})
+
+
+def _triage_time(text):
+    """An ``at`` as an aware datetime, or None when it is not the tool's format."""
+    try:
+        moment = datetime.datetime.strptime(text, "%Y-%m-%dT%H:%M:%S+00:00")
+    except (TypeError, ValueError):
+        return None
+    return moment.replace(tzinfo=datetime.timezone.utc)
+
+
+def _triage_outcome(record, units):
+    """What the authors did after one triage record: the unit it led to, if any.
+
+    A unit is linked by the id the record advised, or else, within the window,
+    by a signed source or target the record's changed paths or pages name.
+    """
+    matched, how = None, None
+    if record.get("unit") and record["unit"] in units:
+        matched, how = record["unit"], "unit id"
+    when = _triage_time(record.get("at"))
+    if matched is None and when is not None:
+        window = datetime.timedelta(days=TRIAGE_WINDOW_DAYS)
+        named = set(record.get("paths") or []) | set(record.get("pages") or [])
+        for unit, events in sorted(units.items()):
+            declared = next((e for e in events if e.get("kind") == "unit-declared"), None)
+            declared_at = _triage_time((declared or {}).get("at"))
+            if declared_at is None or not when <= declared_at <= when + window:
+                continue
+            signed = set()
+            for event in events:
+                if event.get("kind") == "signoff":
+                    signed |= set(s.get("path") for s in event.get("sources") or []
+                                  if isinstance(s, dict))
+                    signed |= set(event.get("targets") or [])
+            if signed & named:
+                matched, how = unit, "changed paths"
+                break
+    outcome = {"unit": matched, "matched_by": how, "intent": None, "targets": [],
+               "verdict": None, "accepted": False, "retired": False}
+    if matched is None:
+        return outcome
+    events = units[matched]
+    signoff = next((e for e in reversed(events) if e.get("kind") == "signoff"), None)
+    review = next((e for e in reversed(events) if e.get("kind") == "review"), None)
+    outcome.update(
+        intent=(signoff or {}).get("intent"),
+        targets=list((signoff or {}).get("targets") or []),
+        verdict=(review or {}).get("verdict"),
+        accepted=bool(review and review.get("verdict") == "accept"),
+        retired=any(e.get("kind") == "retired" for e in events),
+    )
+    return outcome
+
+
+def _triage_label(record, outcome, now):
+    """``(label, source)``: did the change need documentation, as the outcome shows?
+
+    An accepted unit says yes; a retired one, or no unit once the window has
+    passed, says no; anything else is not known yet, and is left unlabelled.
+    """
+    if outcome["accepted"]:
+        return True, "accepted unit"
+    if outcome["retired"]:
+        return False, "retired unit"
+    if outcome["unit"] is not None:
+        return None, "unit in progress"
+    when = _triage_time(record.get("at"))
+    if when is None:
+        return None, "no date"
+    if now - when >= datetime.timedelta(days=TRIAGE_WINDOW_DAYS):
+        return False, "no unit within %d days" % TRIAGE_WINDOW_DAYS
+    return None, "within %d days" % TRIAGE_WINDOW_DAYS
+
+
+def cmd_triage_export(args):
+    """``triage export`` — read-only: every triage record beside what the authors did."""
+    as_json = bool(getattr(args, "json", False))
+    repo = git_root()
+    path = triage_log_path(repo)
+    records = [event for event, _ in read_events(path)] if os.path.exists(path) else []
+    units = {}
+    units_root = os.path.join(os.fspath(repo), ".crayon", "units")
+    if os.path.isdir(units_root):
+        for unit in sorted(os.listdir(units_root)):
+            ledger = os.path.join(units_root, unit, "ledger.jsonl")
+            if os.path.isfile(ledger):
+                units[unit] = [event for event, _ in read_events(ledger, unit)]
+    # utc_now() so a fixture's CRAYON_NOW fixes the window as it fixes ``at``.
+    now = _triage_time(utc_now()) or datetime.datetime.now(datetime.timezone.utc)
+    rows = []
+    for record in records:
+        outcome = _triage_outcome(record, units)
+        label, source = _triage_label(record, outcome, now)
+        rows.append({
+            "seq": record.get("seq"), "at": record.get("at"), "base": record.get("base"),
+            "head": record.get("head"), "paths": record.get("paths") or [],
+            "advice": {"needs_docs": record.get("needs_docs"), "pages": record.get("pages") or [],
+                       "type": record.get("type"), "unit": record.get("unit")},
+            "note": record.get("note"), "outcome": outcome, "label": label,
+            "label_source": source,
+        })
+    labelled = sum(1 for row in rows if row["label"] is not None)
+    return respond(
+        ["%d triage record(s)" % len(rows), "%d with a label" % labelled],
+        context_next(repo), as_json, payload={"rows": rows})
+
+
 # --- argparse (the §6 verb table) -----------------------------------------
 
 
 def build_parser():
     """The contract's §6 verb table, complete — every verb, every argument.
 
-    ``crayon --help`` is a machine-diffed observable, not documentation: phase
-    18's ``check_docs.py`` compares it row for row with §6, and U-08 makes the
-    same comparison now so the two cannot drift during this phase. Every verb
-    was registered with its full signature from day one (D-16) and every one of
-    them now has a body: `verify` was the last stub, and the transitional
-    machinery went with it.
+    ``crayon --help`` is a machine-diffed observable, not documentation:
+    ``check_docs.py`` compares it row for row with §6, and U-08 makes the same
+    comparison so the two cannot drift. Every verb was registered with its full
+    signature from day one and every one of them now has a body: `verify` was
+    the last stub, and the transitional machinery went with it.
 
     ``--force`` is registered nowhere. ``slim@357c513``'s
-    ``dogen-signoff.sh --force`` wrote a second signoff row; VERB-01 removes
+    ``dogen-signoff.sh --force`` wrote a second signoff row; this tool drops
     the flag rather than renaming it, and the replacement is the `already_signed`
     no-op plus ``unit edit --re-sign``.
     """
@@ -9670,7 +10787,7 @@ def build_parser():
     edit.set_defaults(func=cmd_unit_edit)
 
     retire = unit_verbs.add_parser(
-        "retire", parents=[common], help="retire a unit (phase 17)"
+        "retire", parents=[common], help="retire a unit"
     )
     retire.add_argument("unit", help="unit id")
     retire.add_argument("--note", required=True, help="why the unit is retired")
@@ -9716,6 +10833,37 @@ def build_parser():
         "show", parents=[common], help="read-only: the published, staged and drifted artefacts"
     )
     context_show.set_defaults(func=cmd_context_show)
+
+    triage = verbs.add_parser(
+        "triage", help="record or export documentation-triage advice (opt-in per repository)"
+    )
+    triage_verbs = triage.add_subparsers(dest="triage_verb")
+
+    triage_record = triage_verbs.add_parser(
+        "record",
+        parents=[common],
+        help="keep one triage advice, when git config crayon.collect is true",
+    )
+    triage_record.add_argument("--base", required=True, help="the commit before the change")
+    triage_record.add_argument("--head", required=True, help="the change's last commit")
+    triage_record.add_argument(
+        "--needs-docs", required=True, choices=("yes", "no"),
+        help="the advice: does the change need a documentation change",
+    )
+    triage_record.add_argument(
+        "--page", action="append", default=[],
+        help="a docs-relative page the change affects (repeatable)",
+    )
+    triage_record.add_argument("--type", choices=INTENTS, help="the Diátaxis type advised")
+    triage_record.add_argument("--unit-id", help="the unit the advice would declare")
+    triage_record.add_argument("--note", required=True, help="why, in one or two sentences")
+    triage_record.set_defaults(func=cmd_triage_record)
+
+    triage_export = triage_verbs.add_parser(
+        "export", parents=[common],
+        help="read-only: every triage record beside what the authors did",
+    )
+    triage_export.set_defaults(func=cmd_triage_export)
 
     sign = verbs.add_parser(
         "signoff",
@@ -9853,7 +11001,7 @@ def build_parser():
     resume = verbs.add_parser(
         "resume",
         parents=[common],
-        help="complete an interrupted write in two passes (phase 17)",
+        help="complete an interrupted write in two passes",
     )
     resume.add_argument("unit", help="unit id")
     decision = resume.add_mutually_exclusive_group()
@@ -9899,6 +11047,11 @@ def build_parser():
         help="report contract 5.9's V1-V19 over the whole record",
     )
     verify.add_argument("unit", help="unit id")
+    verify.add_argument(
+        "--verbose",
+        action="store_true",
+        help="print the full V1–V19 report with its counts",
+    )
     verify.set_defaults(func=cmd_verify)
 
     version = verbs.add_parser(
@@ -9912,7 +11065,7 @@ def build_parser():
 
 
 def _argv_unit(args):
-    """The unit the parsed command line names, or ``""`` (CR-01).
+    """The unit the parsed command line names, or ``""``.
 
     Every unit-scoped verb takes the id as its first positional, so the parsed
     namespace is the one place ``main`` can attribute a refusal raised below the
@@ -9929,10 +11082,10 @@ def main(argv=None):
     # class of error a skill is most likely to hit while wiring up arguments —
     # was printed with as_json=False, i.e. to stderr, while contract 5.7 says
     # `--json`: stdout. The skill read stdout as JSON and saw an empty
-    # document (WR-06).
+    # document.
     raw = list(sys.argv[1:] if argv is None else argv)
     as_json = "--json" in raw
-    # CR-01: the generic backstops below reported `"unit": ""`, so the one line
+    # The generic backstops below used to report `"unit": ""`, so the one line
     # a skill gets could not name what it had just refused (or, before the
     # placeability guard, wedged). `args` carries the unit for every unit-scoped
     # verb; it is bound before the try so an exception from parse_args itself
@@ -9948,7 +11101,7 @@ def main(argv=None):
             return EXITS["success"]
         return handler(args)
     except Refusal as refusal:
-        # Contract 5.8's honest limit, D-08: the findings on stdout FIRST, then
+        # Contract 5.8's honest limit: the findings on stdout FIRST, then
         # the refusal. Under `--json` `report` prints nothing — 5.7 moves the
         # refusal itself to stdout, where a text block before it would leave the
         # caller parsing a document that is not JSON, and the same facts ride in
@@ -9956,7 +11109,7 @@ def main(argv=None):
         report(refusal.report_lines, as_json)
         return refuse(
             refusal.reason,
-            # WR-10: the fallback, not `refusal.unit` verbatim. CR-01 threaded
+            # The fallback, not `refusal.unit` verbatim. An earlier fix threaded
             # the unit into the three GENERIC backstops and left this arm --
             # the one every STRUCTURED refusal comes through -- reading a field
             # seven `read_events` call sites did not populate, so the common
@@ -9979,7 +11132,7 @@ def main(argv=None):
             as_json=as_json,
         )
     except json.JSONDecodeError as bad:
-        # WR-10: a `JSONDecodeError` IS a `ValueError`, so it used to land in
+        # A `JSONDecodeError` IS a `ValueError`, so it used to land in
         # the arm below and report a damaged RECORD as `bad_target` (2, "bad
         # input") — telling a skill the caller typed something wrong when the
         # truth is that a recorded line will not parse. `read_events` and
@@ -10012,14 +11165,14 @@ def main(argv=None):
         # code for a GATE refusal, so a skill reading the exit code would read
         # "no signoff / plan stale / drift" where the truth is "I could not
         # read the file". `bad_target` keeps REASONS row-for-row with the
-        # contract's reason table (the rule GATE-04 already applies to
+        # contract's reason table (the rule already applied to
         # validate_unit_id); a distinct io_error code belongs in the contract
         # first.
         #
-        # WR-22: `str(OSError)` embeds the ABSOLUTE filename, and the WR-15
+        # `str(OSError)` embeds the ABSOLUTE filename, and `acquire_lock`'s
         # re-raise made the common permission / read-only-filesystem case newly
         # reachable through this arm. `ledger_label` exists (dogen:895) exactly
-        # because WR-10 filed that leak: a diagnostic a skill is invited to
+        # because of that leak: a diagnostic a skill is invited to
         # paste into an issue or a commit message may not carry the caller's
         # filesystem layout. Rebuilt field by field rather than from `str(bad)`,
         # and repo-relativised HERE rather than at every raiser, so a future
@@ -10038,7 +11191,7 @@ def main(argv=None):
             as_json=as_json,
         )
     except Exception as bad:  # noqa: BLE001 - contract 5.7 admits no traceback
-        # CR-04: the four arms above are the exceptions this file RAISES. The
+        # The four arms above are the exceptions this file RAISES. The
         # invariant is about every exception it can REACH: an uncaught one
         # prints a Python traceback and exits 1, which contract 5.7 and REASONS
         # define as a gate refusal ("no signoff / plan stale / drift"), so a
@@ -10046,7 +11199,7 @@ def main(argv=None):
         # is that crayon fell over. Exit 6 is the record-and-recovery code, and
         # `detail` names the real exception rather than inventing a cause.
         #
-        # WR-23: the SHAPE is right and the exit code stays; the SENTENCE was a
+        # The SHAPE is right and the exit code stays; the SENTENCE was a
         # cause this arm never established. It fires for a `KeyError` in
         # `route()`, an `AttributeError` in `summary_markdown`, a `TypeError` in
         # repository discovery before any ledger is opened -- and it can fire
@@ -10054,7 +11207,7 @@ def main(argv=None):
         # record could not be derived; inspect the ledger" told all of them
         # their hash-chained record is damaged, and routed them to a verb that
         # was a stub, so the route went nowhere either. `next` is `show` for
-        # that reason and STAYS `show` now that plan 17-06 has landed the verb:
+        # that reason and STAYS `show` now that the verb exists:
         # this arm has established no interruption, and sending an internal
         # fault to the recovery verb would be the same wrong diagnosis with a
         # working destination. `error`, `hint` and `next` are the three fields a

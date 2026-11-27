@@ -32,7 +32,8 @@ five portable Agent Skills. Its behaviour is fixed by [[contract]], frozen at th
   transition ([[conventions]]).
 - A fixture, a routing row, a threshold or a gate command has one definition site and is
   mirrored mechanically; a hand copy is drift ([[development]]).
-- Stdlib only, Python 3.9 syntax, no package, no venv, no third-party runner ([[architecture]]).
+- `crayon.py` is stdlib only, Python 3.9 syntax, no package, no venv, no third-party runner
+  ([[architecture]]). The model evals have their own environment ([[evals]]).
 - Harness-agnostic: no agent harness is named, detected or preferred on any surface; skills are
   invoked as `/crayon-onboard`, `/crayon-fetch`, `/crayon-plan`, `/crayon-write`, `/crayon-review`
   everywhere ([[install]]).
@@ -49,13 +50,14 @@ Every command below must be green before a commit lands. This is the gate in ful
 shorter version, and a claim of completeness that omits one is the failure mode the list exists
 against. It is pinned by the `GATE_COMMANDS` tuple in `tests/test_crayon_unit.py`: every string
 appears here and in [[development]] verbatim, every `tests/test_*.py` module appears in it, and
-every `run:` body in `.github/workflows/ci.yml` is one of them.
+every `run:` body in `.github/workflows/ci.yml` is one of them, bar the four the suite's `CI_EXTRA`
+names with their reasons: the `shellcheck` command below and the check of its version, and the
+`evals` job's installs of ripgrep and uv, which the runner image does not ship.
 
 ```bash
 python3 -m unittest tests.test_crayon_unit       # the unit suite
 python3 tests/test_crayon_unit.py                # the SAME suite, script form
 python3 -m unittest tests.test_skill_text        # the skill-text contracts
-python3 -m unittest tests.test_planning_lint     # the anonymization lint's own tests
 python3 -m unittest tests.test_check_docs        # the docs-accuracy checker's own tests
 bash tests/test_crayon_lifecycle.sh              # the lifecycle / recovery suite
 bash tests/test_crayon_acceptance.sh             # the acceptance suite
@@ -64,11 +66,10 @@ bash validation/fixtures.sh                      # the validation kit's four cor
 python3 scripts/skill_lint.py                    # the SKILL.md frontmatter gate
 python3 tests/check_traces.py                    # the trace-table checker
 python3 tests/check_docs.py                      # the docs-accuracy checker
-python3 scripts/planning_lint.py                 # the anonymization gate over .planning/
-python3 tests/size_guard.py                      # VERB-09's line budget, reported and enforced
+python3 tests/size_guard.py                      # the line budget, reported and enforced
 python3 -m unittest tests.test_wiki_lint         # the wiki lint's own tests
 python3 scripts/wiki_lint.py                     # the docs/ wiki and AGENTS.md shape
-python3 -m unittest tests.test_evals             # the model-eval kit's offline self-tests
+uv run --project validation/evals python -m unittest tests.test_evals  # the evals' self-tests
 ```
 
 Set `GIT_CONFIG_GLOBAL=/dev/null` for any fixture that shells out to git. Both invocation forms
@@ -86,6 +87,15 @@ from declared external sources, with provenance), `crayon-plan` (declare and sig
 tutorials and how-tos) and `crayon-review` (record the verdict). The family contract and
 the routing table are in `skills/README.md`; the table is mirrored byte-identically into each
 skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copies are equal.
+Three author rules — notes in the author's words, no marked option on a judgment question, an
+explicit go — are authored once in `skills/README.md` between the `author-rules` sentinels and
+carried byte for byte in the plan, write and review SKILL.md bodies, and
+`tests/test_skill_text.py` (S-15) asserts the copies. A plain-words rule is authored once in
+`skills/README.md` between the `plain-words` sentinels and carried byte for byte in all five
+SKILL.md bodies, and `tests/test_skill_text.py` (S-20) asserts the copies: what the author
+reads says "accepted", "the pages as accepted" and "request N", never a ledger token, and
+verbatim tool output sits in a code block. Lane B's always-on `plain_words` check grades every
+case for it.
 
 ## Topic index
 
@@ -98,7 +108,7 @@ skill's `references/routing.md`, and `tests/test_skill_text.py` asserts the copi
   non-negotiables, the constraints . [[conventions]] markup, ledger, commit seam, documents
 - **Developing**: [[development]] gate, suites, checkers, what pins what, driving the verbs by
   hand . [[shellcheck]] the pinned analyzer and the version rule . [[evals]] the model evals:
-  lanes, the jail, reading results
+  the question they answer, the supported models, how a case runs, reading results
 
 ## The tree
 
@@ -162,51 +172,66 @@ skills/                            ← the human-facing surface
 
 scripts/
 ├── skill_lint.py                  ← SKILL.md frontmatter + writer-allowlist gate
-├── planning_lint.py               ← the anonymization gate over .planning/
 └── wiki_lint.py                   ← the docs/ wiki and AGENTS.md shape
 
 validation/                        ← the validation kit: the evidence apparatus, not the tool
-├── score.py                       ← the rubric scorer and the independent audit oracle
+├── score.py                       ← the independent audit oracle over a unit's record, and the
+│                                     RUN-file check of a real-use run
 ├── fixtures.sh                    ← V-01…V-04: four corruptions built from real verbs, and the
 │                                     oracle that catches each one
 ├── audit-docpr-3005.md            ← public-run accountability audit and guarantee table
+├── closeout-docpr-3008.md         ← slim-cycle dispositions, release truth and known limits
 ├── runmeta.sh                     ← records a leg's RUN metadata alongside its drafts
 ├── dogfood-docpr-3002.md          ← local public-candidate dogfood findings and limits
-├── rubric.md                      ← the scoring bar a leg's drafts are read against
-└── evals/                         ← the model evals: one neutral loop, many OpenRouter models;
-    │                                 paid runs by hand only, never in the gate
-    ├── README.md                  ← lanes, running, where results go, adding a case
-    ├── run.py                     ← the runner: a lane × a model or the roster, --dry-run offline
-    ├── openrouter.py              ← the one transport: pinned backend, retries, cache, spend cap
+├── triage/                        ← what the opt-in triage records are for: measure first,
+│   │                                 train only with enough labelled records
+│   ├── measure.py                 ← how often the triage advice matched what authors did
+│   └── build_dataset.py           ← a fine-tuning dataset, refused below 300 records
+└── evals/                         ← the model evals: can an author rely on crayon, with the model
+    │                                 they use? promptfoo runs them; paid runs by hand only
+    ├── README.md                  ← the purpose, running, results, the held-out split, adding a case
+    ├── run.py                     ← the driver: promptfoo per lane and model, results, decisions,
+    │                                 the supported-models table
+    ├── pf_provider.py             ← promptfoo's provider: runs one case, keeps its record
+    ├── pf_assert.py               ← promptfoo's assertion: grades a case with its own checks
+    ├── openrouter.py              ← the one transport: pinned backend, retries, the spend caps
     ├── skills.py                  ← the catalog and /skill invocation, shared by every model
-    ├── lanes.py                   ← each lane's case loader, live call and oracle
-    ├── agent.py                   ← the seven tools, the replayed history, the decisive action
-    ├── sandbox.py                 ← real snapshots of the recorded states, copied per episode
-    ├── grade.py                   ← the assertion kinds and the pinned judge
+    ├── lanes.py                   ← each lane's case loader, run and oracle; the rule groups
+    ├── agent.py                   ← the seven tools, the replayed history, the episode rule
+    ├── sandbox.py                 ← copies of the recorded states; the workshop and host runners
+    ├── digest.py                  ← what counts as a change: file bytes, modes, links, git index
+    ├── grade.py                   ← the assertion kinds, all deterministic
     ├── record_states.py           ← records the real tool's output for lane B; --check for drift
-    ├── models.json                ← the roster: candidates, gate, judge, author, caps
-    ├── fixtures/                  ← states.sh (the recorder, on tests/lib.sh) and the toyq project
-    ├── cases/                     ← the case files, one set per lane
-    └── results/                   ← committed clean summaries; raw/ is gitignored
+    ├── models.json                ← the certified models, the gate model, the caps
+    ├── dispositions.json          ← the decision on every case a certified model did not pass
+    ├── pyproject.toml             ← the kit's environment, built with uv
+    ├── uv.lock                    ← its locked versions
+    ├── workshop/                  ← the Workshop definition lane B's commands run in
+    ├── fixtures/                  ← states.sh (the recorder, on tests/lib.sh) and the two projects,
+    │                                 toyq and tidewatch
+    ├── cases/                     ← the case files, one set per lane, and the held-out split
+    └── results/                   ← committed results; archive/ holds the previous kit's;
+                                      raw/ is gitignored
 
 tests/
 ├── test_crayon_unit.py            ← the unit suite; also the home of the line budget, of the
 │                                     GATE_COMMANDS tuple and of the pin over this listing
 ├── test_skill_text.py             ← the skill-text contracts and the routing-mirror equality
-├── test_planning_lint.py          ← the anonymization lint's own tests
 ├── test_check_docs.py             ← the docs-accuracy checker's own tests
 ├── test_wiki_lint.py              ← the wiki lint's own tests
-├── test_evals.py                  ← the model-eval kit's offline self-tests: transport, kinds,
-│                                     every case against its own oracle
+├── test_evals.py                  ← the evals' offline self-tests: transport, episode rule, kinds,
+│                                     every case against its known-good and known-bad replies,
+│                                     the promptfoo layer, the decisions
 ├── test_crayon_lifecycle.sh       ← the lifecycle / recovery suite (hermetic temp git repos)
 ├── test_crayon_acceptance.sh      ← the acceptance suite, A-01 … A-38
 ├── lib.sh                         ← the fixtures both bash suites share; ONE definition site
-├── install_smoke.sh               ← CI-02 / A-37: run docs/install.md's INSTALL region, then
+├── skips.json                     ← every skip a suite may take, with its reason
+├── install_smoke.sh               ← A-37: run docs/install.md's INSTALL region, then
 │                                     one unit through the installed tool
 ├── check_traces.py                ← the contract trace-table checker
 ├── check_docs.py                  ← the docs-accuracy checker: links, verbs, reasons, compat
 │                                     and the release record, across the documents it names
-├── size_guard.py                  ← VERB-09's line budget over `crayon.py`, reported and enforced
+├── size_guard.py                  ← the line budget over `crayon.py`, reported and enforced
 └── run_matrix.sh                  ← local-only: the unit suite on 3.9 / 3.12 / 3.13
 ```
 
@@ -214,8 +239,7 @@ The `docs/`, `scripts/`, `tests/` and `validation/` sections are pinned against 
 in both directions by `tests/test_crayon_unit.py`; a file that ships and is not listed goes red,
 and so does a listed name that does not exist. One tracked-elsewhere file is deliberately absent
 and named in that suite's `UNSHIPPED_PATHS`: `before-after.md` under `docs/`. The `skills/`
-section and the root block are outside the pin; the two `.html` files at the root are v1-era
-records kept as they are on `main`.
+section and the root block are outside the pin.
 
 ## Key files
 

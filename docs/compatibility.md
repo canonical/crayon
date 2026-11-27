@@ -11,7 +11,7 @@ is checked against the tool by `tests/check_docs.py`.
 | Number | Value |
 |---|---|
 | `contract` | `1` |
-| `min_tool` | `0.2.0` |
+| `min_tool` | `0.3.0` |
 
 `crayon version --json` reports both. A skill stops on exactly two conditions: a `contract`
 number that is not the one it was written against, or a tool older than `min_tool`. Nothing

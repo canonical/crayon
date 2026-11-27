@@ -18,7 +18,7 @@ on the exit code alone — several reasons share one:
 | 0 | recorded; the step resolves (a `fail` is recorded and stays unresolved) | continue the walk |
 | 2 | `step_unknown` — the step id is not in the plan named by `--steps-seq` | read the plan back and use an id it contains |
 | 2 | `not_actionable` — the unit's signed intent is neither tutorial nor how-to, so a step walk does not belong to it | STOP walking; a reference or explanation page is drafted straight from its declared sources |
-| 3 | `already_recorded` — this evidence is already on the record, field for field | report the existing seq and commit; move to the next step |
+| 3 | `already_recorded` — this evidence is already on the record, field for field | say it is already recorded and give the commit from the payload, naming no record number; move to the next step |
 | 4 | `evidence_incomplete` — a required field is missing, or a `pass` / `fail` / `deviated` step arrived without `--output-file` | re-capture with well-shaped proof; never fabricate a field |
 | 4 | `evidence_mismatch` — the evidence's `mode` is not the `mode` the plan declares for this step | record it in the declared mode, or re-plan the step; re-running the command unchanged cannot clear it |
 | 4 | `evidence_stale` — the plan was re-planned after this capture | re-run the command against the current `--steps-seq` |
@@ -70,14 +70,15 @@ the tool would have no reason to believe it.
 whenever it does:
 
 ```bash
-crayon plan-steps "$UNIT_ID" --steps-file - --keep-evidence --note "<why the plan changed>"
+crayon plan-steps "$UNIT_ID" --steps-file - --keep-evidence --note '<their words: why the plan changed>'
 ```
 
 Reuse travels only along consecutive reusing plans, and only for the prefix whose
 steps are identical in text, mode and statefulness at every hop. Ask the author first:
-it asserts that something which has not been re-run still holds.
+it asserts that something which has not been re-run still holds. The note is the
+author's answer, verbatim, to why the plan changed; never compose a reason for them.
 
-## Capture mechanics (D-15)
+## Capture mechanics
 
 One redirection, one status, no digest.
 
@@ -191,8 +192,10 @@ The step tally names every unresolved step by id, in the form `passed 4 · skipp
 marker, status and text; `--json` carries the same rows as `steps.plan`. That listing
 **is** the plan in a session that did not propose it: never re-propose or re-record it,
 and never read the ledger for it. When a plan exists with unresolved steps, offer resume
-as the **default**: show that tally, trust every resolved step, and continue at the first
-unresolved one — a step marked stateful still takes its just-in-time permission gate.
+as the **default**, a mechanical choice because the record says which steps are resolved:
+show that tally, trust every resolved step, and continue at the first unresolved one — a
+step marked stateful still takes its just-in-time permission gate, put as a plain
+question with no option marked.
 
 A step whose text changed on a later plan carries no evidence forward, because the
 tool's own computed hash no longer matches the one the evidence answered — so "only

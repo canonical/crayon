@@ -5,15 +5,14 @@ checker's ``--root`` at it, so the suite never reads the real documents except
 in the one test that asserts the real tree is clean. The fixture tree carries a
 fixture ``crayon`` — a real ``argparse`` program with three subcommands and its
 own ``REASONS``, ``CONTRACT`` and ``__version__`` — because the checker's oracle
-is whatever tool sits at its root, not a hard-coded list (T-18-30).
+is whatever tool sits at its root, not a hard-coded list.
 
 Two things are asserted about every violation, not one: the return code **and**
 the message text. A checker that returns 1 without naming what it compared is
 the failure mode ``tests/check_traces.py``'s "name what was grepped" rule exists
 against, and it would pass a code-only assertion.
 
-Mirrors ``tests/test_planning_lint.py``: stdlib ``unittest``, Python 3.9 syntax,
-no third-party runner on this branch.
+Stdlib ``unittest``, Python 3.9 syntax, no third-party runner.
 """
 
 import contextlib
@@ -90,7 +89,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 '''
 
-#: The Mechanisms rows the fixture tree's contract carries (19 D-12). Their
+#: The Mechanisms rows the fixture tree's contract carries. Their
 #: signal cells use the real table's ``id (`suite file`)`` shape, because that
 #: parenthetical is exactly what scopes the delegate's widened scan. There are
 #: two, as in the real table, so a case that drops one parenthetical still
@@ -257,7 +256,7 @@ def build_tree(
                 ("`min_tool`", "`%s`" % contract_compat[1]),
             ),
         ),
-        # 19 D-12: the delegate also scans the Mechanisms table, and a tree
+        # The delegate also scans the Mechanisms table, and a tree
         # where it scans zero rows is a vacuous pass it reports as exit 2. The
         # fixture therefore carries the same five-cell shape the real table has,
         # with one row whose signal cell names a suite file — the shape the
@@ -294,21 +293,23 @@ def build_tree(
         )
 
     # The trace observable is a delegation, so the fixture carries the real
-    # delegate and a table it can clear (17 D-09). A fixture without it would
+    # delegate and a table it can clear. A fixture without it would
     # exercise the "delegate absent" arm in every case instead of the one.
     shutil.copy(str(TRACE_CHECKER), str(root / "tests" / "check_traces.py"))
     # The delegate's Mechanisms pass greps the same suite files, so the fixture
     # carries the one the fixture table's row names. `v01_suite` decides WHICH
-    # file the `verify` row's `test_v01_*` is written into (19 WR-04): the row
+    # file the `verify` row's `test_v01_*` is written into: the row
     # points at `validation/fixtures.sh`, and a token satisfying it from some
     # other suite is the defect — the row says where, so the check has to read
     # where.
-    unit_body = ["def test_n01_the_fixture_row_is_cleared():\n    pass\n"]
+    # Each named test asserts something: the delegate reads the bodies too.
+    unit_body = ["def test_n01_the_fixture_row_is_cleared():\n    assert True\n"]
     fixtures_body = ["test_a_fixture_carrying_no_row_id() {\n  :\n}\n"]
     if v01_suite == "tests/test_crayon_unit.py":
-        unit_body.append("def test_v01_the_fixture_row_is_cleared():\n    pass\n")
+        unit_body.append("def test_v01_the_fixture_row_is_cleared():\n    assert True\n")
     else:
-        fixtures_body.append("test_v01_the_fixture_row_is_cleared() {\n  :\n}\n")
+        fixtures_body.append(
+            "test_v01_the_fixture_row_is_cleared() {\n  assert_eq x 1 1\n}\n")
     (root / "tests" / "test_crayon_unit.py").write_text(
         "".join(unit_body), encoding="utf-8"
     )
@@ -457,7 +458,7 @@ class TestCompatibility(CheckDocsCase):
 
         Contract section 5.10 says the two numbers are compared as literal
         strings; a check that normalised them would pass this tree, and a skill
-        comparing the strings at runtime would still stop (T-18-33).
+        comparing the strings at runtime would still stop.
         """
         code, output = self.run_checker(self.tree(compat=(FIXTURE_CONTRACT, "9.9")))
         self.assertEqual(code, 1, output)
@@ -549,14 +550,12 @@ class TestSkillsFirst(CheckDocsCase):
 
 
 class TestReleaseRecord(CheckDocsCase):
-    """REL-02 / CI-03: the topmost released section is dated and carries no slot.
+    """The released section is dated and historically bounded.
 
-    The section the tag is cut against is the one a reader diffs the tag
-    against. Before this observable existed, ``CHANGELOG.md`` was read by this
-    checker for link resolution only, so a released section could ship undated
-    and carrying an explicitly unfilled slot and every gate stayed green — the
-    "silently green" shape the rest of this phase's infrastructure was built
-    against.
+    Before this observable existed, ``CHANGELOG.md`` was read by this checker
+    for link resolution only, so a released section could ship undated,
+    carrying an explicitly unfilled slot or narrating a delivery that did not
+    happen while every gate stayed green.
     """
 
     def test_an_undated_released_heading_is_a_violation(self):
@@ -594,6 +593,79 @@ class TestReleaseRecord(CheckDocsCase):
                 self.assertIn("release record", output)
                 self.assertIn(marker, output)
 
+    def test_020_requires_each_actual_delivery_fact(self):
+        """Removing any one pinned fact turns the 0.2.0 record red."""
+        release = (
+            "# Changelog\n\n"
+            "## [Unreleased]\n\nNothing unreleased.\n\n"
+            "## [0.2.0] - 2026-09-18\n\n%s\n"
+            % "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        )
+        for fact in check_docs.RELEASE_020_REQUIRED_FACTS:
+            with self.subTest(fact=fact):
+                mutated = release.replace(fact, "")
+                self.assertNotEqual(mutated, release)
+                code, output = self.run_checker(self.tree(changelog=mutated))
+                self.assertEqual(code, 1, output)
+                self.assertIn("release record", output)
+                self.assertIn(fact, output)
+
+    def test_020_rejects_each_superseded_release_claim(self):
+        """Each known false future-tense claim is independently refused."""
+        release = (
+            "# Changelog\n\n"
+            "## [Unreleased]\n\nNothing unreleased.\n\n"
+            "## [0.2.0] - 2026-09-18\n\n%s\n"
+            % "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        )
+        for claim in check_docs.RELEASE_020_FORBIDDEN_CLAIMS:
+            with self.subTest(claim=claim):
+                mutated = release + "\n" + claim + ".\n"
+                code, output = self.run_checker(self.tree(changelog=mutated))
+                self.assertEqual(code, 1, output)
+                self.assertIn("release record", output)
+                self.assertIn(claim, output)
+
+    def later_release(self, release_020_body, heading_030="## [0.3.0] - 2026-11-01"):
+        """A changelog with a later release cut above the 0.2.0 section."""
+        return (
+            "# Changelog\n\n"
+            "## [Unreleased]\n\nNothing unreleased.\n\n"
+            "%s\n\nThe later fixture release.\n\n"
+            "## [0.2.0] - 2026-09-18\n\n%s\n" % (heading_030, release_020_body)
+        )
+
+    def test_020_facts_hold_below_a_later_dated_release(self):
+        """A dated [0.3.0] above [0.2.0] does not switch the facts off."""
+        fact = check_docs.RELEASE_020_REQUIRED_FACTS[0]
+        facts = "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        changelog = self.later_release(facts.replace(fact, ""))
+        self.assertNotIn(fact, changelog)
+        code, output = self.run_checker(self.tree(changelog=changelog))
+        self.assertEqual(code, 1, output)
+        self.assertIn("release record", output)
+        self.assertIn(fact, output)
+
+    def test_020_claims_stay_out_below_a_later_dated_release(self):
+        """A dated [0.3.0] above [0.2.0] does not let a claim back in."""
+        claim = check_docs.RELEASE_020_FORBIDDEN_CLAIMS[0]
+        facts = "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        changelog = self.later_release(facts + "\n" + claim + ".")
+        code, output = self.run_checker(self.tree(changelog=changelog))
+        self.assertEqual(code, 1, output)
+        self.assertIn("release record", output)
+        self.assertIn(claim, output)
+
+    def test_a_later_undated_release_is_named_by_the_date_check(self):
+        """The date check still reads the topmost section, [0.3.0]."""
+        facts = "\n".join(check_docs.RELEASE_020_REQUIRED_FACTS)
+        changelog = self.later_release(facts, heading_030="## [0.3.0]")
+        code, output = self.run_checker(self.tree(changelog=changelog))
+        self.assertEqual(code, 1, output)
+        self.assertIn("release record", output)
+        self.assertIn("## [0.3.0]", output)
+        self.assertNotIn("## [0.2.0] - YYYY-MM-DD", output)
+
     def test_a_changelog_with_no_versioned_heading_is_a_two(self):
         """The vacuous-pass guard: nothing to scan is 2, never 0.
 
@@ -611,11 +683,11 @@ class TestReleaseRecord(CheckDocsCase):
         self.assertIn("CHANGELOG.md", output)
 
     def test_a_marker_outside_the_topmost_released_section_is_not_a_violation(self):
-        """REL-02's adjacency and ordering edges, in one tree.
+        """The release record's adjacency and ordering edges, in one tree.
 
         ``## [Unreleased]`` sits directly above the released heading and an
         older release sits directly below it. The observable is about the
-        section the tag is cut against: a marker in either neighbour is not a
+        topmost released section: a marker in either neighbour is not a
         finding, and mistaking ``[Unreleased]`` for the released section is the
         failure ``RELEASED_HEADING_RE``'s semantic-version requirement prevents.
         """
@@ -642,29 +714,27 @@ class TestReleaseRecord(CheckDocsCase):
     def test_the_real_repository_tree_is_clean_on_the_release_record(self):
         """This checkout's own ``CHANGELOG.md``, not a fixture.
 
-        The other direction, so the four cases above cannot pass by refusing
-        every tree: the repository's released section is dated and carries no
-        marker, and the observable reports it as checked.
+        The other direction, so the cases above cannot pass by refusing every
+        tree: this repository's 0.2.0 section is dated, carries no marker,
+        retains every delivery fact and carries none of the stale claims.
+        It must carry a ``## [0.2.0]`` heading at all: the 0.2.0 pins are
+        skipped when no such section exists, so deleting it must not pass.
         """
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertRegex(changelog, r"(?m)^## \[0\.2\.0\]")
         code, output = self.run_checker(ROOT)
         self.assertEqual(code, 0, output)
         self.assertIn("release record", output)
 
 
 class TestTraceDelegation(CheckDocsCase):
-    """19 D-12 / T-19-26: the delegate's second vacuous-pass guard, seen from here."""
+    """The delegate's second vacuous-pass guard, seen from here."""
 
-    def test_a_mechanisms_row_that_names_no_suite_file_is_a_two(self):
-        """Dropping the parenthetical unchecks the link and must not read clean.
+    def test_a_mechanisms_row_that_names_no_suite_file_is_a_violation(self):
+        """Dropping the parenthetical unlinks a mechanism from its test: a violation.
 
-        The signal cell's ``(`validation/fixtures.sh`)`` is what scopes the
-        widened Mechanisms scan; without it the row is reported as not scanned,
-        no scanned row names the gated suite, and `tests/check_traces.py`
-        returns 2 — even though the other parenthetical row keeps the scan
-        non-empty, which a bare zero-scanned count would miss. `check_docs`
-        folds that into its nothing-checked arm rather than into a violation, so
-        the report says the traces observable checked nothing — never that the
-        tree is clean.
+        Every Mechanisms row must name the suite file its test lives in; a row
+        that does not is reported by name, and the tree is never clean.
         """
         rows = tuple(
             row[:-1] + (row[-1].split("(")[0].strip(),)
@@ -673,18 +743,27 @@ class TestTraceDelegation(CheckDocsCase):
             for row in DEFAULT_MECHANISM_ROWS
         )
         code, output = self.run_checker(self.tree(mechanism_rows=rows))
-        self.assertEqual(code, 2, output)
-        self.assertIn("traces", output)
-        self.assertIn("validation/fixtures.sh", output)
+        self.assertEqual(code, 1, output)
+        self.assertIn("names no suite file", output)
+        self.assertIn("`verify` (read-only)", output)
+
+    def test_a_named_test_that_asserts_nothing_is_a_violation(self):
+        """A name that exists proves nothing about what is checked."""
+        root = self.tree()
+        (root / "validation" / "fixtures.sh").write_text(
+            "test_v01_the_fixture_row_is_cleared() {\n  :\n}\n", encoding="utf-8")
+        code, output = self.run_checker(root)
+        self.assertEqual(code, 1, output)
+        self.assertIn("asserts nothing", output)
 
     def test_a_row_is_not_satisfied_by_a_test_in_some_other_suite(self):
-        """19 WR-04: the row says WHERE, so the check has to read where.
+        """The row says WHERE, so the check has to read where.
 
         `check_mechanism_row` unpacked ``suite_name`` and then used it only in
         the error message; the existence test searched every entry of
         ``SUITE_FILES``. The ``verify`` row's claim is specifically that
-        V-01…V-04 live in ``validation/fixtures.sh`` — the link 19 D-12 exists
-        to gate — and a ``test_v01_*`` function in any other suite satisfied it
+        V-01…V-04 live in ``validation/fixtures.sh`` — the link the Mechanisms
+        scan exists to gate — and a ``test_v01_*`` function in any other suite satisfied it
         identically. ``GATED_SUITE``'s guard is a different assertion and does
         not cover this one: it checks only that some scanned row still NAMES
         the file, which this tree does.
@@ -715,7 +794,7 @@ class TestScopeDiscipline(CheckDocsCase):
     """The checker has no general constant-versus-doc-row rule."""
 
     def test_the_step_count_backstop_is_never_reported_as_drift(self):
-        """`.planning/WINDOWS.md` entry 17: the tool's step-count backstop constant
+        """The tool's step-count backstop constant
         has no contract row behind it — contract section 5.2 caps the step plan in
         bytes and names no count cap — so a general "every constant needs a row"
         rule would report it forever. The absence is asserted rather than assumed,
