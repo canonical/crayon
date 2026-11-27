@@ -3246,6 +3246,18 @@ class TestDecisions(unittest.TestCase):
                 path = run.destination(result(date="2026-01-01", **meta), "s")
                 self.assertEqual(path.parent, run.RAW / "s")
 
+    def test_a_same_day_rerun_is_later_than_the_first_run(self):
+        """destination names a same-day rerun <stem>-2.json; committed() lists it after
+        <stem>.json and before <stem>-10.json, and a later day after them all."""
+        names = ["2026-01-02-B-m-k3-all.json", "2026-01-01-B-m-k3-all-10.json",
+                 "2026-01-01-B-m-k3-all-2.json", "2026-01-01-B-m-k3-all.json"]
+        with tempfile.TemporaryDirectory() as tmp:
+            for name in names:
+                (Path(tmp) / name).write_text(json.dumps({"decision": {}}), encoding="utf-8")
+            order = [path.name for path, _ in run.committed(tmp)]
+        self.assertEqual(order, ["2026-01-01-B-m-k3-all.json", "2026-01-01-B-m-k3-all-2.json",
+                                 "2026-01-01-B-m-k3-all-10.json", "2026-01-02-B-m-k3-all.json"])
+
     def test_the_kit_digest_leaves_out_the_recorded_states_only(self):
         with tempfile.TemporaryDirectory() as tmp:
             kit = Path(tmp, "kit")

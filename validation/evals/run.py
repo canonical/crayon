@@ -434,10 +434,23 @@ def recount(result_path, raw_dir):
     return result
 
 
+_RERUN_RE = re.compile(r"^(?P<stem>.*?)(?:-(?P<n>\d+))?$")
+
+
+def _run_order(path):
+    """A result's place in time: its stem, then its same-day rerun number.
+
+    ``destination`` names a same-day rerun ``<stem>-2.json``, ``<stem>-3.json``, …,
+    and a plain sort puts ``-2.json`` before ``.json``; the first run is number 1.
+    """
+    match = _RERUN_RE.match(path.stem)
+    return (match.group("stem"), int(match.group("n") or 1))
+
+
 def committed(results=RESULTS):
     """Every committed result file, oldest first, as ``(path, result)``."""
     found = []
-    for path in sorted(Path(results).glob("*.json")):
+    for path in sorted(Path(results).glob("*.json"), key=_run_order):
         try:
             result = json.loads(path.read_text(encoding="utf-8"))
         except ValueError:

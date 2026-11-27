@@ -317,6 +317,9 @@ across. The contract number stays `1`.
 - Lane B's `@OFFERS_PUBLISH` pattern reads `next: publish` quoted whole in inline code as a
   mention of the routed token, as its own comment says, not as publishing offered. The bare
   token is still an offer. Case B-47.
+- `validation/evals/run.py` orders a same-day rerun's result, `<stem>-2.json`, after the first
+  run's `<stem>.json`, so the supported-models table, the dispositions check and the ship
+  baseline read the latest result. A plain sort had put `-2.json` first.
 - Lane B's six `crayon-write` histories that draft (B-18, B-19, B-27, B-55, B-69 and B-70)
   now make the reads the skill requires before authoring: its routing reference,
   `crayon context show --json` and the three recorded artefacts, the intake notes through

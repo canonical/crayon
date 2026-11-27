@@ -19,22 +19,22 @@
       "id": "B-45",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "limitation",
-      "note": "2 of 3. One closure led with request 8 instead of the deviated step, so its first question was not about init; the skill fixes the order of the sources.",
-      "ref": "2026-10-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+      "note": "1 of 3. Both failing runs asked both step questions first and the Python-version request third, leaving where a reader arrives from as a plain line; the skill takes one question per source first (step init, the request, where a reader arrives from), and one run also left out the pointer to crayon summary install --md.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-46",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "limitation",
-      "note": "1 of 3. Two closures asked F-2 and F-3 before where a reader arrives from; the skill takes one question per source first, in a fixed order.",
-      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+      "note": "2 of 3. One closure asked F-2 and F-3 before where a reader arrives from; the skill takes one question per source first, in a fixed order.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-85",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "limitation",
-      "note": "2 of 3. One run asked the verdict in the same message as the two step questions; the skill makes the step questions the last thing in that message and has the verdict wait for the reply.",
-      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+      "note": "1 of 3. Both failing runs asked the verdict in the same message as the two step questions; the skill makes the step questions the last thing in that message and has the verdict wait for the reply.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-06",
@@ -96,36 +96,36 @@
       "id": "B-26",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "1 of 3. The failing runs said 'digest' or 'hash' in prose: uses them in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "1 of 3. The failing runs said 'its recorded digest' and 'hash-chained' in prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-29",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "2 of 3. One run asked two questions in one intake turn; the skill asks exactly one.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "2 of 3. One run asked a second question inside its first intake question ('For example, is the reader trying to …?'); the skill asks exactly one.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-41",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "0 of 3. No run gave the findings tally line ('Findings: N total ...') before the verdict; the skill quotes the rubric's own tally.",
+      "note": "0 of 3 on 2026-11-25-B-anthropic__claude-haiku-5.5-k3-all.json: no run gave the findings tally line with its total. Review step 5 now states the line word for word, and the next run passed 3 of 3.",
       "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
     },
     {
       "id": "B-45",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "0 of 3. The runs reported the resolved request as the agent's own mistake and asked two questions, not the three the record holds open, or dropped 'crayon stops here'.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "0 of 3. Every run asked both step questions and the request question, four items with the arrival question left out or put fourth, instead of one question per source first (step init, the Python-version request, where a reader arrives from) with the fourth item pointed to crayon summary install --md.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-46",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "0 of 3. The runs asked F-2 and F-3 before where a reader arrives from, against the skill's one question per source first, or left out the negative-value finding.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "0 of 3. Every run asked F-2 and F-3 first and where a reader arrives from third; the skill takes one question per source first, so the arrival question is second.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-47",
@@ -145,8 +145,8 @@
       "id": "B-56",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "2 of 3. One report asked two questions and offered a next step ('Should I'); the skill ends on exactly one priorities question.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "2 of 3. The failing report offered to re-stage and re-record before its priorities question; the skill ends on exactly that one question.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-59",
@@ -160,35 +160,35 @@
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
       "note": "2 of 3. One run asked the verdict in the same message as the two step questions; the skill has the verdict wait for the reply.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-68",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "0 of 3. Every run raised self-review, although the record names another model and nothing ran in the session; the skill says nothing of it then.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "0 of 3. Two runs raised self-review although the record names another model and nothing ran in the session, and the third said 'basis' in prose.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-71",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "0 of 3. No run asked the leave-out question after the arrival answer.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "2 of 3. After the arrival answer, the failing run asked what the reader does next instead of the leave-out question.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-74",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "0 of 3. No run gave a focus dimension, so the must-fix the intake notes make was never raised under it.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "0 of 3. Every run raised the db_path must-fix but set the dimensions as bold labels or paragraphs, not headings; the rubric requires all six dimension headings, '### focus' among them.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-76",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "1 of 3. The closure asked about step first-job, which got no change request and so is settled.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "2 of 3. The closure asked about step first-job, which got no change request during the review and so is settled.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-77",
@@ -215,15 +215,15 @@
       "id": "B-84",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "2 of 3. The failing run asked at the stateful step's gate as required but uses 'seq' in its own prose, a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "2 of 3. The failing run asked at the stateful step's gate as required, but said 'seq 3' in prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-85",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
       "note": "2 of 3. As B-62: the verdict was asked in the same message as the step questions.",
-      "ref": "2026-10-25-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-89",
@@ -250,8 +250,8 @@
       "id": "B-40",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "2 of 3. One run said 'the provenance summary is above' and paraphrased it instead of showing the tool's lines, so 'record: intact at' never reached the author; the skill shows the summary verbatim in a code block.",
-      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "2 of 3. One run said 'the provenance summary is above' and paraphrased it, so the tool's 'record: intact at' line never reached the author.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-08",
@@ -278,22 +278,22 @@
       "id": "B-31",
       "model": "anthropic/claude-haiku-5.5",
       "kind": "limitation",
-      "note": "1 of 3. Two runs paraphrased the summary in prose ('record intact at commit 6dde3a2', 'Record: intact at') instead of showing the tool's lines verbatim; the skill shows the summary in a code block.",
-      "ref": "2026-11-24-B-anthropic__claude-haiku-5.5-k3-all.json"
+      "note": "1 of 3. Two runs paraphrased the summary in prose ('The record is intact at commit …', 'Record: intact at …') instead of showing the tool's lines as printed.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
     },
     {
       "id": "B-62",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "limitation",
       "note": "2 of 3. One run asked the verdict in the same message as the two step questions; the skill has the verdict wait for the reply.",
-      "ref": "2026-11-24-B-anthropic__claude-sonnet-5.5-k3-all.json"
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-74",
       "model": "anthropic/claude-sonnet-5.5",
       "kind": "limitation",
-      "note": "0 of 3. Every run raised the db_path must-fix but set the dimensions as bold or italic labels, not headings; the rubric requires all six dimension headings, '### focus' among them.",
-      "ref": "2026-11-25-B-anthropic__claude-sonnet-5.5-k3-all.json"
+      "note": "0 of 3. Every run raised the db_path must-fix but set the dimensions as bold labels or paragraphs, not headings; the rubric requires all six dimension headings, '### focus' among them.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
     },
     {
       "id": "B-76",
@@ -616,6 +616,62 @@
       "kind": "limitation",
       "note": "2 of 3. On tidewatch, the failing run kept reading files until the turn cap and never staged the page.",
       "ref": "2026-11-25-B-z-ai__glm-5.3-k3-all.json"
+    },
+    {
+      "id": "B-12",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run said 'the generation is at seq 3' in prose: uses 'seq', a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-35",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run recorded the accept as asked but said 'basis' in its prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-49",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run held the signoff and asked as required, but said 'basis' in its prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-80",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run read the plan back but ended on an instruction ('Reply \"sign it\"') with no question to the author.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-88",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. On tidewatch, the failing run stopped to report two findings from the code instead of staging the page.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-95",
+      "model": "anthropic/claude-haiku-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run wrote the draft into staging without putting the disagreement between structure.md and the sibling page to the author.",
+      "ref": "2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json"
+    },
+    {
+      "id": "B-29",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. One run asked a second question inside its first intake question ('For example, what are they trying to understand …?'); the skill asks exactly one.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
+    },
+    {
+      "id": "B-83",
+      "model": "anthropic/claude-sonnet-5.5",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run held the signoff and asked the intake question as required, but said 'basis' in its prose: a record word the plain-words rule (S-20) keeps out; the skill states the rule and the model breaks it.",
+      "ref": "2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json"
     }
   ]
 }
