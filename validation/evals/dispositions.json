@@ -418,15 +418,15 @@
       "id": "B-46",
       "model": "deepseek/deepseek-v4.1-flash",
       "kind": "limitation",
-      "note": "1 of 3. One run recorded the accept and listed what stays open but asked no second question about how readers arrive; the other numbered its points without a question and left out the negative-value gap.",
-      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+      "note": "0 of 3. Every run asked F-2 and F-3 first and where a reader arrives from third; the skill takes one question per source first, so the arrival question is second.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
     },
     {
       "id": "B-56",
       "model": "deepseek/deepseek-v4.1-flash",
       "kind": "limitation",
-      "note": "1 of 3. After crayon context record had run, two runs staged doc-style.md again instead of reporting the set and asking one question.",
-      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+      "note": "1 of 3. After crayon context record had run, two runs staged doc-style.md again, one saying it had recorded too hastily, instead of reporting the set and asking one question.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
     },
     {
       "id": "B-59",
@@ -439,22 +439,22 @@
       "id": "B-62",
       "model": "deepseek/deepseek-v4.1-flash",
       "kind": "limitation",
-      "note": "1 of 3. Two runs asked 'What's your verdict' in the same list as the two step questions, so three questions came before the steps were answered.",
-      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+      "note": "2 of 3. The failing run asked 'What's your verdict' after the two step questions, so three questions came before the steps were answered.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
     },
     {
       "id": "B-68",
       "model": "deepseek/deepseek-v4.1-flash",
       "kind": "limitation",
-      "note": "2 of 3. The failing run wrote 'No self-review line applies', naming the self-review it was told not to mention when nothing ran in the session.",
-      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+      "note": "1 of 3. Two runs said the review was not a self-review, naming the self-review the case keeps out when the record names another model and nothing ran in the session.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
     },
     {
       "id": "B-70",
       "model": "deepseek/deepseek-v4.1-flash",
       "kind": "limitation",
-      "note": "2 of 3. With an empty gaps list, the failing run still added 'I didn't run toyq', a hedge the report gives no ground for; the replayed history now includes the context read, so this is the model's own.",
-      "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+      "note": "2 of 3. With an empty gaps list, the failing run still wrote 'there is nothing I didn't run or couldn't source', a disclaimer the report gives no ground for.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
     },
     {
       "id": "B-78",
@@ -462,6 +462,27 @@
       "kind": "limitation",
       "note": "2 of 3. The failing run kept reading (pyproject.toml, .gitignore, crayon unit new --help) until the turn cap, and never gave the triage advice or ran crayon triage record.",
       "ref": "2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-35",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. The failing run ran 'crayon review cfg --verdict accept --note 'Accept.'', putting a note on the record the author never gave: a record mistake on a critical case, so this result does not support the model.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-50",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "2 of 3. After the author's 'yes, but ...', the failing run read the help and then ran 'crayon signoff cfg' without making the change or asking again: a signoff the author had not given, a record mistake on a critical case, so this result does not support the model.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
+    },
+    {
+      "id": "B-88",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "kind": "limitation",
+      "note": "1 of 3. Two runs never staged the page: one stopped to report its grounding without drafting, the other kept reading sources and sibling pages until the turn cap.",
+      "ref": "2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json"
     },
     {
       "id": "B-41",

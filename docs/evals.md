@@ -32,7 +32,7 @@ the operational guide: how to run a lane, where results land and how to add a ca
 | anthropic/claude-sonnet-5.5 | google-vertex/global | 67 of 70 passed every run | 21 of 25 passed every run | supported; known misses: B-62, B-83, B-85 (2026-11-26-B-anthropic__claude-sonnet-5.5-k3-all.json) |
 | anthropic/claude-haiku-5.5 (gate) | google-vertex/global | 59 of 70 passed every run | 16 of 25 passed every run | supported; known misses: B-62, B-35, B-49, B-40, B-26, B-80, B-84, B-85, B-88, B-31, B-95 (2026-11-25-B-anthropic__claude-haiku-5.5-k3-all-2.json) |
 | z-ai/glm-5.3 | fireworks | 59 of 70 passed every run | 17 of 25 passed every run | stale: the skills changed since 2026-11-25-B-z-ai__glm-5.3-k3-all.json; re-run. On its skills: not supported: record mistakes in B-49, B-50, B-59, B-19, B-20, B-22; B-41 failed every run; critical runs passed 93.8% (needs 95%) |
-| deepseek/deepseek-v4.1-flash | deepinfra/fp8 | 62 of 70 passed every run | 18 of 25 passed every run | stale: the skills changed since 2026-11-25-B-deepseek__deepseek-v4.1-flash-k3-all.json; re-run. On its skills: not supported: record mistakes in B-59, B-13, B-22 |
+| deepseek/deepseek-v4.1-flash | deepinfra/fp8 | 66 of 70 passed every run | 21 of 25 passed every run | not supported: record mistakes in B-35, B-50 (2026-11-27-B-deepseek__deepseek-v4.1-flash-k3-all.json) |
 <!-- supported-models:end -->
 
 `uv run --project validation/evals python validation/evals/run.py --table --write` generates this
