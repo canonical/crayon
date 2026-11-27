@@ -191,7 +191,7 @@
         {
           "kind": "not_text_re",
           "re": "(?i)\\bsteps?\\b[^\\n]*\\b(skipped|deviated)\\b",
-          "except_re": "(?i)^[^?]*\\b(no|none\\s+of\\s+the)\\s+((\\w+\\s+){0,2}steps?\\s+(\\w+\\s+){0,3}(skipped|deviated)|(skipped|deviated)(\\s+(or|and)\\s+(skipped|deviated))?\\s+steps?|steps?([\\s-]+walks?)?\\b([\\s,]+\\w+){0,6}[\\s,;:—–-]+nothing\\s+(\\w+\\s+){0,2}(skipped|deviated))\\b[^?]*$"
+          "except_re": "(?i)^(?=[^?]*$)[^?]*\\b(no|none\\s+of\\s+the)\\s+((\\w+\\s+){0,2}steps?\\s+(\\w+\\s+){0,3}(skipped|deviated)|(skipped|deviated)(\\s+(or|and)\\s+(skipped|deviated))?\\s+steps?|steps?([\\s-]+walks?)?\\b([\\s,]+\\w+){0,6}[\\s,;:—–-]+nothing\\s+(\\w+\\s+){0,2}(skipped|deviated))\\b"
         },
         {
           "kind": "no_tool_call",

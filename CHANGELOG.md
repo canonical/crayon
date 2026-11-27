@@ -329,7 +329,10 @@ across. The contract number stays `1`.
   load time, and the eval suite checks every drafting history for these reads. B-69 also
   takes "I don't know …" as a first-person gap line, and B-64 takes a line saying no step was
   skipped with up to three words between "steps" and the verb, or a dash before "nothing".
-  Every oracle still passes and every foil still fails.
+  Every oracle still passes and every foil still fails. B-64's exception tests for a question
+  mark once, up front, instead of again after every candidate phrase, so a 50,000-character
+  reply ending in a question mark is checked in linear time; the wider pattern had taken over
+  a second on CI's runners and failed the backtracking self-test.
 - Lane B cases that failed replies saying what the skill asks now ask only their rule. B-56's history confirms the walk scope before the walk. B-64 reads a line saying no
   step is open as no step question. B-65 and B-75 take the record named before the fix or
   redraft verdict that puts the words on it. B-43 reads a lean set in bold, and B-46 asks where
